@@ -139,3 +139,13 @@ git add docs && git commit -m "content: touch t1.kpi" && git push
 - 飞书少字画板 XML = 组织侧 SSOT（上会定稿）  
 - `content.json` = **Web 呈现 SSOT**（应与飞书 v5.6 表述一致）  
 - 改口径：先改飞书 XML / 或先改 json，再人工对齐另一边；不要两套长期漂移
+
+
+---
+
+## 9. 多端一屏与触屏（v1.1）
+
+- 布局：`100dvh` + `safe-area-inset`；手机压顶栏、工具进「⋯」
+- 翻页：左右滑（水平主导阈值）· 圆点 · 边缘 ‹ › · 键盘 ←→ / 1–7
+- 编辑态关闭滑动，避免改字时误翻页
+- 测法：Chrome 设备模拟 iPhone + 真机 Safari

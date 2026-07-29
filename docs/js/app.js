@@ -15,6 +15,7 @@
   let fileHandle = null;
   let mermaidReady = false;
   const renderedMermaid = new Set();
+  let swipeDir = "left"; // panel animation direction
 
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -106,7 +107,7 @@
     $("#doc-sub").innerHTML = `<b>${esc(m.from || "")}</b> → <b>${esc(m.to || "")}</b> · ${esc(m.subtitle || "")}`;
     $("#doc-role").textContent = m.roleLine || "";
     $("#footer-left").textContent = m.footerLeft || "";
-    $("#footer-right").innerHTML = m.footerRight || "";
+    $("#footer-right").innerHTML = m.footerRight || "左右滑翻页 · 1–7 / ←→";
     if (m.brand) document.documentElement.style.setProperty("--brand", m.brand);
   }
 
@@ -115,13 +116,45 @@
     nav.innerHTML = content.tabs
       .map(
         (t) =>
-          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}">` +
+          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}" role="tab" aria-selected="${t.id === activeTab}">` +
           `<span class="n">${esc(t.no || "")}</span>${esc(t.title)}</button>`
       )
       .join("");
     nav.querySelectorAll(".tab").forEach((btn) => {
       btn.addEventListener("click", () => activate(btn.dataset.tab));
     });
+    renderDots();
+    updatePagerChrome();
+  }
+
+  function renderDots() {
+    const host = $("#pager-dots");
+    if (!host) return;
+    host.innerHTML = content.tabs
+      .map(
+        (t, i) =>
+          `<button type="button" data-tab="${esc(t.id)}" class="${t.id === activeTab ? "active" : ""}" aria-label="第 ${i + 1} 页 ${esc(t.title)}"></button>`
+      )
+      .join("");
+    host.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", () => activate(btn.dataset.tab));
+    });
+  }
+
+  function updatePagerChrome() {
+    const ids = content.tabs.map((x) => x.id);
+    const idx = Math.max(0, ids.indexOf(activeTab));
+    const label = $("#page-label");
+    if (label) label.textContent = `${idx + 1} / ${ids.length}`;
+    const prev = $("#nav-prev");
+    const next = $("#nav-next");
+    if (prev) prev.disabled = idx <= 0;
+    if (next) next.disabled = idx >= ids.length - 1;
+    // scroll active tab into view
+    const tabBtn = document.querySelector(`.tab[data-tab="${activeTab}"]`);
+    if (tabBtn && tabBtn.scrollIntoView) {
+      tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    }
   }
 
   function blockHtml(b) {
@@ -284,11 +317,40 @@
     return content.tabs.find((t) => t.id === id);
   }
 
-  async function activate(id) {
+  async function activate(id, dir) {
+    if (!id || !findTab(id)) return;
+    const ids = content.tabs.map((x) => x.id);
+    const prevIdx = ids.indexOf(activeTab);
+    const nextIdx = ids.indexOf(id);
+    if (dir === "left" || dir === "right") swipeDir = dir;
+    else if (prevIdx >= 0 && nextIdx >= 0) swipeDir = nextIdx >= prevIdx ? "left" : "right";
+
     activeTab = id;
-    $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === id));
-    $$(".panel").forEach((p) => p.classList.toggle("active", p.id === id));
+    $$(".tab").forEach((t) => {
+      const on = t.dataset.tab === id;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    $$("#pager-dots button").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+    $$(".panel").forEach((p) => {
+      const on = p.id === id;
+      p.classList.toggle("active", on);
+      p.classList.remove("slide-left", "slide-right");
+      if (on) p.classList.add(swipeDir === "left" ? "slide-left" : "slide-right");
+    });
+    updatePagerChrome();
     await queueMermaid(id);
+  }
+
+  function go(delta) {
+    const ids = content.tabs.map((x) => x.id);
+    const cur = ids.indexOf(activeTab);
+    const next = cur + delta;
+    if (next < 0 || next >= ids.length) {
+      toast(next < 0 ? "已是第一页" : "已是最后一页");
+      return;
+    }
+    activate(ids[next], delta > 0 ? "left" : "right");
   }
 
   // ---------- Edit mode ----------
@@ -509,9 +571,9 @@
         const t = ids[Number(e.key) - 1];
         if (t) activate(t);
       } else if (e.key === "ArrowRight" || e.key === "PageDown") {
-        activate(ids[Math.min(ids.length - 1, cur + 1)]);
+        go(1);
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-        activate(ids[Math.max(0, cur - 1)]);
+        go(-1);
       } else if (e.key.toLowerCase() === "e") {
         toggleEdit();
       } else if (e.key.toLowerCase() === "s" && !e.metaKey && !e.ctrlKey) {
@@ -521,19 +583,122 @@
   }
 
   function wireToolbar() {
-    $("#btn-edit").addEventListener("click", toggleEdit);
-    $("#btn-save").addEventListener("click", saveToSource);
-    $("#btn-bind").addEventListener("click", bindFile);
-    $("#btn-export").addEventListener("click", () => {
+    const exportFn = () => {
       if (editing) harvestDomToContent();
       downloadJson();
       toast("已导出 content.json");
-    });
-    $("#btn-reload").addEventListener("click", async () => {
+    };
+    const reloadFn = async () => {
       localStorage.removeItem(STORAGE_KEY);
       await loadContent();
       renderAll();
       toast("已从 content.json 重新加载（草稿已清）");
+    };
+    $("#btn-edit").addEventListener("click", toggleEdit);
+    $("#btn-save").addEventListener("click", saveToSource);
+    $("#btn-bind") && $("#btn-bind").addEventListener("click", bindFile);
+    $("#btn-export") && $("#btn-export").addEventListener("click", exportFn);
+    $("#btn-reload") && $("#btn-reload").addEventListener("click", reloadFn);
+    $("#btn-bind-m") && $("#btn-bind-m").addEventListener("click", () => { closeMore(); bindFile(); });
+    $("#btn-export-m") && $("#btn-export-m").addEventListener("click", () => { closeMore(); exportFn(); });
+    $("#btn-reload-m") && $("#btn-reload-m").addEventListener("click", () => { closeMore(); reloadFn(); });
+
+    const moreBtn = $("#btn-more");
+    const menu = $("#toolbar-menu");
+    if (moreBtn && menu) {
+      moreBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = menu.classList.toggle("open");
+        moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.addEventListener("click", () => closeMore());
+    }
+    $("#nav-prev") && $("#nav-prev").addEventListener("click", () => go(-1));
+    $("#nav-next") && $("#nav-next").addEventListener("click", () => go(1));
+  }
+
+  function closeMore() {
+    const menu = $("#toolbar-menu");
+    const moreBtn = $("#btn-more");
+    if (menu) menu.classList.remove("open");
+    if (moreBtn) moreBtn.setAttribute("aria-expanded", "false");
+  }
+
+  /** 触屏左右滑翻页：水平位移主导且超过阈值才触发，避免干扰正文竖滑 */
+  function wireSwipe() {
+    const stage = $("#stage");
+    if (!stage) return;
+    let startX = 0, startY = 0, startT = 0, tracking = false;
+
+    const onStart = (x, y) => {
+      if (editing) return;
+      startX = x;
+      startY = y;
+      startT = Date.now();
+      tracking = true;
+    };
+    const onEnd = (x, y) => {
+      if (!tracking || editing) return;
+      tracking = false;
+      document.body.classList.remove("is-swiping");
+      const dx = x - startX;
+      const dy = y - startY;
+      const dt = Date.now() - startT;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      // 水平主导、距离够、时间不太长
+      if (absX < 48) return;
+      if (absX < absY * 1.15) return; // 竖滑优先
+      if (dt > 800) return;
+      if (dx < 0) go(1); // 左滑 → 下一页
+      else go(-1); // 右滑 → 上一页
+    };
+
+    stage.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length !== 1) return;
+        onStart(e.touches[0].clientX, e.touches[0].clientY);
+      },
+      { passive: true }
+    );
+    stage.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!tracking || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+          document.body.classList.add("is-swiping");
+        }
+      },
+      { passive: true }
+    );
+    stage.addEventListener(
+      "touchend",
+      (e) => {
+        const t = e.changedTouches[0];
+        if (t) onEnd(t.clientX, t.clientY);
+      },
+      { passive: true }
+    );
+    stage.addEventListener("touchcancel", () => {
+      tracking = false;
+      document.body.classList.remove("is-swiping");
+    });
+
+    // 触控板/鼠标拖拽（可选）
+    let mouseDown = false;
+    stage.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.target.closest("a,button,input,textarea,[contenteditable=true]")) return;
+      mouseDown = true;
+      onStart(e.clientX, e.clientY);
+    });
+    stage.addEventListener("pointerup", (e) => {
+      if (!mouseDown) return;
+      mouseDown = false;
+      onEnd(e.clientX, e.clientY);
     });
   }
 
@@ -547,6 +712,7 @@
       wireToolbar();
       wireLogo();
       wireKeys();
+      wireSwipe();
       // title editable only in edit mode
       $("#doc-title").dataset.editable = "true";
     } catch (e) {

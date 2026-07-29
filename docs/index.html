@@ -2,9 +2,12 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#EBE6EF"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <title>AI 赋能立项 · 金主一页</title>
-  <!-- 壳文件：禁止在此写业务文案。内容见 data/content.json · 架构见 ARCHITECTURE.md -->
+  <!-- 壳：无业务文案。内容 data/content.json · 架构 ARCHITECTURE.md -->
   <link rel="stylesheet" href="./css/app.css"/>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
@@ -24,20 +27,39 @@
       <div class="toolbar" aria-label="工具">
         <span id="status-pill">…</span>
         <button type="button" id="btn-edit" title="E">编辑</button>
-        <button type="button" id="btn-bind" title="绑定磁盘上的 content.json">绑定源码</button>
-        <button type="button" class="primary" id="btn-save" title="S">保存到源码</button>
-        <button type="button" id="btn-export">导出 JSON</button>
-        <button type="button" id="btn-reload">重载源码</button>
+        <button type="button" class="primary" id="btn-save" title="S">保存</button>
+        <div class="tool-secondary">
+          <button type="button" id="btn-bind">绑定源码</button>
+          <button type="button" id="btn-export">导出</button>
+          <button type="button" id="btn-reload">重载</button>
+        </div>
+        <div class="toolbar-more-wrap">
+          <button type="button" id="btn-more" aria-label="更多" aria-expanded="false">⋯</button>
+          <div class="toolbar-menu" id="toolbar-menu" role="menu">
+            <button type="button" id="btn-bind-m" role="menuitem">绑定源码</button>
+            <button type="button" id="btn-export-m" role="menuitem">导出 JSON</button>
+            <button type="button" id="btn-reload-m" role="menuitem">重载源码</button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
+    <div class="tabs-row">
+      <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
+      <div class="pager-dots" id="pager-dots" aria-label="页码"></div>
+    </div>
 
-    <main class="stage" id="stage"></main>
+    <div class="stage-wrap">
+      <button type="button" class="edge-nav prev" id="nav-prev" aria-label="上一页">‹</button>
+      <button type="button" class="edge-nav next" id="nav-next" aria-label="下一页">›</button>
+      <main class="stage" id="stage" tabindex="0"></main>
+    </div>
+
+    <div class="swipe-hint" id="swipe-hint">左右滑动翻页 · 点圆点/Tab 跳转 · <strong id="page-label">1 / 7</strong></div>
 
     <footer class="footer">
-      <div id="footer-left"></div>
-      <div class="hint" id="footer-right"></div>
+      <div class="footer-left" id="footer-left"></div>
+      <div class="hint footer-right" id="footer-right"></div>
     </footer>
   </div>
 
