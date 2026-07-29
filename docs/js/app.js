@@ -104,6 +104,16 @@
     }
 
     content = await fetchRemoteContent();
+    // 会议中途刷新：远程文案 + 本机勾选合并（不整份草稿覆盖）
+    try {
+      const draft = localStorage.getItem(STORAGE_KEY);
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed && parsed.tabs) {
+          content = mergeCheckState(parsed, content);
+        }
+      }
+    } catch (_) {}
     contentFingerprint = fingerprintOf(content);
     setStatus("已是最新", "ok");
     return { from: "remote" };
@@ -113,6 +123,10 @@
   function softApplyContent(next, reason) {
     if (!next || !next.tabs) return;
     const keep = activeTab;
+    // poll/reload 时合并本机勾选，避免会议中途被远端文案覆盖掉勾
+    if (reason === "poll" || reason === "reload") {
+      next = mergeCheckState(content, next);
+    }
     content = next;
     contentFingerprint = fingerprintOf(content);
     const stage = $("#stage");
@@ -352,16 +366,64 @@
         const heads = (b.headers || ["#", "决策", "□"])
           .map((h) => `<th>${esc(h)}</th>`)
           .join("");
+        const pathMeta = {
+          A: { label: "A 同意启动", hint: "前置齐了再开发 · 按止损线花钱" },
+          B: { label: "B 先认方向", hint: "费用批完再动手 · 不烧工具费" },
+          C: { label: "C 不立", hint: "写进周报说明 · 不排期" },
+        };
         const rows = (b.rows || [])
-          .map(
-            (r, i) => `<tr data-row="${i}">
+          .map((r, i) => {
+            const on = !!r.checked;
+            const hasPath = Array.isArray(r.pathOptions) && r.pathOptions.length;
+            const pathVal = r.pathValue || "";
+            let pathHtml = "";
+            if (hasPath) {
+              const chips = r.pathOptions
+                .map((p) => {
+                  const key = typeof p === "string" ? p : p.value;
+                  const meta = pathMeta[key] || { label: key, hint: "" };
+                  const lab = typeof p === "object" && p.label ? p.label : meta.label;
+                  const sel = pathVal === key ? " is-selected" : "";
+                  const cls = "path-chip path-" + String(key).toLowerCase() + sel;
+                  return `<button type="button" class="${cls}" data-path-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${pathVal === key ? "true" : "false"}">${esc(lab)}</button>`;
+                })
+                .join("");
+              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径";
+              pathHtml = `<div class="path-row" data-path-row="${i}">
+                <div class="path-chips" role="group" aria-label="路径选择">${chips}</div>
+                <div class="path-hint" data-path-hint>${esc(hint)}</div>
+              </div>`;
+            }
+            // 负责人填空：姓名 / 部门 / 备用
+            let ownerHtml = "";
+            if (r.ownerFields) {
+              const of = r.ownerFields;
+              ownerHtml = `<div class="owner-fields" data-owner-row="${i}">
+                <label>姓名 <input type="text" data-owner="name" data-block="${id}" data-row="${i}" value="${esc(of.name || "")}" placeholder="必填" autocomplete="name"/></label>
+                <label>部门 <input type="text" data-owner="dept" data-block="${id}" data-row="${i}" value="${esc(of.dept || "")}" placeholder="如 客服部"/></label>
+                <label>备用 <input type="text" data-owner="backup" data-block="${id}" data-row="${i}" value="${esc(of.backup || "")}" placeholder="可联系"/></label>
+              </div>`;
+            }
+            return `<tr data-row="${i}" class="${on ? "is-checked" : ""}${hasPath ? " has-path" : ""}">
             <td class="label narrow" data-editable="true" data-field="no">${esc(r.no)}</td>
-            <td data-editable="true" data-field="html">${r.html || ""}</td>
-            <td class="chk">☐</td>
-          </tr>`
-          )
+            <td class="chk-body">
+              <div class="chk-html" data-editable="true" data-field="html">${r.html || ""}</div>
+              ${pathHtml}
+              ${ownerHtml}
+            </td>
+            <td class="chk">
+              <button type="button" class="chk-btn${on ? " is-on" : ""}" data-check-toggle data-block="${id}" data-row="${i}" aria-pressed="${on ? "true" : "false"}" aria-label="勾选第 ${esc(r.no)} 项">
+                <span class="chk-box" aria-hidden="true">${on ? "☑" : "☐"}</span>
+              </button>
+            </td>
+          </tr>`;
+          })
           .join("");
-        return `<div class="block" data-block-id="${id}" data-type="check-table"><table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        const status = checkStatusHtml(b);
+        return `<div class="block" data-block-id="${id}" data-type="check-table">
+          <table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>
+          ${status}
+        </div>`;
       }
       case "mermaid":
         return `<div class="block" data-block-id="${id}" data-type="mermaid">
@@ -439,7 +501,187 @@
     renderedMermaid.clear();
     applyEditMode();
     wireDetailCards();
+    wireCheckTables();
     if (activeTab) queueMermaid(activeTab);
+  }
+
+  /** 勾选进度：散会最低要求提示（白话） */
+  function checkStatusHtml(block) {
+    const rows = block.rows || [];
+    const total = rows.length;
+    const done = rows.filter((r) => r.checked).length;
+    const pathRow = rows.find((r) => Array.isArray(r.pathOptions) && r.pathOptions.length);
+    const path = pathRow ? pathRow.pathValue || "" : "";
+    // 最低：选 A/B 须 #1 #3 #4 #6；选 C 只须 #2=C
+    const needNos = path === "C" ? ["2"] : ["1", "3", "4", "6"];
+    const missing = [];
+    needNos.forEach((no) => {
+      const r = rows.find((x) => String(x.no) === String(no));
+      if (!r) return;
+      if (no === "2") {
+        if (!r.pathValue) missing.push("#2 路径");
+        else if (!r.checked) missing.push("#2 路径");
+      } else if (!r.checked) {
+        missing.push("#" + no);
+      }
+    });
+    // #2 未选路径也算缺
+    if (pathRow && !pathRow.pathValue && path !== "C") {
+      if (!missing.includes("#2 路径")) missing.push("#2 路径");
+    }
+    // #4 负责人姓名空
+    const ownerRow = rows.find((r) => r.ownerFields);
+    if (ownerRow && ownerRow.checked) {
+      const n = (ownerRow.ownerFields.name || "").trim();
+      if (!n && !missing.includes("#4 姓名")) missing.push("#4 姓名");
+    }
+    let cls = "check-status";
+    let msg = "";
+    if (!path && done === 0) {
+      cls += " is-idle";
+      msg = `点右侧方框即可勾选 · 已勾 <b>${done}/${total}</b> · 建议先选路径 A / B / C`;
+    } else if (path === "C") {
+      cls += missing.length ? " is-warn" : " is-ok";
+      msg = missing.length
+        ? `路径 <b>C 不立</b> · 请确认勾选 #2 · 已勾 <b>${done}/${total}</b>`
+        : `路径 <b>C 不立</b> · 最低要求已齐 · 会后写进周报即可 · 已勾 <b>${done}/${total}</b>`;
+    } else if (missing.length) {
+      cls += " is-warn";
+      const pathLab = path === "A" ? "A 同意启动" : path === "B" ? "B 先认方向" : "未选路径";
+      msg = `路径 <b>${pathLab}</b> · 散会前还缺：<b>${missing.join(" · ")}</b> · 已勾 <b>${done}/${total}</b>`;
+    } else {
+      cls += " is-ok";
+      const pathLab = path === "A" ? "A 同意启动" : path === "B" ? "B 先认方向" : "已确认";
+      msg = `路径 <b>${pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 已勾 <b>${done}/${total}</b>`;
+    }
+    return `<div class="${cls}" data-check-status role="status">${msg}</div>`;
+  }
+
+  function refreshCheckStatus(blockId) {
+    const block = findBlock(blockId);
+    const wrap = document.querySelector(`.block[data-block-id="${CSS.escape(blockId)}"]`);
+    if (!block || !wrap) return;
+    const old = wrap.querySelector("[data-check-status]");
+    const tmp = document.createElement("div");
+    tmp.innerHTML = checkStatusHtml(block);
+    const neu = tmp.firstElementChild;
+    if (old && neu) old.replaceWith(neu);
+    else if (neu && !old) wrap.appendChild(neu);
+  }
+
+  function wireCheckTables() {
+    // 勾选框：任何模式可点（会议现场用）
+    $$("[data-check-toggle]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockId = btn.dataset.block;
+        const row = +btn.dataset.row;
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        const r = block.rows[row];
+        // 有路径选项时：未选路径不能空勾；点勾=切换，但 C/A/B 以 path 为准
+        if (Array.isArray(r.pathOptions) && r.pathOptions.length && !r.pathValue) {
+          toast("请先点选路径 A / B / C");
+          const chips = btn.closest("tr")?.querySelector(".path-chips");
+          if (chips) chips.classList.add("is-pulse");
+          setTimeout(() => chips && chips.classList.remove("is-pulse"), 600);
+          return;
+        }
+        r.checked = !r.checked;
+        const tr = btn.closest("tr");
+        btn.classList.toggle("is-on", r.checked);
+        btn.setAttribute("aria-pressed", r.checked ? "true" : "false");
+        const box = btn.querySelector(".chk-box");
+        if (box) box.textContent = r.checked ? "☑" : "☐";
+        if (tr) tr.classList.toggle("is-checked", r.checked);
+        saveDraft();
+        refreshCheckStatus(blockId);
+      });
+    });
+
+    // 路径 A/B/C
+    $$("[data-path-pick]").forEach((chip) => {
+      chip.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockId = chip.dataset.block;
+        const row = +chip.dataset.row;
+        const val = chip.getAttribute("data-path-pick");
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        const r = block.rows[row];
+        // 再点同一项 = 取消
+        if (r.pathValue === val) {
+          r.pathValue = "";
+          r.checked = false;
+        } else {
+          r.pathValue = val;
+          r.checked = true;
+        }
+        // 刷新该行芯片与勾选视觉
+        const tr = chip.closest("tr");
+        if (tr) {
+          $$("[data-path-pick]", tr).forEach((c) => {
+            const on = c.getAttribute("data-path-pick") === r.pathValue;
+            c.classList.toggle("is-selected", on);
+            c.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          const hints = {
+            A: "前置齐了再开发 · 按止损线花钱",
+            B: "费用批完再动手 · 不烧工具费",
+            C: "写进周报说明 · 不排期",
+          };
+          const hintEl = tr.querySelector("[data-path-hint]");
+          if (hintEl) hintEl.textContent = r.pathValue ? hints[r.pathValue] || "" : "点选一项路径";
+          tr.classList.toggle("is-checked", !!r.checked);
+          const btn = tr.querySelector("[data-check-toggle]");
+          if (btn) {
+            btn.classList.toggle("is-on", !!r.checked);
+            btn.setAttribute("aria-pressed", r.checked ? "true" : "false");
+            const box = btn.querySelector(".chk-box");
+            if (box) box.textContent = r.checked ? "☑" : "☐";
+          }
+        }
+        saveDraft();
+        refreshCheckStatus(blockId);
+      });
+    });
+
+    // 负责人填空
+    $$("input[data-owner]").forEach((inp) => {
+      const commit = () => {
+        const blockId = inp.dataset.block;
+        const row = +inp.dataset.row;
+        const field = inp.dataset.owner;
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        if (!block.rows[row].ownerFields) block.rows[row].ownerFields = {};
+        block.rows[row].ownerFields[field] = inp.value;
+        // 姓名有字时自动勾 #4
+        if (field === "name" && inp.value.trim()) {
+          block.rows[row].checked = true;
+          const tr = inp.closest("tr");
+          if (tr) {
+            tr.classList.add("is-checked");
+            const btn = tr.querySelector("[data-check-toggle]");
+            if (btn) {
+              btn.classList.add("is-on");
+              btn.setAttribute("aria-pressed", "true");
+              const box = btn.querySelector(".chk-box");
+              if (box) box.textContent = "☑";
+            }
+          }
+        }
+        saveDraft();
+        refreshCheckStatus(blockId);
+      };
+      inp.addEventListener("input", commit);
+      inp.addEventListener("change", commit);
+      // 输入时别触发翻页手势
+      inp.addEventListener("pointerdown", (e) => e.stopPropagation());
+      inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+    });
   }
 
   function wireDetailCards() {
@@ -461,6 +703,33 @@
         queueMermaid(activeTab);
       });
     });
+  }
+
+  /** 热更新时保留本机勾选状态，避免远程覆盖会议中的勾 */
+  function mergeCheckState(prev, next) {
+    if (!prev || !next || !prev.tabs || !next.tabs) return next;
+    const prevMap = {};
+    prev.tabs.forEach((t) => {
+      (t.blocks || []).forEach((b) => {
+        if (b.type === "check-table" && b.id) prevMap[b.id] = b;
+      });
+    });
+    next.tabs.forEach((t) => {
+      (t.blocks || []).forEach((b) => {
+        const old = prevMap[b.id];
+        if (!old || b.type !== "check-table" || !old.rows || !b.rows) return;
+        b.rows.forEach((r, i) => {
+          const o = old.rows[i];
+          if (!o) return;
+          if (o.checked) r.checked = true;
+          if (o.pathValue) r.pathValue = o.pathValue;
+          if (o.ownerFields) {
+            r.ownerFields = Object.assign({}, r.ownerFields || {}, o.ownerFields);
+          }
+        });
+      });
+    });
+    return next;
   }
 
   async function ensureMermaid() {
@@ -658,6 +927,19 @@
           const h = tr.querySelector("[data-field='html']");
           if (n) block.rows[i].no = n.textContent.trim();
           if (h) block.rows[i].html = h.innerHTML;
+          // 勾选 / 路径 / 负责人（按钮状态已写内存，这里再兜底收一次）
+          const btn = tr.querySelector("[data-check-toggle]");
+          if (btn) block.rows[i].checked = btn.classList.contains("is-on");
+          const sel = tr.querySelector("[data-path-pick].is-selected");
+          if (sel) block.rows[i].pathValue = sel.getAttribute("data-path-pick") || "";
+          else if (Array.isArray(block.rows[i].pathOptions)) {
+            // 若无可选中芯片，保持内存值
+          }
+          if (block.rows[i].ownerFields) {
+            $$("input[data-owner]", tr).forEach((inp) => {
+              block.rows[i].ownerFields[inp.dataset.owner] = inp.value;
+            });
+          }
         });
       } else if (type === "mermaid") {
         const ta = wrap.querySelector(".mermaid-src");
@@ -950,6 +1232,7 @@
       "touchstart",
       (e) => {
         if (e.touches.length !== 1) return;
+        if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields")) return;
         onStart(e.touches[0].clientX, e.touches[0].clientY);
       },
       { passive: true }
@@ -983,7 +1266,7 @@
     let mouseDown = false;
     stage.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target.closest("a,button,input,textarea,[contenteditable=true]")) return;
+      if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields")) return;
       mouseDown = true;
       onStart(e.clientX, e.clientY);
     });

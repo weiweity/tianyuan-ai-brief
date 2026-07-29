@@ -2158,3 +2158,259 @@ body.is-editing #t3 .block[data-type="mermaid"] {
     min-height: min(58vh, 480px) !important;
   }
 }
+
+/* ========== t6 可交互勾选 ========== */
+.block[data-type="check-table"] tr.is-checked {
+  background: rgba(52, 199, 36, 0.06);
+}
+.block[data-type="check-table"] td.chk-body {
+  min-width: 0;
+}
+.block[data-type="check-table"] .chk-html {
+  line-height: 1.45;
+}
+.chk-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink, #222);
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.chk-btn:hover {
+  background: rgba(122, 79, 150, 0.1);
+}
+.chk-btn:active {
+  transform: scale(0.94);
+}
+.chk-btn:focus-visible {
+  outline: 2px solid var(--brand-deep, #7A4F96);
+  outline-offset: 2px;
+}
+.chk-btn .chk-box {
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 500;
+  user-select: none;
+}
+.chk-btn.is-on .chk-box {
+  color: #1a9c1a;
+}
+.block[data-type="check-table"] td.chk {
+  vertical-align: middle;
+  text-align: center;
+  width: 52px;
+}
+
+/* 路径 A/B/C 芯片 */
+.path-row {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.path-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.path-chips.is-pulse {
+  animation: pathPulse 0.55s ease;
+}
+@keyframes pathPulse {
+  0%, 100% { box-shadow: none; }
+  40% { box-shadow: 0 0 0 3px rgba(245, 74, 69, 0.35); border-radius: 10px; }
+}
+.path-chip {
+  appearance: none;
+  border: 1.5px solid var(--line, #ddd);
+  background: #fff;
+  color: var(--ink, #222);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+  font-family: inherit;
+  line-height: 1.2;
+}
+.path-chip:hover {
+  border-color: var(--brand-deep, #7A4F96);
+}
+.path-chip:active {
+  transform: scale(0.97);
+}
+.path-chip:focus-visible {
+  outline: 2px solid var(--brand-deep, #7A4F96);
+  outline-offset: 2px;
+}
+.path-chip.path-a.is-selected {
+  background: #D9F5D6;
+  border-color: #34C724;
+  color: #0d5c0d;
+}
+.path-chip.path-b.is-selected {
+  background: #E8F3FF;
+  border-color: #3370FF;
+  color: #0b3d99;
+}
+.path-chip.path-c.is-selected {
+  background: #FEE3E2;
+  border-color: #F54A45;
+  color: #9b1c18;
+}
+.path-hint {
+  font-size: 12.5px;
+  color: #666;
+  line-height: 1.35;
+}
+
+/* 负责人填空 */
+.owner-fields {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.owner-fields label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #444;
+  font-weight: 600;
+}
+.owner-fields input {
+  font: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1.5px solid var(--line, #ddd);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-height: 40px;
+  min-width: 96px;
+  width: 7.5em;
+  background: #fff;
+  color: var(--ink, #111);
+}
+.owner-fields input:focus {
+  outline: none;
+  border-color: var(--brand-deep, #7A4F96);
+  box-shadow: 0 0 0 3px rgba(122, 79, 150, 0.15);
+}
+
+/* 勾选进度条 */
+.check-status {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  border: 1px solid var(--line, #e5e5e5);
+  background: #f8f7fa;
+  color: #333;
+}
+.check-status.is-idle {
+  background: #f5f0f8;
+  border-color: #d9cce3;
+}
+.check-status.is-warn {
+  background: #FFF8E8;
+  border-color: #FFC60A;
+  color: #5c4500;
+}
+.check-status.is-ok {
+  background: #EAF8E8;
+  border-color: #34C724;
+  color: #145214;
+}
+
+/* fill 布局：勾选表可滚动，行高自适应（含路径/填空） */
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] tbody {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 0;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] tr {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 36px 1fr 52px;
+  align-items: start;
+  min-height: 0;
+  padding: 8px 6px;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] tr.has-path,
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] tr:has(.owner-fields) {
+  align-items: start;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] td.chk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2px !important;
+}
+
+@media (max-width: 640px) {
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="check-table"] tr {
+    display: grid;
+    grid-template-columns: 28px 1fr 48px;
+    gap: 4px 6px;
+    padding: 12px !important;
+  }
+  .path-chip {
+    flex: 1 1 auto;
+    text-align: center;
+    min-width: 0;
+    font-size: 12.5px;
+    padding: 8px 8px;
+  }
+  .owner-fields {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .owner-fields label {
+    width: 100%;
+  }
+  .owner-fields input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+  .check-status {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+  .chk-btn .chk-box {
+    font-size: 28px;
+  }
+}
+
+@media (hover: hover) and (min-width: 641px) {
+  .block[data-type="check-table"] tr:hover {
+    background: rgba(122, 79, 150, 0.04);
+  }
+  .block[data-type="check-table"] tr.is-checked:hover {
+    background: rgba(52, 199, 36, 0.1);
+  }
+}
