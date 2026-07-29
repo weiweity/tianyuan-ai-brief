@@ -3653,3 +3653,50 @@ html, body, .stage {
   #t6 .fee-fields .fee-lab { font-size: 11px !important; }
   #t6 .fee-fields .fee-inp i { font-size: 12px !important; }
 }
+
+/* ========== Claude gap 补丁：Tab 44px + 费用标签 ≥12 + 暗色选中态 ========== */
+@media (max-width: 640px) {
+  .tab {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+  #t6 .fee-fields label,
+  #t6 .fee-fields .fee-lab {
+    font-size: 12px !important;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .path-chip.path-a.is-selected {
+    background: rgba(52, 199, 36, 0.2) !important;
+    color: #aef0a8 !important;
+    border-color: #34C724 !important;
+  }
+  .path-chip.path-b.is-selected {
+    background: rgba(51, 112, 255, 0.22) !important;
+    color: #bcd6ff !important;
+    border-color: #3370FF !important;
+  }
+  .path-chip.path-c.is-selected {
+    background: rgba(245, 74, 69, 0.22) !important;
+    color: #ffb6b3 !important;
+    border-color: #F54A45 !important;
+  }
+  .multi-chip.is-selected {
+    background: rgba(122, 79, 150, 0.28) !important;
+    color: #e8d8f5 !important;
+  }
+  .check-status.is-ok {
+    background: rgba(52, 199, 36, 0.18) !important;
+    color: #b9e7b4 !important;
+    border-color: #34C724 !important;
+  }
+  .check-status.is-warn {
+    background: rgba(255, 198, 10, 0.18) !important;
+    color: #ffe58a !important;
+    border-color: #FFC60A !important;
+  }
+  .check-status.is-idle {
+    background: rgba(122, 79, 150, 0.2) !important;
+    color: #e0d0f0 !important;
+  }
+}

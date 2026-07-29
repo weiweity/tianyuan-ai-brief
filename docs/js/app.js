@@ -423,10 +423,10 @@
             if (r.feeFields) {
               const f = r.feeFields;
               extras.push(`<div class="fee-fields" data-fee-row="${i}">
-                <label class="fee-num"><span class="fee-lab">全期约</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">全期止损</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
-                <label class="fee-other">其他费用说明 <input type="text" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
+                <label class="fee-num"><span class="fee-lab">全期约</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">全期止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
+                <label class="fee-other">其他费用说明 <input type="text" enterkeyhint="done" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
               </div>`);
             }
 
@@ -439,9 +439,9 @@
                   return `<div class="owner-card${moreCls}" data-owner-idx="${oi}">
                     <div class="owner-card-title">负责人 ${oi + 1}</div>
                     <div class="owner-fields">
-                      <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name"/></label>
-                      <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部"/></label>
-                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="如 客服 Agent"/></label>
+                      <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name" enterkeyhint="next"/></label>
+                      <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部" enterkeyhint="next"/></label>
+                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="如 客服 Agent" enterkeyhint="done"/></label>
                     </div>
                   </div>`;
                 })
@@ -897,6 +897,17 @@
   function bindNoSwipe(inp) {
     inp.addEventListener("pointerdown", (e) => e.stopPropagation());
     inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+    // 手机软键盘弹起时把输入框滚进可视区
+    inp.addEventListener("focus", () => {
+      setTimeout(() => {
+        try {
+          const r = inp.getBoundingClientRect();
+          if (r.bottom > window.innerHeight * 0.55 || r.top < 80) {
+            inp.scrollIntoView({ block: "center", behavior: "smooth" });
+          }
+        } catch (_) {}
+      }, 280);
+    });
   }
 
   function wireCheckTables() {
