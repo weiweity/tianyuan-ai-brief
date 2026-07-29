@@ -932,6 +932,7 @@
         const tr = btn.closest("tr");
         if (Array.isArray(r.pathOptions) && r.pathOptions.length && !r.pathValue) {
           toast("请先点选路径 A / B / C");
+          tapHaptic("warn");
           pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
           return;
         }
@@ -939,11 +940,13 @@
           const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
           if (!vals.length) {
             toast("请先多选主开项目（至少一项）");
+            tapHaptic("warn");
             pulseChips(tr && tr.querySelector(".multi-chips"));
             return;
           }
           if (vals.includes("other") && !(r.otherText || "").trim()) {
             toast("选了「其他」，请填写说明");
+            tapHaptic("warn");
             const ot = tr && tr.querySelector("[data-other-text]");
             if (ot) ot.focus();
             return;
