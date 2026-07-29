@@ -4355,3 +4355,362 @@ body.ix-haptic-flash.ix-haptic-warn {
     transition: none !important;
   }
 }
+
+/* ========== 手机：滑页无残留 + 内容卡片流 v1.85 ========== */
+
+/* 非活动页强制不可见，防 ghost 半透明叠在舞台上 */
+.panel:not(.active):not(.is-peek) {
+  display: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+/* 邻页预览：只在 is-swiping 时露头，结束立刻消失 */
+.panel.is-peek {
+  display: flex !important;
+  position: absolute !important;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none !important;
+  margin: 0 !important;
+  animation: none !important;
+  background: var(--bg, #F7F3F9);
+  box-shadow: none;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+body:not(.is-swiping) .panel.is-peek {
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+#stage {
+  isolation: isolate;
+  contain: layout style;
+}
+body.is-swiping #stage {
+  overflow: hidden !important;
+  touch-action: pan-y;
+}
+body.is-swiping .panel.active:not(.is-peek) {
+  position: relative;
+  z-index: 3;
+  animation: none !important;
+  will-change: transform, opacity;
+  background: var(--bg, #F7F3F9);
+}
+
+@media (max-width: 640px) {
+  /* 舞台：浅底，让白卡片浮起来 */
+  .stage-wrap {
+    background:
+      linear-gradient(180deg, rgba(235, 230, 239, 0.55) 0%, rgba(247, 243, 249, 0.95) 40%, #F4F0F7 100%);
+  }
+  #stage {
+    background: transparent;
+  }
+
+  /* 整页：标题小卡 + 下方卡片流 */
+  .panel {
+    padding: 8px 10px 18px !important;
+    gap: 10px !important;
+    background: transparent !important;
+    overflow: hidden;
+  }
+  .panel > h2 {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 !important;
+    padding: 10px 12px !important;
+    font-size: 15px !important;
+    font-weight: 700;
+    color: var(--brand-dark, #3d2a4d);
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(122, 79, 150, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(74, 47, 98, 0.06);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(122, 79, 150, 0.12) !important;
+  }
+  .panel > h2 .tag {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 8px;
+  }
+
+  /* 内容区：卡片流滚动 */
+  .panel-body,
+  .panel-body.layout-stack,
+  .panel-body.layout-fill,
+  .panel-body.layout-split {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 2px 0 20px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    background: transparent !important;
+  }
+  .panel-body.layout-split > .slot-main,
+  .panel-body.layout-split > .slot-side {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* —— 通用内容卡 —— */
+  .block {
+    flex: 0 0 auto !important;
+    width: 100%;
+    max-width: 100%;
+    background: #fff;
+    border: 1px solid rgba(122, 79, 150, 0.11);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(74, 47, 98, 0.07);
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+
+  /* 表格块：外壳透明，让「每一行」成为主卡片，避免双层框累眼 */
+  .block[data-type="kv-table"],
+  .block[data-type="gate-table"],
+  .block[data-type="check-table"] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .block[data-type="kv-table"] tbody,
+  .block[data-type="gate-table"] tbody,
+  .block[data-type="check-table"] tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .block[data-type="kv-table"] tr,
+  .block[data-type="gate-table"] tr,
+  .block[data-type="check-table"] tr {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(122, 79, 150, 0.11) !important;
+    background: #fff !important;
+    box-shadow: 0 3px 12px rgba(74, 47, 98, 0.06) !important;
+  }
+  .block[data-type="check-table"] tr {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 6px 8px !important;
+  }
+  .block[data-type="kv-table"] td.label,
+  .block[data-type="gate-table"] td.label {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em;
+    color: var(--brand-deep, #7A4F96) !important;
+    margin-bottom: 6px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px dashed rgba(122, 79, 150, 0.18) !important;
+    background: transparent !important;
+  }
+  .block[data-type="kv-table"] td,
+  .block[data-type="gate-table"] td {
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+  }
+  .kv-cell {
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* callout 也是一张卡 */
+  .block[data-type="callout"],
+  .callout {
+    border-radius: 16px !important;
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    box-shadow: 0 3px 12px rgba(74, 47, 98, 0.05);
+  }
+
+  /* 流程图卡 */
+  .block[data-type="mermaid"] {
+    padding: 10px !important;
+    min-height: 168px !important;
+    max-height: 42vh !important;
+    background: #fff !important;
+  }
+  .block[data-type="mermaid"] .mermaid-host {
+    border-radius: 12px;
+    background: linear-gradient(180deg, #FCFBFD, #F6F1F9);
+  }
+
+  /* 取舍 detail 卡 */
+  .detail-card,
+  .block[data-type="detail-card"] {
+    border-radius: 16px !important;
+    border: 1px solid rgba(122, 79, 150, 0.11) !important;
+    box-shadow: 0 4px 16px rgba(74, 47, 98, 0.07) !important;
+    background: #fff !important;
+    overflow: hidden;
+  }
+  .detail-card-btn {
+    padding: 12px 14px !important;
+    min-height: 48px;
+  }
+  .detail-card-btn-title {
+    font-size: 15px !important;
+  }
+  .detail-card-btn-sub {
+    font-size: 13px !important;
+    margin-top: 2px;
+  }
+
+  /* 做 / 不做：两张大卡上下叠 + 每条小卡 */
+  #t3 .panel-body.layout-fill,
+  #t3 .panel-body.layout-fill[data-count="1"] {
+    background: transparent !important;
+    gap: 12px !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  #t3 .block[data-type="do-dont"] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  #t3 .do-dont .dd-cols {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #t3 .do-dont .dd-col {
+    background: #fff !important;
+    border: 1px solid rgba(122, 79, 150, 0.11) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 16px rgba(74, 47, 98, 0.07) !important;
+    padding: 12px 12px 10px !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+  }
+  #t3 .do-dont .dd-title {
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+    padding: 0 2px 8px !important;
+    border-bottom: 1px dashed rgba(122, 79, 150, 0.15);
+  }
+  #t3 .do-dont .dd-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  #t3 .do-dont .dd-item {
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+    background: #FAF8FC !important;
+    border: 1px solid rgba(122, 79, 150, 0.08) !important;
+  }
+  #t3 .do-dont .dd-dont-item {
+    background: #FFF6F5 !important;
+    border-color: rgba(245, 74, 69, 0.12) !important;
+  }
+  #t3 .do-dont .dd-do-item {
+    background: #F3FBF2 !important;
+    border-color: rgba(52, 199, 36, 0.14) !important;
+  }
+  #t3 .do-dont .dd-arrow {
+    display: none !important; /* 上下叠时箭头多余 */
+  }
+  .dd-label {
+    position: static !important;
+    display: inline-flex;
+    margin: 0 0 8px;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  /* 勾选页：状态条也成底卡；行卡更疏 */
+  #t6 .block[data-type="check-table"] tr {
+    padding: 12px 12px 10px !important;
+    gap: 8px !important;
+  }
+  #t6 .check-status {
+    border-radius: 16px !important;
+    border: 1px solid rgba(122, 79, 150, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(74, 47, 98, 0.06) !important;
+    padding: 10px 12px !important;
+    margin-top: 4px;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip {
+    border-radius: 12px !important;
+    min-height: 40px;
+    padding: 8px 12px !important;
+  }
+  #t6 .fee-fields,
+  #t6 .owners-grid,
+  #t6 .multi-row,
+  #t6 .path-row {
+    width: 100%;
+    margin-top: 4px;
+  }
+  #t6 .owner-card {
+    border-radius: 12px !important;
+    background: #FAF8FC !important;
+    border: 1px solid rgba(122, 79, 150, 0.08) !important;
+    padding: 8px 10px !important;
+  }
+
+  /* 底栏提示更轻，不抢卡片 */
+  .stage-meta {
+    background: transparent;
+    padding-top: 2px;
+  }
+  .swipe-hint {
+    font-size: 11px;
+    opacity: 0.75;
+  }
+}
+
+/* 极短屏：卡片再压一点间距，仍保持卡片感 */
+@media (max-width: 640px) {
+  body.is-tiny .panel-body,
+  body.is-short .panel-body {
+    gap: 10px !important;
+  }
+  body.is-tiny .block[data-type="kv-table"] tr,
+  body.is-tiny .block[data-type="gate-table"] tr,
+  body.is-tiny .block[data-type="check-table"] tr {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+}

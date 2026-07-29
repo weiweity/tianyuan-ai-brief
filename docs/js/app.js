@@ -1590,9 +1590,35 @@
     return content.tabs.find((t) => t.id === id);
   }
 
-  async function activate(id, dir) {
+  /** 清掉滑页跟手/邻页预览的全部内联残留，避免叠影与半透明 ghost */
+  function resetAllSwipeStyles() {
+    document.body.classList.remove("is-swiping");
+    $$(".panel").forEach((p) => {
+      p.classList.remove("is-peek");
+      p.style.transition = "none";
+      p.style.transform = "";
+      p.style.opacity = "";
+      p.style.zIndex = "";
+      p.style.position = "";
+      p.style.left = "";
+      p.style.right = "";
+      p.style.top = "";
+      p.style.bottom = "";
+      p.style.margin = "";
+      p.style.pointerEvents = "";
+      p.style.willChange = "";
+    });
+    // 下一帧再放回 transition，避免 clear→set 同帧闪回
+    requestAnimationFrame(() => {
+      $$(".panel").forEach((p) => {
+        if (p.style.transition === "none") p.style.transition = "";
+      });
+    });
+  }
+
+  async function activate(id, dir, opts) {
     if (!id || !findTab(id)) return;
-    if (id === activeTab && !dir) return;
+    if (id === activeTab && !dir && !(opts && opts.force)) return;
     const ids = content.tabs.map((x) => x.id);
     const prevIdx = ids.indexOf(activeTab);
     const nextIdx = ids.indexOf(id);
@@ -1601,6 +1627,8 @@
 
     activeTab = id;
     if (document.body.classList.contains("is-mobile")) tapHaptic("light");
+    // 切页前强制清残留，防止上一页 transform/opacity 挂着
+    resetAllSwipeStyles();
     $$(".tab").forEach((t) => {
       const on = t.dataset.tab === id;
       t.classList.toggle("active", on);
@@ -1612,13 +1640,16 @@
       const on = p.id === id;
       p.classList.toggle("active", on);
       p.classList.remove("slide-left", "slide-right");
-      if (on) p.classList.add(swipeDir === "left" ? "slide-left" : "slide-right");
+      // 手势跟手进位后不再播二次 panelIn，避免「残留滑一下」
+      if (on && !(opts && opts.fromSwipe)) {
+        p.classList.add(swipeDir === "left" ? "slide-left" : "slide-right");
+      }
     });
     updatePagerChrome();
     await queueMermaid(id);
   }
 
-  function go(delta) {
+  function go(delta, opts) {
     const ids = content.tabs.map((x) => x.id);
     const cur = ids.indexOf(activeTab);
     const next = cur + delta;
@@ -1627,15 +1658,7 @@
       tapHaptic("warn");
       return;
     }
-    // 清残留 peek，避免双页叠显
-    $$(".panel.is-peek").forEach((p) => {
-      p.classList.remove("is-peek");
-      p.style.transform = "";
-      p.style.opacity = "";
-      p.style.zIndex = "";
-      p.style.transition = "";
-    });
-    activate(ids[next], delta > 0 ? "left" : "right");
+    activate(ids[next], delta > 0 ? "left" : "right", opts || null);
   }
 
   // ---------- Edit mode ----------
@@ -2026,10 +2049,15 @@
       peekEl = null,
       pendingGoTimer = null;
 
-    const cancelPendingGo = () => {
+    /** hard=true：连同未完成的进位动画一起清干净（新滑打断时） */
+    const cancelPendingGo = (hard) => {
       if (pendingGoTimer) {
         clearTimeout(pendingGoTimer);
         pendingGoTimer = null;
+        if (hard) {
+          peekEl = null;
+          resetAllSwipeStyles();
+        }
       }
     };
 
@@ -2045,29 +2073,29 @@
         p.style.transform = "";
         p.style.opacity = "";
         p.style.zIndex = "";
+        p.style.position = "";
+        p.style.pointerEvents = "";
       });
       peekEl = null;
     };
 
     const clearDrag = (panel, animate) => {
       clearPeek();
-      if (!panel) return;
+      document.body.classList.remove("is-swiping");
+      if (!panel) {
+        resetAllSwipeStyles();
+        return;
+      }
       if (animate) {
         panel.style.transition =
-          "transform var(--ix-slow, 0.28s) var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity var(--ix-mid, 0.2s) ease";
+          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
         panel.style.transform = "translateX(0)";
         panel.style.opacity = "1";
         setTimeout(() => {
-          panel.style.transition = "";
-          panel.style.transform = "";
-          panel.style.opacity = "";
-          panel.style.zIndex = "";
-        }, 320);
+          resetAllSwipeStyles();
+        }, 220);
       } else {
-        panel.style.transition = "none";
-        panel.style.transform = "";
-        panel.style.opacity = "";
-        panel.style.zIndex = "";
+        resetAllSwipeStyles();
       }
     };
 
@@ -2109,8 +2137,8 @@
 
     const onStart = (x, y) => {
       if (editing) return;
-      // 新滑动打断未完成的 go 定时器，避免 activeTab 错位
-      cancelPendingGo();
+      // 新滑动硬打断未完成进位，避免双页残留
+      cancelPendingGo(true);
       startX = x;
       startY = y;
       startT = Date.now();
@@ -2147,7 +2175,6 @@
       const wasH = axis === "h" && dragging;
       axis = null;
       dragging = false;
-      document.body.classList.remove("is-swiping");
       if (!wasH) {
         clearDrag(panel, false);
         return;
@@ -2161,38 +2188,29 @@
       }
       const w = stage.clientWidth || window.innerWidth;
       const dir = dx < 0 ? 1 : -1;
-      // 当前页滑出，peek 进位
+      // 当前页滑出，peek 进位（保持 is-swiping 到切页完成，防止 CSS 回弹）
+      document.body.classList.add("is-swiping");
       if (panel) {
         panel.style.transition =
-          "transform 0.22s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.18s ease";
+          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
         panel.style.transform = "translateX(" + (dir > 0 ? -w : w) + "px)";
-        panel.style.opacity = "0.2";
+        panel.style.opacity = "0";
+        panel.style.zIndex = "3";
       }
       if (peekEl) {
         peekEl.style.transition =
-          "transform 0.22s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.18s ease";
+          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
         peekEl.style.transform = "translateX(0)";
         peekEl.style.opacity = "1";
+        peekEl.style.zIndex = "4";
       }
-      const peekKeep = peekEl;
-      cancelPendingGo();
+      cancelPendingGo(false);
       pendingGoTimer = setTimeout(() => {
         pendingGoTimer = null;
-        if (panel) {
-          panel.style.transition = "none";
-          panel.style.transform = "";
-          panel.style.opacity = "";
-          panel.style.zIndex = "";
-        }
-        if (peekKeep) {
-          peekKeep.classList.remove("is-peek");
-          peekKeep.style.transition = "none";
-          peekKeep.style.transform = "";
-          peekKeep.style.opacity = "";
-          peekKeep.style.zIndex = "";
-        }
         peekEl = null;
-        go(dir);
+        // 先硬清残留，再切页（fromSwipe 跳过二次入场动画）
+        resetAllSwipeStyles();
+        go(dir, { fromSwipe: true });
       }, 200);
     };
 
@@ -2222,12 +2240,11 @@
       { passive: true }
     );
     stage.addEventListener("touchcancel", () => {
-      cancelPendingGo();
+      cancelPendingGo(true);
       tracking = false;
       axis = null;
       dragging = false;
-      document.body.classList.remove("is-swiping");
-      clearDrag(activePanel(), true);
+      clearDrag(activePanel(), false);
     });
 
     let mouseDown = false;
@@ -2247,13 +2264,12 @@
       onEnd(e.clientX, e.clientY);
     });
     stage.addEventListener("pointercancel", () => {
-      cancelPendingGo();
+      cancelPendingGo(true);
       mouseDown = false;
       tracking = false;
       axis = null;
       dragging = false;
-      document.body.classList.remove("is-swiping");
-      clearDrag(activePanel(), true);
+      clearDrag(activePanel(), false);
     });
   }
 
