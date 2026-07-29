@@ -3700,3 +3700,285 @@ html, body, .stage {
     color: #e0d0f0 !important;
   }
 }
+
+/* ========== 阿里手淘/钉钉标准冲 9.5（v1.76） ========== */
+@media (max-width: 640px) {
+  /* 1. 正文底线 15，辅助 ≥13 */
+  :root {
+    --fs: 15px !important;
+    --fs-sm: 13px !important;
+    --fs-title: 16px !important;
+    --touch: 44px;
+  }
+  body, .panel {
+    font-size: 15px !important;
+    -webkit-text-size-adjust: 100%;
+  }
+  .panel .block[data-type="kv-table"] td,
+  .panel .block[data-type="gate-table"] td,
+  .panel .block[data-type="check-table"] .chk-html,
+  .panel .block[data-type="callout"],
+  .kv-cell,
+  .dd-item {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+  #t2 .detail-card-table td,
+  #t2 .detail-card-btn-title {
+    font-size: 14px !important;
+  }
+  #t2 .detail-card-btn-sub {
+    font-size: 13px !important;
+  }
+  #t6 .fee-fields .fee-lab,
+  #t6 .fee-fields label {
+    font-size: 13px !important;
+  }
+  #t7 .panel-body > .block[data-type="callout"] {
+    font-size: 15px !important;
+  }
+
+  /* 2. 顶栏再压：演示模式优先内容 */
+  .top {
+    padding: 4px 8px !important;
+    min-height: 40px !important;
+  }
+  .logo-wrap {
+    width: 64px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+  #doc-title {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+  .toolbar button {
+    min-height: 36px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+  .tabs-row {
+    padding: 2px 4px 4px !important;
+  }
+  .tab {
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+  .panel {
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+  .panel > h2 {
+    font-size: 15px !important;
+    padding: 0 0 2px !important;
+    margin: 0 !important;
+  }
+  .stage-meta {
+    min-height: 0 !important;
+    padding: 2px 8px env(safe-area-inset-bottom, 4px) !important;
+  }
+  .swipe-hint { font-size: 11px !important; }
+  .footer { display: none !important; }
+
+  /* 3. t6 首屏决策区极限压缩 */
+  #t6 .panel > h2 { font-size: 14px !important; }
+  #t6 .panel-body {
+    gap: 4px !important;
+  }
+  #t6 .block[data-type="check-table"] tr {
+    padding: 5px 6px !important;
+    margin-bottom: 4px !important;
+    border-radius: 8px !important;
+  }
+  #t6 .chk-html {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 2px !important;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip {
+    min-height: 40px !important;
+    padding: 5px 8px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
+  #t6 .path-chips,
+  #t6 .multi-chips {
+    gap: 4px !important;
+  }
+  #t6 .fee-fields {
+    gap: 4px !important;
+  }
+  #t6 .fee-fields input {
+    min-height: 38px !important;
+    padding: 4px 6px !important;
+    font-size: 15px !important;
+  }
+  #t6 .owner-card {
+    padding: 4px 6px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  #t6 .owner-card .owner-fields label:first-child input {
+    min-height: 40px !important;
+  }
+  #t6 .owners-more-btn {
+    min-height: 36px !important;
+    margin-top: 2px !important;
+    padding: 6px !important;
+    font-size: 12px !important;
+  }
+  #t6 .chk-later-toggle {
+    min-height: 36px !important;
+    margin: 2px 0 !important;
+    padding: 6px !important;
+    font-size: 12px !important;
+  }
+  #t6 .check-status {
+    padding: 6px 8px !important;
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
+  }
+  #t6 .copy-conclusion-btn {
+    min-height: 36px !important;
+    padding: 6px 10px !important;
+    font-size: 12.5px !important;
+  }
+  #t6 .panel-body > .block[data-type="callout"] {
+    padding: 6px 8px !important;
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
+  }
+  #t6 .chk-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+  #t6 .label.narrow {
+    font-size: 13px !important;
+    padding-top: 4px !important;
+  }
+
+  /* 4. 短屏/小屏再砍 */
+  body.is-short #t6 .panel-body > .block[data-type="callout"] {
+    display: none !important; /* 短屏：边界/散会文案让位决策，展开 later 或桌面再看 */
+  }
+  body.is-short #t6 .owners-more-btn {
+    display: none !important; /* 短屏默认不展多人入口，1 人够散会 */
+  }
+  body.is-tiny #t1 .panel-body > .block[data-type="callout"] {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    min-height: 0 !important;
+  }
+  body.is-tiny #t1 .block[data-type="kv-table"] td {
+    padding: 6px 8px !important;
+    font-size: 14px !important;
+  }
+
+  /* 5. t1 压滚动 */
+  #t1 .panel-body {
+    gap: 6px !important;
+  }
+  #t1 .block[data-type="kv-table"] tr {
+    padding: 0 !important;
+  }
+  #t1 .block[data-type="kv-table"] td {
+    padding: 8px 10px !important;
+  }
+  #t1 .panel-body > .block[data-type="callout"] {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    min-height: 0 !important;
+  }
+
+  /* 6. t4/t5 图更矮，表卡更紧 */
+  #t4 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"],
+  #t5 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"] {
+    max-height: 20vh !important;
+    height: 20vh !important;
+    min-height: 110px !important;
+  }
+  #t4 .panel-body,
+  #t5 .panel-body {
+    gap: 8px !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] tr,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] tr {
+    padding: 8px 10px !important;
+  }
+
+  /* 7. t7 紧凑卡片 */
+  #t7 .panel-body {
+    gap: 6px !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] tr {
+    padding: 8px 10px !important;
+  }
+  #t7 .panel-body > .block[data-type="callout"] {
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+
+  /* 8. t3 标题与项更紧 */
+  #t3 .do-dont .dd-cols {
+    padding: 36px 8px 8px !important;
+    gap: 8px !important;
+  }
+  #t3 .do-dont .dd-item {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+  }
+  #t3 .do-dont .dd-title {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+  }
+  #t3 .do-dont .dd-arrow {
+    height: 14px !important;
+  }
+}
+
+/* 9. 横屏手机：强制可滚 + 更矮 chrome */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 480px) {
+  .panel-body {
+    overflow-y: auto !important;
+  }
+  #t6 .panel-body > .block[data-type="callout"] {
+    display: none !important;
+  }
+}
+
+/* ========== 阿里 9.5 收口：t6 手机藏双 callout + 触控回 44 ========== */
+@media (max-width: 640px) {
+  /* 决策页：散会/边界并入状态条语义，首屏不占位 */
+  #t6 .panel-body > .block[data-type="callout"] {
+    display: none !important;
+  }
+  #t6 .chk-later-toggle,
+  #t6 .owners-more-btn,
+  #t6 .copy-conclusion-btn {
+    min-height: 44px !important;
+    font-size: 13px !important;
+    padding: 10px 12px !important;
+  }
+  #t6 .check-status {
+    font-size: 13px !important;
+    padding: 10px 12px !important;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip,
+  #t6 .chk-btn {
+    min-height: 44px !important;
+  }
+  #t6 .chk-btn {
+    min-width: 44px !important;
+  }
+  /* 状态条补充最低要求（callout 隐藏后） */
+  #t6 .check-status::after {
+    content: " · 边界：不立刻上线/不代回";
+    opacity: 0.85;
+  }
+  #t6 .check-status.is-ok::after {
+    content: " · 可复制结论贴飞书";
+  }
+}

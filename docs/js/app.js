@@ -1826,7 +1826,20 @@
   }
 
   // ---------- boot ----------
+  function applyMobileClasses() {
+    const w = window.innerWidth || 0;
+    const h = window.innerHeight || 0;
+    document.body.classList.toggle("is-mobile", w <= 640);
+    // 手机竖屏一律短屏策略：决策页优先，次要文案折叠
+    document.body.classList.toggle("is-short", w <= 640 || (h > 0 && h < 780));
+    document.body.classList.toggle("is-tiny", h > 0 && h < 700);
+  }
+
   async function boot() {
+    applyMobileClasses();
+    window.addEventListener("resize", applyMobileClasses);
+    window.addEventListener("orientationchange", () => setTimeout(applyMobileClasses, 200));
+
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
       await loadContent({ preferDraft: isEditQuery });
