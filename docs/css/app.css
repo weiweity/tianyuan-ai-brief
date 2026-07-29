@@ -5453,12 +5453,14 @@ body.is-lightbox {
     font-size: 13.5px !important;
     line-height: 1.45 !important;
   }
-  /* 请勾 / 工期 文案长：通栏更易读 */
-  #t1 .block[data-type="kv-table"] tr:nth-child(3),
-  #t1 .block[data-type="kv-table"] tr:nth-child(5) {
+  /* 自动识别：compact 并排两列；wide / 落单 compact 通栏（见 app.js data-kv-span） */
+  #t1 .block[data-type="kv-table"] tr.kv-wide {
     grid-column: 1 / -1 !important;
   }
-  /* 底两 callout 并排 */
+  #t1 .block[data-type="kv-table"] tr.kv-compact {
+    grid-column: auto;
+  }
+  /* 底两 callout 并排；仅 1 个时自然通栏 */
   #t1 .panel-body > .block[data-type="callout"] {
     flex: 0 0 auto !important;
     width: auto !important;
@@ -5482,8 +5484,8 @@ body.is-lightbox {
     #t1 .block[data-type="kv-table"] tbody {
       grid-template-columns: 1fr !important;
     }
-    #t1 .block[data-type="kv-table"] tr:nth-child(3),
-    #t1 .block[data-type="kv-table"] tr:nth-child(5) {
+    #t1 .block[data-type="kv-table"] tr.kv-wide,
+    #t1 .block[data-type="kv-table"] tr.kv-compact {
       grid-column: auto !important;
     }
     #t1 .panel-body > .block[data-type="callout"] {

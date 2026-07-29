@@ -447,13 +447,41 @@
           <div data-editable="true" data-field="html">${b.html || ""}</div>
         </div>`;
       case "kv-table": {
-        const rows = (b.rows || [])
+        const rawRows = b.rows || [];
+        // 手机双列：按正文长度自动标 compact/wide；连续 compact 奇数个时末项升 wide，避免「钱」右侧空半格
+        const spans = rawRows.map((r) => {
+          const plain = String(r.html || "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/&[a-z]+;/gi, " ")
+            .replace(/\s+/g, "");
+          const keyLen = String(r.key || "").length;
+          const len = plain.length + keyLen;
+          const hasFlow = /flow-step|flow-arrow/.test(r.html || "");
+          const multiClause = (plain.match(/[。；;·]/g) || []).length >= 3;
+          // 阈值：约两列半宽可读；带流程箭头/多子句强制通栏
+          if (hasFlow || multiClause || len >= 40) return "wide";
+          return "compact";
+        });
+        for (let i = 0; i < spans.length; ) {
+          if (spans[i] === "wide") {
+            i += 1;
+            continue;
+          }
+          let j = i;
+          while (j < spans.length && spans[j] === "compact") j += 1;
+          if ((j - i) % 2 === 1) spans[j - 1] = "wide";
+          i = j;
+        }
+        const rows = rawRows
           .map((r, i) => {
             const v = r.variant || "default";
-            const cls = v === "ok" ? "row-ok" : v === "info" ? "row-info" : v === "warn" ? "row-warn" : "";
+            const cls =
+              (v === "ok" ? "row-ok" : v === "info" ? "row-info" : v === "warn" ? "row-warn" : "") +
+              " kv-" +
+              spans[i];
             const w = b.keyWidth === "wide" ? " wide" : "";
             // 内容包一层 .kv-cell：避免 td 的 flex 把 b/→ 拆成多个子项导致换行错位
-            return `<tr class="${cls}" data-row="${i}">
+            return `<tr class="${cls.trim()}" data-row="${i}" data-kv-span="${spans[i]}">
               <td class="label${w}" data-editable="true" data-field="key">${esc(r.key)}</td>
               <td class="kv-val"><div class="kv-cell" data-editable="true" data-field="html">${r.html || ""}</div></td>
             </tr>`;
