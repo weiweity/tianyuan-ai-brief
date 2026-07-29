@@ -4262,3 +4262,95 @@ body.is-swiping {
     box-shadow: 0 0 0 2px rgba(122, 79, 150, 0.18) !important;
   }
 }
+
+/* ========== 剩余交互收尾 v1.81：邻页预览 + 无震动闪白 + detail 展开 ========== */
+#stage {
+  position: relative;
+  overflow: hidden;
+}
+/* 邻页预览层：滑页时叠在下面露头 */
+.panel.is-peek {
+  display: flex !important;
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  margin: 0 !important;
+  animation: none !important;
+  will-change: transform, opacity;
+}
+body.is-swiping .panel.active:not(.is-peek) {
+  position: relative;
+  z-index: 3;
+  animation: none !important;
+  will-change: transform, opacity;
+}
+body.is-swiping #stage {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+/* 无震动时的视觉触觉 */
+@keyframes ixHapticFlash {
+  0% { box-shadow: inset 0 0 0 0 rgba(122, 79, 150, 0); }
+  40% { box-shadow: inset 0 0 0 3px rgba(122, 79, 150, 0.22); }
+  100% { box-shadow: inset 0 0 0 0 rgba(122, 79, 150, 0); }
+}
+@keyframes ixHapticOk {
+  0% { box-shadow: inset 0 0 0 0 rgba(52, 199, 36, 0); }
+  40% { box-shadow: inset 0 0 0 3px rgba(52, 199, 36, 0.28); }
+  100% { box-shadow: inset 0 0 0 0 rgba(52, 199, 36, 0); }
+}
+@keyframes ixHapticWarn {
+  0% { box-shadow: inset 0 0 0 0 rgba(245, 74, 69, 0); }
+  40% { box-shadow: inset 0 0 0 3px rgba(245, 74, 69, 0.28); }
+  100% { box-shadow: inset 0 0 0 0 rgba(245, 74, 69, 0); }
+}
+body.ix-haptic-flash {
+  animation: ixHapticFlash 0.16s ease;
+}
+body.ix-haptic-flash.ix-haptic-ok {
+  animation: ixHapticOk 0.18s ease;
+}
+body.ix-haptic-flash.ix-haptic-warn {
+  animation: ixHapticWarn 0.2s ease;
+}
+
+/* detail-card 展开更顺 */
+.detail-card-body {
+  transition: opacity var(--ix-mid, 0.2s) ease;
+}
+.detail-card-btn {
+  transition: background var(--ix-mid, 0.2s) ease, transform var(--ix-fast, 0.12s) ease;
+}
+.detail-card-btn.is-pressed {
+  transform: scale(0.98);
+}
+.detail-card-chevron {
+  transition: transform var(--ix-mid, 0.2s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)),
+    background var(--ix-mid, 0.2s) ease;
+}
+.detail-card.is-open .detail-card-chevron {
+  background: rgba(122, 79, 150, 0.08);
+  border-color: var(--brand-deep, #7A4F96);
+}
+.detail-card-chevron::after {
+  transition: transform var(--ix-mid, 0.2s) var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1));
+}
+
+/* 状态条变化更跟手 */
+.check-status {
+  transition: background var(--ix-mid, 0.2s) ease, border-color var(--ix-mid, 0.2s) ease, color var(--ix-mid, 0.2s) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.ix-haptic-flash,
+  .panel.is-peek,
+  body.is-swiping .panel.active {
+    animation: none !important;
+    transition: none !important;
+  }
+}

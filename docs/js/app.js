@@ -1211,13 +1211,51 @@
         if (!card || !body) return;
         const open = !card.classList.contains("is-open");
         card.classList.toggle("is-open", open);
-        body.hidden = !open;
         btn.setAttribute("aria-expanded", open ? "true" : "false");
         const pb = card.closest(".panel-body");
         if (pb) pb.classList.toggle("is-detail-open", open);
-        // 展开后重绘 mermaid（空间被压缩）
-        renderedMermaid.clear();
-        queueMermaid(activeTab);
+        tapHaptic("light");
+
+        // 高度展开动画（不用 hidden 硬切）
+        if (open) {
+          body.hidden = false;
+          body.style.overflow = "hidden";
+          body.style.maxHeight = "0px";
+          body.style.opacity = "0";
+          requestAnimationFrame(() => {
+            const h = Math.min(body.scrollHeight, window.innerHeight * 0.5);
+            body.style.transition =
+              "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+            body.style.maxHeight = h + "px";
+            body.style.opacity = "1";
+            setTimeout(() => {
+              body.style.maxHeight = "";
+              body.style.overflow = "";
+              body.style.transition = "";
+              renderedMermaid.clear();
+              queueMermaid(activeTab);
+            }, 300);
+          });
+        } else {
+          body.style.overflow = "hidden";
+          body.style.maxHeight = body.scrollHeight + "px";
+          body.style.opacity = "1";
+          requestAnimationFrame(() => {
+            body.style.transition =
+              "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+            body.style.maxHeight = "0px";
+            body.style.opacity = "0";
+            setTimeout(() => {
+              body.hidden = true;
+              body.style.maxHeight = "";
+              body.style.opacity = "";
+              body.style.overflow = "";
+              body.style.transition = "";
+              renderedMermaid.clear();
+              queueMermaid(activeTab);
+            }, 280);
+          });
+        }
       });
     });
   }
@@ -1412,8 +1450,17 @@
     const next = cur + delta;
     if (next < 0 || next >= ids.length) {
       toast(next < 0 ? "已是第一页" : "已是最后一页");
+      tapHaptic("warn");
       return;
     }
+    // 清残留 peek，避免双页叠显
+    $$(".panel.is-peek").forEach((p) => {
+      p.classList.remove("is-peek");
+      p.style.transform = "";
+      p.style.opacity = "";
+      p.style.zIndex = "";
+      p.style.transition = "";
+    });
     activate(ids[next], delta > 0 ? "left" : "right");
   }
 
@@ -1791,7 +1838,7 @@
     if (moreBtn) moreBtn.setAttribute("aria-expanded", "false");
   }
 
-  /** 触屏左右滑翻页：跟手位移 + 过阈吸附 / 回弹，竖滑不抢 */
+  /** 触屏左右滑翻页：跟手 + 邻页预览叠层 + 过阈吸附 / 回弹 */
   function wireSwipe() {
     const stage = $("#stage");
     if (!stage || wireSwipe._on) return;
@@ -1800,31 +1847,82 @@
       startY = 0,
       startT = 0,
       tracking = false,
-      axis = null, // null | "h" | "v"
-      dragging = false;
+      axis = null,
+      dragging = false,
+      peekEl = null;
 
     const skipSel =
-      "a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.multi-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row,.path-row,.check-status";
+      "a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.multi-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row,.path-row,.check-status,.detail-card";
 
-    const activePanel = () => document.querySelector(".panel.active");
+    const activePanel = () => document.querySelector(".panel.active:not(.is-peek)");
+
+    const clearPeek = () => {
+      $$(".panel.is-peek").forEach((p) => {
+        p.classList.remove("is-peek");
+        p.style.transition = "none";
+        p.style.transform = "";
+        p.style.opacity = "";
+        p.style.zIndex = "";
+      });
+      peekEl = null;
+    };
 
     const clearDrag = (panel, animate) => {
+      clearPeek();
       if (!panel) return;
       if (animate) {
         panel.style.transition =
-          "transform var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+          "transform var(--ix-slow, 0.28s) var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity var(--ix-mid, 0.2s) ease";
         panel.style.transform = "translateX(0)";
         panel.style.opacity = "1";
         setTimeout(() => {
           panel.style.transition = "";
           panel.style.transform = "";
           panel.style.opacity = "";
-        }, 300);
+          panel.style.zIndex = "";
+        }, 320);
       } else {
         panel.style.transition = "none";
         panel.style.transform = "";
         panel.style.opacity = "";
+        panel.style.zIndex = "";
       }
+    };
+
+    const applyDrag = (dx) => {
+      const panel = activePanel();
+      if (!panel || !content) return;
+      const ids = content.tabs.map((t) => t.id);
+      const idx = ids.indexOf(activeTab);
+      const w = stage.clientWidth || window.innerWidth;
+      let tx = dx;
+      if ((idx <= 0 && dx > 0) || (idx >= ids.length - 1 && dx < 0)) tx = dx * 0.3;
+
+      panel.style.transition = "none";
+      panel.style.transform = "translateX(" + tx + "px)";
+      panel.style.opacity = String(Math.max(0.55, 1 - Math.abs(tx) / 520));
+      panel.style.zIndex = "3";
+
+      // 邻页预览
+      let peekId = null;
+      if (dx < -10 && idx < ids.length - 1) peekId = ids[idx + 1];
+      else if (dx > 10 && idx > 0) peekId = ids[idx - 1];
+
+      if (!peekId) {
+        if (peekEl) clearPeek();
+        return;
+      }
+      const peek = document.getElementById(peekId);
+      if (!peek) return;
+      if (peekEl && peekEl !== peek) clearPeek();
+      peekEl = peek;
+      peek.classList.add("is-peek");
+      peek.style.transition = "none";
+      peek.style.zIndex = "2";
+      // 下一页从右侧露头 / 上一页从左侧
+      if (dx < 0) peek.style.transform = "translateX(" + (w + tx) + "px)";
+      else peek.style.transform = "translateX(" + (-w + tx) + "px)";
+      peek.style.opacity = String(Math.min(1, 0.4 + Math.abs(tx) / w));
     };
 
     const onStart = (x, y) => {
@@ -1846,20 +1944,10 @@
         axis = Math.abs(dx) > Math.abs(dy) * 1.12 ? "h" : "v";
       }
       if (axis !== "h") return;
-      // 跟手：阻止页面跟着横滑选中
       if (e && e.cancelable) e.preventDefault();
       dragging = true;
       document.body.classList.add("is-swiping");
-      const panel = activePanel();
-      if (!panel || !content) return;
-      const ids = content.tabs.map((t) => t.id);
-      const idx = ids.indexOf(activeTab);
-      let tx = dx;
-      // 边缘橡胶带
-      if ((idx <= 0 && dx > 0) || (idx >= ids.length - 1 && dx < 0)) tx = dx * 0.32;
-      panel.style.transition = "none";
-      panel.style.transform = "translateX(" + tx + "px)";
-      panel.style.opacity = String(Math.max(0.5, 1 - Math.abs(tx) / 480));
+      applyDrag(dx);
     };
 
     const onEnd = (x, y) => {
@@ -1868,7 +1956,6 @@
         return;
       }
       tracking = false;
-      document.body.classList.remove("is-swiping");
       const panel = activePanel();
       const dx = x - startX;
       const dy = y - startY;
@@ -1876,34 +1963,51 @@
       const wasH = axis === "h" && dragging;
       axis = null;
       dragging = false;
+      document.body.classList.remove("is-swiping");
       if (!wasH) {
         clearDrag(panel, false);
         return;
       }
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      // 阈值：距离或快速轻扫
-      const pass = absX >= 56 || (absX >= 36 && dt < 260);
+      const pass = absX >= 52 || (absX >= 34 && dt < 280);
       if (!pass || absX < absY * 1.05) {
         clearDrag(panel, true);
         return;
       }
-      // 跟手结束 → 滑出再切页
+      const w = stage.clientWidth || window.innerWidth;
+      const dir = dx < 0 ? 1 : -1;
+      // 当前页滑出，peek 进位
       if (panel) {
         panel.style.transition =
-          "transform 0.2s var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity 0.18s ease";
-        panel.style.transform = "translateX(" + (dx < 0 ? -72 : 72) + "px)";
-        panel.style.opacity = "0.25";
+          "transform 0.22s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.18s ease";
+        panel.style.transform = "translateX(" + (dir > 0 ? -w : w) + "px)";
+        panel.style.opacity = "0.2";
       }
-      const dir = dx < 0 ? 1 : -1;
+      if (peekEl) {
+        peekEl.style.transition =
+          "transform 0.22s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.18s ease";
+        peekEl.style.transform = "translateX(0)";
+        peekEl.style.opacity = "1";
+      }
+      const peekKeep = peekEl;
       setTimeout(() => {
         if (panel) {
           panel.style.transition = "none";
           panel.style.transform = "";
           panel.style.opacity = "";
+          panel.style.zIndex = "";
         }
+        if (peekKeep) {
+          peekKeep.classList.remove("is-peek");
+          peekKeep.style.transition = "none";
+          peekKeep.style.transform = "";
+          peekKeep.style.opacity = "";
+          peekKeep.style.zIndex = "";
+        }
+        peekEl = null;
         go(dir);
-      }, 110);
+      }, 200);
     };
 
     stage.addEventListener(
@@ -1996,12 +2100,27 @@
   }
 
   function tapHaptic(kind) {
+    let vibrated = false;
     try {
-      if (!navigator.vibrate) return;
-      if (kind === "ok") navigator.vibrate(12);
-      else if (kind === "warn") navigator.vibrate([8, 30, 8]);
-      else navigator.vibrate(8);
-    } catch (_) {}
+      if (navigator.vibrate) {
+        if (kind === "ok") vibrated = navigator.vibrate(12);
+        else if (kind === "warn") vibrated = navigator.vibrate([8, 30, 8]);
+        else vibrated = navigator.vibrate(8);
+      }
+    } catch (_) {
+      vibrated = false;
+    }
+    // 无震动权限时：全屏极短闪一下，补交互闭环
+    if (!vibrated) {
+      document.body.classList.remove("ix-haptic-flash", "ix-haptic-ok", "ix-haptic-warn");
+      void document.body.offsetWidth;
+      document.body.classList.add("ix-haptic-flash");
+      if (kind === "ok") document.body.classList.add("ix-haptic-ok");
+      if (kind === "warn") document.body.classList.add("ix-haptic-warn");
+      setTimeout(() => {
+        document.body.classList.remove("ix-haptic-flash", "ix-haptic-ok", "ix-haptic-warn");
+      }, 160);
+    }
   }
 
   async function boot() {
