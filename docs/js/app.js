@@ -389,9 +389,29 @@
     });
   }
 
-  function updatePagerChrome() {
+  /**
+   * 只改顶栏 chrome（Tab/进度/页码），不写 activeTab、不切 panel。
+   * 手势过阈时乐观调用，回弹时用真实 activeTab 回滚。
+   * @param {string} id tab id
+   * @param {{ smoothTab?: boolean }} [opts]
+   */
+  function paintChrome(id, opts) {
+    if (!content || !id || !findTab(id)) return;
     const ids = content.tabs.map((x) => x.id);
-    const idx = Math.max(0, ids.indexOf(activeTab));
+    const idx = Math.max(0, ids.indexOf(id));
+    $$(".tab").forEach((t) => {
+      const on = t.dataset.tab === id;
+      t.classList.toggle("active", on);
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      if (on) t.setAttribute("aria-current", "true");
+      else t.removeAttribute("aria-current");
+    });
+    $$("#pager-dots button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.tab === id);
+      if (b.dataset.tab === id) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
     const label = $("#page-label");
     if (label) label.textContent = `${idx + 1} / ${ids.length}`;
     const prev = $("#nav-prev");
@@ -404,13 +424,19 @@
     }
     const stage = $("#stage");
     if (stage) {
-      const tab = findTab(activeTab);
+      const tab = findTab(id);
       stage.setAttribute("aria-label", tab ? `第 ${idx + 1} 页 ${tab.title}` : "正文");
     }
-    const tabBtn = document.querySelector(`.tab[data-tab="${activeTab}"]`);
+    const tabBtn = document.querySelector(`.tab[data-tab="${CSS.escape(id)}"]`);
     if (tabBtn && tabBtn.scrollIntoView) {
-      tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      // 跟手路径用 auto，避免 smooth 连滑拖沓
+      const behavior = opts && opts.smoothTab ? "smooth" : "auto";
+      tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior });
     }
+  }
+
+  function updatePagerChrome() {
+    paintChrome(activeTab, { smoothTab: true });
   }
 
   function blockHtml(b) {
@@ -1084,60 +1110,67 @@
 
   function wireCheckTables() {
     // 勾选框：任何模式可点（会议现场用）
+    const toggleCheckRow = (btn) => {
+      const blockId = btn.dataset.block;
+      const row = +btn.dataset.row;
+      const block = findBlock(blockId);
+      if (!block || !block.rows || !block.rows[row]) return;
+      const r = block.rows[row];
+      const tr = btn.closest("tr");
+      if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
+        if (!r.pathValue) {
+          toast("请先点选路径 A / B / C");
+          tapHaptic("warn");
+          pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
+          return;
+        }
+        toast("改路径请点 A / B / C");
+        tapHaptic("light");
+        return;
+      }
+      if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
+        const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
+        if (!vals.length) {
+          toast("请先多选主开项目（至少一项）");
+          tapHaptic("warn");
+          pulseChips(tr && tr.querySelector(".multi-chips"));
+          return;
+        }
+        if (vals.includes("other") && !(r.otherText || "").trim()) {
+          toast("选了「其他」，请填写说明");
+          tapHaptic("warn");
+          const ot = tr && tr.querySelector("[data-other-text]");
+          if (ot) ot.focus();
+          return;
+        }
+      }
+      r.checked = !r.checked;
+      setRowCheckedUI(tr, r.checked);
+      if (tr) {
+        tr.classList.remove("is-just-toggled");
+        void tr.offsetWidth;
+        tr.classList.add("is-just-toggled");
+        setTimeout(() => tr.classList.remove("is-just-toggled"), 320);
+      }
+      tapHaptic(r.checked ? "ok" : "light");
+      saveDraft();
+      refreshCheckStatus(blockId);
+    };
+
     $$("[data-check-toggle]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const blockId = btn.dataset.block;
-        const row = +btn.dataset.row;
-        const block = findBlock(blockId);
-        if (!block || !block.rows || !block.rows[row]) return;
-        const r = block.rows[row];
-        const tr = btn.closest("tr");
-        if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
-          // 路径行：只能通过 A/B/C 改表态，勾选框不单独翻转
-          if (!r.pathValue) {
-            toast("请先点选路径 A / B / C");
-            tapHaptic("warn");
-            pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
-            return;
-          }
-          toast("改路径请点 A / B / C");
-          tapHaptic("light");
-          return;
-        }
-        if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
-          const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
-          if (!vals.length) {
-            toast("请先多选主开项目（至少一项）");
-            tapHaptic("warn");
-            pulseChips(tr && tr.querySelector(".multi-chips"));
-            return;
-          }
-          if (vals.includes("other") && !(r.otherText || "").trim()) {
-            toast("选了「其他」，请填写说明");
-            tapHaptic("warn");
-            const ot = tr && tr.querySelector("[data-other-text]");
-            if (ot) ot.focus();
-            return;
-          }
-        }
-        if (Array.isArray(r.owners) && !namedOwnersOf(r).length && !r.checked) {
-          // 允许先勾，但状态条会提示缺姓名；若要严格：
-          // 不拦截，只在 gate 检查
-        }
-        r.checked = !r.checked;
-        setRowCheckedUI(tr, r.checked);
-        if (tr) {
-          tr.classList.remove("is-just-toggled");
-          // force reflow for pop animation
-          void tr.offsetWidth;
-          tr.classList.add("is-just-toggled");
-          setTimeout(() => tr.classList.remove("is-just-toggled"), 320);
-        }
-        tapHaptic(r.checked ? "ok" : "light");
-        saveDraft();
-        refreshCheckStatus(blockId);
+        toggleCheckRow(btn);
+      });
+    });
+
+    // 简勾行：整卡可点（手机 2 列热区）
+    $$(".block[data-type='check-table'] tr:not(.has-path)").forEach((tr) => {
+      tr.addEventListener("click", (e) => {
+        if (e.target.closest("button,input,textarea,label,a,[contenteditable=true]")) return;
+        const btn = tr.querySelector("[data-check-toggle]");
+        if (btn) toggleCheckRow(btn);
       });
     });
 
@@ -1394,19 +1427,27 @@
           body.style.transition = "";
 
           if (isMobile) {
-            // 手机：不限高动画，展开后压缩图 + 列表随页面滚
+            // 手机：压缩图后，用 gBCR 把「客服」首卡顶到 sticky 按钮下（禁止 scrollIntoView 整卡）
+            const scrollToFirstDept = () => {
+              const first = card.querySelector(".dept-card");
+              const sticky = card.querySelector(".detail-card-btn");
+              if (!pb || !first) return;
+              const stickyH = sticky ? sticky.getBoundingClientRect().height : 0;
+              const delta =
+                first.getBoundingClientRect().top -
+                pb.getBoundingClientRect().top -
+                stickyH -
+                8;
+              pb.scrollTo({ top: Math.max(0, pb.scrollTop + delta), behavior: "smooth" });
+            };
             requestAnimationFrame(() => {
-              renderedMermaid.clear();
-              queueMermaid(activeTab);
-              // 把「各部门」滚到可视区顶部，下面可继续拖
-              try {
-                card.scrollIntoView({ block: "start", behavior: "smooth" });
-              } catch (_) {}
-              // 若 panel-body 是滚动容器，滚到明细
-              if (pb) {
-                const top = card.offsetTop - 8;
-                pb.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-              }
+              requestAnimationFrame(() => {
+                renderedMermaid.clear();
+                queueMermaid(activeTab);
+                scrollToFirstDept();
+                // mermaid 重绘后再校一次
+                setTimeout(scrollToFirstDept, 320);
+              });
             });
           } else {
             // 桌面：短展开动画
@@ -1639,6 +1680,18 @@
   }
 
   async function queueMermaid(tabId) {
+    // 放大入口：渲染后给 host 打标
+    const markZoom = () => {
+      $$("#" + CSS.escape(tabId || activeTab) + " .mermaid-host").forEach((h) => {
+        if (h.querySelector("svg")) {
+          h.classList.add("is-zoomable");
+          h.setAttribute("role", "button");
+          h.setAttribute("tabindex", "0");
+          h.setAttribute("aria-label", "单击放大流程图");
+        }
+      });
+    };
+
     if (editing) return;
     await ensureMermaid();
     const panel = document.getElementById(tabId);
@@ -1684,6 +1737,7 @@
         host.innerHTML = `<pre style="color:#b00;font-size:11px;padding:8px;white-space:pre-wrap">Mermaid 错误: ${esc(e.message || e)}</pre>`;
       }
     }
+    markZoom();
   }
 
   function findBlock(id) {
@@ -1727,6 +1781,8 @@
   async function activate(id, dir, opts) {
     if (!id || !findTab(id)) return;
     if (id === activeTab && !dir && !(opts && opts.force)) return;
+    // 点 Tab 时打断未完成的滑页进位
+    if (typeof cancelPendingGoSwipe === "function") cancelPendingGoSwipe(true);
     const ids = content.tabs.map((x) => x.id);
     const prevIdx = ids.indexOf(activeTab);
     const nextIdx = ids.indexOf(id);
@@ -1737,13 +1793,8 @@
     if (document.body.classList.contains("is-mobile")) tapHaptic("light");
     // 切页前强制清残留，防止上一页 transform/opacity 挂着
     resetAllSwipeStyles();
-    $$(".tab").forEach((t) => {
-      const on = t.dataset.tab === id;
-      t.classList.toggle("active", on);
-      t.setAttribute("aria-selected", on ? "true" : "false");
-      t.tabIndex = on ? 0 : -1;
-    });
-    $$("#pager-dots button").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+    // chrome 幂等（手势可能已 paintChrome 过）
+    paintChrome(id, { smoothTab: !(opts && opts.fromSwipe) });
     $$(".panel").forEach((p) => {
       const on = p.id === id;
       p.classList.toggle("active", on);
@@ -1766,7 +1817,6 @@
         el.hidden = true;
       });
     }
-    updatePagerChrome();
     await queueMermaid(id);
     syncCheckStatusFloat();
   }
@@ -1778,10 +1828,14 @@
     if (next < 0 || next >= ids.length) {
       toast(next < 0 ? "已是第一页" : "已是最后一页");
       tapHaptic("warn");
+      paintChrome(activeTab);
       return;
     }
     activate(ids[next], delta > 0 ? "left" : "right", opts || null);
   }
+
+  /** 供 wireSwipe 暴露：点 Tab 时硬取消进位（在 wireSwipe 内赋值） */
+  let cancelPendingGoSwipe = null;
 
   // ---------- Edit mode ----------
   function applyEditMode() {
@@ -2221,7 +2275,7 @@
     document.body.classList.remove("is-more-open");
   }
 
-  /** 触屏左右滑翻页：跟手 + 邻页预览叠层 + 过阈吸附 / 回弹 */
+  /** 触屏左右滑翻页：中央带 + 过阈乐观 Tab + 竖滚优先 + 单链（touch 主 / pointer 仅 mouse） */
   function wireSwipe() {
     const stage = $("#stage");
     if (!stage || wireSwipe._on) return;
@@ -2233,24 +2287,49 @@
       axis = null,
       dragging = false,
       peekEl = null,
-      pendingGoTimer = null;
+      pendingGoTimer = null,
+      pendingDir = 0,
+      chromeOptimisticId = null;
 
-    /** hard=true：连同未完成的进位动画一起清干净（新滑打断时） */
+    /** hard=true：连同未完成的进位动画一起清干净，并回滚乐观 chrome */
     const cancelPendingGo = (hard) => {
       if (pendingGoTimer) {
         clearTimeout(pendingGoTimer);
         pendingGoTimer = null;
-        if (hard) {
-          peekEl = null;
-          resetAllSwipeStyles();
+      }
+      if (hard) {
+        pendingDir = 0;
+        peekEl = null;
+        if (chromeOptimisticId && chromeOptimisticId !== activeTab) {
+          paintChrome(activeTab);
         }
+        chromeOptimisticId = null;
+        resetAllSwipeStyles();
       }
     };
+    cancelPendingGoSwipe = cancelPendingGo;
 
-    const skipSel =
-      "a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.multi-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row,.path-row,.check-status,.detail-card";
+    // 仅控件吞手势；卡片空白区可滑（方案 skip 最终表）
+    const skipSel = "a,button,input,textarea,select,label,[contenteditable=true]";
 
     const activePanel = () => document.querySelector(".panel.active:not(.is-peek)");
+
+    const inSwipeBand = (clientY) => {
+      const rect = stage.getBoundingClientRect();
+      const H = rect.height || window.innerHeight;
+      const y = clientY - rect.top;
+      let safeTop = 0,
+        safeBot = 0;
+      try {
+        const cs = getComputedStyle(document.documentElement);
+        // env() 读不到时退回 0
+        safeTop = parseFloat(cs.getPropertyValue("--safe-t")) || 0;
+        safeBot = parseFloat(cs.getPropertyValue("--safe-b")) || 0;
+      } catch (_) {}
+      const topEx = Math.max(0.16 * H, safeTop + 8);
+      const botEx = Math.max(0.16 * H, safeBot + 24);
+      return y >= topEx && y <= H - botEx;
+    };
 
     const clearPeek = () => {
       $$(".panel.is-peek").forEach((p) => {
@@ -2268,6 +2347,11 @@
     const clearDrag = (panel, animate) => {
       clearPeek();
       document.body.classList.remove("is-swiping");
+      if (chromeOptimisticId && chromeOptimisticId !== activeTab) {
+        paintChrome(activeTab);
+      }
+      chromeOptimisticId = null;
+      pendingDir = 0;
       if (!panel) {
         resetAllSwipeStyles();
         return;
@@ -2285,6 +2369,11 @@
       }
     };
 
+    const passThreshold = (dx, dt, w) => {
+      const abs = Math.abs(dx);
+      return abs >= 36 || (abs >= 24 && dt < 240) || abs / w >= 0.15;
+    };
+
     const applyDrag = (dx) => {
       const panel = activePanel();
       if (!panel || !content) return;
@@ -2298,6 +2387,23 @@
       panel.style.transform = "translateX(" + tx + "px)";
       panel.style.opacity = String(Math.max(0.55, 1 - Math.abs(tx) / 520));
       panel.style.zIndex = "3";
+
+      // 过阈乐观 chrome（同帧跟手）
+      const dt = Date.now() - startT;
+      if (passThreshold(dx, dt, w)) {
+        const dir = dx < 0 ? 1 : -1;
+        const next = idx + dir;
+        if (next >= 0 && next < ids.length) {
+          const nid = ids[next];
+          if (chromeOptimisticId !== nid) {
+            chromeOptimisticId = nid;
+            paintChrome(nid);
+          }
+        }
+      } else if (chromeOptimisticId && chromeOptimisticId !== activeTab) {
+        chromeOptimisticId = null;
+        paintChrome(activeTab);
+      }
 
       // 邻页预览
       let peekId = null;
@@ -2315,15 +2421,14 @@
       peek.classList.add("is-peek");
       peek.style.transition = "none";
       peek.style.zIndex = "2";
-      // 下一页从右侧露头 / 上一页从左侧
       if (dx < 0) peek.style.transform = "translateX(" + (w + tx) + "px)";
       else peek.style.transform = "translateX(" + (-w + tx) + "px)";
       peek.style.opacity = String(Math.min(1, 0.4 + Math.abs(tx) / w));
     };
 
     const onStart = (x, y) => {
-      if (editing) return;
-      // 新滑动硬打断未完成进位，避免双页残留
+      if (editing || document.body.classList.contains("is-lightbox")) return;
+      if (!inSwipeBand(y)) return;
       cancelPendingGo(true);
       startX = x;
       startY = y;
@@ -2331,6 +2436,8 @@
       tracking = true;
       axis = null;
       dragging = false;
+      chromeOptimisticId = null;
+      pendingDir = 0;
     };
 
     const onMove = (x, y, e) => {
@@ -2339,7 +2446,14 @@
       const dy = y - startY;
       if (!axis) {
         if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-        axis = Math.abs(dx) > Math.abs(dy) * 1.12 ? "h" : "v";
+        // 先竖：整段手势不翻页
+        if (Math.abs(dy) > 6 && Math.abs(dy) >= Math.abs(dx)) {
+          axis = "v";
+          return;
+        }
+        // 认横：滞回 1.15
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.15) axis = "h";
+        else return;
       }
       if (axis !== "h") return;
       if (e && e.cancelable) e.preventDefault();
@@ -2365,16 +2479,27 @@
         clearDrag(panel, false);
         return;
       }
+      const w = stage.clientWidth || window.innerWidth;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      const pass = absX >= 52 || (absX >= 34 && dt < 280);
-      if (!pass || absX < absY * 1.05) {
+      const pass = passThreshold(dx, dt, w) && absX >= absY * 0.95;
+      if (!pass) {
         clearDrag(panel, true);
         return;
       }
-      const w = stage.clientWidth || window.innerWidth;
       const dir = dx < 0 ? 1 : -1;
-      // 当前页滑出，peek 进位（保持 is-swiping 到切页完成，防止 CSS 回弹）
+      const ids = content.tabs.map((t) => t.id);
+      const idx = ids.indexOf(activeTab);
+      const next = idx + dir;
+      if (next < 0 || next >= ids.length) {
+        clearDrag(panel, true);
+        toast(next < 0 ? "已是第一页" : "已是最后一页");
+        return;
+      }
+      // 确认 chrome（可能已乐观切过）
+      paintChrome(ids[next]);
+      chromeOptimisticId = ids[next];
+      pendingDir = dir;
       document.body.classList.add("is-swiping");
       if (panel) {
         panel.style.transition =
@@ -2394,12 +2519,15 @@
       pendingGoTimer = setTimeout(() => {
         pendingGoTimer = null;
         peekEl = null;
-        // 先硬清残留，再切页（fromSwipe 跳过二次入场动画）
+        const d = pendingDir;
+        pendingDir = 0;
+        chromeOptimisticId = null;
         resetAllSwipeStyles();
-        go(dir, { fromSwipe: true });
+        go(d, { fromSwipe: true });
       }, 200);
     };
 
+    // —— touch 主链 ——
     stage.addEventListener(
       "touchstart",
       (e) => {
@@ -2433,29 +2561,117 @@
       clearDrag(activePanel(), false);
     });
 
+    // —— pointer 仅 mouse，禁与 touch 双 fire ——
     let mouseDown = false;
     stage.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.pointerType === "touch" || e.pointerType === "pen") return;
+      if (e.button !== 0) return;
       if (e.target.closest(skipSel)) return;
       mouseDown = true;
       onStart(e.clientX, e.clientY);
     });
     stage.addEventListener("pointermove", (e) => {
+      if (e.pointerType === "touch" || e.pointerType === "pen") return;
       if (!mouseDown) return;
       onMove(e.clientX, e.clientY, null);
     });
     stage.addEventListener("pointerup", (e) => {
+      if (e.pointerType === "touch" || e.pointerType === "pen") return;
       if (!mouseDown) return;
       mouseDown = false;
       onEnd(e.clientX, e.clientY);
     });
-    stage.addEventListener("pointercancel", () => {
+    stage.addEventListener("pointercancel", (e) => {
+      if (e.pointerType === "touch" || e.pointerType === "pen") return;
       cancelPendingGo(true);
       mouseDown = false;
       tracking = false;
       axis = null;
       dragging = false;
       clearDrag(activePanel(), false);
+    });
+  }
+
+
+  /** mermaid 单击放大：clone SVG 进 lightbox，防背后滑动 */
+  function wireMermaidLightbox() {
+    if (wireMermaidLightbox._on) return;
+    wireMermaidLightbox._on = true;
+    const box = $("#diagram-lightbox");
+    const stageEl = $("#diagram-lightbox-stage");
+    const closeBtn = $("#diagram-lightbox-close");
+    if (!box || !stageEl) return;
+
+    let lastTrigger = null;
+    const close = () => {
+      box.hidden = true;
+      document.body.classList.remove("is-lightbox");
+      stageEl.innerHTML = "";
+      document.body.style.overflow = "";
+      if (lastTrigger && lastTrigger.focus) {
+        try { lastTrigger.focus(); } catch (_) {}
+      }
+      lastTrigger = null;
+    };
+    const openFrom = (host) => {
+      if (editing || document.body.classList.contains("is-swiping")) return;
+      const svg = host.querySelector("svg");
+      if (!svg) return;
+      lastTrigger = host;
+      stageEl.innerHTML = "";
+      const clone = svg.cloneNode(true);
+      clone.removeAttribute("width");
+      clone.removeAttribute("height");
+      clone.style.width = "100%";
+      clone.style.height = "auto";
+      clone.style.maxHeight = "min(88vh, 100%)";
+      stageEl.appendChild(clone);
+      box.hidden = false;
+      document.body.classList.add("is-lightbox");
+      document.body.style.overflow = "hidden";
+      if (closeBtn) closeBtn.focus();
+    };
+
+    // 点击 mermaid-host：tap 判定 movement < 8
+    let sx = 0, sy = 0;
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        const host = e.target.closest(".mermaid-host");
+        if (!host) return;
+        sx = e.clientX;
+        sy = e.clientY;
+        host._tapCand = true;
+      },
+      true
+    );
+    document.addEventListener(
+      "pointerup",
+      (e) => {
+        const host = e.target.closest(".mermaid-host");
+        if (!host || !host._tapCand) return;
+        host._tapCand = false;
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openFrom(host);
+      },
+      true
+    );
+
+    if (closeBtn) closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      close();
+    });
+    box.addEventListener("click", (e) => {
+      if (e.target === box || e.target === stageEl) close();
+    });
+    // 阻止 lightbox 内滑动传到 stage
+    ["touchstart", "touchmove", "touchend"].forEach((ev) => {
+      box.addEventListener(ev, (e) => e.stopPropagation(), { passive: true });
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !box.hidden) close();
     });
   }
 
@@ -2532,6 +2748,7 @@
       wireLogo();
       wireKeys();
       wireSwipe();
+      wireMermaidLightbox();
       wireCheckStatusFloat();
       startHotPoll();
       document.body.classList.toggle("is-check-page", activeTab === "t6");

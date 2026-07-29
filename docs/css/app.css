@@ -5223,3 +5223,143 @@ body.is-swiping .panel.active:not(.is-peek) {
     display: table;
   }
 }
+
+/* ========== v1.89 方案落地：lightbox · t6/t7 双列 · later none · zoom ========== */
+
+/* mermaid 可点放大 */
+.mermaid-host.is-zoomable {
+  cursor: zoom-in;
+}
+.mermaid-host.is-zoomable:focus-visible {
+  outline: 2px solid var(--brand-deep, #7A4F96);
+  outline-offset: 2px;
+}
+
+.diagram-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(30, 22, 40, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+.diagram-lightbox[hidden] {
+  display: none !important;
+}
+.diagram-lightbox-close {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  z-index: 2;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.95);
+  color: #3d2a4d;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.diagram-lightbox-stage {
+  width: min(960px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.diagram-lightbox-stage svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto !important;
+}
+body.is-lightbox {
+  overflow: hidden !important;
+}
+
+@media (max-width: 640px) {
+  /* —— t6：tbody 2 列；富交互通栏；later 收起 display:none —— */
+  #t6 .block[data-type="check-table"] tbody {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  #t6 .block[data-type="check-table"] tr.has-path {
+    grid-column: 1 / -1 !important;
+  }
+  #t6 .block[data-type="check-table"] tr:not(.has-path) {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 88px !important;
+    cursor: pointer;
+  }
+  #t6 .block[data-type="check-table"] tr:not(.has-path) .chk-body {
+    flex: 1 1 auto;
+  }
+  #t6 .block[data-type="check-table"] tr:not(.has-path) .chk {
+    align-self: flex-end;
+    margin-top: 4px;
+  }
+  /* later 收起：彻底不占 grid 槽（反转 v1.79 display:grid 占位） */
+  #t6 .block[data-type="check-table"][data-later-open="false"] tr.chk-tier-later {
+    display: none !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+  /* 仅 1 张简勾时通栏（#6 常单独可见） */
+  #t6 .block[data-type="check-table"][data-later-open="false"] tr:not(.has-path) {
+    grid-column: 1 / -1 !important;
+  }
+  #t6 .block[data-type="check-table"][data-later-open="true"] tr.chk-tier-later {
+    display: flex !important;
+  }
+  @media (max-width: 360px) {
+    #t6 .block[data-type="check-table"] tbody {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* —— t7：每个 gate-table 各自 2 列 —— */
+  #t7 .panel-body > .block[data-type="gate-table"] tbody {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] tr {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] td {
+    width: 100% !important;
+  }
+  #t7 .panel-body > .block[data-type="callout"] {
+    grid-column: 1 / -1;
+    width: 100% !important;
+  }
+  @media (max-width: 360px) {
+    #t7 .panel-body > .block[data-type="gate-table"] tbody {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
