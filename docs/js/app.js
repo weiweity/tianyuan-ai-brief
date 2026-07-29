@@ -2140,21 +2140,85 @@
     const menu = $("#toolbar-menu");
     if (moreBtn && menu) {
       moreBtn.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        const open = menu.classList.toggle("open");
-        moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        if (menu.classList.contains("open")) closeMore();
+        else openMore();
       });
+      // 点菜单本体不关闭；点遮罩/页面其它处关闭
+      menu.addEventListener("click", (e) => e.stopPropagation());
       document.addEventListener("click", () => closeMore());
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMore();
+      });
+      window.addEventListener("resize", () => {
+        if (menu.classList.contains("open")) positionMoreMenu();
+      });
+      window.addEventListener("scroll", () => {
+        if (menu.classList.contains("open")) positionMoreMenu();
+      }, true);
     }
     $("#nav-prev") && $("#nav-prev").addEventListener("click", () => go(-1));
     $("#nav-next") && $("#nav-next").addEventListener("click", () => go(1));
   }
 
+  /** 三点菜单：fixed 悬浮，避开 chrome overflow 裁切与标题叠层 */
+  function positionMoreMenu() {
+    const moreBtn = $("#btn-more");
+    const menu = $("#toolbar-menu");
+    if (!moreBtn || !menu || !menu.classList.contains("open")) return;
+    // 先显示才能量宽
+    menu.style.visibility = "hidden";
+    menu.style.display = "flex";
+    const r = moreBtn.getBoundingClientRect();
+    const mw = Math.max(menu.offsetWidth || 0, 168);
+    const mh = menu.offsetHeight || 160;
+    const gap = 8;
+    let left = r.right - mw;
+    left = Math.max(gap, Math.min(left, window.innerWidth - mw - gap));
+    let top = r.bottom + 6;
+    // 下方不够则往上翻
+    if (top + mh > window.innerHeight - gap && r.top - 6 - mh > gap) {
+      top = r.top - 6 - mh;
+    }
+    top = Math.max(gap, Math.min(top, window.innerHeight - mh - gap));
+    menu.style.position = "fixed";
+    menu.style.top = Math.round(top) + "px";
+    menu.style.left = Math.round(left) + "px";
+    menu.style.right = "auto";
+    menu.style.bottom = "auto";
+    menu.style.zIndex = "300";
+    menu.style.visibility = "";
+  }
+
+  function openMore() {
+    const menu = $("#toolbar-menu");
+    const moreBtn = $("#btn-more");
+    if (!menu || !moreBtn) return;
+    menu.classList.add("open");
+    document.body.classList.add("is-more-open");
+    moreBtn.setAttribute("aria-expanded", "true");
+    positionMoreMenu();
+    // 下一帧再量一次（字体/布局稳定）
+    requestAnimationFrame(() => positionMoreMenu());
+  }
+
   function closeMore() {
     const menu = $("#toolbar-menu");
     const moreBtn = $("#btn-more");
-    if (menu) menu.classList.remove("open");
+    if (menu) {
+      menu.classList.remove("open");
+      menu.style.top = "";
+      menu.style.left = "";
+      menu.style.right = "";
+      menu.style.bottom = "";
+      menu.style.position = "";
+      menu.style.zIndex = "";
+      menu.style.visibility = "";
+      menu.style.display = "";
+    }
     if (moreBtn) moreBtn.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("is-more-open");
   }
 
   /** 触屏左右滑翻页：跟手 + 邻页预览叠层 + 过阈吸附 / 回弹 */
