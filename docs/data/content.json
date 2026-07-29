@@ -1,0 +1,292 @@
+{
+  "$schema": "./content.schema.json",
+  "version": "5.6.0",
+  "ssot": "feishu-slim-board-v5.6",
+  "updated": "2026-07-29",
+  "meta": {
+    "title": "AI 赋能立项 · 金主一页（少字画板版 v5.6 · P0闭环）",
+    "from": "天元",
+    "to": "HR 人事总经理",
+    "subtitle": "软件尚未开发 · 批路径 ≠ 上线 · 详版 v4 归档",
+    "logo": "assets/logo.png",
+    "brand": "#EBE6EF",
+    "roleLine": "您批：方向 + 费用路径 + 组织催办 · 您不背：话术口径 · BI 看服务结果指标 · FDE 改岗位动作并催办/停扩（须留痕 · 追责挂钩派工 SLA）",
+    "footerLeft": "少字画板 v5.6 P0闭环 · 量纲/SLA验真/抽检主体 · 2026-07-29 · 内容与飞书画板版 v5.6 一字对齐",
+    "footerRight": "Tab / 数字键 1–7 · ←→ 翻页 · E 编辑 · S 保存"
+  },
+  "tabs": [
+    {
+      "id": "t1",
+      "no": "1",
+      "title": "20 秒结论",
+      "layout": "stack",
+      "blocks": [
+        {
+          "id": "t1.role",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>您批：</b>方向 + 费用路径 + 组织催办 · <b>您不背：</b>话术口径 · <b>BI</b> 看服务结果指标 · <b>FDE</b> 改岗位动作并催办/停扩（须留痕 · 追责挂钩派工 SLA）"
+        },
+        {
+          "id": "t1.kpi",
+          "type": "kv-table",
+          "rows": [
+            {
+              "key": "建议",
+              "variant": "ok",
+              "html": "立 <b>客服话术库</b>（人在环 · 不代回）· <b>A/B=立 · C=不立</b>"
+            },
+            {
+              "key": "请勾",
+              "variant": "info",
+              "html": "A/B/C + 前置日 + Owner 当场具名 + 48h cap 责任人 + <b>勾 A 即授权 FDE 超 cap 即停</b>"
+            },
+            {
+              "key": "钱",
+              "variant": "warn",
+              "html": "月 API cap 数百～数千元（仅当月 API 调用，不含 FDE 人力）· 精确数 48h 回填 · fallback 下沿数百元/月 · <b>首期累计停损上限=API 万元内</b>（与月 cap 两层：月控节奏、万元控总停损）· A 超时视同 B（复核窗=T0+2 17:00 留痕）· <b>复核期仅配置不调用</b>"
+            },
+            {
+              "key": "工期",
+              "variant": "default",
+              "html": "G0 齐 → ~4 周可演示 → ~4 周小试用 · <b>勾 A 到首次演示最短 ~6–7 周</b>（假设 #3=≤8/15；若改前置日则按 G0 齐+4 周顺延，'6–7 周'自动失效）· <b>到 G1b 闭环约 ~11 周</b> · 中途不过停扩重测时钟不归零 · 未齐 G0 不开开发日历 · 旁线 ≤20% FDE 人日/周 · 超 20% 金主一句话仲裁（默认主开优先）"
+            }
+          ]
+        },
+        {
+          "id": "t1.swap",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>换：</b>标准可管 + 可质培 + 可周报样板。· <b>不立：</b>同问异答难追责 · 质培无标准 · 无样板。"
+        },
+        {
+          "id": "t1.scope",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>本场不做：</b>验收软件 · 定名单 · 锁死总价 · 承诺上线/周活。· <b>人力口径：</b>FDE 工时另计组织成本，不混进「万元内 API 累计停损」；月 cap 与万元停损是两层口径，禁止混读；周报分列 API 用量与人日，禁止合并。"
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "no": "2",
+      "title": "取舍",
+      "layout": "split",
+      "blocks": [
+        {
+          "id": "t2.chart",
+          "type": "mermaid",
+          "slot": "main",
+          "source": "flowchart TB\n  subgraph MAIN[主开]\n    K[客服 话术库<br/>外包标准散]\n  end\n  subgraph SIDE[旁线 ≤20% 人日/周]\n    S[供应链 文稿校验<br/>对账归 BI]\n  end\n  subgraph HOLD[轻/后 · 有触发再开]\n    W[仓储 先查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计 已自驱]\n  end\n  K --> BI[BI 结果 · FDE 动作]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#FFF5CC,stroke:#FFC60A\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
+        },
+        {
+          "id": "t2.trigger",
+          "type": "callout",
+          "slot": "side",
+          "variant": "brand",
+          "html": "后置启动触发（可共改）：仓储查重结论有缺口再议；私域有 Owner 主动要人再议。对账归 BI：会后 FDE 发 1 页需求摘要给 BI 接口人（知会记录）。"
+        },
+        {
+          "id": "t2.brake",
+          "type": "callout",
+          "slot": "side",
+          "variant": "warn",
+          "html": "<b>旁线刹车：</b>FDE 周人日基线以派工 SLA 为准（默认 30 人日/周为占位；实际按当前生效人头核定，规模变更当周双轨报金主；20%=≤基线/5 人日/自然周，SLA 全文归档备查）。任一自然周旁线 &gt;20% → 金主一句话仲裁优先序；缺仲裁默认主开优先、旁线顺延（FDE 双轨留痕）。"
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "no": "3",
+      "title": "做 / 不做",
+      "layout": "fill",
+      "blocks": [
+        {
+          "id": "t3.chart",
+          "type": "mermaid",
+          "source": "flowchart LR\n  subgraph DO[做 MVP-A]\n    A1[统一库] --> A2[检索推荐] --> A3[人确认发出]\n  end\n  subgraph DONT[不做]\n    B1[自动代回]\n    B2[首期桌面]\n    B3[智能排产]\n    B4[第二对账看板]\n  end\n  style A1 fill:#D9F5D6,stroke:#34C724\n  style A2 fill:#D9F5D6,stroke:#34C724\n  style A3 fill:#D9F5D6,stroke:#34C724\n  style B1 fill:#FEE3E2,stroke:#F54A45\n  style B2 fill:#FEE3E2,stroke:#F54A45\n  style B3 fill:#FEE3E2,stroke:#F54A45\n  style B4 fill:#FEE3E2,stroke:#F54A45"
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "no": "4",
+      "title": "路径 + DoD",
+      "layout": "split",
+      "blocks": [
+        {
+          "id": "t4.chart",
+          "type": "mermaid",
+          "slot": "main",
+          "source": "flowchart LR\n  G0[G0 三件齐<br/>未齐=不开日历] --> G1a[G1a ~4周 可演示]\n  G1a -->|过| G1b[G1b ~4周 小试用]\n  G1a -->|不过| G0b[回 G0 停扩重测]\n  G1b -->|过| OK[可汇报 · 0 代发]\n  G1b -->|不过| STOP[停扩 · 不上报采用]\n  style G0 fill:#FFF5CC,stroke:#FFC60A\n  style G0b fill:#FEE3E2,stroke:#F54A45\n  style G1a fill:#E8F3FF,stroke:#3370FF\n  style G1b fill:#E8F3FF,stroke:#3370FF\n  style OK fill:#D9F5D6,stroke:#34C724\n  style STOP fill:#FEE3E2,stroke:#F54A45"
+        },
+        {
+          "id": "t4.dod",
+          "type": "gate-table",
+          "slot": "side",
+          "headers": [
+            "门禁",
+            "通过标准（默认 · 可共改须书面）"
+          ],
+          "rows": [
+            {
+              "gate": "G0",
+              "html": "① 客服原则同意：<b>邮件或飞书书面</b>（口头须 ≤3 工作日补书面；<b>到期日 17:00 未补 → 自动降为仅意向，停 G1a 日历，回 G0 重走</b>）② Owner+备用具名（角色=客服侧话术/质培负责人，非 HR 代理人）③ 月 API cap 精确数或 fallback 生效 · 三缺一不开日历 · <b>FDE 派工 SLA 须含追责条款（警告/换人/熔断），缺则本立项不批</b>"
+            },
+            {
+              "gate": "G1a",
+              "html": "有效话术 ≥200 条（可共改）含分类+Owner · 改一条同日可检索（验收条件）· 黄金问法 20 条：<b>标准答案由 Owner 在 FDE 出题前提供基线稿</b>；FDE 出题 + Owner 盲审；每题 Top3 推荐，≥14 题与标准答案完全一致（即 ≥70%，可共改）· 抽检 0 自动代发（<b>FDE 抽检 + Owner 抽复核</b>，双人留痕）· <b>不过 → 停扩回 G0 重测，不上报采用</b>"
+            },
+            {
+              "gate": "G1b",
+              "html": "≥3 名内部坐席（含 ≥1 正式编制；<b>Owner 在 G0 齐前锁定 ≥2 名正式编制替补池，缺则 G0 不齐</b>）连续 2 周 · 每人每周真实检索 ≥5 次（可共改上调）· 有用反馈抽样 ≥10 条/周 · 0 自动代发 · 可写进周报 · <b>中途正式编制离职/转岗/产假 → 当周作废 + 补位后重测满 2 周（替补须同为正式编制：与公司签劳动合同的在岗客服，非外包/劳务派遣）</b>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "no": "5",
+      "title": "费用 + 48h",
+      "layout": "split",
+      "blocks": [
+        {
+          "id": "t5.chart",
+          "type": "mermaid",
+          "slot": "main",
+          "source": "flowchart TB\n  Q{路径} --> A[A 立 启最小环境 须 G0]\n  Q --> B[B 立 金额前不开发]\n  Q --> C[C 不立]\n  A -->|T0+2日17:00 无精确 cap| B2[视同 B + 复核至T0+2 17:00]\n  A --> GO1[G0 后 G1a]\n  B --> GO2[金额批后 G1a]\n  C --> STOP[周报锁范围]\n  style A fill:#D9F5D6,stroke:#34C724\n  style B fill:#E8F3FF,stroke:#3370FF\n  style C fill:#FEE3E2,stroke:#F54A45\n  style B2 fill:#FFF5CC,stroke:#FFC60A"
+        },
+        {
+          "id": "t5.money",
+          "type": "kv-table",
+          "slot": "side",
+          "keyWidth": "wide",
+          "rows": [
+            {
+              "key": "T0 定义",
+              "html": "<b>勾选当日 0 点</b>；48h 截止 = <b>T0+2 自然日 17:00</b>（<b>遇法定节假日顺延至下个工作日 17:00</b>；日历由 FDE 建提醒）"
+            },
+            {
+              "key": "月 API cap",
+              "html": "仅 API 调用 · 区间数百～数千元/月 · 精确数 48h 财务回填 · <b>人力不计入此 cap</b> · 周报分列 API 与人日（禁止合并）"
+            },
+            {
+              "key": "fallback",
+              "html": "到期无精确数 → 自动下沿「数百元/月」+ <b>视同 B</b> · FDE 企微+邮件双轨通知金主 · <b>快速复核窗口 = 与 48h cap 同截止 T0+2 17:00</b>（遇节假日顺延；金主确认或改 C；<b>截止未回复默认视同改 C</b>，FDE 当日撤配置+删密钥）· <b>复核期内仅配置不调用</b>（密钥/模型不入请求路径）· 改 C 零成本回退（<b>FDE 当日撤配置+删密钥</b>，金主无 API 计费；清理人日不计入 API cap）"
+            },
+            {
+              "key": "超 cap 停扩",
+              "html": "勾 A/B 即授权 FDE 即停扩 · <b>FDE 每周一上午核算上周用量并企微+邮件双轨报金主</b> · 超 cap 即停扩 · 金主一句确认（可异步）"
+            },
+            {
+              "key": "首期停损",
+              "html": "首期 API <b>累计停损上限万元内</b>（≠ 月 cap；月 cap 仍为数百～数千）· 演示不过停扩 · 无采用不加 L3/L4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "no": "6",
+      "title": "请您勾选",
+      "layout": "stack",
+      "blocks": [
+        {
+          "id": "t6.check",
+          "type": "check-table",
+          "headers": [
+            "#",
+            "决策",
+            "□"
+          ],
+          "rows": [
+            {
+              "no": "1",
+              "html": "认同取舍（主开话术库 · 设计不开 · 仓储查重 · 对账归 BI · 私域后置 · 旁线≤20%人日/周 · 超载主开优先）"
+            },
+            {
+              "no": "2",
+              "html": "<b>A/B=立 · C=不立</b>（建议 A；勾 A=授权 FDE 超 cap 即停）"
+            },
+            {
+              "no": "3",
+              "html": "前置完成日：________（<b>硬 deadline 默认 ≤8/15</b>；超期未填=仅意向）"
+            },
+            {
+              "no": "4",
+              "html": "客服业务 Owner（话术/质培负责人）：姓名____ 部门____ · 备用____ · 同意：□书面 □口头（须 ≤3 工作日补书面；到期 17:00 未补=仅意向）"
+            },
+            {
+              "no": "5",
+              "html": "48h cap 回填：财务/采购姓名____ · 催办 FDE · 截止 T0+2 日 17:00 · 复核期仅配置不调用"
+            },
+            {
+              "no": "6",
+              "html": "供应链旁线 ≤20% FDE 人日/周（基线=派工 SLA 周人日，20%=≤1/5，按自然周统计）· 超载金主仲裁 · 不单独立项"
+            },
+            {
+              "no": "7",
+              "html": "FDE 派工 SLA 含追责条款（警告/换人/熔断）· 缺则本立项不批 · <b>会前 FDE 须书面出示 SLA 含该三段（PDF/截图归档），否则不进散会勾选</b>"
+            }
+          ]
+        },
+        {
+          "id": "t6.gate",
+          "type": "callout",
+          "variant": "warn",
+          "html": "<b>散会门禁：</b>勾 A/B 时 #4 Owner/备用未填 或 #7 SLA 未勾/未出示验真 → 仅意向不启 G1a；#3 前置日未填 → 须当场填硬 deadline（默认 ≤8/15，超期未填自动降为仅意向）。· <b>G0 额外：</b>FDE 派工 SLA 无追责条款 → 本立项不批（与 #7 会前验真同一标准，避免会后黑洞）。"
+        },
+        {
+          "id": "t6.bound",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>边界：</b>未批不承诺上线/名单 · 不代回/不代审 · 不建第二看板 · 禁假 ROI · 金额以财务回填为准"
+        }
+      ]
+    },
+    {
+      "id": "t7",
+      "no": "7",
+      "title": "会后 48h",
+      "layout": "stack",
+      "blocks": [
+        {
+          "id": "t7.raci",
+          "type": "gate-table",
+          "headers": [
+            "结果",
+            "动作 · 责任 · 留痕"
+          ],
+          "rows": [
+            {
+              "gate": "A",
+              "html": "Owner 书面（业务 · 3 日内；到期未补=仅意向停日历）· cap 回填（财务 · T0+2 日 17:00）· 盘点（FDE · 复核期仅配置不调用）· 到期无 cap：FDE 双轨通知 + 视同 B + 复核窗至 T0+2 17:00 · 改 C 零成本"
+            },
+            {
+              "gate": "B",
+              "html": "组织前置同上 · 不启调用/不签 API · 金额批后 G1a"
+            },
+            {
+              "gate": "C",
+              "html": "一页「不立+C1/C2」进飞书周报总册（FDE 出稿 · 金主阅）· 不开发 · <b>若后续改 B/A 重启须重走 G0 三件齐，日历不继承</b>"
+            }
+          ]
+        },
+        {
+          "id": "t7.weekly",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>周报：</b>每周一行进总册（G0 状态 / <b>API 用量</b> / <b>旁线人日</b> 分列）。· <b>出错默认：</b>内容口径→Owner · 工具故障→FDE（按派工 SLA：警告/换人/熔断）· 费用超支未停→FDE 追责 + 金主知悉。"
+        },
+        {
+          "id": "t7.speak",
+          "type": "callout",
+          "variant": "ok",
+          "html": "口播：60″ 结论 · 6–8′ 取舍/DoD/钱 · 2–3′ 勾选填名 · 旁线 ≤1′"
+        }
+      ]
+    }
+  ]
+}
