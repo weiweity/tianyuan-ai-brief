@@ -3277,3 +3277,379 @@ html, body, .stage {
     overflow-y: auto !important;
   }
 }
+
+/* ========== Mobile 10 分冲刺 v1.72 ========== */
+/* 负责人折叠 / 会后约定折叠（桌面默认全开） */
+.owner-card-extra { display: none; }
+.owners-grid[data-owners-collapsed="false"] .owner-card-extra { display: block; }
+.owners-more-btn,
+.chk-later-toggle {
+  appearance: none;
+  border: 1.5px dashed var(--brand-deep, #7A4F96);
+  background: rgba(122, 79, 150, 0.06);
+  color: var(--brand-deep, #7A4F96);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  text-align: center;
+}
+.owners-more-btn:active,
+.chk-later-toggle:active { transform: scale(0.98); }
+/* 桌面：later 默认显示，toggle 隐藏；手机默认藏 later */
+.chk-tier-later { display: grid; }
+.chk-later-toggle { display: none; }
+.owners-more-btn { display: none; }
+
+@media (max-width: 640px) {
+  :root {
+    --fs: 15px !important;
+    --fs-sm: 14px !important;
+    --fs-title: 16px !important;
+    --pad: 8px;
+  }
+  html { font-size: 15px; }
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  #app {
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+  }
+
+  /* 正文字号底线 15 */
+  .panel .block[data-type="kv-table"] td,
+  .panel .block[data-type="gate-table"] td,
+  .panel .block[data-type="check-table"] td,
+  .panel .block[data-type="callout"],
+  .do-dont .dd-item,
+  .chk-html,
+  .kv-cell {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+  .panel > h2 { font-size: 16px !important; }
+  .tab { font-size: 13px !important; min-height: 36px !important; }
+
+  /* 顶栏再压一点，多给正文 */
+  .chrome { flex-shrink: 0; }
+  .top { padding: 6px 8px !important; min-height: 0; }
+  .logo-wrap { width: 72px !important; height: 32px !important; min-height: 32px !important; }
+  .tabs-row { padding: 2px 6px 4px !important; }
+  .stage-meta { padding-bottom: env(safe-area-inset-bottom, 4px); }
+
+  /* t6：首屏决策 — 藏 later，折叠额外负责人，压密度 */
+  #t6 .block[data-type="check-table"][data-later-open="false"] tr.chk-tier-later {
+    display: none !important;
+  }
+  #t6 .block[data-type="check-table"][data-later-open="true"] tr.chk-tier-later {
+    display: grid !important;
+  }
+  #t6 .chk-later-toggle { display: block !important; }
+  #t6 .owners-more-btn { display: block !important; }
+  #t6 .owners-grid[data-owners-collapsed="true"] .owner-card-extra {
+    display: none !important;
+  }
+  #t6 .path-hint { display: none; } /* 省行高，按钮本身够自解释 */
+  #t6 .multi-row .path-hint { display: none; }
+  #t6 .block[data-type="check-table"] tr {
+    padding: 8px !important;
+    margin-bottom: 6px !important;
+    gap: 2px;
+  }
+  #t6 .chk-html {
+    font-size: 14.5px !important;
+    font-weight: 600;
+  }
+  #t6 .fee-fields {
+    gap: 6px !important;
+  }
+  #t6 .fee-fields label {
+    font-size: 13px !important;
+    width: calc(50% - 4px);
+  }
+  #t6 .fee-fields label.fee-other {
+    width: 100%;
+  }
+  #t6 .fee-fields input {
+    width: 4.8em !important;
+    min-height: 40px !important;
+    font-size: 15px !important;
+  }
+  #t6 .fee-fields label.fee-other input {
+    width: 100% !important;
+    flex: 1;
+  }
+  #t6 .owner-card {
+    padding: 8px !important;
+  }
+  #t6 .owner-card .owner-fields {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+  #t6 .owner-card .owner-fields label:last-child {
+    grid-column: 1 / -1;
+  }
+  #t6 .panel-body > .block[data-type="callout"] {
+    padding: 10px 12px !important;
+    font-size: 13.5px !important;
+  }
+  #t6 .check-status {
+    font-size: 13.5px !important;
+    padding: 10px 12px !important;
+  }
+  #t6 .copy-conclusion-btn {
+    min-height: 44px !important;
+    font-size: 14px !important;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip {
+    min-height: 42px !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* t4/t7 列表行更紧 */
+  #t7 .panel-body > .block[data-type="gate-table"] tr,
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] tr {
+    padding: 10px 12px !important;
+  }
+  #t7 .panel-body {
+    gap: 8px !important;
+  }
+  #t4 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"],
+  #t5 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"] {
+    max-height: 24vh !important;
+    height: 24vh !important;
+    min-height: 140px !important;
+  }
+
+  /* 滚动阴影提示「下面还有」 */
+  .panel-body {
+    background:
+      linear-gradient(#fff 30%, rgba(255,255,255,0)) center top,
+      linear-gradient(rgba(255,255,255,0), #fff 70%) center bottom,
+      radial-gradient(farthest-side at 50% 0, rgba(42,26,56,.12), transparent) center top,
+      radial-gradient(farthest-side at 50% 100%, rgba(42,26,56,.12), transparent) center bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 28px, 100% 28px, 100% 10px, 100% 10px;
+    background-attachment: local, local, scroll, scroll;
+  }
+}
+
+/* 桌面：负责人额外卡默认全开 */
+@media (min-width: 641px) {
+  .owner-card-extra { display: block; }
+  .owners-more-btn { display: none !important; }
+  .chk-later-toggle { display: none !important; }
+  tr.chk-tier-later { display: grid; }
+}
+
+/* ========== Mobile 10 分：t6 再压 + 字号底线硬保证 ========== */
+@media (max-width: 640px) {
+  /* 硬保证：任何正文字 ≥15（控件标签可 14） */
+  #t1 .kv-cell,
+  #t1 .callout,
+  #t2 .detail-card-btn-title,
+  #t2 .detail-card-btn-sub,
+  #t3 .dd-item,
+  #t3 .dd-title,
+  #t4 .block[data-type="gate-table"] td,
+  #t5 .block[data-type="kv-table"] td,
+  #t6 .chk-html,
+  #t6 .path-chip,
+  #t6 .multi-chip,
+  #t7 .block[data-type="gate-table"] td,
+  #t7 .callout {
+    font-size: 15px !important;
+  }
+  #t2 .detail-card-btn-sub { font-size: 14px !important; opacity: 0.85; }
+
+  /* t6 极限压高度：会中 30 秒勾完 */
+  #t6 .panel { padding: 6px !important; gap: 6px !important; }
+  #t6 .panel > h2 { margin: 0 0 4px !important; padding: 0 !important; font-size: 15px !important; }
+  #t6 .panel-body { gap: 6px !important; }
+  #t6 .block[data-type="check-table"] {
+    border-radius: 10px !important;
+    padding: 0 !important;
+  }
+  #t6 .block[data-type="check-table"] tr {
+    padding: 6px 8px !important;
+    margin-bottom: 5px !important;
+    border-radius: 10px !important;
+  }
+  #t6 .chk-html {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 4px;
+  }
+  #t6 .path-chips,
+  #t6 .multi-chips {
+    gap: 6px !important;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip {
+    min-height: 40px !important;
+    padding: 6px 10px !important;
+    font-size: 13.5px !important;
+  }
+  /* 费用：三数一排，藏其他说明；标签保持横排（避免「元」掉到输入框下） */
+  #t6 .fee-fields {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+    align-items: end !important;
+  }
+  #t6 .fee-fields label {
+    width: auto !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    font-size: 11.5px !important;
+    gap: 3px !important;
+    display: flex !important;
+  }
+  /* 把「元」贴输入框右侧：用内部横向 */
+  #t6 .fee-fields label {
+    font-size: 11px !important;
+  }
+  #t6 .fee-fields label.fee-other {
+    display: none !important;
+  }
+  #t6 .fee-fields input {
+    width: 100% !important;
+    min-height: 40px !important;
+    font-size: 15px !important;
+    box-sizing: border-box;
+  }
+  /* 负责人：只露姓名一行 */
+  #t6 .owner-card-title { display: none !important; }
+  #t6 .owner-card .owner-fields {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+  #t6 .owner-card .owner-fields label:nth-child(n+2) {
+    display: none !important;
+  }
+  #t6 .owner-card .owner-fields label:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  #t6 .owner-card .owner-fields label:first-child input {
+    flex: 1 !important;
+    min-height: 40px !important;
+    font-size: 15px !important;
+  }
+  #t6 .owners-more-btn {
+    min-height: 40px !important;
+    padding: 8px !important;
+    font-size: 13px !important;
+    margin-top: 6px !important;
+  }
+  #t6 .chk-later-toggle {
+    min-height: 40px !important;
+    margin: 4px 0 !important;
+    font-size: 13px !important;
+  }
+  #t6 .check-status {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+  }
+  #t6 .copy-conclusion-btn {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+  }
+  #t6 .panel-body > .block[data-type="callout"] {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+    min-height: 0 !important;
+  }
+  #t6 .chk-btn {
+    min-width: 42px !important;
+    min-height: 42px !important;
+  }
+  #t6 .chk-btn .chk-box { font-size: 22px !important; }
+
+  /* t7 再压 */
+  #t7 .panel-body > .block[data-type="gate-table"] tr {
+    padding: 8px 10px !important;
+  }
+  #t7 .panel-body { gap: 6px !important; }
+  #t7 .panel-body > .block[data-type="callout"] {
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+
+  /* t4/t5 图再矮 */
+  #t4 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"],
+  #t5 .panel-body.layout-split > .slot-main > .block[data-type="mermaid"] {
+    max-height: 22vh !important;
+    height: 22vh !important;
+    min-height: 120px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* 消灭残留 <15 字号（除顶栏 tab） */
+  #t2 .detail-card-btn-sub,
+  #t6 .panel-body > .block[data-type="callout"],
+  #t6 .fee-fields label,
+  #t6 .chk-later-toggle,
+  #t6 .owners-more-btn,
+  #t6 .check-status,
+  #t7 .panel-body > .block[data-type="callout"] {
+    font-size: 14px !important;
+  }
+  #t2 .detail-card-btn-title { font-size: 15px !important; }
+  /* t6 再砍：双 callout 合并视觉高度 — 更紧 */
+  #t6 .panel-body > .block[data-type="callout"] {
+    padding: 8px 10px !important;
+    line-height: 1.35 !important;
+  }
+  #t6 .panel-body {
+    /* 目标：首屏尽量露出 #6 + 复制按钮 */
+  }
+}
+
+/* 费用输入：标签上、输入+元横排 */
+.fee-fields label.fee-num {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.fee-fields .fee-lab {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+.fee-fields .fee-inp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fee-fields .fee-inp input {
+  flex: 1;
+  min-width: 0;
+}
+.fee-fields .fee-inp i {
+  font-style: normal;
+  font-size: 13px;
+  color: #666;
+  flex: 0 0 auto;
+}
+@media (max-width: 640px) {
+  #t6 .fee-fields .fee-lab { font-size: 11px !important; }
+  #t6 .fee-fields .fee-inp i { font-size: 12px !important; }
+}

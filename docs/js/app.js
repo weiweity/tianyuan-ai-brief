@@ -423,19 +423,20 @@
             if (r.feeFields) {
               const f = r.feeFields;
               extras.push(`<div class="fee-fields" data-fee-row="${i}">
-                <label>全期约 <input type="text" inputmode="numeric" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/> 元</label>
-                <label>首月止损 <input type="text" inputmode="numeric" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/> 元</label>
-                <label>全期止损 <input type="text" inputmode="numeric" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/> 元</label>
+                <label class="fee-num"><span class="fee-lab">全期约</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">全期止损</span><span class="fee-inp"><input type="text" inputmode="numeric" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
                 <label class="fee-other">其他费用说明 <input type="text" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
               </div>`);
             }
 
-            // #4 最多 3 位负责人
+            // #4 最多 3 位负责人（手机默认只展 1 位）
             if (Array.isArray(r.owners) && r.owners.length) {
               const cards = r.owners
                 .map((of, oi) => {
                   const ofx = of || {};
-                  return `<div class="owner-card" data-owner-idx="${oi}">
+                  const moreCls = oi > 0 ? " owner-card-extra" : "";
+                  return `<div class="owner-card${moreCls}" data-owner-idx="${oi}">
                     <div class="owner-card-title">负责人 ${oi + 1}</div>
                     <div class="owner-fields">
                       <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name"/></label>
@@ -445,7 +446,11 @@
                   </div>`;
                 })
                 .join("");
-              extras.push(`<div class="owners-grid" data-owners-row="${i}">${cards}</div>`);
+              const moreBtn =
+                r.owners.length > 1
+                  ? `<button type="button" class="owners-more-btn" data-owners-more data-block="${id}" data-row="${i}" aria-expanded="false">+ 再加负责人（最多 ${r.owners.length} 人）</button>`
+                  : "";
+              extras.push(`<div class="owners-grid" data-owners-row="${i}" data-owners-collapsed="true">${cards}${moreBtn}</div>`);
             } else if (r.ownerFields) {
               // 兼容旧单人结构
               const of = r.ownerFields;
@@ -457,7 +462,8 @@
             }
 
             const hasExtra = extras.length > 0;
-            return `<tr data-row="${i}" class="${on ? "is-checked" : ""}${hasExtra ? " has-path" : ""}">
+            const tier = r.tier === "later" ? "later" : "must";
+            return `<tr data-row="${i}" data-tier="${tier}" class="chk-tier-${tier}${on ? " is-checked" : ""}${hasExtra ? " has-path" : ""}">
             <td class="label narrow" data-editable="true" data-field="no">${esc(r.no)}</td>
             <td class="chk-body">
               <div class="chk-html" data-editable="true" data-field="html">${r.html || ""}</div>
@@ -471,9 +477,15 @@
           </tr>`;
           })
           .join("");
+        const laterCount = (b.rows || []).filter((r) => r.tier === "later").length;
+        const laterToggle =
+          laterCount > 0
+            ? `<button type="button" class="chk-later-toggle" data-later-toggle data-block="${id}" aria-expanded="false">展开会后约定（${laterCount} 项，可后补）</button>`
+            : "";
         const status = checkStatusHtml(b);
-        return `<div class="block" data-block-id="${id}" data-type="check-table">
+        return `<div class="block" data-block-id="${id}" data-type="check-table" data-later-open="false">
           <table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>
+          ${laterToggle}
           ${status}
         </div>`;
       }
@@ -1101,6 +1113,37 @@
       inp.addEventListener("input", commit);
       inp.addEventListener("change", commit);
       bindNoSwipe(inp);
+    });
+
+    // 手机：展开「会后约定」次要勾选项
+    $$("[data-later-toggle]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const wrap = btn.closest(".block[data-type='check-table']");
+        if (!wrap) return;
+        const open = wrap.getAttribute("data-later-open") === "true";
+        wrap.setAttribute("data-later-open", open ? "false" : "true");
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        const n = wrap.querySelectorAll("tr.chk-tier-later").length;
+        btn.textContent = open
+          ? `展开会后约定（${n} 项，可后补）`
+          : "收起会后约定";
+      });
+    });
+
+    // 再加负责人
+    $$("[data-owners-more]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const grid = btn.closest(".owners-grid");
+        if (!grid) return;
+        const open = grid.getAttribute("data-owners-collapsed") === "false";
+        grid.setAttribute("data-owners-collapsed", open ? "true" : "false");
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        btn.textContent = open ? "+ 再加负责人（最多 3 人）" : "收起额外负责人";
+      });
     });
   }
 
