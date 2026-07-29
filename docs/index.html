@@ -4,13 +4,16 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="theme-color" content="#EBE6EF"/>
-  <meta name="color-scheme" content="light dark"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="description" content="AI 赋能项目的会议决策台：逐项目定路径、预算、Owner 与止损授权。"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <title>AI 赋能立项</title>
+  <title>AI 立项决策台</title>
+  <link rel="icon" href="./assets/logo.png"/>
   <!-- 壳：无业务文案。内容 data/content.json · 架构 ARCHITECTURE.md -->
-  <link rel="stylesheet" href="./css/app.css?v=1.92"/>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link rel="stylesheet" href="./css/app.css?v=2.1"/>
+  <script defer src="./js/bootstrap.js?v=1.0"></script>
 </head>
 <body>
   <a class="skip-link" href="#stage">跳到正文</a>
@@ -19,7 +22,7 @@
     <div class="chrome">
       <header class="top">
         <div class="logo-wrap">
-          <img id="logo-img" src="./assets/logo.png" alt="logo"/>
+          <img id="logo-img" src="./assets/logo.png" alt="SHINE MAGE"/>
           <div class="logo-edit-hint">点此换图</div>
           <input id="logo-file" type="file" accept="image/*" hidden/>
         </div>
@@ -48,6 +51,9 @@
         </div>
       </header>
       <div class="progress-bar" aria-hidden="true"><i id="progress-fill" style="width:14%"></i></div>
+      <div class="offline-notice" id="offline-notice" role="status" hidden>
+        本地离线快照 · 可正常演示；要获取远端最新内容，请运行 npm run serve
+      </div>
       <div class="edit-banner" id="edit-banner">编辑模式 · 改完点「保存并更新」→ 自动写回并刷新本页（客户打开的链接约 30 秒内同步）</div>
       <div class="tabs-row">
         <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
@@ -84,6 +90,5 @@
     <button type="button" class="diagram-lightbox-close" id="diagram-lightbox-close" aria-label="关闭">关闭</button>
     <div class="diagram-lightbox-stage" id="diagram-lightbox-stage"></div>
   </div>
-  <script src="./js/app.js?v=1.92"></script>
 </body>
 </html>

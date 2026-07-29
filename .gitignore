@@ -1,9 +1,11 @@
 .DS_Store
 **/.DS_Store
 05-供应链布局/print-pdf/*.html
-
-.DS_Store
-**/.DS_Store
 *.log
 .gstack/
+.codegraph/
 SESSION-MEMORY.md
+node_modules/
+test-results/
+playwright-report/
+tmp/
