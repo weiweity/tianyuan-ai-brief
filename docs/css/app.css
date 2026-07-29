@@ -2077,27 +2077,30 @@ html, body, .stage {
 }
 
 
-/* ========== t3 做/不做：图铺满 + 左上角标签 ========== */
-.block[data-type="mermaid"] {
+/* ========== t3 做/不做：左不做 · 右做 双列放大自适应 ========== */
+.block[data-type="mermaid"],
+.block[data-type="do-dont"] {
   position: relative;
 }
-.mermaid-corner-label {
+.mermaid-corner-label,
+.dd-label {
   position: absolute;
-  top: 10px;
-  left: 12px;
+  top: 12px;
+  left: 14px;
   z-index: 3;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: #111;
   letter-spacing: 0.02em;
   line-height: 1.2;
   pointer-events: auto;
-  background: rgba(255,255,255,0.88);
-  padding: 2px 6px;
-  border-radius: 4px;
+  background: rgba(255,255,255,0.92);
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 #t3 .panel {
-  padding: 8px;
+  padding: 6px 8px 8px;
   min-height: 0;
 }
 #t3 .panel-body.layout-fill,
@@ -2111,8 +2114,9 @@ html, body, .stage {
   background: #fff;
 }
 #t3 .panel-body.layout-fill[data-count="1"]::after {
-  display: none !important; /* 去掉水印占视觉 */
+  display: none !important;
 }
+#t3 .block[data-type="do-dont"],
 #t3 .block[data-type="mermaid"] {
   flex: 1 1 auto !important;
   min-height: 0 !important;
@@ -2120,42 +2124,130 @@ html, body, .stage {
   height: 100% !important;
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #faf9fb;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fcfbfd 0%, #f7f4fa 100%);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-#t3 .mermaid-host {
+/* 双列主体 */
+.do-dont .dd-cols {
   flex: 1 1 auto;
   min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 2vw, 28px);
+  padding: 48px clamp(14px, 2.2vw, 32px) clamp(14px, 2vh, 24px);
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
+  align-items: stretch;
+}
+.do-dont .dd-col {
+  min-height: 0;
+  min-width: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 2px solid;
+  padding: clamp(14px, 1.6vh, 22px) clamp(12px, 1.4vw, 20px);
+  box-sizing: border-box;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.do-dont .dd-dont {
+  border-color: #F54A45;
+  background: linear-gradient(180deg, #FFF8F8 0%, #FEE3E2 100%);
+}
+.do-dont .dd-do {
+  border-color: #34C724;
+  background: linear-gradient(180deg, #F6FCF5 0%, #D9F5D6 100%);
+}
+.do-dont .dd-title {
+  margin: 0 0 clamp(12px, 1.6vh, 20px);
+  text-align: center;
+  font-size: clamp(20px, 1.6vw + 0.6vh, 28px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+.do-dont .dd-dont .dd-title { color: #9b1c18; }
+.do-dont .dd-do .dd-title { color: #145214; }
+.do-dont .dd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  padding: 28px 16px 16px; /* 给左上角标签留空 */
+  gap: clamp(10px, 1.4vh, 18px);
+  min-height: 0;
 }
-#t3 .mermaid-host svg {
-  max-width: 96% !important;
-  max-height: 92% !important;
-  width: auto !important;
-  height: auto !important;
+.do-dont .dd-item {
+  margin: 0;
+  padding: clamp(14px, 1.8vh, 22px) clamp(12px, 1.4vw, 20px);
+  border-radius: 12px;
+  font-size: clamp(16px, 1.15vw + 0.45vh, 22px);
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  word-break: break-word;
 }
-/* 展开编辑时 textarea 仍占满 */
-#t3 body.is-editing .block[data-type="mermaid"],
-body.is-editing #t3 .block[data-type="mermaid"] {
-  min-height: 50vh;
+.do-dont .dd-dont-item {
+  border: 1.5px solid #F54A45;
+  color: #111;
 }
+.do-dont .dd-do-item {
+  border: 1.5px solid #34C724;
+  color: #111;
+}
+.do-dont .dd-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: clamp(16px, 2.2vh, 28px);
+  flex: 0 0 auto;
+}
+.do-dont .dd-arrow span {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid #34C724;
+  opacity: 0.85;
+}
+/* 手机：仍两列尽量；窄屏上下叠 */
 @media (max-width: 640px) {
+  .do-dont .dd-cols {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1.15fr;
+    padding: 40px 10px 12px;
+    gap: 10px;
+  }
+  .do-dont .dd-item {
+    font-size: 15px;
+    padding: 12px 12px;
+  }
+  .do-dont .dd-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  #t3 .dd-label,
   #t3 .mermaid-corner-label {
     font-size: 12px;
     top: 8px;
     left: 8px;
+    padding: 3px 8px;
   }
-  #t3 .mermaid-host {
-    padding: 32px 10px 12px;
-  }
-  #t3 .block[data-type="mermaid"] {
-    min-height: min(58vh, 480px) !important;
+}
+@media (min-width: 900px) and (min-height: 700px) {
+  .do-dont .dd-cols {
+    padding: 52px 36px 28px;
+    gap: 32px;
   }
 }
 

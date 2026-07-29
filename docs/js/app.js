@@ -476,6 +476,37 @@
           ${status}
         </div>`;
       }
+      case "do-dont": {
+        // 左不做 · 右做 · 双列自适应（非 mermaid，避免排版漂移）
+        const dontItems = (b.dont || [])
+          .map(
+            (t, i) =>
+              `<li class="dd-item dd-dont-item" data-editable="true" data-field="dont" data-idx="${i}">${esc(t)}</li>`
+          )
+          .join("");
+        const doItems = (b.do || [])
+          .map((t, i) => {
+            const arrow =
+              i < (b.do || []).length - 1
+                ? `<div class="dd-arrow" aria-hidden="true"><span></span></div>`
+                : "";
+            return `<li class="dd-item dd-do-item" data-editable="true" data-field="do" data-idx="${i}">${esc(t)}</li>${arrow}`;
+          })
+          .join("");
+        return `<div class="block do-dont" data-block-id="${id}" data-type="do-dont">
+          ${b.label ? `<div class="mermaid-corner-label dd-label" data-editable="true" data-field="label">${esc(b.label)}</div>` : ""}
+          <div class="dd-cols" role="group" aria-label="做与不做">
+            <section class="dd-col dd-dont" aria-label="${esc(b.dontTitle || "不做")}">
+              <h3 class="dd-title" data-editable="true" data-field="dontTitle">${esc(b.dontTitle || "不做")}</h3>
+              <ul class="dd-list">${dontItems}</ul>
+            </section>
+            <section class="dd-col dd-do" aria-label="${esc(b.doTitle || "做")}">
+              <h3 class="dd-title" data-editable="true" data-field="doTitle">${esc(b.doTitle || "做")}</h3>
+              <ul class="dd-list dd-flow">${doItems}</ul>
+            </section>
+          </div>
+        </div>`;
+      }
       case "mermaid":
         return `<div class="block" data-block-id="${id}" data-type="mermaid">
           ${b.label ? `<div class="mermaid-corner-label" data-editable="true" data-field="label">${esc(b.label)}</div>` : ""}
@@ -1141,13 +1172,13 @@
         curve: "basis",
         htmlLabels: true,
         useMaxWidth: true,
-        padding: 6,
-        nodeSpacing: 24,
-        rankSpacing: 28,
+        padding: 12,
+        nodeSpacing: 32,
+        rankSpacing: 40,
       },
       themeVariables: {
         fontFamily: "-apple-system, PingFang SC, Microsoft YaHei, sans-serif",
-        fontSize: "13px",
+        fontSize: "16px",
         primaryColor: "#EBE6EF",
         primaryTextColor: "#2A1A38",
         primaryBorderColor: "#7A4F96",
@@ -1159,6 +1190,34 @@
       },
     });
     mermaidReady = true;
+  }
+
+  /** 流程图 SVG 铺满 host：裁掉空白 viewBox + meet 自适应放大 */
+  function fitMermaidSvg(host, svgEl) {
+    if (!host || !svgEl) return;
+    try {
+      svgEl.removeAttribute("width");
+      svgEl.removeAttribute("height");
+      svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      svgEl.style.width = "100%";
+      svgEl.style.height = "100%";
+      svgEl.style.maxWidth = "100%";
+      svgEl.style.maxHeight = "100%";
+      svgEl.style.display = "block";
+      // 下一帧按真实内容 bbox 收紧 viewBox，图更大
+      requestAnimationFrame(() => {
+        try {
+          const bbox = svgEl.getBBox();
+          if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) return;
+          const padX = Math.max(16, bbox.width * 0.06);
+          const padY = Math.max(16, bbox.height * 0.06);
+          svgEl.setAttribute(
+            "viewBox",
+            [bbox.x - padX, bbox.y - padY, bbox.width + padX * 2, bbox.height + padY * 2].join(" ")
+          );
+        } catch (_) {}
+      });
+    } catch (_) {}
   }
 
   async function queueMermaid(tabId) {
@@ -1187,6 +1246,8 @@
           svgEl.setAttribute("role", "img");
           const label = (block.source || "").replace(/\s+/g, " ").trim().slice(0, 48);
           svgEl.setAttribute("aria-label", "流程图: " + (label || id));
+          // 自适应铺满容器（尤其 t3 双列做/不做）
+          fitMermaidSvg(host, svgEl);
           // 隐藏文本副本供读屏
           let desc = host.querySelector(".mermaid-a11y");
           if (!desc) {
@@ -1360,6 +1421,19 @@
             });
           }
         });
+      } else if (type === "do-dont") {
+        const lab = wrap.querySelector("[data-field='label']");
+        if (lab) block.label = lab.textContent.trim();
+        const dt = wrap.querySelector("[data-field='dontTitle']");
+        if (dt) block.dontTitle = dt.textContent.trim();
+        const ot = wrap.querySelector("[data-field='doTitle']");
+        if (ot) block.doTitle = ot.textContent.trim();
+        const dont = [];
+        $$("[data-field='dont']", wrap).forEach((el) => dont.push(el.textContent.trim()));
+        if (dont.length) block.dont = dont;
+        const dos = [];
+        $$("[data-field='do']", wrap).forEach((el) => dos.push(el.textContent.trim()));
+        if (dos.length) block.do = dos;
       } else if (type === "mermaid") {
         const ta = wrap.querySelector(".mermaid-src");
         if (ta) block.source = ta.value;

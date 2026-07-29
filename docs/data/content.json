@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.11.0",
+  "version": "5.12.0",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -138,9 +138,21 @@
       "blocks": [
         {
           "id": "t3.chart",
-          "type": "mermaid",
-          "source": "flowchart LR\n  subgraph DO[做]\n    direction TB\n    A1[统一话术库] --> A2[算法检索]\n    A2 --> A3[人机共存回复]\n    A3 --> A4[获取回复内容<br/>训练 AI 数据库]\n  end\n  subgraph DONT[不做]\n    direction TB\n    B1[AI 自动回复]\n    B2[首期落地排产]\n    B3[回复监控]\n  end\n  style A1 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A2 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A3 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A4 fill:#D9F5D6,stroke:#34C724,color:#111\n  style B1 fill:#FEE3E2,stroke:#F54A45,color:#111\n  style B2 fill:#FEE3E2,stroke:#F54A45,color:#111\n  style B3 fill:#FEE3E2,stroke:#F54A45,color:#111",
-          "label": "客服 Agent"
+          "type": "do-dont",
+          "label": "客服 Agent",
+          "dontTitle": "不做",
+          "doTitle": "做",
+          "dont": [
+            "AI 自动回复",
+            "首期落地排产",
+            "回复监控"
+          ],
+          "do": [
+            "统一话术库",
+            "算法检索",
+            "人机共存回复",
+            "获取回复内容 · 训练 AI 数据库"
+          ]
         }
       ]
     },
