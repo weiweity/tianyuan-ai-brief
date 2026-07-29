@@ -4,9 +4,30 @@ const ALLOWED_TAGS = Object.freeze(["b", "strong", "em", "i", "br", "span", "div
 const ALLOWED_ATTR = Object.freeze(["class", "aria-hidden"]);
 const ALLOWED_CLASSES = new Set(["flow-step", "flow-arrow", "line"]);
 const SAFE_DATA_IMAGE =
-  /^data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);base64,[a-z0-9+/=\s]+$/i;
-const SAFE_RELATIVE_ASSET = /^(?:\.{0,2}\/|\/|assets\/)[a-z0-9_./@%+~()-]+$/i;
+  /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
+const SAFE_RELATIVE_ASSET = /^(?:\.\/)?assets\/[a-z0-9_./@+~()-]+$/i;
 const SAFE_HEX_COLOR = /^#[0-9a-f]{3,8}$/i;
+
+function hasUnsafeCss(value) {
+  const css = String(value || "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .toLowerCase();
+  if (
+    /[@\\]/.test(css) ||
+    /(?:expression|behavior|-moz-binding)\s*[:(]/.test(css) ||
+    /(?:javascript|data|https?|file)\s*:/.test(css)
+  ) {
+    return true;
+  }
+  const urls = css.matchAll(/url\s*\(\s*([^)]*?)\s*\)/g);
+  for (const match of urls) {
+    const target = String(match[1] || "")
+      .trim()
+      .replace(/^['"]|['"]$/g, "");
+    if (!/^#[a-z0-9_.:-]+$/i.test(target)) return true;
+  }
+  return false;
+}
 
 export function createHtmlPolicy(windowLike) {
   if (!windowLike || !windowLike.document) {
@@ -26,6 +47,29 @@ export function createHtmlPolicy(windowLike) {
       data.attrValue = data.attrValue === "true" ? "true" : "false";
     }
   });
+  svgPurifier.addHook("uponSanitizeAttribute", (_node, data) => {
+    const name = String(data.attrName || "").toLowerCase();
+    if (/^on/.test(name)) {
+      data.keepAttr = false;
+      return;
+    }
+    if (/url\s*\(/i.test(String(data.attrValue || "")) && hasUnsafeCss(data.attrValue)) {
+      data.keepAttr = false;
+      return;
+    }
+    if (name === "href" || name === "xlink:href") {
+      const target = String(data.attrValue || "").trim();
+      if (!target.startsWith("#")) data.keepAttr = false;
+    }
+    if (name === "style" && hasUnsafeCss(data.attrValue)) {
+      data.keepAttr = false;
+    }
+  });
+  svgPurifier.addHook("uponSanitizeElement", (node, data) => {
+    if (String(data.tagName || "").toLowerCase() === "style" && hasUnsafeCss(node.textContent)) {
+      node.textContent = "";
+    }
+  });
 
   const sanitizeRichHtml = (value) =>
     purifier.sanitize(String(value == null ? "" : value), {
@@ -39,9 +83,8 @@ export function createHtmlPolicy(windowLike) {
 
   const sanitizeSvg = (value) => {
     const clean = svgPurifier.sanitize(String(value == null ? "" : value), {
-      USE_PROFILES: { svg: true, svgFilters: true, html: true },
-      FORBID_TAGS: ["script", "iframe", "object", "embed"],
-      FORBID_ATTR: ["onload", "onclick", "onerror"],
+      USE_PROFILES: { svg: true, svgFilters: true },
+      FORBID_TAGS: ["script", "iframe", "object", "embed", "foreignObject"],
       ALLOW_DATA_ATTR: false,
       RETURN_TRUSTED_TYPE: false,
     });
@@ -50,7 +93,16 @@ export function createHtmlPolicy(windowLike) {
 
   const sanitizeAssetUrl = (value, fallback = "") => {
     const candidate = String(value == null ? "" : value).trim();
-    if (SAFE_DATA_IMAGE.test(candidate) || SAFE_RELATIVE_ASSET.test(candidate)) return candidate;
+    const pathSegments = candidate.split("/");
+    if (
+      SAFE_DATA_IMAGE.test(candidate) ||
+      (SAFE_RELATIVE_ASSET.test(candidate) &&
+        !/[\u0000-\u001f\u007f\\]/.test(candidate) &&
+        !candidate.startsWith("//") &&
+        !pathSegments.includes(".."))
+    ) {
+      return candidate;
+    }
     return fallback;
   };
 

@@ -1,9 +1,9 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.20.0",
+  "version": "5.21.0",
   "decisionSchemaVersion": 2,
-  "ssot": "web-decision-v5.20-project-level-receipt",
-  "updated": "2026-07-29",
+  "ssot": "web-decision-v5.21-resilient-single-screen",
+  "updated": "2026-07-30",
   "meta": {
     "title": "AI 立项决策台",
     "from": "",
@@ -76,13 +76,20 @@
         {
           "id": "t2.chart",
           "type": "mermaid",
+          "label": "主开：客服 Agent / 备案识别 · 后置：仓储 / 私域 · 不开：设计",
+          "compactItems": [
+            { "label": "主开", "text": "客服 Agent / 供应链备案识别", "tone": "ok" },
+            { "label": "产出", "text": "可周报 / 可停损", "tone": "info" },
+            { "label": "后置", "text": "仓储 / 私域", "tone": "warn" },
+            { "label": "不开", "text": "设计", "tone": "danger" }
+          ],
           "source": "flowchart TB\n  subgraph MAIN[本期主开]\n    K[客服 Agent<br/>统一答法 · 人确认]\n    S[供应链 备案识别<br/>机标差异 · 人终审]\n  end\n  subgraph HOLD[后置 · 有条件再开]\n    W[仓储<br/>先数据治理 / BI]\n    P[私域<br/>RPA + BI 优先]\n  end\n  subgraph NO[本期不开]\n    D[设计<br/>已自驱]\n  end\n  K --> OUT[可周报 · 可停损]\n  S --> OUT\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#FFF5CC,stroke:#FFC60A\n  style P fill:#FFF5CC,stroke:#FFC60A\n  style D fill:#FEE3E2,stroke:#F54A45\n  style OUT fill:#E8F3FF,stroke:#3370FF"
         },
         {
           "id": "t2.dept",
           "type": "detail-card",
           "title": "各部门：为什么开 · 为什么不开 · 原因",
-          "subtitle": "点开后压缩流程图 · 按部门卡片下拉查看",
+          "subtitle": "展开后保留可读决策缩略 · 详情区上下滑看 6 部门",
           "defaultOpen": false,
           "headers": [
             "部门",
@@ -168,6 +175,7 @@
           "id": "t4.chart",
           "type": "mermaid",
           "slot": "main",
+          "label": "未齐不开发 · 约 4 周演示 + 约 4 周试用 · 不过即停扩",
           "source": "flowchart LR\n  S0[① 先齐前置<br/>未齐=不开开发] --> S1[② 约4周<br/>内部演示]\n  S1 -->|过| S2[③ 约4周<br/>内部小试用]\n  S1 -->|不过| BACK[回前置<br/>停扩重测]\n  S2 -->|过| OK[可汇报<br/>不代回客户]\n  S2 -->|不过| STOP[停扩<br/>不上报采用]\n  style S0 fill:#FFF5CC,stroke:#FFC60A,color:#111\n  style BACK fill:#FEE3E2,stroke:#F54A45,color:#111\n  style S1 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style S2 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style OK fill:#D9F5D6,stroke:#34C724,color:#111\n  style STOP fill:#FEE3E2,stroke:#F54A45,color:#111"
         },
         {
@@ -205,6 +213,7 @@
           "id": "t5.chart",
           "type": "mermaid",
           "slot": "main",
+          "label": "7000 目标 · 5000 首月 · 10000 硬止损",
           "source": "flowchart TB\n  Q{您怎么批}\n  Q --> A[A 立 · 同意启动<br/>前置齐了再开发]\n  Q --> B[B 立 · 先认方向<br/>费用批完再动手]\n  Q --> C[C 不立<br/>写入周报说明]\n  A --> A1[按止损线花钱<br/>超线即停]\n  B --> B1[不开发不烧工具费<br/>批完再开工]\n  C --> C1[不立项 · 不排期]\n  style A fill:#D9F5D6,stroke:#34C724,color:#111\n  style B fill:#E8F3FF,stroke:#3370FF,color:#111\n  style C fill:#FEE3E2,stroke:#F54A45,color:#111\n  style A1 fill:#D9F5D6,stroke:#34C724,color:#111\n  style B1 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style C1 fill:#FEE3E2,stroke:#F54A45,color:#111\n"
         },
         {
@@ -451,5 +460,5 @@
       ]
     }
   ],
-  "publishStamp": "1785329167229"
+  "publishStamp": "1785348966720"
 }

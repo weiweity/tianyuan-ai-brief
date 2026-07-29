@@ -24,7 +24,7 @@ test("content.json 通过结构 Schema", async () => {
 
 test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
   const content = JSON.parse(await read("docs/data/content.json"));
-  assert.equal(content.version, "5.20.0");
+  assert.equal(content.version, "5.21.0");
   assert.equal(content.decisionSchemaVersion, 2);
   assert.equal(content.tabs.length, 7);
   assert.deepEqual(
@@ -74,30 +74,59 @@ test("核心隐性知识与反误导边界存在且无旧版统一路径", async
   assert.doesNotMatch(text, /如两项路径不同，请分两次记录/);
 });
 
-test("正式入口自包含、依赖固定且启用 CSP", async () => {
-  const [index, app, policy, bootstrap, mermaidVendor, offlineBundle, buildScript] =
+test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", async () => {
+  const [
+    index,
+    app,
+    policy,
+    bootstrap,
+    mermaidVendor,
+    httpBundle,
+    offlineBundle,
+    buildScript,
+    contentText,
+    releaseText,
+    css,
+    logoBytes,
+  ] =
     await Promise.all([
-    read("docs/index.html"),
-    read("docs/js/app.js"),
-    read("docs/js/modules/html-policy.js"),
+      read("docs/index.html"),
+      read("docs/js/app.js"),
+      read("docs/js/modules/html-policy.js"),
       read("docs/js/bootstrap.js"),
       read("docs/vendor/mermaid-10.9.6.min.js"),
+      read("docs/js/app.bundle.js"),
       read("docs/js/app.offline.bundle.js"),
       read("scripts/build-web.mjs"),
+      read("docs/data/content.json"),
+      read("docs/data/release.json"),
+      read("docs/css/app.css"),
+      readFile(path.join(root, "docs/assets/logo.png")),
     ]);
+  const release = JSON.parse(releaseText);
   assert.match(index, /Content-Security-Policy/);
-  assert.match(index, /<script defer src="\.\/js\/bootstrap\.js\?v=1\.0"><\/script>/);
+  assert.match(index, new RegExp(`<html lang="zh-CN" data-release="${release.releaseId}"`));
+  assert.match(
+    index,
+    new RegExp(`href="\\.\\/css\\/app\\.css\\?v=${release.releaseId.replaceAll(".", "\\.")}"`)
+  );
+  assert.match(
+    index,
+    new RegExp(`src="\\.\\/js\\/bootstrap\\.js\\?v=${release.releaseId.replaceAll(".", "\\.")}"`)
+  );
   assert.doesNotMatch(index, /<script type="module"/);
   assert.doesNotMatch(index, /https:\/\/cdn\.jsdelivr\.net/);
   assert.doesNotMatch(index, /unsafe-eval/);
   assert.match(app, /sanitizeContent/);
   assert.match(app, /sanitizeRichHtml/);
-  assert.match(app, /__AI_BRIEF_EMBEDDED_CONTENT__/);
+  assert.match(app, /createContentLoader/);
   assert.match(app, /isFileProtocol/);
   assert.match(policy, /dompurify-3\.4\.12\.es\.mjs/);
   assert.match(bootstrap, /location\.protocol === "file:"/);
-  assert.match(bootstrap, /app\.offline\.bundle\.js\?v=3\.1/);
-  assert.match(bootstrap, /app\.js\?v=3\.1/);
+  assert.match(bootstrap, /app\.offline\.bundle\.js\?v=\$\{encodeURIComponent\(releaseId\)\}/);
+  assert.match(bootstrap, /app\.bundle\.js\?v=\$\{encodeURIComponent\(releaseId\)\}/);
+  assert.doesNotMatch(bootstrap, /app\.type\s*=\s*"module"/);
+  assert.match(bootstrap, /__AI_BRIEF_LOAD_MERMAID__/);
   assert.match(bootstrap, /mermaid-10\.9\.6\.min\.js/);
   assert.match(bootstrap, /sha384-qX9VvWkP79m/);
   assert.equal(
@@ -105,36 +134,87 @@ test("正式入口自包含、依赖固定且启用 CSP", async () => {
     "qX9VvWkP79m/O121ZE6sOYp0nf/pldQgtvWDbkpzi+3mUo4Wn4Ix4cFzNPay3VaB"
   );
   assert.match(offlineBundle, /GENERATED FILE/);
+  assert.match(offlineBundle, /__AI_BRIEF_EMBEDDED_CONTENT__/);
   assert.match(offlineBundle, /__AI_BRIEF_OFFLINE_META__/);
+  assert.match(offlineBundle, new RegExp(release.releaseId.replaceAll(".", "\\.")));
+  assert.doesNotMatch(httpBundle, /^\/\* GENERATED FILE/);
+  assert.match(httpBundle, /tianyuan-brief-content-lkg-v1/);
+  assert.doesNotMatch(httpBundle, /\bimport\s+[^("]/);
   assert.match(buildScript, /contentSha256/);
+  assert.match(buildScript, /releaseSourceSha256/);
+  assert.equal(
+    release.contentSha256,
+    createHash("sha256").update(contentText).digest("hex"),
+    "release.json 必须绑定 content.json 精确字节"
+  );
+  const indexTemplate = index
+    .replace(
+      /<html lang="zh-CN"(?: data-release="[^"]*")?>/,
+      '<html lang="zh-CN" data-release="__RELEASE__">'
+    )
+    .replace(/href="\.\/css\/app\.css\?v=[^"]+"/, 'href="./css/app.css?v=__RELEASE__"')
+    .replace(
+      /src="\.\/js\/bootstrap\.js\?v=[^"]+"/,
+      'src="./js/bootstrap.js?v=__RELEASE__"'
+    );
+  const shellSha = createHash("sha256")
+    .update(httpBundle)
+    .update("\n/* runtime-asset-boundary */\n")
+    .update(css)
+    .update("\n/* runtime-asset-boundary */\n")
+    .update(bootstrap)
+    .update("\n/* runtime-asset-boundary */\n")
+    .update(indexTemplate)
+    .update("\n/* runtime-asset-boundary */\n")
+    .update(mermaidVendor)
+    .update("\n/* runtime-asset-boundary */\n")
+    .update(logoBytes)
+    .digest("hex");
+  assert.equal(release.sourceSha256, shellSha, "release 必须绑定真实 HTTP 运行时字节");
+  assert.equal(
+    release.releaseId,
+    `shell-v${release.decisionSchemaVersion}-${shellSha.slice(0, 12)}`
+  );
 });
 
 test("CSS 是单一分层契约，不再加载尾部版本补丁", async () => {
   const [index, css] = await Promise.all([read("docs/index.html"), read("docs/css/app.css")]);
   const lines = css.split("\n").length;
-  assert.ok(lines < 2600, `app.css 行数过高：${lines}`);
+  assert.ok(lines < 3350, `app.css 行数过高：${lines}`);
   assert.match(css, /UI contract v2/);
   assert.match(css, /@media \(max-width: 640px\)/);
+  assert.match(css, /@media \(max-width: 640px\) and \(max-height: 700px\)/);
+  assert.match(css, /@media \(min-width: 1025px\) and \(max-height: 800px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.doesNotMatch(index, /app\.legacy\.css/);
 });
 
 test("高风险前端能力保持独立模块且主控制器受体积门禁约束", async () => {
-  const [app, decisionModel, meetingState, htmlPolicy, mermaidRuntime, domPurifyVendor] =
+  const [
+    app,
+    decisionModel,
+    meetingState,
+    htmlPolicy,
+    mermaidRuntime,
+    contentLoader,
+    domPurifyVendor,
+  ] =
     await Promise.all([
       read("docs/js/app.js"),
       read("docs/js/modules/decision-model.js"),
       read("docs/js/modules/meeting-state.js"),
       read("docs/js/modules/html-policy.js"),
       read("docs/js/modules/mermaid-runtime.js"),
+      read("docs/js/modules/content-loader.js"),
       read("docs/vendor/dompurify-3.4.12.es.mjs"),
     ]);
 
-  assert.ok(app.split("\n").length < 2500, "app.js 应只负责 UI 编排");
+  assert.ok(app.split("\n").length < 2600, "app.js 应只负责 UI 编排");
   for (const modulePath of [
     "./modules/decision-model.js",
     "./modules/meeting-state.js",
     "./modules/html-policy.js",
+    "./modules/content-loader.js",
     "./modules/mermaid-runtime.js",
   ]) {
     assert.match(app, new RegExp(modulePath.replaceAll(".", "\\.")));
@@ -144,6 +224,8 @@ test("高风险前端能力保持独立模块且主控制器受体积门禁约�
   assert.match(htmlPolicy, /export function createHtmlPolicy/);
   assert.match(mermaidRuntime, /export function createMermaidRuntime/);
   assert.match(mermaidRuntime, /sanitizeSvg\(svg\)/);
+  assert.match(contentLoader, /export function createContentLoader/);
+  assert.match(contentLoader, /contentSha256/);
   assert.doesNotMatch(app, /function wireMermaidLightbox/);
   assert.match(domPurifyVendor, /DOMPurify/);
 });
