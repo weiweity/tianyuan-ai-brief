@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.13.1",
+  "version": "5.14.0",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {

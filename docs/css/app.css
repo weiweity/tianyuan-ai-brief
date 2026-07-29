@@ -2985,3 +2985,295 @@ html, body, .stage {
   font-size: clamp(14px, 1.1vw + 0.3vh, 16.5px);
   line-height: 1.55;
 }
+
+/* ========== 手机端总修 v1.71：一屏可滚、表格完整、不遮挡 ========== */
+@media (max-width: 640px) {
+  /* 全局：块不要裁切内部文字 */
+  .block {
+    overflow: visible !important;
+  }
+  .block[data-type="mermaid"] {
+    overflow: hidden !important; /* 图仍可裁边 */
+  }
+
+  /* split（t4/t5）：图压缩在上，侧栏表紧接在下，整页可滚 */
+  .panel-body.layout-split {
+    overflow-y: auto !important;
+    gap: 12px !important;
+  }
+  .panel-body.layout-split > .slot-main {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+  }
+  .panel-body.layout-split > .slot-main > .block[data-type="mermaid"] {
+    min-height: 168px !important;
+    max-height: 28vh !important;
+    height: 28vh !important;
+    flex: 0 0 auto !important;
+  }
+  .panel-body.layout-split > .slot-main .mermaid-host {
+    min-height: 0 !important;
+    height: 100% !important;
+    padding: 8px !important;
+  }
+  .panel-body.layout-split > .slot-side {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .panel-body.layout-split > .slot-side > .block {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] table,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] table {
+    height: auto !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] tbody,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    gap: 8px !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] tr,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] tr {
+    display: block !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    padding: 10px 12px !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] thead,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] thead {
+    display: none !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] td,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] td {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    border: 0 !important;
+    padding: 2px 0 !important;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+  .panel-body.layout-split > .slot-side .block[data-type="gate-table"] td.label,
+  .panel-body.layout-split > .slot-side .block[data-type="kv-table"] td.label {
+    font-weight: 700 !important;
+    color: var(--brand-deep) !important;
+    margin-bottom: 4px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px dashed var(--line) !important;
+  }
+
+  /* t7：禁止 flex 压扁表格，卡片完整展示，整页可滚 */
+  #t7 .panel {
+    overflow: hidden !important;
+  }
+  #t7 .panel-body.layout-fill,
+  #t7 .panel-body.layout-fill[data-count="3"] {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] {
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"]:nth-of-type(1),
+  #t7 .panel-body > .block[data-type="gate-table"]:nth-of-type(2) {
+    flex: 0 0 auto !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] table {
+    height: auto !important;
+    display: block !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] thead {
+    display: none !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    height: auto !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] tr {
+    display: block !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    padding: 10px 12px !important;
+    grid-template-columns: none !important;
+    overflow: visible !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] td {
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    border: 0 !important;
+    padding: 2px 0 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+  #t7 .panel-body > .block[data-type="gate-table"] td.label {
+    font-weight: 700 !important;
+    color: var(--brand-deep) !important;
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px dashed var(--line) !important;
+  }
+  #t7 .panel-body > .block[data-type="callout"] {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+    padding: 12px !important;
+  }
+
+  /* t6：取消 sticky 遮挡；触控加大；整页顺滑滚 */
+  #t6 .panel-body.layout-fill,
+  #t6 .panel-body.layout-fill[data-count="3"] {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px !important;
+    height: 100% !important;
+  }
+  #t6 .panel-body > .block[data-type="check-table"] {
+    flex: 0 0 auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  #t6 .check-status {
+    position: static !important;
+    box-shadow: none !important;
+    border-radius: 0 0 11px 11px !important;
+    margin-top: 4px !important;
+  }
+  #t6 .path-chip,
+  #t6 .multi-chip {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+  #t6 .chk-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  #t6 .panel-body > .block[data-type="callout"] {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+  }
+  #t6 .block[data-type="check-table"] tr {
+    /* 手机卡片式 */
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) 44px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    margin-bottom: 8px !important;
+    padding: 10px 8px !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  #t6 .block[data-type="check-table"] tbody {
+    display: block !important;
+  }
+  #t6 .fee-fields input,
+  #t6 .owner-fields input,
+  #t6 .other-text-wrap input {
+    min-height: 40px !important;
+    font-size: 14px !important;
+  }
+
+  /* t3 做/不做：上下叠时标题不被裁 */
+  #t3 .do-dont .dd-cols {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: auto !important;
+    padding: 40px 10px 12px !important;
+    gap: 10px !important;
+  }
+  #t3 .do-dont .dd-col {
+    overflow: visible !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+  }
+  #t3 .do-dont .dd-title {
+    flex-shrink: 0 !important;
+    display: block !important;
+    margin-bottom: 10px !important;
+    font-size: 18px !important;
+  }
+  #t3 .do-dont .dd-list {
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+  }
+  #t3 .block[data-type="do-dont"] {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: auto !important;
+  }
+  #t3 .panel-body {
+    overflow-y: auto !important;
+  }
+
+  /* t1：底 callout 别被裁，可滚 */
+  #t1 .panel-body.layout-fill[data-count="3"] {
+    overflow-y: auto !important;
+    height: 100% !important;
+  }
+  #t1 .panel-body > .block[data-type="kv-table"] {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  #t1 .panel-body > .block[data-type="kv-table"] tbody {
+    height: auto !important;
+  }
+  #t1 .panel-body > .block[data-type="kv-table"] tr {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  #t1 .panel-body > .block[data-type="callout"] {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  /* t2：图 + 按钮可滚 */
+  #t2 .panel-body {
+    overflow-y: auto !important;
+  }
+}
