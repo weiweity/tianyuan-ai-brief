@@ -132,17 +132,30 @@
   }
 
   let pollFailCount = 0;
+  const MSG = {
+    hotOk: "内容已自动更新",
+    hotClick: "已刷新到最新",
+    netWarn: "网络不稳，恢复后将自动同步",
+    netStatus: "离线/弱网",
+    netBack: "网络已恢复",
+    latest: "已是最新",
+  };
   async function checkRemoteUpdate(silent) {
     if (editing) return;
     try {
       const remote = await fetchRemoteContent();
+      const wasFailing = pollFailCount >= 3;
       pollFailCount = 0;
+      if (wasFailing) {
+        setStatus(MSG.latest, "ok");
+        toast(MSG.netBack, 1400);
+      }
       const fp = fingerprintOf(remote);
       if (!fp || fp === contentFingerprint) return;
       // C端：静默热更新（无感）
       if (silent) {
         softApplyContent(remote, "poll");
-        toast("内容已自动更新", 1600);
+        toast(MSG.hotOk, 1600);
       } else {
         const chip = $("#update-chip");
         if (chip) {
@@ -152,18 +165,19 @@
             softApplyContent(remote, "poll");
             chip.classList.remove("show");
             chip.hidden = true;
-            toast("已刷新到最新", 1400);
+            toast(MSG.hotClick, 1400);
           };
         } else {
           softApplyContent(remote, "poll");
+          toast(MSG.hotOk, 1600);
         }
       }
     } catch (_) {
       pollFailCount += 1;
-      // 连续失败 3 次再提示，避免弱网刷屏
+      // 连续失败 3 次再提示，避免弱网刷屏；文案统一 MSG
       if (pollFailCount === 3) {
-        setStatus("离线/弱网", "warn");
-        toast("网络不稳，将在恢复后自动同步", 2000);
+        setStatus(MSG.netStatus, "warn");
+        toast(MSG.netWarn, 2200);
       }
     }
   }

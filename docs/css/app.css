@@ -95,16 +95,24 @@ body {
 }
 .logo-wrap {
   position: relative;
+  /* D7：可点区域 ≥44×44，视觉 logo 仍可更扁 */
   width: clamp(96px, 12vw, 150px);
   height: clamp(32px, 5vh, 48px);
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   flex-shrink: 0;
   grid-row: 1;
 }
 .logo-wrap img {
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
   object-fit: contain;
   display: block;
+  pointer-events: none;
 }
 .logo-wrap .logo-edit-hint {
   display: none;
@@ -576,17 +584,19 @@ body.is-editing [data-editable="true"]:focus {
 }
 .swipe-hint strong { font-weight: 700; }
 
-/* 侧滑边缘指示 */
+/* 侧滑边缘指示 — D5：桌面默认隐、hover 显；触屏设备常显 */
 .edge-nav {
   display: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   z-index: 20;
-  width: 36px;
+  width: 40px;
   height: 56px;
+  min-width: 44px;
+  min-height: 44px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   border-radius: 999px;
   color: var(--brand-deep);
   font-size: 18px;
@@ -594,10 +604,39 @@ body.is-editing [data-editable="true"]:focus {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 14px rgba(74, 47, 98, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
 }
-.edge-nav.prev { left: 4px; }
-.edge-nav.next { right: 4px; }
-.edge-nav:disabled { opacity: 0.25; pointer-events: none; }
+.edge-nav.prev { left: 6px; }
+.edge-nav.next { right: 6px; }
+.edge-nav:disabled { opacity: 0.2 !important; pointer-events: none !important; }
+
+/* 桌面：有精细指针 → hover 舞台才露边键 */
+@media (hover: hover) and (pointer: fine) {
+  .edge-nav { display: flex; }
+  .stage-wrap:hover .edge-nav:not(:disabled),
+  .stage-wrap:focus-within .edge-nav:not(:disabled) {
+    opacity: 0.92;
+    pointer-events: auto;
+  }
+  .edge-nav:hover:not(:disabled) {
+    opacity: 1;
+    background: #fff;
+  }
+}
+
+/* 触屏 / 粗指针：常显（半透明，不抢内容） */
+@media (hover: none), (pointer: coarse) {
+  .edge-nav {
+    display: flex;
+    opacity: 0.72;
+    pointer-events: auto;
+  }
+  .edge-nav:active:not(:disabled) {
+    opacity: 1;
+  }
+}
 
 .toast {
   position: fixed;
@@ -644,8 +683,7 @@ body.is-editing [data-editable="true"]:focus {
   }
   .panel-body.layout-fill { overflow: auto; }
   .block[data-type="mermaid"] { min-height: min(38vh, 320px); flex: 0 0 auto; }
-  .edge-nav { display: flex; }
-  .swipe-hint { display: block; }
+  .swipe-hint { display: inline; }
 }
 
 /* ========== 手机：真·一屏优先 ========== */
@@ -1179,30 +1217,56 @@ body {
   }
 }
 
-/* 系统暗色偏好：轻降噪（不推翻品牌浅紫） */
+/* D6：暗色完整覆盖 chrome / stage-wrap / meta（实机可验） */
 @media (prefers-color-scheme: dark) {
   body {
     background: linear-gradient(165deg, #1a1422 0%, #2a1f35 50%, #1e1828 100%);
     color: #f2ecf7;
   }
-  .stage, .top {
-    background: #241c2e !important;
+  .chrome {
+    background: linear-gradient(180deg, #241c2e 0%, #2a1f38 100%);
     border-color: #4a3d5c;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+  .top {
+    background: transparent !important;
+    border-color: transparent;
     color: #f2ecf7;
   }
+  .stage-wrap {
+    background: #1e1828;
+    border-color: #4a3d5c;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+  .stage {
+    background: transparent !important;
+    border-color: transparent;
+    color: #f2ecf7;
+  }
+  .stage-meta {
+    background: rgba(30, 24, 40, 0.95);
+    border-top-color: #4a3d5c;
+  }
+  .tabs-row {
+    background: rgba(36, 28, 46, 0.55);
+    border-top-color: #4a3d5c;
+  }
   .top-mid h1 { color: #f5eef9; }
-  .top-mid .sub, .footer, .swipe-hint { color: #b8aec6; }
+  .top-mid .sub, .footer, .swipe-hint, .stage-meta .swipe-hint { color: #b8aec6; }
   .tab {
     background: #2e243c;
     color: #e8dff2;
     border-color: #4a3d5c;
   }
   .tab.active { background: #8b5cb3; border-color: #8b5cb3; color: #fff; }
-  .callout.brand { background: #322840; border-color: #5a4a70; }
-  .callout.ok { background: #1e3328; border-color: #3d6b4f; }
-  .callout.warn { background: #3a3018; border-color: #8a7020; }
+  .tab .n { background: #3d2f52; color: #d4b8f0; }
+  .pager-dots button { background: #5a4a70; }
+  .pager-dots button.active { background: #c9a8e0; }
+  .callout.brand { background: #322840; border-color: #5a4a70; color: #f2ecf7; }
+  .callout.ok { background: #1e3328; border-color: #3d6b4f; color: #e8f5ec; }
+  .callout.warn { background: #3a3018; border-color: #8a7020; color: #fff6db; }
   th { background: #322840; color: #e8dff2; }
-  td { border-color: #4a3d5c; }
+  td { border-color: #4a3d5c; color: #f2ecf7; }
   td.label { background: #2a2235; color: #c9a8e0; }
   .block[data-type="mermaid"] {
     background: linear-gradient(180deg, #2a2235, #221c2c);
@@ -1218,6 +1282,16 @@ body {
     border-color: #8b5cb3;
     color: #fff;
   }
+  .toolbar-menu {
+    background: #241c2e;
+    border-color: #4a3d5c;
+  }
+  .edge-nav {
+    background: rgba(36, 28, 46, 0.95);
+    border-color: #5a4a70;
+    color: #d4b8f0;
+  }
+  .progress-bar { background: rgba(90, 74, 112, 0.5); }
 }
 
 /* 减弱动效：mermaid 静态友好 */

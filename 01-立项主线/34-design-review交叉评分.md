@@ -120,3 +120,17 @@
 - 页：https://weiweity.github.io/tianyuan-ai-brief/  
 - 仓：https://github.com/weiweity/tianyuan-ai-brief  
 - 前序：`33-设计分_v1.4.3_Claude9.52.md`
+
+
+---
+
+## G · P1 落地记录（准备信息打磨）
+
+| ID | 状态 | 说明 |
+|-|-|-|
+| D5 | ✅ | edge-nav：`hover:hover` 默认隐、hover 显；触屏常显半透明 |
+| D6 | ✅ | 暗色覆盖 chrome/stage-wrap/tabs-row/stage-meta/edge-nav |
+| D7 | ✅ | `.logo-wrap` min 44×44 |
+| D8 | ✅ | 弱网文案统一 `MSG.*`；恢复后 toast「网络已恢复」 |
+
+*2026-07-29 · 信息打磨前清场完成*
