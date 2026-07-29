@@ -2,10 +2,14 @@
   "use strict";
 
   const isFileProtocol = location.protocol === "file:";
+  const releaseId = document.documentElement.dataset.release || "dev";
   const mermaidIntegrity =
     "sha384-qX9VvWkP79m/O121ZE6sOYp0nf/pldQgtvWDbkpzi+3mUo4Wn4Ix4cFzNPay3VaB";
+  let bootFinished = false;
+  let mermaidLoadPromise = null;
 
   function showFatal(message) {
+    bootFinished = true;
     const title = document.querySelector("#doc-title");
     const stage = document.querySelector("#stage");
     if (title) title.textContent = "加载失败";
@@ -16,16 +20,20 @@
     heading.textContent = "页面启动失败";
     const detail = document.createElement("p");
     detail.textContent = message;
-    panel.replaceChildren(heading, detail);
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "boot-retry";
+    retry.textContent = "重新加载";
+    retry.addEventListener("click", () => location.reload());
+    panel.replaceChildren(heading, detail, retry);
     stage.replaceChildren(panel);
   }
 
   function appendApp() {
     const app = document.createElement("script");
     app.src = isFileProtocol
-      ? "./js/app.offline.bundle.js?v=3.1"
-      : "./js/app.js?v=3.1";
-    if (!isFileProtocol) app.type = "module";
+      ? `./js/app.offline.bundle.js?v=${encodeURIComponent(releaseId)}`
+      : `./js/app.bundle.js?v=${encodeURIComponent(releaseId)}`;
     app.addEventListener("error", () => {
       showFatal(
         isFileProtocol
@@ -36,16 +44,56 @@
     document.body.appendChild(app);
   }
 
-  const mermaid = document.createElement("script");
-  mermaid.src = "./vendor/mermaid-10.9.6.min.js";
-  if (!isFileProtocol) {
-    mermaid.integrity = mermaidIntegrity;
-    mermaid.crossOrigin = "anonymous";
-    mermaid.referrerPolicy = "no-referrer";
+  function startMermaid() {
+    if (globalThis.mermaid) return Promise.resolve(globalThis.mermaid);
+    if (mermaidLoadPromise) return mermaidLoadPromise;
+    mermaidLoadPromise = new Promise((resolve) => {
+      const mermaid = document.createElement("script");
+      mermaid.src = `./vendor/mermaid-10.9.6.min.js?v=${encodeURIComponent(releaseId)}`;
+      if (!isFileProtocol) {
+        mermaid.integrity = mermaidIntegrity;
+        mermaid.crossOrigin = "anonymous";
+        mermaid.referrerPolicy = "no-referrer";
+      }
+      mermaid.addEventListener("load", () => {
+        resolve(globalThis.mermaid || null);
+        window.dispatchEvent(new Event("ai-brief:mermaid-ready"));
+      });
+      mermaid.addEventListener("error", () => {
+        mermaidLoadPromise = null;
+        resolve(null);
+        window.dispatchEvent(new Event("ai-brief:mermaid-error"));
+      });
+      document.head.appendChild(mermaid);
+    });
+    globalThis.__AI_BRIEF_MERMAID_READY__ = mermaidLoadPromise;
+    return mermaidLoadPromise;
   }
-  mermaid.addEventListener("load", appendApp);
-  mermaid.addEventListener("error", () => {
-    showFatal("流程图运行时未能加载，请确认 docs/vendor 文件完整。");
-  });
-  document.head.appendChild(mermaid);
+  globalThis.__AI_BRIEF_LOAD_MERMAID__ = startMermaid;
+
+  function scheduleMermaidWarmup() {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(startMermaid, { timeout: 1800 });
+    } else {
+      window.setTimeout(startMermaid, 500);
+    }
+  }
+
+  window.addEventListener("ai-brief:need-mermaid", startMermaid);
+  window.addEventListener(
+    "ai-brief:booted",
+    () => {
+      bootFinished = true;
+      scheduleMermaidWarmup();
+    },
+    { once: true }
+  );
+  window.setTimeout(() => {
+    if (!bootFinished) {
+      showFatal("应用启动超时，请检查网络后重新加载。流程图失败不应阻塞正文。");
+    }
+  }, 10000);
+
+  // 正文应用与 3MB 流程图库并行加载；慢网时先展示可读内容。
+  appendApp();
 })();

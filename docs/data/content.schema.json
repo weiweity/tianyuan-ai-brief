@@ -62,6 +62,20 @@
                 "variant": { "type": "string" },
                 "html": { "type": "string" },
                 "source": { "type": "string" },
+                "compactItems": {
+                  "type": "array",
+                  "maxItems": 6,
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "text"],
+                    "properties": {
+                      "label": { "type": "string" },
+                      "text": { "type": "string" },
+                      "tone": { "enum": ["ok", "info", "warn", "danger"] }
+                    },
+                    "additionalProperties": false
+                  }
+                },
                 "src": { "type": "string" },
                 "alt": { "type": "string" },
                 "headers": { "type": "array", "items": { "type": "string" } },

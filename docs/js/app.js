@@ -7,6 +7,7 @@ import {
   buildMeetingConclusionText,
   evaluateCheckGate,
   namedOwnersOf,
+  sha256,
   verifyDecisionReceipt,
 } from "./modules/decision-model.js";
 import {
@@ -16,6 +17,7 @@ import {
   sanitizeRichHtml,
   sanitizeSvg,
 } from "./modules/html-policy.js";
+import { createContentLoader } from "./modules/content-loader.js";
 import { createMermaidRuntime } from "./modules/mermaid-runtime.js";
 import { mergeMeetingState } from "./modules/meeting-state.js";
 
@@ -23,6 +25,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   "use strict";
 
   const STORAGE_KEY = "tianyuan-brief-draft-v1";
+  const LKG_KEY = "tianyuan-brief-content-lkg-v1";
   const HANDLE_DB = "tianyuan-brief-fs";
   const HANDLE_STORE = "handles";
   const DECISION_SCHEMA_VERSION = 2;
@@ -32,14 +35,25 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   let editing = false;
   let fileHandle = null;
   let swipeDir = "left"; // panel animation direction
-  let contentFingerprint = "";
+  let currentReleaseManifest = null;
   let hotPollTimer = null;
   const POLL_MS = 30000; // C端静默检查远端内容
   const isEditQuery = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
   const isFileProtocol = location.protocol === "file:";
+  const shellReleaseId = document.documentElement.dataset.release || "";
   document.documentElement.classList.toggle("author-mode", isEditQuery);
   document.documentElement.classList.toggle("offline-file-mode", isFileProtocol);
 
+  const contentLoader = createContentLoader({
+    windowLike: window,
+    isFileProtocol,
+    isAuthorMode: () => isEditQuery || editing,
+    sanitizeContent,
+    sha256,
+    expectedReleaseId: shellReleaseId,
+    expectedDecisionSchemaVersion: DECISION_SCHEMA_VERSION,
+    cacheKey: LKG_KEY,
+  });
 
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -55,6 +69,43 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     const p = $("#status-pill");
     p.textContent = text;
     p.className = cls;
+  }
+
+  function showLoadFailure(error, options = {}) {
+    const stage = $("#stage");
+    const panel = document.createElement("section");
+    panel.className = "boot-error";
+    const heading = document.createElement("h2");
+    const detail = document.createElement("p");
+    const hint = document.createElement("p");
+    const retry = document.createElement("button");
+    const isReleaseRefresh = Boolean(options.releaseId);
+    heading.textContent = isFileProtocol
+      ? "离线快照暂不可用"
+      : isReleaseRefresh
+        ? "检测到新版本"
+        : "内容暂不可用";
+    detail.textContent = isReleaseRefresh
+      ? "页面与内容版本正在切换，将自动重新加载。"
+      : String(error && error.message ? error.message : error || "加载失败");
+    hint.className = "boot-error-hint";
+    hint.textContent = isFileProtocol
+      ? "请在仓库根执行 npm run build:web 后重新打开此文件。"
+      : "网络或发布恢复后可直接重试；本机已保存的会议草稿不会丢失。";
+    retry.type = "button";
+    retry.className = "boot-retry";
+    retry.textContent = isReleaseRefresh ? "立即加载新版本" : "重新加载";
+    retry.addEventListener("click", () => {
+      if (isReleaseRefresh) {
+        const target = new URL(location.href);
+        target.searchParams.set("_release", options.releaseId);
+        location.replace(target.toString());
+      } else {
+        location.reload();
+      }
+    });
+    panel.replaceChildren(heading, detail, hint, retry);
+    stage.replaceChildren(panel);
   }
 
   // ---------- File handle (IndexedDB) ----------
@@ -135,60 +186,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   }
 
   // ---------- Load content ----------
-  /**
-   * 内容指纹：只用「作者态」字段，不含会议勾选/路径/费用手填，
-   * 避免本机勾选污染指纹导致 30s 轮询假热更。
-   */
-  function fingerprintOf(obj) {
-    if (!obj) return "";
-    try {
-      const parts = [
-        obj.version || "",
-        obj.updated || "",
-        obj.publishStamp || "",
-        obj.ssot || "",
-        String((obj.tabs || []).length),
-      ];
-      let struct = "";
-      (obj.tabs || []).forEach((t) => {
-        struct += (t.id || "") + ":" + (t.title || "") + ";";
-        (t.blocks || []).forEach((b) => {
-          struct += (b.id || "") + "|" + (b.type || "") + "|";
-          if (b.html) struct += "h" + b.html.length + ";";
-          if (b.source) struct += "s" + b.source.length + ";";
-          (b.rows || []).forEach((r) => {
-            struct +=
-              (r.rowId || r.no || "") +
-              ":" +
-              (r.html || "").length +
-              ":" +
-              (r.gate || r.key || "").length +
-              ";";
-          });
-        });
-      });
-      // djb2 of structure (not meeting state)
-      let h = 5381;
-      for (let i = 0; i < struct.length; i++) h = ((h << 5) + h) ^ struct.charCodeAt(i);
-      parts.push(String(struct.length), (h >>> 0).toString(36));
-      return parts.join("|");
-    } catch (_) {
-      return [obj.version || "", obj.updated || "", obj.publishStamp || "", (obj.tabs || []).length].join("|");
-    }
-  }
-
-  async function fetchRemoteContent() {
-    if (isFileProtocol) {
-      const embedded = globalThis.__AI_BRIEF_EMBEDDED_CONTENT__;
-      if (!embedded || !Array.isArray(embedded.tabs)) {
-        throw new Error("离线内容快照缺失，请执行 npm run build:web 后重试");
-      }
-      return sanitizeContent(embedded);
-    }
-    const url = "./data/content.json?_=" + Date.now();
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("无法加载 data/content.json");
-    return sanitizeContent(await res.json());
+  async function fetchRemoteContent(manifestHint) {
+    return contentLoader.fetchContent(manifestHint);
   }
 
   async function loadContent(opts) {
@@ -205,7 +204,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
             Number(parsed.decisionSchemaVersion || 1) === DECISION_SCHEMA_VERSION
           ) {
             content = parsed;
-            contentFingerprint = fingerprintOf(content);
             setStatus("草稿(本机)", "warn");
             return { from: "draft" };
           }
@@ -213,7 +211,18 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       } catch (_) {}
     }
 
-    content = await fetchRemoteContent();
+    let source = isFileProtocol ? "offline" : "remote";
+    try {
+      const loaded = await fetchRemoteContent();
+      content = loaded.content;
+      currentReleaseManifest = loaded.manifest;
+    } catch (error) {
+      const cached = !isFileProtocol && contentLoader.readLastKnownGood();
+      if (!cached) throw error;
+      content = cached.content;
+      currentReleaseManifest = cached.manifest;
+      source = "cache";
+    }
     // 会议中途刷新：远程文案 + 本机勾选合并（不整份草稿覆盖）
     try {
       const draft = localStorage.getItem(STORAGE_KEY);
@@ -224,9 +233,9 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         }
       }
     } catch (_) {}
-    contentFingerprint = fingerprintOf(content);
-    setStatus(isFileProtocol ? "本地快照" : "已是最新", isFileProtocol ? "warn" : "ok");
-    return { from: isFileProtocol ? "offline" : "remote" };
+    if (source === "cache") setStatus("缓存快照 · 可能不是最新", "warn");
+    else setStatus(isFileProtocol ? "本地快照" : "已是最新", isFileProtocol ? "warn" : "ok");
+    return { from: source };
   }
 
   /** 无感应用新内容：保留当前 Tab，轻闪刷新，不整页跳转 */
@@ -239,7 +248,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       next = mergeCheckState(content, next);
     }
     content = next;
-    contentFingerprint = fingerprintOf(content);
     // 热更合并后写回草稿，刷新/重开仍能按 rowId 对齐勾选
     if (reason === "poll" || reason === "reload") {
       saveDraft();
@@ -259,6 +267,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     renderAll();
     document.body.classList.toggle("is-check-page", activeTab === "t6");
     setStatus(reason === "save" ? "已更新" : "已同步最新", "ok");
+    return true;
   }
 
   let pollFailCount = 0;
@@ -269,37 +278,79 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     netStatus: "离线/弱网",
     netBack: "网络已恢复",
     latest: "已是最新",
+    release: "发现新版本，正在安全刷新",
   };
+
+  function requestReleaseRefresh(releaseId) {
+    const target = new URL(location.href);
+    const alreadyTargeted = target.searchParams.get("_release") === releaseId;
+    const refresh = () => {
+      if (alreadyTargeted) {
+        location.reload();
+        return;
+      }
+      target.searchParams.set("_release", releaseId);
+      location.replace(target.toString());
+    };
+    pollFailCount = 0;
+    setStatus(alreadyTargeted ? "新版本待刷新" : "正在切换新版本", "warn");
+    const chip = $("#update-chip");
+    if (alreadyTargeted) {
+      if (chip) {
+        chip.textContent = "新版本已发布 · 点击重新加载";
+        chip.hidden = false;
+        chip.classList.add("show");
+        chip.onclick = refresh;
+      }
+      return;
+    }
+    toast(MSG.release, 1400);
+    setTimeout(refresh, 80);
+  }
+
   async function checkRemoteUpdate(silent) {
     if (editing) return;
     try {
-      const remote = await fetchRemoteContent();
+      // 轮询允许识别“新壳 + 新内容”的 release；跨 release 不在旧 JS 上热套，
+      // 而是带版本号刷新整页，避免 shell/content 混版。
+      const manifest = await contentLoader.fetchManifest({ allowReleaseMismatch: true });
+      if (shellReleaseId && manifest.releaseId !== shellReleaseId) {
+        requestReleaseRefresh(manifest.releaseId);
+        return;
+      }
+      if (manifest.contentSha256 === currentReleaseManifest?.contentSha256) {
+        pollFailCount = 0;
+        return;
+      }
+      const loaded = await fetchRemoteContent(manifest);
+      const remote = loaded.content;
       const wasFailing = pollFailCount >= 3;
       pollFailCount = 0;
       if (wasFailing) {
         setStatus(MSG.latest, "ok");
         toast(MSG.netBack, 1400);
       }
-      const fp = fingerprintOf(remote);
-      if (!fp || fp === contentFingerprint) return;
+      const apply = (message, duration) => {
+        if (!softApplyContent(remote, "poll")) return;
+        // 只有成功渲染并保存会议态后，才提交新 SHA，失败时下轮仍会重试。
+        currentReleaseManifest = loaded.manifest;
+        toast(message, duration);
+      };
       // C端：静默热更新（无感）
       if (silent) {
-        softApplyContent(remote, "poll");
-        toast(MSG.hotOk, 1600);
+        apply(MSG.hotOk, 1600);
       } else {
         const chip = $("#update-chip");
         if (chip) {
           chip.hidden = false;
           chip.classList.add("show");
           chip.onclick = () => {
-            softApplyContent(remote, "poll");
+            apply(MSG.hotClick, 1400);
             chip.classList.remove("show");
             chip.hidden = true;
-            toast(MSG.hotClick, 1400);
           };
         } else {
-          softApplyContent(remote, "poll");
-          toast(MSG.hotOk, 1600);
+          apply(MSG.hotOk, 1600);
         }
       }
     } catch (_) {
@@ -345,6 +396,10 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   const queueMermaid = (tabId) => mermaidRuntime.queue(tabId);
   const queueAllMermaid = () =>
     Promise.allSettled((content && content.tabs ? content.tabs : []).map((tab) => queueMermaid(tab.id)));
+  const prepareAllMermaidFallbacks = () =>
+    (content && content.tabs ? content.tabs : []).forEach((tab) =>
+      mermaidRuntime.prepareFallback(tab.id)
+    );
   const wireMermaidLightbox = () => mermaidRuntime.wireLightbox();
 
   function renderHeader() {
@@ -630,7 +685,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
                     <div class="owner-fields">
                       <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name" enterkeyhint="next"/></label>
                       <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部" enterkeyhint="next"/></label>
-                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="${esc(r.projectLabel || "项目范围")}" enterkeyhint="done"/></label>
+                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="本项目范围" enterkeyhint="done"/></label>
                     </div>
                   </div>`;
                 })
@@ -652,7 +707,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
             const hasExtra = extras.length > 0;
             const tier = r.tier === "later" ? "later" : "must";
-            return `<tr data-row="${i}" data-tier="${tier}" class="chk-tier-${tier}${on ? " is-checked" : ""}${hasExtra ? " has-path" : ""}">
+            const section =
+              Array.isArray(r.pathOptions) || Array.isArray(r.multiOptions)
+                ? "paths"
+                : r.kind === "fee" || r.kind === "stop-authority"
+                  ? "budget"
+                  : r.kind === "owner" || r.ownerFields
+                    ? "owners"
+                    : "record";
+            return `<tr data-row="${i}" data-tier="${tier}" data-check-section="${section}" class="chk-tier-${tier}${on ? " is-checked" : ""}${hasExtra ? " has-path" : ""}">
             <td class="label narrow" data-editable="true" data-field="no">${esc(r.no)}</td>
             <td class="chk-body">
               <div class="chk-html" data-editable="true" data-field="html">${r.html || ""}</div>
@@ -666,15 +729,21 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           </tr>`;
           })
           .join("");
-        const laterCount = (b.rows || []).filter((r) => r.tier === "later").length;
-        const laterToggle =
-          laterCount > 0
-            ? `<button type="button" class="chk-later-toggle" data-later-toggle data-block="${id}" aria-expanded="false">展开会后约定（${laterCount} 项，可后补）</button>`
-            : "";
+        const steps = [
+          ["paths", "1 路径"],
+          ["budget", "2 预算止损"],
+          ["owners", "3 Owner"],
+          ["record", "4 留痕"],
+        ]
+          .map(
+            ([view, label], index) =>
+              `<button type="button" class="check-step${index === 0 ? " is-active" : ""}" data-check-view-button="${view}" aria-pressed="${index === 0 ? "true" : "false"}">${label}</button>`
+          )
+          .join("");
         const status = checkStatusHtml(b);
-        return `<div class="block" data-block-id="${id}" data-type="check-table" data-later-open="false">
+        return `<div class="block" data-block-id="${id}" data-type="check-table" data-check-view="paths">
+          <div class="check-steps" role="group" aria-label="当场确认步骤">${steps}</div>
           <table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>
-          ${laterToggle}
           ${status}
         </div>`;
       }
@@ -709,12 +778,26 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           </div>
         </div>`;
       }
-      case "mermaid":
+      case "mermaid": {
+        const compactItems = Array.isArray(b.compactItems)
+          ? `<div class="mermaid-context-strip" role="list" aria-label="流程图可读缩略">
+              ${b.compactItems
+                .map(
+                  (item) => `<div class="mermaid-context-item tone-${esc(item.tone || "info")}" role="listitem">
+                    <b>${esc(item.label)}</b><span>${esc(item.text)}</span>
+                  </div>`
+                )
+                .join("")}
+              <span class="mermaid-context-hint">点按查看完整流程</span>
+            </div>`
+          : "";
         return `<div class="block" data-block-id="${id}" data-type="mermaid">
           ${b.label ? `<div class="mermaid-corner-label" data-editable="true" data-field="label">${esc(b.label)}</div>` : ""}
+          ${compactItems}
           <div class="mermaid-host" data-mermaid-id="${id}"></div>
           <textarea class="mermaid-src" data-field="source" spellcheck="false">${esc(b.source || "")}</textarea>
         </div>`;
+      }
       case "image":
         return `<div class="block" data-block-id="${id}" data-type="image" style="text-align:center">
           <img src="${esc(sanitizeAssetUrl(b.src, ""))}" alt="${esc(b.alt || "")}" style="max-width:100%;max-height:40vh;object-fit:contain" data-field="src"/>
@@ -807,6 +890,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     applyEditMode();
     wireDetailCards();
     wireCheckTables();
+    wireCheckViews();
     wireCopyConclusion();
     if (activeTab) queueMermaid(activeTab);
   }
@@ -819,16 +903,16 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     const bound = "边界：不立刻上线 · 不代回 · 不编假收益";
     if (g.done === 0) {
       cls += " is-idle";
-      msg = `先为两个项目分别选 A / B / C · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
+      msg = `先为两个项目分别选 A / B / C · ${bound}`;
     } else if (g.allC && g.isMinOk) {
       cls += " is-ok";
-      msg = `两个项目均为 <b>C 不立</b> · 最低要求已齐 · 会后记录各自不立原因 · 已确认 <b>${g.done}/${g.total}</b>`;
+      msg = "会后分别记录不立原因；全部 C 无需补费用与 Owner。";
     } else if (g.missing.length) {
       cls += " is-warn";
-      msg = `<b>${esc(g.pathLab)}</b> · 散会前还缺：<b>${esc(g.missing.join(" · "))}</b> · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
+      msg = `散会前还缺：<b>${esc(g.missing.join(" · "))}</b> · ${bound}`;
     } else {
       cls += " is-ok";
-      msg = `<b>${esc(g.pathLab)}</b> · 最低要求已齐 · 可复制结论或下载可校验凭证，贴入飞书/邮件确认后生效 · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
+      msg = "结论可复制或下载；贴入飞书/邮件确认后生效。边界：不立刻上线、不代回、不编收益。";
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前状态";
     const hasAnyPath = g.decisions.some((decision) => decision.path);
@@ -1347,6 +1431,27 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     });
   }
 
+  function wireCheckViews() {
+    $$("[data-check-view-button]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const wrap = button.closest("[data-type='check-table']");
+        const view = button.getAttribute("data-check-view-button");
+        if (!wrap || !view) return;
+        wrap.setAttribute("data-check-view", view);
+        $$("[data-check-view-button]", wrap).forEach((candidate) => {
+          const on = candidate === button;
+          candidate.classList.toggle("is-active", on);
+          candidate.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        const firstControl = wrap.querySelector(
+          `tr[data-check-section="${CSS.escape(view)}"] button, tr[data-check-section="${CSS.escape(view)}"] input`
+        );
+        if (firstControl) firstControl.focus({ preventScroll: true });
+        tapHaptic("light");
+      });
+    });
+  }
+
   function wireDetailCards() {
     $$("[data-detail-toggle]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1356,7 +1461,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const body = document.getElementById("detail-body-" + id);
         if (!card || !body) return;
         const open = !card.classList.contains("is-open");
-        const isMobile = window.innerWidth <= 640;
         card.classList.toggle("is-open", open);
         btn.setAttribute("aria-expanded", open ? "true" : "false");
         const pb = card.closest(".panel-body");
@@ -1375,30 +1479,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           body.style.opacity = "1";
           body.style.transition = "";
 
-          if (isMobile) {
-            // 手机：禁止 smooth 连滚（smooth + mermaid 重绘 = 回弹感）
-            // 布局稳定后 auto 一次对准「客服」首卡
-            const scrollToFirstDept = () => {
-              const first = card.querySelector(".dept-card");
-              const sticky = card.querySelector(".detail-card-btn");
-              if (!pb || !first) return;
-              const stickyH = sticky ? sticky.getBoundingClientRect().height : 0;
-              const delta =
-                first.getBoundingClientRect().top -
-                pb.getBoundingClientRect().top -
-                stickyH -
-                8;
-              pb.scrollTo({ top: Math.max(0, pb.scrollTop + delta), behavior: "auto" });
-            };
-            // 先锁滚到首卡，再异步重绘图（避免图压缩动画带跑滚动）
+          if (window.innerWidth <= 640) {
+            // 展开不抢滚动位置；保留流程缩略图与详情标题作为上下文。
             requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                scrollToFirstDept();
-                mermaidRuntime.clear();
-                Promise.resolve(queueMermaid(activeTab)).then(() => {
-                  requestAnimationFrame(scrollToFirstDept);
-                });
-              });
+              mermaidRuntime.clear();
+              void queueMermaid(activeTab);
             });
           } else {
             // 桌面：短展开动画
@@ -1421,7 +1506,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
             });
           }
         } else {
-          if (isMobile) {
+          if (window.innerWidth <= 640) {
             body.hidden = true;
             body.style.maxHeight = "";
             body.style.opacity = "";
@@ -1817,8 +1902,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
       // 3) 清草稿 + 无感刷新本页（C端同页立即看到结果，不整页 reload）
       try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-      contentFingerprint = fingerprintOf(content);
-
       softApplyContent(content, "save");
 
       if (persisted) {
@@ -2448,29 +2531,47 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
       await loadContent({ preferDraft: isEditQuery });
-      // IndexedDB 在部分环境会挂起：超时后跳过，绝不挡首屏渲染
-      fileHandle = await withTimeout(loadHandle(), 1500, null);
-      if (fileHandle) setStatus("可一键保存", "ok");
       renderAll();
       wireToolbar();
       wireLogo();
       wireKeys();
       wireSwipe();
       wireMermaidLightbox();
-      void queueAllMermaid();
-      window.addEventListener("beforeprint", () => void queueAllMermaid());
-      if (!isFileProtocol) startHotPoll();
+      window.addEventListener("ai-brief:mermaid-ready", () => {
+        mermaidRuntime.clear();
+        void queueMermaid(activeTab);
+      });
+      window.addEventListener("beforeprint", () => {
+        // beforeprint 不等待 Promise；先同步写入可读文字摘要，图形随后尽力替换。
+        prepareAllMermaidFallbacks();
+        void queueAllMermaid();
+      });
       document.body.classList.toggle("is-check-page", activeTab === "t6");
       // title editable only in edit mode
       $("#doc-title").dataset.editable = "true";
+      document.documentElement.dataset.appState = "ready";
+      window.dispatchEvent(new CustomEvent("ai-brief:booted", { detail: { state: "ready" } }));
+      // 文件句柄、热轮询和图表预热都在首屏 ready 之后进行。
+      void loadHandle().then((handle) => {
+        fileHandle = handle;
+        if (fileHandle && isEditQuery) setStatus("可一键保存", "ok");
+      });
+      if (!isFileProtocol) startHotPoll();
     } catch (e) {
-      $("#stage").innerHTML = `<div style="padding:24px;color:#b00">
-        <h2>加载失败</h2>
-        <p>${esc(e.message || e)}</p>
-        <p style="margin-top:8px;color:#666">请在仓库根执行：<code>npm run serve</code><br/>
-        然后打开 <code>http://localhost:8765</code></p>
-      </div>`;
+      let nextReleaseId = "";
+      if (!isFileProtocol) {
+        try {
+          const manifest = await contentLoader.fetchManifest({ allowReleaseMismatch: true });
+          if (shellReleaseId && manifest.releaseId !== shellReleaseId) {
+            nextReleaseId = manifest.releaseId;
+          }
+        } catch (_) {}
+      }
+      showLoadFailure(e, { releaseId: nextReleaseId });
       setStatus("加载失败", "warn");
+      document.documentElement.dataset.appState = nextReleaseId ? "refreshing" : "error";
+      window.dispatchEvent(new CustomEvent("ai-brief:booted", { detail: { state: "error" } }));
+      if (nextReleaseId) requestReleaseRefresh(nextReleaseId);
     }
   }
 

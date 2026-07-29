@@ -1,6 +1,6 @@
 # AI 立项决策台 · 架构契约
 
-> 当前版本：Web v5.20 · 决策状态 Schema v2
+> 当前版本：Web v5.21 · 决策状态 Schema v2
 > 原则：内容、决策规则、渲染和样式各有唯一归属；默认入口只负责开会，作者能力必须显式进入。
 
 ## 1. 目录与职责
@@ -9,14 +9,17 @@
 docs/
 ├── index.html                         # 安全壳、挂载点、固定依赖
 ├── css/app.css                        # UI contract v2：token → shell → component → page → responsive
-├── js/bootstrap.js                    # 协议感知启动：HTTP ESM / file IIFE
+├── js/bootstrap.js                    # 协议感知启动：HTTP / file 均加载版本化 IIFE
 ├── js/app.js                          # UI 编排：渲染、导航、作者模式、持久化
+├── js/app.bundle.js                   # 生成物：HTTP 原子运行时，不含正文
 ├── js/app.offline.bundle.js           # 生成物：应用 + content.json 离线快照
+├── js/modules/content-loader.js        # release manifest、内容 SHA、超时与可信旧快照
 ├── js/modules/decision-model.js       # 纯决策域：门禁、结论、凭证、SHA-256 校验
 ├── js/modules/meeting-state.js        # 草稿兼容：Schema 隔离、字段白名单、长度钳制
 ├── js/modules/html-policy.js          # 输入边界：富文本、资源 URL、品牌色、SVG 清洗
 ├── js/modules/mermaid-runtime.js       # 图表渲染、无障碍描述、缩放灯箱
 ├── data/content.json                  # Web 内容 SSOT
+├── data/release.json                  # 生成物：统一 releaseId 与内容/源码 SHA
 ├── data/content.schema.json           # 内容与决策行结构约束
 ├── vendor/mermaid-10.9.6.min.js       # 固定版本、本地运行时
 ├── vendor/mermaid-LICENSE.txt
@@ -25,14 +28,15 @@ docs/
 └── assets/logo.png
 
 scripts/
-└── build-web.mjs                      # 生成 / 校验离线 Bundle 与内容 SHA-256
+└── build-web.mjs                      # 生成 / 校验 Bundle、release manifest 与入口版本
 
 tests/
 ├── decision-model.test.mjs            # 项目级 A/B/C 与凭证单元测试
+├── content-loader.test.mjs             # 超时、SHA、可信旧快照与混版阻断
 ├── meeting-state.test.mjs              # 状态版本、白名单与不变性测试
 ├── html-policy.test.mjs                # XSS、URL、颜色与 Mermaid SVG 安全测试
 ├── content-contract.test.mjs           # Schema、内容、依赖、单入口与模块体积契约
-└── ui-audit.mjs                       # 3×7 页、file、打印、交互、a11y、截图
+└── ui-audit.mjs                       # 4×7 页、故障注入、file、打印、交互、a11y、截图
 
 .github/workflows/quality.yml           # PR / main 的完整质量门禁
 .github/dependabot.yml                  # npm / Actions 每周依赖更新 PR
@@ -46,8 +50,11 @@ tests/
 | 旧会议草稿合并 | `meeting-state.js` | 按对象展开或跨 Schema 猜测合并 |
 | 富文本、资源地址、SVG 安全 | `html-policy.js` | 未清洗地写入 `innerHTML` |
 | Mermaid 渲染与灯箱 | `mermaid-runtime.js` | 在 `app.js` 维护第二套实现 |
+| 内容加载、完整性与可信降级 | `content-loader.js` | 用时间戳穿透缓存或未校验混用内容 |
 | HTTP / file 启动选择 | `bootstrap.js` | 放宽浏览器安全策略或让页面永久骨架 |
+| HTTP 模块图发布 | `build-web.mjs` 生成 `app.bundle.js` | 直接部署无版本的 ESM 子模块 |
 | 离线快照 | `build-web.mjs` 生成 | 手改 `app.offline.bundle.js` |
+| 发布指纹 | `build-web.mjs` 生成 `release.json` 并注入入口 | 人工维护多套 `?v=` |
 | DOM 渲染、导航、保存 | `app.js` | 把业务规则塞回 UI 编排 |
 | 颜色、间距、响应式 | `app.css` 对应分层 | 文件尾追加“vN 修复补丁” |
 | 内容字段结构 | `content.schema.json` | 无版本地改变本机会议状态 |
@@ -60,6 +67,10 @@ tests/
 - 历史 HTML 在 HTTP 和 file 两种协议下都跳入同一正式壳，不拥有业务正文。
 - 会议勾选会保存到当前设备，用于刷新恢复，但始终是本机草稿。
 - 飞书 / 邮件确认才是组织留痕；页面不宣称“已审批”。
+
+启动顺序固定为 `release/content → renderAll → booted`。IndexedDB、热轮询和 Mermaid
+预热均在正文 ready 之后；Mermaid 仅在空闲时或首次进入图表页时加载。图表库失败时显示
+从同一 Mermaid 源提取的安全文字摘要，不阻断七页正文和决策交互。
 
 ## 3. 项目级决策模型
 
@@ -116,7 +127,7 @@ tests/
 3. 通用内容组件
 4. 页面专用布局
 5. 交互状态
-6. 1024 / 640 / 370 / 横屏响应式
+6. 1024 / 640 / 640×700 短手机 / 1025×800 短桌面 / 370 / 横屏响应式
 7. print / reduced motion
 
 旧版 5500 行级联补丁不参与加载。修复必须回到所属层，不得在文件尾追加版本覆盖。
@@ -126,7 +137,11 @@ tests/
 - Mermaid 固定为 10.9.6 并随站点发布，不依赖 CDN。
 - DOMPurify 固定为 3.4.12；远端 JSON、本机草稿、编辑器富文本和 Mermaid SVG 都在进入 DOM 前经过显式白名单。
 - HTTP 启动由 `bootstrap.js` 为 Mermaid 设置 SRI；file 启动不设置会触发 `origin null` CORS 的 `crossorigin`，但仍只允许仓库内固定脚本。
-- Mermaid 使用 `securityLevel: "strict"`；离线 Bundle 携带内容 SHA-256，并由 `build:check` 保证与 SSOT 同步。
+- Mermaid 使用 `securityLevel: "strict"` 与原生 `text/tspan`；SVG-only 清洗禁止
+  `foreignObject`、全部 `on*` 属性和外部 URL。
+- `release.json` 用 `releaseId` 绑定 CSS、bootstrap、HTTP 原子 Bundle 与决策 Schema；
+  `contentSha256` 独立标识正文。正文变化可无感热更，壳或 Schema 变化必须整页刷新。
+- 内容请求有超时和 SHA-256 校验；失败时仅回退到曾校验成功的 last-known-good，并明确标为“缓存快照”。
 - HTML 保持 CSP，无运行时第三方 CDN，不要求关闭 CORS 或浏览器安全策略。
 - 动态样式与 Mermaid SVG 仍需要 CSP `style-src 'unsafe-inline'`；脚本侧不允许 `unsafe-eval`，内容侧由 DOMPurify 和字段白名单收口。
 - 更新 Mermaid 或 DOMPurify 时同步替换 vendor 文件、许可证、SRI（适用时）、`package.json` 和测试断言。
@@ -147,18 +162,19 @@ npm run test:all
 
 本地 `test:ui` 使用系统 Chrome；CI 使用 Node 24 和 Playwright 固定 Chromium。两者执行相同逻辑门禁，但浏览器二进制证据分别保留。覆盖：
 
-- 390×844、768×1024、1440×900；
-- 三个视口的七页逐页截图、overflow 与 axe；
-- 手机七页可见操作区至少 40px（主要动作按 44px 设计）；
+- 375×667、390×844、1366×768、1440×900；
+- 四个视口的七页逐页截图、裁切/嵌套滚动与 axe；
+- 手机七页可见操作区至少 44px；
 - 键盘导航、演示 / 作者隔离；
-- Mermaid 本地渲染；
+- Mermaid 关键业务标签、慢 3 秒与运行时缺失的文字降级；
+- t2 详情不抢滚动，t6 四步单屏，t7 桌面/手机责任矩阵单屏；
 - C/C、A/C 混合路径、Owner / 费用 / 停扩门禁；
 - 复制结论、下载 JSON、SHA-256 复验；
 - HTTP 正式 / 历史入口和 file 直接 / 历史入口；
 - 七个面板、全部 Mermaid、恰好七页的 A4 打印 PDF；
 - axe WCAG 2A / 2AA / 2.1AA 每页 serious / critical 为 0；
 - npm 生产 / 开发依赖已知漏洞为 0；
-- Bundle 新鲜度、vendor SHA-384 与协议分支契约。
+- Bundle / release manifest / 入口版本新鲜度、vendor SHA-384 与协议分支契约。
 
 ## 9. 历史打印入口
 
