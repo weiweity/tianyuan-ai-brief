@@ -208,24 +208,28 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   min-height: 40px;
 }
 
-/* Tabs */
+/* Tabs — 紧凑一行：Tab 左 + 圆点右，吃掉多余留白 */
 .tabs-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 6px 0 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 2px;
+  padding: 0;
   flex-shrink: 0;
   min-height: 0;
 }
 .tabs {
   display: flex;
-  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   align-items: center;
-  padding: 2px 0;
+  padding: 0;
   scroll-snap-type: x proximity;
 }
 .tabs::-webkit-scrollbar { display: none; }
@@ -234,14 +238,15 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   background: rgba(255, 255, 255, 0.82);
   color: var(--brand-dark);
   border-radius: 999px;
-  padding: 7px 12px;
-  min-height: 36px;
+  padding: 3px 9px;
+  min-height: 28px;
   font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   scroll-snap-align: start;
   flex-shrink: 0;
+  line-height: 1.2;
   transition: background 0.15s, color 0.15s, transform 0.12s;
 }
 .tab:active { transform: scale(0.97); }
@@ -249,36 +254,39 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   background: var(--brand-deep);
   border-color: var(--brand-deep);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(122, 79, 150, 0.25);
+  box-shadow: 0 2px 8px rgba(122, 79, 150, 0.22);
 }
 .tab .n {
   display: inline-block;
-  width: 18px;
-  height: 18px;
-  line-height: 18px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
   border-radius: 50%;
   background: var(--brand);
   color: var(--brand-deep);
   text-align: center;
   font-size: 10px;
-  margin-right: 4px;
+  margin-right: 3px;
+  vertical-align: -1px;
 }
 .tab.active .n {
   background: rgba(255, 255, 255, 0.25);
   color: #fff;
 }
 
-/* 页码点 */
+/* 页码点 — 与 Tab 同一行，不再单独占高 */
 .pager-dots {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
-  min-height: 14px;
+  gap: 5px;
+  min-height: 0;
+  flex-shrink: 0;
+  padding: 0 2px;
 }
 .pager-dots button {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   border: none;
   background: var(--brand-mid);
@@ -287,7 +295,7 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   transition: width 0.15s, background 0.15s;
 }
 .pager-dots button.active {
-  width: 18px;
+  width: 14px;
   border-radius: 999px;
   background: var(--brand-deep);
 }
@@ -617,18 +625,26 @@ body.is-editing [data-editable="true"]:focus {
   #btn-more { display: inline-flex; align-items: center; justify-content: center; }
   #status-pill { display: none; }
 
+  /* 手机：Tab 仍可点，但不再叠两层空白 */
+  .tabs-row {
+    gap: 6px;
+    margin: 1px 0;
+  }
   .tabs {
-    gap: 5px;
+    gap: 4px;
   }
   .tab {
-    min-height: var(--touch-min);
-    padding: 8px 12px;
-    font-size: 12.5px;
+    min-height: 32px;
+    padding: 5px 10px;
+    font-size: 12px;
   }
   .tab .n {
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+  }
+  .pager-dots {
+    display: none; /* 手机用 Tab 横滑即可，圆点省一行 */
   }
 
   .stage {
@@ -877,13 +893,13 @@ body.is-editing [data-editable="true"]:focus {
 .callout.ok { border-left-color: var(--ok); }
 .callout.warn { border-left-color: var(--warn); }
 
-/* 进度条（细） */
+/* 进度条（细）— 贴顶栏，少占高 */
 .progress-bar {
-  height: 3px;
+  height: 2px;
   background: rgba(201, 184, 217, 0.45);
   border-radius: 999px;
   overflow: hidden;
-  margin: 0 0 2px;
+  margin: 2px 0 0;
   flex-shrink: 0;
 }
 .progress-bar > i {
