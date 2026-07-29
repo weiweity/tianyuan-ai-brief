@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.13.0",
+  "version": "5.13.1",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -48,7 +48,7 @@
             {
               "key": "工期",
               "variant": "default",
-              "html": "分两段走，不跳步：<b>先齐前置</b>（业务同意 + 负责人具名 + 费用确认）→ <b>约 4 周可内部演示</b> → 再 <b>约 4 周内部小试用</b> · 前置不齐不开开发 · 演示/试用不过则停扩重测（详见「怎么走」）"
+              "html": "分两段走，不跳步：<span class=\"flow-step\"><b>先齐前置</b>（业务同意 + 负责人具名 + 费用确认）</span><span class=\"flow-arrow\" aria-hidden=\"true\">→</span><span class=\"flow-step\"><b>约 4 周内部演示</b></span><span class=\"flow-arrow\" aria-hidden=\"true\">→</span><span class=\"flow-step\"><b>约 4 周内部小试用</b></span> · 前置不齐不开开发 · 演示/试用不过则停扩重测（详见「怎么走」）"
             }
           ]
         },

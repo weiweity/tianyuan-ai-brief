@@ -2987,3 +2987,50 @@ html, body, .stage {
     margin-bottom: 4px;
   }
 }
+
+/* ========== t1 工期/kv 单元格：正常行内流 + 阶段箭头不拆开 ========== */
+.block[data-type="kv-table"] td.kv-val {
+  display: flex !important;
+  align-items: center;
+  min-width: 0;
+  vertical-align: middle;
+}
+.block[data-type="kv-table"] .kv-cell {
+  min-width: 0;
+  width: 100%;
+  line-height: 1.5;
+  /* 正常 inline 排版，b / → 不再被 flex 拆行 */
+  display: block;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+/* 工期阶段：尽量整段换行，箭头贴阶段 */
+.kv-cell .flow-step {
+  display: inline;
+  white-space: normal;
+}
+.kv-cell .flow-arrow {
+  display: inline-block;
+  margin: 0 0.28em;
+  color: var(--brand-deep, #7A4F96);
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  /* 不与前后字拆成「箭头单独占一行」的尴尬 */
+  white-space: nowrap;
+}
+/* 窄屏时阶段允许断，但箭头不单独顶头：用 word-join 思路 — 箭头前不断 */
+@media (min-width: 900px) {
+  #t1 .kv-cell .flow-step {
+    white-space: nowrap;
+  }
+}
+/* 工期行略抬行高，五等分行时别挤 */
+#t1 .block[data-type="kv-table"] td {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+#t1 .block[data-type="kv-table"] .kv-cell {
+  font-size: clamp(14px, 1.1vw + 0.3vh, 16.5px);
+  line-height: 1.55;
+}

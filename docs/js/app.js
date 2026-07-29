@@ -340,9 +340,10 @@
             const v = r.variant || "default";
             const cls = v === "ok" ? "row-ok" : v === "info" ? "row-info" : v === "warn" ? "row-warn" : "";
             const w = b.keyWidth === "wide" ? " wide" : "";
+            // 内容包一层 .kv-cell：避免 td 的 flex 把 b/→ 拆成多个子项导致换行错位
             return `<tr class="${cls}" data-row="${i}">
               <td class="label${w}" data-editable="true" data-field="key">${esc(r.key)}</td>
-              <td data-editable="true" data-field="html">${r.html || ""}</td>
+              <td class="kv-val"><div class="kv-cell" data-editable="true" data-field="html">${r.html || ""}</div></td>
             </tr>`;
           })
           .join("");
