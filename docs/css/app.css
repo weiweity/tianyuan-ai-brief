@@ -2414,3 +2414,72 @@ body.is-editing #t3 .block[data-type="mermaid"] {
     background: rgba(52, 199, 36, 0.1);
   }
 }
+
+/* ========== 复制本场结论 ========== */
+.check-status-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+}
+.check-status-msg {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.copy-conclusion-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--brand-deep, #7A4F96);
+  background: #fff;
+  color: var(--brand-deep, #7A4F96);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+}
+.copy-conclusion-btn:hover {
+  background: rgba(122, 79, 150, 0.1);
+}
+.copy-conclusion-btn:active {
+  transform: scale(0.97);
+}
+.copy-conclusion-btn:focus-visible {
+  outline: 2px solid var(--brand-deep, #7A4F96);
+  outline-offset: 2px;
+}
+.copy-conclusion-btn.is-copied {
+  background: #D9F5D6;
+  border-color: #34C724;
+  color: #0d5c0d;
+}
+.check-status.is-ok .copy-conclusion-btn {
+  background: #34C724;
+  border-color: #34C724;
+  color: #fff;
+}
+.check-status.is-ok .copy-conclusion-btn:hover {
+  background: #2aad22;
+}
+.check-status.is-ok .copy-conclusion-btn.is-copied {
+  background: #145214;
+  border-color: #145214;
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .check-status-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .copy-conclusion-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

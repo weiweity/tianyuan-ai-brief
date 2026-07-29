@@ -502,59 +502,193 @@
     applyEditMode();
     wireDetailCards();
     wireCheckTables();
+    wireCopyConclusion();
     if (activeTab) queueMermaid(activeTab);
   }
 
-  /** 勾选进度：散会最低要求提示（白话） */
-  function checkStatusHtml(block) {
+  function stripHtmlText(html) {
+    const d = document.createElement("div");
+    d.innerHTML = html || "";
+    return (d.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  const PATH_LABELS = {
+    A: "A 同意启动",
+    B: "B 先认方向",
+    C: "C 不立",
+  };
+
+  /** 散会最低要求：选 A/B 须 #1 #3 #4 #6；选 C 只须 #2=C */
+  function evaluateCheckGate(block) {
     const rows = block.rows || [];
     const total = rows.length;
     const done = rows.filter((r) => r.checked).length;
     const pathRow = rows.find((r) => Array.isArray(r.pathOptions) && r.pathOptions.length);
     const path = pathRow ? pathRow.pathValue || "" : "";
-    // 最低：选 A/B 须 #1 #3 #4 #6；选 C 只须 #2=C
     const needNos = path === "C" ? ["2"] : ["1", "3", "4", "6"];
     const missing = [];
     needNos.forEach((no) => {
       const r = rows.find((x) => String(x.no) === String(no));
       if (!r) return;
       if (no === "2") {
-        if (!r.pathValue) missing.push("#2 路径");
-        else if (!r.checked) missing.push("#2 路径");
+        if (!r.pathValue || !r.checked) missing.push("#2 路径");
       } else if (!r.checked) {
         missing.push("#" + no);
       }
     });
-    // #2 未选路径也算缺
     if (pathRow && !pathRow.pathValue && path !== "C") {
       if (!missing.includes("#2 路径")) missing.push("#2 路径");
     }
-    // #4 负责人姓名空
     const ownerRow = rows.find((r) => r.ownerFields);
     if (ownerRow && ownerRow.checked) {
       const n = (ownerRow.ownerFields.name || "").trim();
       if (!n && !missing.includes("#4 姓名")) missing.push("#4 姓名");
     }
+    return {
+      rows,
+      total,
+      done,
+      path,
+      pathLab: PATH_LABELS[path] || (path ? path : "未选"),
+      missing,
+      isMinOk: !!path && missing.length === 0,
+      ownerRow,
+    };
+  }
+
+  /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮 */
+  function checkStatusHtml(block) {
+    const g = evaluateCheckGate(block);
     let cls = "check-status";
     let msg = "";
-    if (!path && done === 0) {
+    if (!g.path && g.done === 0) {
       cls += " is-idle";
-      msg = `点右侧方框即可勾选 · 已勾 <b>${done}/${total}</b> · 建议先选路径 A / B / C`;
-    } else if (path === "C") {
-      cls += missing.length ? " is-warn" : " is-ok";
-      msg = missing.length
-        ? `路径 <b>C 不立</b> · 请确认勾选 #2 · 已勾 <b>${done}/${total}</b>`
-        : `路径 <b>C 不立</b> · 最低要求已齐 · 会后写进周报即可 · 已勾 <b>${done}/${total}</b>`;
-    } else if (missing.length) {
+      msg = `点右侧方框即可勾选 · 已勾 <b>${g.done}/${g.total}</b> · 建议先选路径 A / B / C`;
+    } else if (g.path === "C") {
+      cls += g.missing.length ? " is-warn" : " is-ok";
+      msg = g.missing.length
+        ? `路径 <b>C 不立</b> · 请确认勾选 #2 · 已勾 <b>${g.done}/${g.total}</b>`
+        : `路径 <b>C 不立</b> · 最低要求已齐 · 会后写进周报即可 · 已勾 <b>${g.done}/${g.total}</b>`;
+    } else if (g.missing.length) {
       cls += " is-warn";
-      const pathLab = path === "A" ? "A 同意启动" : path === "B" ? "B 先认方向" : "未选路径";
-      msg = `路径 <b>${pathLab}</b> · 散会前还缺：<b>${missing.join(" · ")}</b> · 已勾 <b>${done}/${total}</b>`;
+      msg = `路径 <b>${g.pathLab}</b> · 散会前还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b>`;
     } else {
       cls += " is-ok";
-      const pathLab = path === "A" ? "A 同意启动" : path === "B" ? "B 先认方向" : "已确认";
-      msg = `路径 <b>${pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 已勾 <b>${done}/${total}</b>`;
+      msg = `路径 <b>${g.pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 已勾 <b>${g.done}/${g.total}</b>`;
     }
-    return `<div class="${cls}" data-check-status role="status">${msg}</div>`;
+    const copyLab = g.isMinOk ? "复制本场结论" : "复制当前勾选";
+    return `<div class="${cls}" data-check-status role="status">
+      <div class="check-status-main">
+        <div class="check-status-msg">${msg}</div>
+        <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书">${copyLab}</button>
+      </div>
+    </div>`;
+  }
+
+  function buildMeetingConclusion(block) {
+    const g = evaluateCheckGate(block);
+    const date = (content && content.updated) || new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const stamp =
+      date +
+      " " +
+      String(now.getHours()).padStart(2, "0") +
+      ":" +
+      String(now.getMinutes()).padStart(2, "0");
+    const lines = [];
+    lines.push("【AI 赋能立项 · 本场结论】");
+    lines.push("时间：" + stamp);
+    lines.push("路径：" + g.pathLab + (g.isMinOk ? "（最低要求已齐）" : "（最低要求未齐）"));
+    lines.push("主开两项：客服 Agent · 供应链备案识别");
+    lines.push("费用口径：全期约 7000 元 · 首月止损 5000 · 全期止损 10000");
+    if (g.ownerRow && g.ownerRow.ownerFields) {
+      const of = g.ownerRow.ownerFields;
+      const name = (of.name || "").trim() || "（未填）";
+      const dept = (of.dept || "").trim() || "—";
+      const backup = (of.backup || "").trim() || "—";
+      lines.push("业务负责人：" + name + " · 部门 " + dept + " · 备用 " + backup);
+    } else {
+      lines.push("业务负责人：（未填）");
+    }
+    lines.push("勾选明细：");
+    g.rows.forEach((r) => {
+      const mark = r.checked ? "☑" : "☐";
+      let line = "  " + mark + " #" + (r.no || "") + " " + stripHtmlText(r.html);
+      if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
+        line += r.pathValue ? " → 路径 " + (PATH_LABELS[r.pathValue] || r.pathValue) : " → 路径未选";
+      }
+      lines.push(line);
+    });
+    if (g.missing.length) {
+      lines.push("散会最低要求：还缺 " + g.missing.join(" · "));
+      lines.push("结论口径：只记「有意向」，不排开发（除非路径 C）。");
+    } else if (g.path === "C") {
+      lines.push("散会最低要求：已齐（不立）");
+      lines.push("会后：一页「不立+原因」进周报 · 不排期");
+    } else if (g.path === "B") {
+      lines.push("散会最低要求：已齐");
+      lines.push("会后：组织准备 · 费用没批完前不开发、不烧工具费 · 批完再开工");
+    } else if (g.path === "A") {
+      lines.push("散会最低要求：已齐");
+      lines.push("会后：负责人 3 天内补书面同意 · 2 天内钉死账户与对接人 · 按止损线开通工具 · 超线即停");
+    } else {
+      lines.push("散会最低要求：路径未选");
+    }
+    lines.push("本场边界：不承诺立刻上线 · 不自动代回客户 · 金额以确认的止损线为准");
+    lines.push("— 可直接贴周报 / 飞书纪要 —");
+    return lines.join("\n");
+  }
+
+  async function copyTextToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_) {}
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;left:-9999px;top:0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  let copyConclusionWired = false;
+  function wireCopyConclusion() {
+    if (copyConclusionWired) return;
+    copyConclusionWired = true;
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-copy-conclusion]");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const blockId = btn.getAttribute("data-copy-conclusion");
+      const block = findBlock(blockId);
+      if (!block) return;
+      const text = buildMeetingConclusion(block);
+      const ok = await copyTextToClipboard(text);
+      if (ok) {
+        const g = evaluateCheckGate(block);
+        toast(g.isMinOk ? "✅ 本场结论已复制 · 可贴周报/飞书" : "已复制当前勾选（最低要求未齐）", 2400);
+        btn.classList.add("is-copied");
+        const prev = btn.textContent;
+        btn.textContent = "已复制";
+        setTimeout(() => {
+          btn.textContent = prev;
+          btn.classList.remove("is-copied");
+        }, 1600);
+      } else {
+        toast("复制失败 · 请手动选中文字，或用 HTTPS/本机打开", 2800);
+      }
+    });
   }
 
   function refreshCheckStatus(blockId) {

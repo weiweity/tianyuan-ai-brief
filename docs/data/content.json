@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.9.0",
+  "version": "5.10.0",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -38,7 +38,7 @@
             {
               "key": "请勾",
               "variant": "info",
-              "html": "本场请您当场拍 3 件事：① 是否同意立上述 2 项；② 是否同意费用与止损线（见「钱」）；③ 业务 Owner 是否当场具名，并授权超止损由 FDE <b>即停扩</b>"
+              "html": "本场请您当场拍 3 件事：① 是否同意立上述 2 项；② 是否同意费用与止损线（见「钱」）；③ 业务负责人是否当场具名，并授权超止损由执行方 <b>立即停扩</b>"
             },
             {
               "key": "钱",
@@ -48,7 +48,7 @@
             {
               "key": "工期",
               "variant": "default",
-              "html": "分两段走，不跳步：<b>先齐前置</b>（业务同意 + Owner 具名 + 费用确认）→ <b>约 4 周可内部演示</b> → 再 <b>约 4 周内部小试用</b> · 前置不齐不开开发日历 · 演示/试用不过则停扩重测"
+              "html": "分两段走，不跳步：<b>先齐前置</b>（业务同意 + 负责人具名 + 费用确认）→ <b>约 4 周可内部演示</b> → 再 <b>约 4 周内部小试用</b> · 前置不齐不开开发 · 演示/试用不过则停扩重测（详见「怎么走」）"
             }
           ]
         },
@@ -147,35 +147,35 @@
     {
       "id": "t4",
       "no": "4",
-      "title": "路径 + DoD",
+      "title": "怎么走",
       "layout": "split",
       "blocks": [
         {
           "id": "t4.chart",
           "type": "mermaid",
           "slot": "main",
-          "source": "flowchart LR\n  G0[G0 三件齐<br/>未齐=不开日历] --> G1a[G1a ~4周 可演示]\n  G1a -->|过| G1b[G1b ~4周 小试用]\n  G1a -->|不过| G0b[回 G0 停扩重测]\n  G1b -->|过| OK[可汇报 · 0 代发]\n  G1b -->|不过| STOP[停扩 · 不上报采用]\n  style G0 fill:#FFF5CC,stroke:#FFC60A\n  style G0b fill:#FEE3E2,stroke:#F54A45\n  style G1a fill:#E8F3FF,stroke:#3370FF\n  style G1b fill:#E8F3FF,stroke:#3370FF\n  style OK fill:#D9F5D6,stroke:#34C724\n  style STOP fill:#FEE3E2,stroke:#F54A45"
+          "source": "flowchart LR\n  S0[① 先齐前置<br/>未齐=不开开发] --> S1[② 约4周<br/>内部演示]\n  S1 -->|过| S2[③ 约4周<br/>内部小试用]\n  S1 -->|不过| BACK[回前置<br/>停扩重测]\n  S2 -->|过| OK[可汇报<br/>不代回客户]\n  S2 -->|不过| STOP[停扩<br/>不上报采用]\n  style S0 fill:#FFF5CC,stroke:#FFC60A,color:#111\n  style BACK fill:#FEE3E2,stroke:#F54A45,color:#111\n  style S1 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style S2 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style OK fill:#D9F5D6,stroke:#34C724,color:#111\n  style STOP fill:#FEE3E2,stroke:#F54A45,color:#111"
         },
         {
           "id": "t4.dod",
           "type": "gate-table",
           "slot": "side",
           "headers": [
-            "门禁",
-            "通过标准（默认 · 可共改须书面）"
+            "阶段",
+            "过关标准（默认可共改 · 须书面）"
           ],
           "rows": [
             {
-              "gate": "G0",
-              "html": "① 客服书面同意（邮件/飞书；口头 ≤3 工作日补书面，到期 17:00 未补→仅意向停日历）② Owner+备用具名（话术/质培负责人，非 HR 代理）③ 月 API cap 精确数或 fallback · 三缺一不开日历 · <b>派工 SLA 须含警告/换人/熔断，缺则不批</b>"
+              "gate": "① 前置",
+              "html": "三件事齐了才开开发日历：① <b>业务书面同意</b>做客服 Agent / 备案识别（口头须 ≤3 个工作日补书面，到期未补→只记意向）② <b>负责人+备用当场具名</b>（业务侧，不是行政代签）③ <b>费用与止损已确认</b>（约 7000 · 首月 5000 · 全期 10000）· 另须书面写清「出问题怎么办」（提醒 / 换人 / 停做），没有则不批启动"
             },
             {
-              "gate": "G1a",
-              "html": "话术 ≥200 条（分类+Owner）· 改一条同日可检索 · 黄金 20 题：<b>Owner 先出标准答案</b>；FDE 出题 + Owner 盲审；每题 Top3，≥14 题全中（≥70%）· 0 代发（<b>FDE 抽检 + Owner 复核</b>）· 不过→停扩回 G0"
+              "gate": "② 演示",
+              "html": "约 4 周内做到可内部演示：话术库够用且分类清楚 · 改一条<strong>当天能搜到</strong>· 抽 20 道常见题：业务先出标准答案，执行方出题、业务盲审· 每题给前 3 条，至少 14 题全中（约 70%）· <b>0 次自动代回客户</b>（执行方抽检 + 业务复核）· 不过 → 停扩，回到前置重测"
             },
             {
-              "gate": "G1b",
-              "html": "≥3 内部坐席（含 ≥1 正式编制；<b>G0 齐前锁定 ≥2 名正式编制替补池</b>）连续 2 周 · 每人每周检索 ≥5 次 · 有用反馈 ≥10 条/周 · 0 代发 · 可写周报 · 中途离职/转岗/产假→当周作废+补位后重测满 2 周（替补=劳动合同在岗，非外包派遣）"
+              "gate": "③ 试用",
+              "html": "约 4 周内部小试用：≥3 名内部坐席（含 ≥1 正式编制；前置阶段先备好 ≥2 名正式编制替补）· 连续 2 周，每人每周至少用 5 次 · 每周有用反馈 ≥10 条· 仍 <b>0 次自动代回</b> · 能写进周报· 中途人走了（离职/转岗等）→ 当周作废，补位后重新满 2 周"
             }
           ]
         }
