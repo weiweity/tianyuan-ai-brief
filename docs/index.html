@@ -9,50 +9,53 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <title>AI 赋能立项 · 金主一页</title>
   <!-- 壳：无业务文案。内容 data/content.json · 架构 ARCHITECTURE.md -->
-  <link rel="stylesheet" href="./css/app.css?v=1.44"/>
+  <link rel="stylesheet" href="./css/app.css?v=1.45"/>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#stage">跳到正文</a>
   <div id="app">
-    <header class="top">
-      <div class="logo-wrap">
-        <img id="logo-img" src="./assets/logo.png" alt="logo"/>
-        <div class="logo-edit-hint">点此换图</div>
-        <input id="logo-file" type="file" accept="image/*" hidden/>
-      </div>
-      <div class="top-mid">
-        <h1 id="doc-title">加载中…</h1>
-        <div class="sub" id="doc-sub"></div>
-      </div>
-      <div class="top-right" id="doc-role"></div>
-      <div class="toolbar" aria-label="工具">
-        <span id="status-pill">…</span>
-        <button type="button" id="btn-edit" title="E">编辑</button>
-        <button type="button" class="primary" id="btn-save" title="S · 保存并刷新页面内容">保存并更新</button>
-        <div class="tool-secondary">
-          <button type="button" id="btn-bind">绑定源码</button>
-          <button type="button" id="btn-export">导出</button>
-          <button type="button" id="btn-reload">重载</button>
+    <!-- 上框：顶栏 + 进度 + Tab 粘成一体，中间不留缝 -->
+    <div class="chrome">
+      <header class="top">
+        <div class="logo-wrap">
+          <img id="logo-img" src="./assets/logo.png" alt="logo"/>
+          <div class="logo-edit-hint">点此换图</div>
+          <input id="logo-file" type="file" accept="image/*" hidden/>
         </div>
-        <div class="toolbar-more-wrap">
-          <button type="button" id="btn-more" aria-label="更多" aria-expanded="false">⋯</button>
-          <div class="toolbar-menu" id="toolbar-menu" role="menu">
-            <button type="button" id="btn-bind-m" role="menuitem">绑定源码</button>
-            <button type="button" id="btn-export-m" role="menuitem">导出 JSON</button>
-            <button type="button" id="btn-reload-m" role="menuitem">重载源码</button>
+        <div class="top-mid">
+          <h1 id="doc-title">加载中…</h1>
+          <div class="sub" id="doc-sub"></div>
+        </div>
+        <div class="top-right" id="doc-role"></div>
+        <div class="toolbar" aria-label="工具">
+          <span id="status-pill">…</span>
+          <button type="button" id="btn-edit" title="E">编辑</button>
+          <button type="button" class="primary" id="btn-save" title="S · 保存并刷新页面内容">保存并更新</button>
+          <div class="tool-secondary">
+            <button type="button" id="btn-bind">绑定源码</button>
+            <button type="button" id="btn-export">导出</button>
+            <button type="button" id="btn-reload">重载</button>
+          </div>
+          <div class="toolbar-more-wrap">
+            <button type="button" id="btn-more" aria-label="更多" aria-expanded="false">⋯</button>
+            <div class="toolbar-menu" id="toolbar-menu" role="menu">
+              <button type="button" id="btn-bind-m" role="menuitem">绑定源码</button>
+              <button type="button" id="btn-export-m" role="menuitem">导出 JSON</button>
+              <button type="button" id="btn-reload-m" role="menuitem">重载源码</button>
+            </div>
           </div>
         </div>
+      </header>
+      <div class="progress-bar" aria-hidden="true"><i id="progress-fill" style="width:14%"></i></div>
+      <div class="edit-banner" id="edit-banner">编辑模式 · 改完点「保存并更新」→ 自动写回并刷新本页（客户打开的链接约 30 秒内同步）</div>
+      <div class="tabs-row">
+        <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
+        <div class="pager-dots" id="pager-dots" aria-label="页码"></div>
       </div>
-    </header>
-
-    <div class="progress-bar" aria-hidden="true"><i id="progress-fill" style="width:14%"></i></div>
-    <div class="edit-banner" id="edit-banner">编辑模式 · 改完点「保存并更新」→ 自动写回并刷新本页（客户打开的链接约 30 秒内同步）</div>
-    <div class="tabs-row">
-      <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
-      <div class="pager-dots" id="pager-dots" aria-label="页码"></div>
     </div>
 
+    <!-- 下框：内容舞台，flex 吃满剩余高度 -->
     <div class="stage-wrap">
       <button type="button" class="edge-nav prev" id="nav-prev" aria-label="上一页">‹</button>
       <button type="button" class="edge-nav next" id="nav-next" aria-label="下一页">›</button>
@@ -65,18 +68,18 @@
           <div class="skel skel-line" style="flex:1;min-height:120px"></div>
         </div>
       </main>
+      <div class="stage-meta">
+        <span class="swipe-hint" id="swipe-hint">左右滑翻页 · <strong id="page-label">1 / 7</strong></span>
+        <footer class="footer">
+          <div class="footer-left" id="footer-left"></div>
+          <div class="hint footer-right" id="footer-right"></div>
+        </footer>
+      </div>
     </div>
-
-    <div class="swipe-hint" id="swipe-hint">左右滑动翻页 · 点圆点/Tab 跳转 · <strong id="page-label">1 / 7</strong></div>
-
-    <footer class="footer">
-      <div class="footer-left" id="footer-left"></div>
-      <div class="hint footer-right" id="footer-right"></div>
-    </footer>
   </div>
 
   <button type="button" class="update-chip" id="update-chip" hidden>内容已更新 · 点击刷新</button>
   <div class="toast" id="toast" role="status"></div>
-  <script src="./js/app.js?v=1.44"></script>
+  <script src="./js/app.js?v=1.45"></script>
 </body>
 </html>
