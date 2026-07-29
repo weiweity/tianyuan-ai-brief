@@ -686,7 +686,7 @@ body.is-editing [data-editable="true"]:focus {
   .swipe-hint { display: inline; }
 }
 
-/* ========== 手机：真·一屏优先 ========== */
+/* ========== 手机：真·一屏优先 · 防卡片重叠 ========== */
 @media (max-width: 640px) {
   :root {
     --fs: 13px;
@@ -695,8 +695,11 @@ body.is-editing [data-editable="true"]:focus {
     --pad: 6px;
     --radius: 10px;
   }
+  /* 保持 flex 列，勿再写 grid-template-rows（会与 #app flex 打架） */
   #app {
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
   .top {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -705,9 +708,11 @@ body.is-editing [data-editable="true"]:focus {
   }
   .logo-wrap {
     width: 84px;
-    height: 28px;
+    min-width: 44px;
+    height: 36px;
+    min-height: 36px;
   }
-  .top-mid .sub { display: none; } /* 省高度 */
+  .top-mid .sub { display: none; }
   .top-right { display: none !important; }
   .toolbar .tool-secondary { display: none; }
   #btn-more { display: inline-flex; align-items: center; justify-content: center; }
@@ -718,9 +723,7 @@ body.is-editing [data-editable="true"]:focus {
     margin: 0;
     padding: 3px 6px 5px;
   }
-  .tabs {
-    gap: 3px;
-  }
+  .tabs { gap: 3px; }
   .tab {
     min-height: 30px;
     padding: 4px 9px;
@@ -731,48 +734,78 @@ body.is-editing [data-editable="true"]:focus {
     height: 15px;
     line-height: 15px;
   }
-  .pager-dots {
-    display: none; /* 手机用 Tab 横滑即可 */
-  }
+  .pager-dots { display: none; }
   .stage-meta .swipe-hint { display: inline; }
-  #app { gap: 4px; }
 
-  .stage {
-    border-radius: 10px;
-  }
   .panel {
     padding: 8px;
-    gap: 6px;
+    gap: 8px;
+    overflow: hidden;
   }
-  .panel > h2 { font-size: 13.5px; }
+  .panel > h2 {
+    font-size: 13.5px;
+    flex-shrink: 0;
+  }
 
-  /* 表在手机上改为卡片感 */
-  table { font-size: 12px; }
-  th, td { padding: 7px 6px; }
-  td.label {
-    width: 56px;
-    white-space: normal;
-    word-break: break-all;
+  /* 内容区只在 panel-body 滚，块之间不叠 */
+  .panel-body,
+  .panel-body.layout-stack,
+  .panel-body.layout-fill,
+  .panel-body.layout-split {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px !important;
+    grid-template-columns: none !important;
   }
-  td.label.wide { width: 64px; }
+  .panel-body.layout-split > .slot-main,
+  .panel-body.layout-split > .slot-side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: visible !important;
+    min-height: 0;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .block {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .block[data-type="mermaid"] {
+    min-height: 180px;
+    max-height: 36vh;
+    flex: 0 0 auto;
+  }
+  .panel-body[data-count="1"]::after {
+    z-index: 0;
+    opacity: 0.5;
+  }
+  .panel-body[data-count="1"] > .block {
+    z-index: 1;
+  }
+
+  /* 手机：左右滑足够，边键易盖住卡片 → 隐藏 */
+  .edge-nav {
+    display: none !important;
+  }
 
   .footer {
     font-size: 10px;
-    min-height: 20px;
+    min-height: 0;
   }
-  .footer-left { max-width: 55%; }
-  .footer-right { max-width: 42%; text-align: right; }
+  .footer-left { max-width: 50%; }
+  .footer-right { max-width: 48%; text-align: right; }
   .footer .kbd { display: none; }
-
-  .edge-nav {
-    width: 32px;
-    height: 48px;
-    opacity: 0.88;
-  }
-
-  .block[data-type="mermaid"] {
-    min-height: min(34vh, 260px);
-  }
 }
 
 /* 矮屏（横屏手机 / 小笔记本） */
@@ -784,15 +817,17 @@ body.is-editing [data-editable="true"]:focus {
   .block[data-type="mermaid"] { min-height: 160px; }
 }
 
-/* 横屏手机：左右分栏尽量恢复 */
+/* 横屏手机：仍单列滚动，避免双栏把卡片挤叠 */
 @media (max-width: 900px) and (orientation: landscape) and (max-height: 480px) {
   .panel-body.layout-split {
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
   }
   .block[data-type="mermaid"] {
-    min-height: 0;
-    flex: 1;
+    min-height: 120px;
+    max-height: 42vh;
+    flex: 0 0 auto;
   }
 }
 
@@ -879,30 +914,49 @@ body.is-editing [data-editable="true"]:focus {
   gap: 10px;
 }
 
-/* 卡片化表格（手机） */
+/* 卡片化表格（手机）— 整表 display:block 防 tr 重叠 */
 @media (max-width: 640px) {
+  .block[data-type="kv-table"],
+  .block[data-type="gate-table"],
+  .block[data-type="check-table"] {
+    display: block;
+    width: 100%;
+  }
   .block[data-type="kv-table"] table,
   .block[data-type="gate-table"] table,
   .block[data-type="check-table"] table {
+    display: block;
+    width: 100%;
     border: 0;
+    border-collapse: separate;
+    border-spacing: 0;
   }
   .block[data-type="kv-table"] thead,
   .block[data-type="gate-table"] thead,
   .block[data-type="check-table"] thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0);
+    display: none; /* 勿用 absolute，多表会叠在一起 */
+  }
+  .block[data-type="kv-table"] tbody,
+  .block[data-type="gate-table"] tbody,
+  .block[data-type="check-table"] tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
   }
   .block[data-type="kv-table"] tr,
   .block[data-type="gate-table"] tr,
   .block[data-type="check-table"] tr {
     display: block;
+    position: relative;
+    float: none;
+    clear: both;
+    width: 100%;
+    box-sizing: border-box;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: #fff;
-    margin-bottom: 8px;
+    margin: 0;
     padding: 10px 12px;
     box-shadow: 0 2px 8px rgba(74, 47, 98, 0.05);
   }
@@ -910,10 +964,15 @@ body.is-editing [data-editable="true"]:focus {
   .block[data-type="gate-table"] td,
   .block[data-type="check-table"] td {
     display: block;
+    position: static;
+    float: none;
     border: 0 !important;
     padding: 2px 0 !important;
-    width: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
     white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   .block[data-type="kv-table"] td.label,
   .block[data-type="gate-table"] td.label,
@@ -922,23 +981,40 @@ body.is-editing [data-editable="true"]:focus {
     color: var(--brand-deep);
     font-size: 11px;
     letter-spacing: 0.04em;
-    text-transform: none;
-    margin-bottom: 2px;
-    padding-bottom: 4px !important;
+    margin: 0 0 6px;
+    padding: 0 0 6px !important;
     border-bottom: 1px dashed var(--line) !important;
-    margin-bottom: 6px;
+  }
+  /* 勾选框：流式排在末行，不用 absolute 盖字 */
+  .block[data-type="check-table"] tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 8px;
+    padding-right: 12px;
+  }
+  .block[data-type="check-table"] td.label.narrow {
+    flex: 0 0 auto;
+    width: auto !important;
+    border-bottom: none !important;
+    margin: 0;
+    padding: 0 !important;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .block[data-type="check-table"] td[data-field="html"] {
+    flex: 1 1 70%;
+    min-width: 0;
   }
   .block[data-type="check-table"] td.chk {
-    position: absolute;
-    right: 14px;
-    top: 12px;
+    position: static;
+    flex: 0 0 auto;
+    width: auto !important;
     font-size: 18px;
+    line-height: 1;
+    padding: 0 !important;
+    margin-left: auto;
   }
-  .block[data-type="check-table"] tr {
-    position: relative;
-    padding-right: 36px;
-  }
-  /* 手机门禁长文：可读行高 */
   .block[data-type="gate-table"] td[data-field="html"],
   .block[data-type="kv-table"] td[data-field="html"] {
     line-height: 1.55;
