@@ -1427,7 +1427,8 @@
           body.style.transition = "";
 
           if (isMobile) {
-            // 手机：压缩图后，用 gBCR 把「客服」首卡顶到 sticky 按钮下（禁止 scrollIntoView 整卡）
+            // 手机：禁止 smooth 连滚（smooth + mermaid 重绘 = 回弹感）
+            // 布局稳定后 auto 一次对准「客服」首卡
             const scrollToFirstDept = () => {
               const first = card.querySelector(".dept-card");
               const sticky = card.querySelector(".detail-card-btn");
@@ -1438,15 +1439,16 @@
                 pb.getBoundingClientRect().top -
                 stickyH -
                 8;
-              pb.scrollTo({ top: Math.max(0, pb.scrollTop + delta), behavior: "smooth" });
+              pb.scrollTo({ top: Math.max(0, pb.scrollTop + delta), behavior: "auto" });
             };
+            // 先锁滚到首卡，再异步重绘图（避免图压缩动画带跑滚动）
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
-                renderedMermaid.clear();
-                queueMermaid(activeTab);
                 scrollToFirstDept();
-                // mermaid 重绘后再校一次
-                setTimeout(scrollToFirstDept, 320);
+                renderedMermaid.clear();
+                Promise.resolve(queueMermaid(activeTab)).then(() => {
+                  requestAnimationFrame(scrollToFirstDept);
+                });
               });
             });
           } else {
@@ -2344,6 +2346,9 @@
       peekEl = null;
     };
 
+    // 滑页动效用 ease-out，禁止 spring 过冲（过冲=肉眼「回弹」）
+    const SWIPE_EASE = "transform 0.18s cubic-bezier(0.25,0.1,0.25,1), opacity 0.14s ease";
+
     const clearDrag = (panel, animate) => {
       clearPeek();
       document.body.classList.remove("is-swiping");
@@ -2357,13 +2362,12 @@
         return;
       }
       if (animate) {
-        panel.style.transition =
-          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
+        panel.style.transition = SWIPE_EASE;
         panel.style.transform = "translateX(0)";
         panel.style.opacity = "1";
         setTimeout(() => {
           resetAllSwipeStyles();
-        }, 220);
+        }, 200);
       } else {
         resetAllSwipeStyles();
       }
@@ -2497,20 +2501,19 @@
         return;
       }
       // 确认 chrome（可能已乐观切过）
-      paintChrome(ids[next]);
-      chromeOptimisticId = ids[next];
+      const nextId = ids[next];
+      paintChrome(nextId);
+      chromeOptimisticId = nextId;
       pendingDir = dir;
       document.body.classList.add("is-swiping");
       if (panel) {
-        panel.style.transition =
-          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
+        panel.style.transition = SWIPE_EASE;
         panel.style.transform = "translateX(" + (dir > 0 ? -w : w) + "px)";
         panel.style.opacity = "0";
         panel.style.zIndex = "3";
       }
       if (peekEl) {
-        peekEl.style.transition =
-          "transform 0.2s var(--ix-spring, cubic-bezier(0.2,0.9,0.3,1.1)), opacity 0.16s ease";
+        peekEl.style.transition = SWIPE_EASE;
         peekEl.style.transform = "translateX(0)";
         peekEl.style.opacity = "1";
         peekEl.style.zIndex = "4";
@@ -2518,13 +2521,32 @@
       cancelPendingGo(false);
       pendingGoTimer = setTimeout(() => {
         pendingGoTimer = null;
-        peekEl = null;
         const d = pendingDir;
+        const commitId = ids[ids.indexOf(activeTab) + d];
         pendingDir = 0;
         chromeOptimisticId = null;
-        resetAllSwipeStyles();
+        // 先无动画落位再切 active，避免 transform 清空时「弹回」一帧
+        $$(".panel").forEach((p) => {
+          p.style.transition = "none";
+          p.classList.remove("is-peek", "slide-left", "slide-right");
+          p.style.transform = "";
+          p.style.opacity = "";
+          p.style.zIndex = "";
+          p.style.position = "";
+          p.style.pointerEvents = "";
+          p.style.left = "";
+          p.style.right = "";
+          p.style.top = "";
+          p.style.bottom = "";
+          p.style.margin = "";
+          p.style.willChange = "";
+          p.classList.toggle("active", p.id === commitId);
+        });
+        peekEl = null;
+        document.body.classList.remove("is-swiping");
+        // go 幂等：fromSwipe 不再播 panelIn
         go(d, { fromSwipe: true });
-      }, 200);
+      }, 180);
     };
 
     // —— touch 主链 ——
@@ -2593,7 +2615,7 @@
   }
 
 
-  /** mermaid 单击放大：clone SVG 进 lightbox，防背后滑动 */
+  /** mermaid 单击放大：clone SVG 进 lightbox；支持双指缩放 / 双击放大 / 滚轮缩放 */
   function wireMermaidLightbox() {
     if (wireMermaidLightbox._on) return;
     wireMermaidLightbox._on = true;
@@ -2603,13 +2625,42 @@
     if (!box || !stageEl) return;
 
     let lastTrigger = null;
+    let scale = 1;
+    let tx = 0;
+    let ty = 0;
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let panStart = null;
+    let lastTapT = 0;
+
+    const viewport = () => stageEl.querySelector(".diagram-zoom-viewport");
+    const applyTransform = () => {
+      const vp = viewport();
+      if (!vp) return;
+      scale = Math.min(5, Math.max(1, scale));
+      if (scale === 1) {
+        tx = 0;
+        ty = 0;
+      }
+      vp.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+    };
+    const resetZoom = () => {
+      scale = 1;
+      tx = 0;
+      ty = 0;
+      applyTransform();
+    };
+
     const close = () => {
       box.hidden = true;
       document.body.classList.remove("is-lightbox");
       stageEl.innerHTML = "";
       document.body.style.overflow = "";
+      resetZoom();
       if (lastTrigger && lastTrigger.focus) {
-        try { lastTrigger.focus(); } catch (_) {}
+        try {
+          lastTrigger.focus();
+        } catch (_) {}
       }
       lastTrigger = null;
     };
@@ -2619,13 +2670,21 @@
       if (!svg) return;
       lastTrigger = host;
       stageEl.innerHTML = "";
+      const wrap = document.createElement("div");
+      wrap.className = "diagram-zoom-viewport";
       const clone = svg.cloneNode(true);
       clone.removeAttribute("width");
       clone.removeAttribute("height");
       clone.style.width = "100%";
       clone.style.height = "auto";
-      clone.style.maxHeight = "min(88vh, 100%)";
-      stageEl.appendChild(clone);
+      clone.style.maxHeight = "none";
+      wrap.appendChild(clone);
+      const hint = document.createElement("div");
+      hint.className = "diagram-zoom-hint";
+      hint.textContent = "双指缩放 · 双击放大/还原 · 单指拖移";
+      stageEl.appendChild(wrap);
+      stageEl.appendChild(hint);
+      resetZoom();
       box.hidden = false;
       document.body.classList.add("is-lightbox");
       document.body.style.overflow = "hidden";
@@ -2633,12 +2692,13 @@
     };
 
     // 点击 mermaid-host：tap 判定 movement < 8
-    let sx = 0, sy = 0;
+    let sx = 0,
+      sy = 0;
     document.addEventListener(
       "pointerdown",
       (e) => {
         const host = e.target.closest(".mermaid-host");
-        if (!host) return;
+        if (!host || box && !box.hidden) return;
         sx = e.clientX;
         sy = e.clientY;
         host._tapCand = true;
@@ -2659,17 +2719,88 @@
       true
     );
 
-    if (closeBtn) closeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      close();
-    });
+    if (closeBtn)
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        close();
+      });
     box.addEventListener("click", (e) => {
-      if (e.target === box || e.target === stageEl) close();
+      if (e.target === box) close();
     });
-    // 阻止 lightbox 内滑动传到 stage
-    ["touchstart", "touchmove", "touchend"].forEach((ev) => {
-      box.addEventListener(ev, (e) => e.stopPropagation(), { passive: true });
-    });
+
+    // —— 双指缩放 + 单指拖移 + 双击 ——
+    const dist = (t0, t1) => Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+
+    stageEl.addEventListener(
+      "touchstart",
+      (e) => {
+        e.stopPropagation();
+        if (e.touches.length === 2) {
+          pinchStartDist = dist(e.touches[0], e.touches[1]) || 1;
+          pinchStartScale = scale;
+          panStart = null;
+        } else if (e.touches.length === 1 && scale > 1) {
+          panStart = { x: e.touches[0].clientX - tx, y: e.touches[0].clientY - ty };
+        }
+      },
+      { passive: true }
+    );
+    stageEl.addEventListener(
+      "touchmove",
+      (e) => {
+        e.stopPropagation();
+        if (e.touches.length === 2) {
+          if (e.cancelable) e.preventDefault();
+          const d = dist(e.touches[0], e.touches[1]) || 1;
+          scale = pinchStartScale * (d / pinchStartDist);
+          applyTransform();
+        } else if (e.touches.length === 1 && panStart && scale > 1) {
+          if (e.cancelable) e.preventDefault();
+          tx = e.touches[0].clientX - panStart.x;
+          ty = e.touches[0].clientY - panStart.y;
+          applyTransform();
+        }
+      },
+      { passive: false }
+    );
+    stageEl.addEventListener(
+      "touchend",
+      (e) => {
+        e.stopPropagation();
+        if (e.touches.length < 2) pinchStartDist = 0;
+        if (e.touches.length === 0) panStart = null;
+        // 双击放大 / 还原
+        if (e.changedTouches.length === 1 && e.touches.length === 0) {
+          const now = Date.now();
+          if (now - lastTapT < 280) {
+            if (scale > 1.05) resetZoom();
+            else {
+              scale = 2.2;
+              applyTransform();
+            }
+            lastTapT = 0;
+          } else {
+            lastTapT = now;
+          }
+        }
+      },
+      { passive: true }
+    );
+
+    // 桌面滚轮缩放
+    stageEl.addEventListener(
+      "wheel",
+      (e) => {
+        if (box.hidden) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = e.deltaY > 0 ? -0.12 : 0.12;
+        scale += delta;
+        applyTransform();
+      },
+      { passive: false }
+    );
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !box.hidden) close();
     });

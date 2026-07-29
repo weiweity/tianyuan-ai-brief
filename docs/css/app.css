@@ -5363,3 +5363,139 @@ body.is-lightbox {
     }
   }
 }
+
+/* ========== v1.90：t1 双列 · lightbox 缩放 · 滑页无过冲 ========== */
+
+/* lightbox 缩放视口 */
+.diagram-zoom-viewport {
+  width: 100%;
+  transform-origin: center center;
+  will-change: transform;
+  transition: none;
+  touch-action: none;
+}
+.diagram-zoom-hint {
+  position: sticky;
+  bottom: 0;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b5a78;
+  background: rgba(255,255,255,0.92);
+  padding: 6px;
+  border-radius: 8px;
+}
+.diagram-lightbox-stage {
+  touch-action: none;
+  overflow: hidden; /* 缩放由 transform 负责，避免双滚冲突 */
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (max-width: 640px) {
+  /* —— 20 秒结论：kv 行 2 列卡片；两通栏 callout 也 2 列 —— */
+  #t1 .panel-body.layout-fill,
+  #t1 .panel-body.layout-fill[data-count="3"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  #t1 .block[data-type="kv-table"] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+    max-height: none !important;
+  }
+  #t1 .block[data-type="kv-table"] tbody {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  #t1 .block[data-type="kv-table"] tr {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 12px 12px 10px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(122, 79, 150, 0.12) !important;
+    background: #fff !important;
+    box-shadow: 0 3px 12px rgba(74, 47, 98, 0.06) !important;
+  }
+  #t1 .block[data-type="kv-table"] td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+  #t1 .block[data-type="kv-table"] td.label {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: var(--brand-deep, #7A4F96) !important;
+    margin: 0 0 6px !important;
+    padding: 0 0 6px !important;
+    border-bottom: 1px dashed rgba(122, 79, 150, 0.16) !important;
+    background: transparent !important;
+    width: 100% !important;
+  }
+  #t1 .block[data-type="kv-table"] .kv-cell,
+  #t1 .block[data-type="kv-table"] td:not(.label) {
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+  }
+  /* 请勾 / 工期 文案长：通栏更易读 */
+  #t1 .block[data-type="kv-table"] tr:nth-child(3),
+  #t1 .block[data-type="kv-table"] tr:nth-child(5) {
+    grid-column: 1 / -1 !important;
+  }
+  /* 底两 callout 并排 */
+  #t1 .panel-body > .block[data-type="callout"] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+  }
+  #t1 .panel-body {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    flex-direction: row !important;
+    align-content: flex-start !important;
+  }
+  #t1 .panel-body > .block[data-type="kv-table"] {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+  #t1 .panel-body > .block[data-type="callout"] {
+    flex: 1 1 calc(50% - 5px) !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+  @media (max-width: 360px) {
+    #t1 .block[data-type="kv-table"] tbody {
+      grid-template-columns: 1fr !important;
+    }
+    #t1 .block[data-type="kv-table"] tr:nth-child(3),
+    #t1 .block[data-type="kv-table"] tr:nth-child(5) {
+      grid-column: auto !important;
+    }
+    #t1 .panel-body > .block[data-type="callout"] {
+      flex: 1 1 100% !important;
+    }
+  }
+
+  /* 取舍展开：去掉 mermaid 收起伪元素动画干扰滚动 */
+  body.is-t2-dept-open #t2 .block[data-type="mermaid"] {
+    transition: none !important;
+  }
+  #t2 .detail-card.is-open .detail-card-body {
+    transition: none !important;
+  }
+}
