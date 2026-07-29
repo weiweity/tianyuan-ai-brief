@@ -1431,3 +1431,139 @@ html, body, .stage {
   .pager-dots button.active { width: 22px; }
 }
 /* 克制：Tab 选中不再放大 */
+
+/* ========== t1 20秒结论：主表吃满 + 底卡贴底 ========== */
+.panel-body.layout-fill[data-count="3"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 10px;
+  overflow: hidden;
+}
+/* 主 KPI 表占满中部 */
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] table {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] tbody {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] tr {
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: stretch;
+  min-height: 0;
+  border-bottom: 1px solid var(--line);
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] tr:last-child {
+  border-bottom: 0;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td {
+  border: 0 !important;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px !important;
+  font-size: clamp(13px, 1.05vw + 0.2vh, 15px);
+  line-height: 1.45;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td.label {
+  justify-content: center;
+  width: auto !important;
+  font-size: 13px;
+  border-right: 1px solid var(--line) !important;
+}
+/* 底部两 callout 横排贴底 */
+.panel-body.layout-fill[data-count="3"] > .block[data-type="callout"] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+/* 把连续两个 callout 包成横排：用 CSS 对相邻 callout */
+.panel-body.layout-fill[data-count="3"] {
+  /* use subgrid-like: after kv-table, remaining callouts in a row via flex wrap on a pseudo group */
+}
+/* 方案：callout 共享一行 — 父级用 flex-wrap，kv 100% 宽，callout 各半 */
+.panel-body.layout-fill[data-count="3"] {
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-content: stretch;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] {
+  flex: 1 1 100%;
+  width: 100%;
+  min-height: 45%;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="callout"] {
+  flex: 1 1 calc(50% - 6px);
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  font-size: clamp(12.5px, 0.95vw + 0.15vh, 14px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  /* 手机：表仍纵向卡片，callout 上下排，减少底部空洞靠加大表区 */
+  .panel-body.layout-fill[data-count="3"] {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    overflow-y: auto !important;
+    height: auto;
+    min-height: 100%;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] {
+    flex: 1 1 auto;
+    min-height: 50vh;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: auto;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] tr {
+    display: block;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    grid-template-columns: none;
+    background: #fff;
+    padding: 10px 12px;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td {
+    display: block;
+    padding: 2px 0 !important;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td.label {
+    border-right: 0 !important;
+    justify-content: flex-start;
+    margin-bottom: 6px;
+    padding-bottom: 6px !important;
+    border-bottom: 1px dashed var(--line) !important;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="callout"] {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+}
