@@ -226,6 +226,8 @@
     }
     renderedMermaid.clear();
     renderAll();
+    document.body.classList.toggle("is-check-page", activeTab === "t6");
+    syncCheckStatusFloat();
     setStatus(reason === "save" ? "已更新" : "已同步最新", "ok");
   }
 
@@ -790,7 +792,26 @@
       msg = `路径 <b>${g.pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 可复制结论贴飞书 · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`;
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前勾选";
+    // 悬浮头：路径 + 进度 + 门禁，滚动多选时一眼能看见
+    const pathCls = g.path ? " path-" + String(g.path).toLowerCase() : " is-empty";
+    const pathBadge = g.path
+      ? `<span class="check-path-badge${pathCls}">${esc(g.pathLab)}</span>`
+      : `<span class="check-path-badge is-empty">路径未选</span>`;
+    const progBadge = `<span class="check-prog-badge">已勾 <b>${g.done}/${g.total}</b></span>`;
+    let gateBadge;
+    if (g.isMinOk) {
+      gateBadge = `<span class="check-gate-badge is-ok">最低要求已齐</span>`;
+    } else if (g.missing.length) {
+      gateBadge = `<span class="check-gate-badge is-warn">还缺 ${esc(g.missing.join(" · "))}</span>`;
+    } else {
+      gateBadge = `<span class="check-gate-badge is-idle">先选路径 A / B / C</span>`;
+    }
     return `<div class="${cls}" data-check-status role="status">
+      <div class="check-status-dock">
+        ${pathBadge}
+        ${progBadge}
+        ${gateBadge}
+      </div>
       <div class="check-status-main">
         <div class="check-status-msg">${msg}</div>
         <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书">${copyLab}</button>
@@ -965,6 +986,34 @@
     const neu = tmp.firstElementChild;
     if (old && neu) old.replaceWith(neu);
     else if (neu && !old) wrap.appendChild(neu);
+    // 手机悬浮底栏：同步键盘/可视区 bottom
+    syncCheckStatusFloat();
+  }
+
+  /** 手机：进度条 fixed 时避开软键盘遮挡 */
+  function syncCheckStatusFloat() {
+    if (window.innerWidth > 640) return;
+    const el = document.querySelector("#t6.panel.active [data-check-status]");
+    if (!el) return;
+    const vv = window.visualViewport;
+    let lift = 0;
+    if (vv) {
+      // 键盘顶起时，把底栏抬到可视区上方
+      lift = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    }
+    el.style.bottom = "calc(" + (10 + lift) + "px + env(safe-area-inset-bottom, 0px))";
+  }
+
+  function wireCheckStatusFloat() {
+    if (wireCheckStatusFloat._on) return;
+    wireCheckStatusFloat._on = true;
+    const tick = () => syncCheckStatusFloat();
+    window.addEventListener("resize", tick);
+    window.addEventListener("orientationchange", () => setTimeout(tick, 200));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", tick);
+      window.visualViewport.addEventListener("scroll", tick);
+    }
   }
 
   function setRowCheckedUI(tr, checked) {
@@ -1645,8 +1694,11 @@
         p.classList.add(swipeDir === "left" ? "slide-left" : "slide-right");
       }
     });
+    // 勾选页：标记 body，方便悬浮底栏；切走则清
+    document.body.classList.toggle("is-check-page", id === "t6");
     updatePagerChrome();
     await queueMermaid(id);
+    syncCheckStatusFloat();
   }
 
   function go(delta, opts) {
@@ -2346,7 +2398,10 @@
       wireLogo();
       wireKeys();
       wireSwipe();
+      wireCheckStatusFloat();
       startHotPoll();
+      document.body.classList.toggle("is-check-page", activeTab === "t6");
+      syncCheckStatusFloat();
       // title editable only in edit mode
       $("#doc-title").dataset.editable = "true";
     } catch (e) {

@@ -4714,3 +4714,195 @@ body.is-swiping .panel.active:not(.is-peek) {
     border-radius: 14px !important;
   }
 }
+
+/* ========== 手机：请您勾选 · 进度条悬浮底栏 v1.86 ========== */
+@media (max-width: 640px) {
+  /* 勾选页：给底栏腾出安全区，避免最后几项被挡住 */
+  body.is-check-page #t6.panel.active .block[data-type="check-table"] {
+    padding-bottom: 0 !important;
+  }
+  body.is-check-page #t6.panel.active .panel-body {
+    padding-bottom: calc(148px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* 隐藏页脚提示，少抢悬浮条高度 */
+  body.is-check-page .stage-meta {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* 核心：进度判定条固定悬浮在屏幕底部 */
+  body.is-check-page #t6.panel.active .check-status,
+  body.is-check-page #t6.panel.active [data-check-status] {
+    position: fixed !important;
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 80 !important;
+    margin: 0 !important;
+    max-height: min(42vh, 220px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 18px !important;
+    border: 1.5px solid rgba(122, 79, 150, 0.22) !important;
+    box-shadow:
+      0 12px 36px rgba(42, 26, 56, 0.22),
+      0 2px 0 rgba(255, 255, 255, 0.65) inset !important;
+    padding: 10px 12px 10px !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    /* 盖住下方内容，保证可读 */
+    background: rgba(255, 255, 255, 0.96) !important;
+  }
+  body.is-check-page #t6.panel.active .check-status.is-idle {
+    background: rgba(245, 240, 248, 0.97) !important;
+    border-color: rgba(122, 79, 150, 0.28) !important;
+  }
+  body.is-check-page #t6.panel.active .check-status.is-warn {
+    background: rgba(255, 248, 232, 0.97) !important;
+    border-color: rgba(255, 198, 10, 0.65) !important;
+  }
+  body.is-check-page #t6.panel.active .check-status.is-ok {
+    background: rgba(234, 248, 232, 0.97) !important;
+    border-color: rgba(52, 199, 36, 0.55) !important;
+  }
+
+  /* 顶行：路径 / 已勾 / 还缺 —— 一眼进度 */
+  .check-status-dock {
+    display: none; /* 桌面隐藏，手机显示 */
+  }
+  body.is-check-page #t6.panel.active .check-status-dock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .check-path-badge,
+  .check-prog-badge,
+  .check-gate-badge {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .check-path-badge {
+    background: #EDE4F4;
+    color: #5a3a72;
+    border-color: rgba(122, 79, 150, 0.25);
+  }
+  .check-path-badge.path-a {
+    background: #D9F5D6;
+    color: #145214;
+    border-color: rgba(52, 199, 36, 0.35);
+  }
+  .check-path-badge.path-b {
+    background: #E8F3FF;
+    color: #1a4a8a;
+    border-color: rgba(51, 112, 255, 0.3);
+  }
+  .check-path-badge.path-c {
+    background: #FEE3E2;
+    color: #8a1f1a;
+    border-color: rgba(245, 74, 69, 0.3);
+  }
+  .check-path-badge.is-empty {
+    background: #f0eef3;
+    color: #6b5a78;
+    border-style: dashed;
+  }
+  .check-prog-badge {
+    background: #fff;
+    color: #3d2a4d;
+    border-color: rgba(122, 79, 150, 0.18);
+  }
+  .check-prog-badge b {
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-deep, #7A4F96);
+  }
+  .check-gate-badge {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    justify-content: flex-start;
+  }
+  .check-gate-badge.is-ok {
+    background: #D9F5D6;
+    color: #0d5c0d;
+    border-color: rgba(52, 199, 36, 0.35);
+  }
+  .check-gate-badge.is-warn {
+    background: #FFF1C2;
+    color: #5c4500;
+    border-color: rgba(255, 198, 10, 0.55);
+  }
+  .check-gate-badge.is-idle {
+    background: #f5f0f8;
+    color: #5a3a72;
+    border-color: rgba(122, 79, 150, 0.2);
+  }
+
+  /* 悬浮时正文略缩，优先看 dock */
+  body.is-check-page #t6.panel.active .check-status-msg {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    color: #444;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  body.is-check-page #t6.panel.active .check-status-main {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  body.is-check-page #t6.panel.active .copy-conclusion-btn {
+    width: auto !important;
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+    flex: 0 0 auto;
+    border-radius: 12px !important;
+  }
+
+  /* 滑页时短暂隐藏，避免跟手叠影 */
+  body.is-swiping.is-check-page #t6 .check-status {
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+}
+
+/* 桌面：dock 可显示为精简顶条（可选，保持不抢戏） */
+@media (min-width: 641px) {
+  .check-status-dock {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .check-path-badge,
+  .check-prog-badge,
+  .check-gate-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(122, 79, 150, 0.15);
+    background: #f8f5fb;
+    color: #3d2a4d;
+  }
+  .check-path-badge.path-a { background: #D9F5D6; color: #145214; }
+  .check-path-badge.path-b { background: #E8F3FF; color: #1a4a8a; }
+  .check-path-badge.path-c { background: #FEE3E2; color: #8a1f1a; }
+  .check-gate-badge.is-ok { background: #D9F5D6; color: #0d5c0d; }
+  .check-gate-badge.is-warn { background: #FFF1C2; color: #5c4500; }
+}
