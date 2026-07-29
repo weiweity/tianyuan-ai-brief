@@ -453,7 +453,9 @@
         card.classList.toggle("is-open", open);
         body.hidden = !open;
         btn.setAttribute("aria-expanded", open ? "true" : "false");
-        // 展开后重绘 mermaid，避免高度被挤没
+        const pb = card.closest(".panel-body");
+        if (pb) pb.classList.toggle("is-detail-open", open);
+        // 展开后重绘 mermaid（空间被压缩）
         renderedMermaid.clear();
         queueMermaid(activeTab);
       });

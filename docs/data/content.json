@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.7.3",
+  "version": "5.7.4",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -75,13 +75,13 @@
         {
           "id": "t2.chart",
           "type": "mermaid",
-          "source": "flowchart TB\n  subgraph MAIN[主开 · 2 项]\n    K[客服 Agent]\n    S[供应链 备案识别]\n  end\n  subgraph HOLD[轻/后]\n    W[仓储 查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计]\n  end\n  K --> BI[BI · FDE]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
+          "source": "flowchart TB\n  subgraph MAIN[本期主开]\n    K[客服 Agent<br/>统一答法 · 人确认]\n    S[供应链 备案识别<br/>机标差异 · 人终审]\n  end\n  subgraph HOLD[后置 · 有条件再开]\n    W[仓储<br/>先数据治理 / BI]\n    P[私域<br/>RPA + BI 优先]\n  end\n  subgraph NO[本期不开]\n    D[设计<br/>已自驱]\n  end\n  K --> OUT[可周报 · 可停损]\n  S --> OUT\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#FFF5CC,stroke:#FFC60A\n  style P fill:#FFF5CC,stroke:#FFC60A\n  style D fill:#FEE3E2,stroke:#F54A45\n  style OUT fill:#E8F3FF,stroke:#3370FF"
         },
         {
           "id": "t2.dept",
           "type": "detail-card",
           "title": "各部门：为什么开 · 为什么不开 · 原因",
-          "subtitle": "点击展开 / 再次点击收起",
+          "subtitle": "展开后一屏看完 · 自动压缩上方流程图",
           "defaultOpen": false,
           "headers": [
             "部门",
@@ -104,15 +104,15 @@
             },
             {
               "sector": "仓储",
-              "whyOpen": "有查重/效率诉求",
-              "whyNot": "愿望清单长，不宜本期铺开",
-              "reason": "轻/后：先查重，有缺口再议"
+              "whyOpen": "—",
+              "whyNot": "有 AI 智能化助手需求，想基于历史数据做智能化、提醒化",
+              "reason": "先数据治理，BI 搞定后再智能化"
             },
             {
               "sector": "私域",
-              "whyOpen": "有人效（如日报）诉求",
+              "whyOpen": "—",
               "whyNot": "不抢两项主开资源",
-              "reason": "后置：Owner 主动要人再开"
+              "reason": "RPA 和 BI 的需求大"
             },
             {
               "sector": "设计",
@@ -324,5 +324,5 @@
       ]
     }
   ],
-  "publishStamp": "1785309481081"
+  "publishStamp": "1785309995636"
 }
