@@ -365,6 +365,7 @@
       }
       case "mermaid":
         return `<div class="block" data-block-id="${id}" data-type="mermaid">
+          ${b.label ? `<div class="mermaid-corner-label" data-editable="true" data-field="label">${esc(b.label)}</div>` : ""}
           <div class="mermaid-host" data-mermaid-id="${id}"></div>
           <textarea class="mermaid-src" data-field="source" spellcheck="false">${esc(b.source || "")}</textarea>
         </div>`;
@@ -661,6 +662,8 @@
       } else if (type === "mermaid") {
         const ta = wrap.querySelector(".mermaid-src");
         if (ta) block.source = ta.value;
+        const lab = wrap.querySelector("[data-field='label']");
+        if (lab) block.label = lab.textContent.trim();
       } else if (type === "detail-card") {
         const title = wrap.querySelector(".detail-card-btn-title");
         if (title) block.title = title.textContent.trim();

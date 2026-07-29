@@ -2075,3 +2075,86 @@ html, body, .stage {
     height: auto;
   }
 }
+
+
+/* ========== t3 做/不做：图铺满 + 左上角标签 ========== */
+.block[data-type="mermaid"] {
+  position: relative;
+}
+.mermaid-corner-label {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 3;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  pointer-events: auto;
+  background: rgba(255,255,255,0.88);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+#t3 .panel {
+  padding: 8px;
+  min-height: 0;
+}
+#t3 .panel-body.layout-fill,
+#t3 .panel-body.layout-fill[data-count="1"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+  background: #fff;
+}
+#t3 .panel-body.layout-fill[data-count="1"]::after {
+  display: none !important; /* 去掉水印占视觉 */
+}
+#t3 .block[data-type="mermaid"] {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: 100% !important;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #faf9fb;
+  overflow: hidden;
+}
+#t3 .mermaid-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px 16px; /* 给左上角标签留空 */
+}
+#t3 .mermaid-host svg {
+  max-width: 96% !important;
+  max-height: 92% !important;
+  width: auto !important;
+  height: auto !important;
+}
+/* 展开编辑时 textarea 仍占满 */
+#t3 body.is-editing .block[data-type="mermaid"],
+body.is-editing #t3 .block[data-type="mermaid"] {
+  min-height: 50vh;
+}
+@media (max-width: 640px) {
+  #t3 .mermaid-corner-label {
+    font-size: 12px;
+    top: 8px;
+    left: 8px;
+  }
+  #t3 .mermaid-host {
+    padding: 32px 10px 12px;
+  }
+  #t3 .block[data-type="mermaid"] {
+    min-height: min(58vh, 480px) !important;
+  }
+}
