@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.7.4",
+  "version": "5.7.5",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -139,7 +139,7 @@
         {
           "id": "t3.chart",
           "type": "mermaid",
-          "source": "flowchart LR\n  subgraph DO[做 MVP-A]\n    A1[统一库] --> A2[检索推荐] --> A3[人确认发出]\n  end\n  subgraph DONT[不做]\n    B1[自动代回]\n    B2[首期桌面]\n    B3[智能排产]\n    B4[第二对账看板]\n  end\n  style A1 fill:#D9F5D6,stroke:#34C724\n  style A2 fill:#D9F5D6,stroke:#34C724\n  style A3 fill:#D9F5D6,stroke:#34C724\n  style B1 fill:#FEE3E2,stroke:#F54A45\n  style B2 fill:#FEE3E2,stroke:#F54A45\n  style B3 fill:#FEE3E2,stroke:#F54A45\n  style B4 fill:#FEE3E2,stroke:#F54A45"
+          "source": "flowchart TB\n  N[客服 Agent]\n  subgraph ROW[ ]\n    direction LR\n    subgraph DO[做]\n      direction TB\n      A1[统一话术库] --> A2[算法检索]\n      A2 --> A3[人机共存回复]\n      A3 --> A4[获取回复内容<br/>训练 AI 数据库]\n    end\n    subgraph DONT[不做]\n      direction TB\n      B1[AI 自动回复]\n      B2[首期落地排产]\n      B3[回复监控]\n    end\n  end\n  N ~~~ ROW\n  style N fill:#ffffff,stroke:#ffffff,color:#111111\n  style A1 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A2 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A3 fill:#D9F5D6,stroke:#34C724,color:#111\n  style A4 fill:#D9F5D6,stroke:#34C724,color:#111\n  style B1 fill:#FEE3E2,stroke:#F54A45,color:#111\n  style B2 fill:#FEE3E2,stroke:#F54A45,color:#111\n  style B3 fill:#FEE3E2,stroke:#F54A45,color:#111"
         }
       ]
     },
@@ -324,5 +324,5 @@
       ]
     }
   ],
-  "publishStamp": "1785309995636"
+  "publishStamp": "1785310146398"
 }

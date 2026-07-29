@@ -68,23 +68,32 @@ flowchart TB
 <h1>3 · 做 / 不做</h1>
 
 <whiteboard type="mermaid">
-flowchart LR
-  subgraph DO[做 MVP-A]
-    A1[统一库] --> A2[检索推荐] --> A3[人确认发出]
+flowchart TB
+  N[客服 Agent]
+  subgraph ROW[ ]
+    direction LR
+    subgraph DO[做]
+      direction TB
+      A1[统一话术库] --> A2[算法检索]
+      A2 --> A3[人机共存回复]
+      A3 --> A4[获取回复内容<br/>训练 AI 数据库]
+    end
+    subgraph DONT[不做]
+      direction TB
+      B1[AI 自动回复]
+      B2[首期落地排产]
+      B3[回复监控]
+    end
   end
-  subgraph DONT[不做]
-    B1[自动代回]
-    B2[首期桌面]
-    B3[智能排产]
-    B4[第二对账看板]
-  end
-  style A1 fill:#D9F5D6,stroke:#34C724
-  style A2 fill:#D9F5D6,stroke:#34C724
-  style A3 fill:#D9F5D6,stroke:#34C724
-  style B1 fill:#FEE3E2,stroke:#F54A45
-  style B2 fill:#FEE3E2,stroke:#F54A45
-  style B3 fill:#FEE3E2,stroke:#F54A45
-  style B4 fill:#FEE3E2,stroke:#F54A45
+  N ~~~ ROW
+  style N fill:#ffffff,stroke:#ffffff,color:#111111
+  style A1 fill:#D9F5D6,stroke:#34C724,color:#111
+  style A2 fill:#D9F5D6,stroke:#34C724,color:#111
+  style A3 fill:#D9F5D6,stroke:#34C724,color:#111
+  style A4 fill:#D9F5D6,stroke:#34C724,color:#111
+  style B1 fill:#FEE3E2,stroke:#F54A45,color:#111
+  style B2 fill:#FEE3E2,stroke:#F54A45,color:#111
+  style B3 fill:#FEE3E2,stroke:#F54A45,color:#111
 </whiteboard>
 
 <hr/>
