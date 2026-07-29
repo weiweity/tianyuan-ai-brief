@@ -1479,14 +1479,15 @@ html, body, .stage {
   border: 0 !important;
   display: flex;
   align-items: center;
-  padding: 10px 14px !important;
-  font-size: clamp(13px, 1.05vw + 0.2vh, 15px);
-  line-height: 1.45;
+  padding: 12px 16px !important;
+  font-size: clamp(14.5px, 1.15vw + 0.35vh, 17px);
+  line-height: 1.5;
 }
 .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td.label {
   justify-content: center;
   width: auto !important;
-  font-size: 13px;
+  font-size: clamp(14px, 1.05vw + 0.3vh, 16px);
+  font-weight: 700;
   border-right: 1px solid var(--line) !important;
 }
 /* 底部两 callout 横排贴底 */
@@ -1514,9 +1515,14 @@ html, body, .stage {
   min-width: 200px;
   display: flex;
   align-items: center;
-  min-height: 64px;
-  font-size: clamp(12.5px, 0.95vw + 0.15vh, 14px);
+  min-height: 80px;
+  padding: 14px 16px;
+  font-size: clamp(15px, 1.2vw + 0.35vh, 18px);
+  line-height: 1.55;
   box-sizing: border-box;
+}
+.panel-body.layout-fill[data-count="3"] > .block[data-type="callout"] b {
+  font-size: 1.05em;
 }
 
 @media (max-width: 640px) {
@@ -1565,5 +1571,11 @@ html, body, .stage {
     flex: 0 0 auto;
     width: 100%;
     min-width: 0;
+    min-height: 72px;
+    font-size: 15.5px;
+    padding: 12px 14px;
+  }
+  .panel-body.layout-fill[data-count="3"] > .block[data-type="kv-table"] td {
+    font-size: 14.5px;
   }
 }
