@@ -1430,7 +1430,4 @@ html, body, .stage {
   .pager-dots button { width: 8px; height: 8px; }
   .pager-dots button.active { width: 22px; }
 }
-/* 触控：Tab 选中放大反馈 */
-.tab.active {
-  transform: scale(1.02);
-}
+/* 克制：Tab 选中不再放大 */
