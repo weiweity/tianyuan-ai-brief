@@ -204,16 +204,59 @@
   }
 
   function renderHeader() {
-    const m = content.meta;
+    const m = content.meta || {};
     const logo = m.logoDataUrl || m.logo || "assets/logo.png";
     $("#logo-img").src = logo;
-    $("#logo-img").alt = m.from || "logo";
-    $("#doc-title").textContent = m.title || "";
-    $("#doc-sub").innerHTML = `<b>${esc(m.from || "")}</b> → <b>${esc(m.to || "")}</b> · ${esc(m.subtitle || "")}`;
-    $("#doc-role").textContent = m.roleLine || "";
-    $("#footer-left").textContent = m.footerLeft || "";
-    $("#footer-right").innerHTML = m.footerRight || "左右滑翻页 · 1–7 / ←→";
+    $("#logo-img").alt = m.title || "logo";
+    $("#doc-title").textContent = m.title || "AI 赋能立项";
+
+    // 副标题 / 角色行：空则隐藏，不留占位
+    const sub = $("#doc-sub");
+    const from = (m.from || "").trim();
+    const to = (m.to || "").trim();
+    const subtitle = (m.subtitle || "").trim();
+    if (sub) {
+      if (from || to || subtitle) {
+        const parts = [];
+        if (from || to) parts.push(`<b>${esc(from)}</b>${from || to ? " → " : ""}<b>${esc(to)}</b>`);
+        if (subtitle) parts.push(esc(subtitle));
+        sub.innerHTML = parts.filter(Boolean).join(" · ");
+        sub.hidden = false;
+        sub.style.display = "";
+      } else {
+        sub.innerHTML = "";
+        sub.hidden = true;
+        sub.style.display = "none";
+      }
+    }
+    const role = $("#doc-role");
+    if (role) {
+      const rl = (m.roleLine || "").trim();
+      role.textContent = rl;
+      role.hidden = !rl;
+      role.style.display = rl ? "" : "none";
+    }
+
+    const fl = $("#footer-left");
+    const fr = $("#footer-right");
+    if (fl) {
+      fl.textContent = m.footerLeft || "";
+      fl.hidden = !(m.footerLeft || "").trim();
+    }
+    if (fr) {
+      // 底栏默认极简，不塞版本号/派工说明
+      fr.innerHTML = m.footerRight || "";
+      fr.hidden = !(m.footerRight || "").trim();
+    }
+    // 两侧都空则藏整条 stage-meta 里的 footer 区（保留页码提示）
+    const meta = document.querySelector(".stage-meta");
+    if (meta) {
+      const hasFoot = (m.footerLeft || "").trim() || (m.footerRight || "").trim();
+      const foot = meta.querySelector(".footer");
+      if (foot) foot.hidden = !hasFoot;
+    }
     if (m.brand) document.documentElement.style.setProperty("--brand", m.brand);
+    document.title = m.title || "AI 赋能立项";
   }
 
   function renderTabs() {

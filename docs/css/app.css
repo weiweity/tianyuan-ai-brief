@@ -41,7 +41,7 @@ body {
   font-size: var(--fs);
   line-height: 1.45;
   color: var(--ink);
-  background: linear-gradient(165deg, #F8F5FA 0%, var(--brand) 48%, #E4DCEB 100%);
+  background: #F7F6F8;
   overscroll-behavior: none;
   overscroll-behavior-y: contain;
   overflow-x: hidden;
@@ -67,27 +67,27 @@ body {
   min-height: 0;
 }
 
-/* 上框：顶栏+进度+Tab 粘死，中间零缝 */
+/* 上框：克制——浅底、轻边、少阴影 */
 .chrome {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: linear-gradient(180deg, #fff 0%, var(--brand) 100%);
+  background: #fff;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(74, 47, 98, 0.06);
+  box-shadow: none;
 }
 
-/* Header */
+/* Header — 标题单行居中克制 */
 .top {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px 8px;
-  padding: 6px 10px;
-  background: transparent;
+  padding: 8px 12px;
+  background: #fff;
   border: none;
   border-radius: 0;
   flex-shrink: 0;
@@ -133,9 +133,10 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   grid-column: 2;
 }
 .top-mid h1 {
-  font-size: var(--fs-title);
+  font-size: clamp(15px, 1.2vw + 0.3vh, 18px);
   color: var(--brand-dark);
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -148,7 +149,17 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.top-mid .sub[hidden],
+.top-mid .sub:empty {
+  display: none !important;
+  margin: 0;
+  height: 0;
+}
 .top-mid .sub b { color: var(--brand-deep); }
+.top-right[hidden],
+.top-right:empty {
+  display: none !important;
+}
 
 .top-right {
   display: none; /* 桌面在 toolbar 行展示简化版，避免挤 */
@@ -330,7 +341,7 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   outline-offset: 2px;
 }
 
-/* 下框：内容舞台 + 底 meta，吃满剩余高度 */
+/* 下框：内容舞台 + 底 meta，吃满剩余高度（克制阴影） */
 .stage-wrap {
   position: relative;
   flex: 1 1 auto;
@@ -340,7 +351,7 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 6px 20px rgba(74, 47, 98, 0.07);
+  box-shadow: none;
   overflow: hidden;
 }
 .stage {
@@ -1036,9 +1047,9 @@ body.is-editing [data-editable="true"]:focus {
   }
 }
 
-/* 舞台抬升交给 stage-wrap */
+/* 克制：不加重阴影 */
 .stage-wrap {
-  box-shadow: var(--surface-elev);
+  box-shadow: none;
 }
 .panel > h2 {
   letter-spacing: 0.01em;
