@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.17.1",
+  "version": "5.17.2",
   "ssot": "feishu-slim-board-v5.17",
   "updated": "2026-07-29",
   "meta": {
@@ -81,7 +81,7 @@
           "id": "t2.dept",
           "type": "detail-card",
           "title": "各部门：为什么开 · 为什么不开 · 原因",
-          "subtitle": "展开后一屏看完 · 自动压缩上方流程图",
+          "subtitle": "点开后压缩流程图 · 按部门卡片下拉查看",
           "defaultOpen": false,
           "headers": [
             "部门",
@@ -424,5 +424,5 @@
       ]
     }
   ],
-  "publishStamp": "1785320000001"
+  "publishStamp": "1785321000002"
 }

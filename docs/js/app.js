@@ -617,8 +617,13 @@
           <img src="${esc(b.src)}" alt="${esc(b.alt || "")}" style="max-width:100%;max-height:40vh;object-fit:contain" data-field="src"/>
         </div>`;
       case "detail-card": {
-        const open = b.defaultOpen !== false;
-        const heads = (b.headers || []).map((h) => `<th>${esc(h)}</th>`).join("");
+        // defaultOpen 缺省 false：取舍页默认收起，避免一进页就被表撑爆
+        const open = b.defaultOpen === true;
+        const h0 = (b.headers && b.headers[0]) || "部门";
+        const h1 = (b.headers && b.headers[1]) || "为什么开";
+        const h2 = (b.headers && b.headers[2]) || "为什么不开";
+        const h3 = (b.headers && b.headers[3]) || "原因";
+        const heads = [h0, h1, h2, h3].map((h) => `<th>${esc(h)}</th>`).join("");
         const rows = (b.rows || [])
           .map((r) => {
             // 部门 | 为什么开 | 为什么不开 | 原因
@@ -627,13 +632,28 @@
               const c3 = r.whyNot != null ? r.whyNot : r.direction;
               const c4 = r.reason != null ? r.reason : r.choice;
               return `<tr>
-                <td data-editable="true" data-field="sector"><b>${esc(r.sector)}</b></td>
-                <td data-editable="true" data-field="whyOpen">${esc(c2 || "")}</td>
-                <td data-editable="true" data-field="whyNot">${esc(c3 || "")}</td>
-                <td data-editable="true" data-field="reason">${esc(c4 || "")}</td>
+                <td data-label="${esc(h0)}" data-editable="true" data-field="sector"><b>${esc(r.sector)}</b></td>
+                <td data-label="${esc(h1)}" data-editable="true" data-field="whyOpen">${esc(c2 || "")}</td>
+                <td data-label="${esc(h2)}" data-editable="true" data-field="whyNot">${esc(c3 || "")}</td>
+                <td data-label="${esc(h3)}" data-editable="true" data-field="reason">${esc(c4 || "")}</td>
               </tr>`;
             }
             return `<tr><td colspan="4">${esc(JSON.stringify(r))}</td></tr>`;
+          })
+          .join("");
+        // 手机专用：各部门竖向卡片（与 table 同源，便于扫读/滚动）
+        const deptCards = (b.rows || [])
+          .map((r, i) => {
+            if (r.sector == null) return "";
+            const c2 = r.whyOpen != null ? r.whyOpen : r.need;
+            const c3 = r.whyNot != null ? r.whyNot : r.direction;
+            const c4 = r.reason != null ? r.reason : r.choice;
+            return `<article class="dept-card" data-dept-idx="${i}">
+              <h4 class="dept-card-name">${esc(r.sector)}</h4>
+              <div class="dept-kv"><span class="dept-lab">${esc(h1)}</span><span class="dept-val" data-editable="true" data-field="whyOpen">${esc(c2 || "—")}</span></div>
+              <div class="dept-kv"><span class="dept-lab">${esc(h2)}</span><span class="dept-val" data-editable="true" data-field="whyNot">${esc(c3 || "—")}</span></div>
+              <div class="dept-kv is-reason"><span class="dept-lab">${esc(h3)}</span><span class="dept-val" data-editable="true" data-field="reason">${esc(c4 || "—")}</span></div>
+            </article>`;
           })
           .join("");
         return `<div class="block detail-card ${open ? "is-open" : ""}" data-block-id="${id}" data-type="detail-card">
@@ -647,6 +667,7 @@
               <thead><tr>${heads}</tr></thead>
               <tbody>${rows}</tbody>
             </table>
+            <div class="dept-card-list" aria-label="各部门明细">${deptCards}</div>
           </div>
         </div>`;
       }
@@ -1353,51 +1374,89 @@
         const body = document.getElementById("detail-body-" + id);
         if (!card || !body) return;
         const open = !card.classList.contains("is-open");
+        const isMobile = window.innerWidth <= 640;
         card.classList.toggle("is-open", open);
         btn.setAttribute("aria-expanded", open ? "true" : "false");
         const pb = card.closest(".panel-body");
         if (pb) pb.classList.toggle("is-detail-open", open);
+        // 手机：面板级标记，CSS 强压流程图 + 整页可滚
+        const panel = card.closest(".panel");
+        if (panel) panel.classList.toggle("is-dept-open", open);
+        document.body.classList.toggle("is-t2-dept-open", open && activeTab === "t2");
         tapHaptic("light");
 
-        // 高度展开动画（不用 hidden 硬切）
         if (open) {
           body.hidden = false;
-          body.style.overflow = "hidden";
-          body.style.maxHeight = "0px";
-          body.style.opacity = "0";
-          requestAnimationFrame(() => {
-            const h = Math.min(body.scrollHeight, window.innerHeight * 0.5);
-            body.style.transition =
-              "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
-            body.style.maxHeight = h + "px";
-            body.style.opacity = "1";
-            setTimeout(() => {
-              body.style.maxHeight = "";
-              body.style.overflow = "";
-              body.style.transition = "";
+          // 清掉可能残留的 max-height，避免被 50vh 卡住拖不动
+          body.style.maxHeight = "";
+          body.style.overflow = "";
+          body.style.opacity = "1";
+          body.style.transition = "";
+
+          if (isMobile) {
+            // 手机：不限高动画，展开后压缩图 + 列表随页面滚
+            requestAnimationFrame(() => {
               renderedMermaid.clear();
               queueMermaid(activeTab);
-            }, 300);
-          });
-        } else {
-          body.style.overflow = "hidden";
-          body.style.maxHeight = body.scrollHeight + "px";
-          body.style.opacity = "1";
-          requestAnimationFrame(() => {
-            body.style.transition =
-              "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+              // 把「各部门」滚到可视区顶部，下面可继续拖
+              try {
+                card.scrollIntoView({ block: "start", behavior: "smooth" });
+              } catch (_) {}
+              // 若 panel-body 是滚动容器，滚到明细
+              if (pb) {
+                const top = card.offsetTop - 8;
+                pb.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+              }
+            });
+          } else {
+            // 桌面：短展开动画
+            body.style.overflow = "hidden";
             body.style.maxHeight = "0px";
             body.style.opacity = "0";
-            setTimeout(() => {
-              body.hidden = true;
-              body.style.maxHeight = "";
-              body.style.opacity = "";
-              body.style.overflow = "";
-              body.style.transition = "";
-              renderedMermaid.clear();
-              queueMermaid(activeTab);
-            }, 280);
-          });
+            requestAnimationFrame(() => {
+              const h = Math.min(body.scrollHeight, window.innerHeight * 0.62);
+              body.style.transition =
+                "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+              body.style.maxHeight = h + "px";
+              body.style.opacity = "1";
+              setTimeout(() => {
+                body.style.maxHeight = "";
+                body.style.overflow = "";
+                body.style.transition = "";
+                renderedMermaid.clear();
+                queueMermaid(activeTab);
+              }, 300);
+            });
+          }
+        } else {
+          if (isMobile) {
+            body.hidden = true;
+            body.style.maxHeight = "";
+            body.style.opacity = "";
+            body.style.overflow = "";
+            body.style.transition = "";
+            renderedMermaid.clear();
+            queueMermaid(activeTab);
+          } else {
+            body.style.overflow = "hidden";
+            body.style.maxHeight = body.scrollHeight + "px";
+            body.style.opacity = "1";
+            requestAnimationFrame(() => {
+              body.style.transition =
+                "max-height var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+              body.style.maxHeight = "0px";
+              body.style.opacity = "0";
+              setTimeout(() => {
+                body.hidden = true;
+                body.style.maxHeight = "";
+                body.style.opacity = "";
+                body.style.overflow = "";
+                body.style.transition = "";
+                renderedMermaid.clear();
+                queueMermaid(activeTab);
+              }, 280);
+            });
+          }
         }
       });
     });
@@ -1696,6 +1755,17 @@
     });
     // 勾选页：标记 body，方便悬浮底栏；切走则清
     document.body.classList.toggle("is-check-page", id === "t6");
+    // 离开取舍页时清掉部门展开态，避免样式串页
+    if (id !== "t2") {
+      document.body.classList.remove("is-t2-dept-open");
+      $$("#t2.is-dept-open, #t2 .panel-body.is-detail-open, #t2 .detail-card.is-open").forEach((el) => {
+        el.classList.remove("is-dept-open", "is-detail-open", "is-open");
+      });
+      $$("#t2 [data-detail-toggle]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+      $$("#t2 .detail-card-body").forEach((el) => {
+        el.hidden = true;
+      });
+    }
     updatePagerChrome();
     await queueMermaid(id);
     syncCheckStatusFloat();

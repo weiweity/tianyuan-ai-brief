@@ -4906,3 +4906,234 @@ body.is-swiping .panel.active:not(.is-peek) {
   .check-gate-badge.is-ok { background: #D9F5D6; color: #0d5c0d; }
   .check-gate-badge.is-warn { background: #FFF1C2; color: #5c4500; }
 }
+
+/* ========== 手机：取舍页 · 展开部门可滚卡片 v1.87 ========== */
+.dept-card-list {
+  display: none; /* 桌面隐藏，手机显示 */
+}
+
+@media (max-width: 640px) {
+  /* 取舍页：整页必须能滚，不被 flex 卡死 */
+  #t2.panel {
+    overflow: hidden !important;
+    min-height: 0 !important;
+  }
+  #t2 .panel-body,
+  #t2 .panel-body.layout-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain;
+    gap: 10px !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* 默认：流程图正常高度，明细按钮在下 */
+  #t2 .panel-body > .block[data-type="mermaid"] {
+    flex: 0 0 auto !important;
+    min-height: 200px !important;
+    max-height: 48vh !important;
+    overflow: hidden !important;
+    padding: 8px !important;
+  }
+  #t2 .panel-body > .block[data-type="detail-card"] {
+    flex: 0 0 auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important; /* 按钮/列表自带留白 */
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  #t2 .detail-card-btn {
+    width: 100%;
+    border-radius: 16px !important;
+    padding: 14px 14px !important;
+    min-height: 56px;
+    background: #fff !important;
+    border: 1px solid rgba(122, 79, 150, 0.14) !important;
+    box-shadow: 0 4px 14px rgba(74, 47, 98, 0.07);
+    text-align: left;
+  }
+  #t2 .detail-card-btn-title {
+    font-size: 15px !important;
+    font-weight: 700;
+  }
+  #t2 .detail-card-btn-sub {
+    font-size: 12.5px !important;
+    opacity: 0.8;
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* —— 展开后：强压流程图，部门列表可一直往下拖 —— */
+  #t2.panel.is-dept-open .panel-body > .block[data-type="mermaid"],
+  #t2 .panel-body.is-detail-open > .block[data-type="mermaid"],
+  #t2 .panel-body.layout-stack:has(.detail-card.is-open) > .block[data-type="mermaid"],
+  body.is-t2-dept-open #t2 .panel-body > .block[data-type="mermaid"],
+  body.is-t2-dept-open #t2.panel .block[data-type="mermaid"] {
+    flex: 0 0 88px !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: 88px !important;
+    min-height: 0 !important;
+    max-height: 88px !important;
+    height: 88px !important;
+    padding: 4px 6px !important;
+    opacity: 0.92;
+    position: relative;
+    overflow: hidden !important;
+  }
+  #t2.panel.is-dept-open .panel-body > .block[data-type="mermaid"] .mermaid-host,
+  #t2 .panel-body.is-detail-open > .block[data-type="mermaid"] .mermaid-host,
+  body.is-t2-dept-open #t2 .block[data-type="mermaid"] .mermaid-host {
+    max-height: 72px !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    transform: scale(0.92);
+    transform-origin: top center;
+  }
+  #t2.panel.is-dept-open .panel-body > .block[data-type="mermaid"]::after,
+  body.is-t2-dept-open #t2 .block[data-type="mermaid"]::after {
+    content: "流程图已收起 · 上滑看部门 · 再点下方可收起";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 4px;
+    z-index: 2;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #5a3a72;
+    text-align: center;
+    pointer-events: none;
+    background: linear-gradient(transparent, rgba(255,255,255,0.92) 40%);
+    padding-top: 12px;
+  }
+
+  #t2.panel.is-dept-open .panel-body > .block[data-type="detail-card"],
+  #t2 .panel-body.is-detail-open > .block[data-type="detail-card"],
+  body.is-t2-dept-open #t2 .block[data-type="detail-card"] {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #t2 .detail-card.is-open {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px;
+  }
+  #t2 .detail-card.is-open .detail-card-btn {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.97) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #t2 .detail-card.is-open .detail-card-btn-sub {
+    color: var(--brand-deep, #7A4F96);
+  }
+  #t2 .detail-card.is-open .detail-card-body {
+    display: block !important;
+    flex: 0 0 auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  /* 手机：隐藏宽表，改用部门卡片列表 */
+  #t2 .detail-card-table {
+    display: none !important;
+  }
+  #t2 .dept-card-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 0 8px;
+  }
+  #t2 .dept-card {
+    background: #fff;
+    border: 1px solid rgba(122, 79, 150, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 3px 12px rgba(74, 47, 98, 0.06);
+    padding: 12px 14px;
+  }
+  #t2 .dept-card-name {
+    margin: 0 0 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(122, 79, 150, 0.18);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--brand-deep, #7A4F96);
+    letter-spacing: 0.02em;
+  }
+  #t2 .dept-kv {
+    display: grid;
+    grid-template-columns: 5.5em 1fr;
+    gap: 6px 10px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  #t2 .dept-kv:last-child {
+    margin-bottom: 0;
+  }
+  #t2 .dept-lab {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7a6a88;
+    line-height: 1.4;
+    padding-top: 1px;
+  }
+  #t2 .dept-val {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: #222;
+    word-break: break-word;
+  }
+  #t2 .dept-kv.is-reason {
+    background: #FAF7FC;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-top: 4px;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  #t2 .dept-kv.is-reason .dept-lab {
+    color: var(--brand-deep, #7A4F96);
+  }
+  #t2 .dept-kv.is-reason .dept-val {
+    font-weight: 600;
+  }
+
+  /* 主开部门略强调 */
+  #t2 .dept-card:nth-child(1),
+  #t2 .dept-card:nth-child(2) {
+    border-color: rgba(52, 199, 36, 0.28);
+    box-shadow: 0 3px 12px rgba(52, 199, 36, 0.08);
+  }
+  #t2 .dept-card:nth-child(1) .dept-card-name,
+  #t2 .dept-card:nth-child(2) .dept-card-name {
+    color: #145214;
+  }
+}
+
+/* 桌面：仍用表格，隐藏手机卡片列表 */
+@media (min-width: 641px) {
+  .dept-card-list {
+    display: none !important;
+  }
+  .detail-card-table {
+    display: table;
+  }
+}
