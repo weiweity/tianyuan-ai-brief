@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.10.0",
+  "version": "5.11.0",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -241,12 +241,29 @@
             {
               "no": "1",
               "checked": false,
-              "html": "认同主开两项：<b>客服 Agent</b> + <b>供应链备案识别</b>；设计本期不开；仓储/私域后置（有条件再开）"
+              "html": "主开项目（可多选；设计本期不开；仓储/私域后置）",
+              "multiOptions": [
+                {
+                  "id": "agent",
+                  "label": "客服 Agent"
+                },
+                {
+                  "id": "filing",
+                  "label": "供应链备案识别"
+                },
+                {
+                  "id": "other",
+                  "label": "其他",
+                  "hasText": true
+                }
+              ],
+              "multiValues": [],
+              "otherText": ""
             },
             {
               "no": "2",
               "checked": false,
-              "html": "路径选择（点右侧方框，或下方按钮）：建议 <b>A</b>，也可 <b>B</b> 或 <b>C</b>",
+              "html": "路径选择（点下方按钮）：建议 <b>A</b>，也可 <b>B</b> 或 <b>C</b>",
               "pathOptions": [
                 "A",
                 "B",
@@ -257,17 +274,35 @@
             {
               "no": "3",
               "checked": false,
-              "html": "同意费用口径：全期预计约 <b>7000 元</b>；<b>首月止损 5000 元</b>；<b>全期止损 10000 元</b>"
+              "html": "同意费用口径（默认可改；可填其他费用说明）",
+              "feeFields": {
+                "total": "7000",
+                "monthCap": "5000",
+                "allCap": "10000",
+                "otherNote": ""
+              }
             },
             {
               "no": "4",
               "checked": false,
-              "html": "业务负责人当场具名（填姓名即可自动勾选）",
-              "ownerFields": {
-                "name": "",
-                "dept": "",
-                "backup": ""
-              }
+              "html": "业务负责人当场具名（最多 3 位；至少填 1 位姓名）",
+              "owners": [
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                },
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                },
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                }
+              ]
             },
             {
               "no": "5",
@@ -277,7 +312,7 @@
             {
               "no": "6",
               "checked": false,
-              "html": "授权：一超止损线，执行方 <b>立即停扩</b>，企微/邮件同步您；是否加预算您一句话"
+              "html": "授权：一超止损线，执行方 <b>立即停扩</b>，飞书/邮件同步您；是否加预算您一句话"
             },
             {
               "no": "7",
@@ -290,7 +325,7 @@
           "id": "t6.gate",
           "type": "callout",
           "variant": "warn",
-          "html": "<b>散会前最低要求：</b>若选 A/B，须勾 #1 取舍、#3 费用、#4 负责人、#6 停扩授权；缺任一项 → 只记「有意向」，不排开发。选 C 则点路径 C 即可，写进周报说明。"
+          "html": "<b>散会前最低要求：</b>若选 A/B，须勾 #1 主开（至少一项）、#3 费用、#4 负责人（至少 1 人）、#6 停扩授权；缺任一项 → 只记「有意向」，不排开发。选 C 则点路径 C 即可，写进周报说明。"
         },
         {
           "id": "t6.bound",

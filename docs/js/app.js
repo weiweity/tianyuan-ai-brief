@@ -374,10 +374,33 @@
         const rows = (b.rows || [])
           .map((r, i) => {
             const on = !!r.checked;
-            const hasPath = Array.isArray(r.pathOptions) && r.pathOptions.length;
-            const pathVal = r.pathValue || "";
-            let pathHtml = "";
-            if (hasPath) {
+            const extras = [];
+
+            // #1 主开多选
+            if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
+              const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
+              const chips = r.multiOptions
+                .map((opt) => {
+                  const key = typeof opt === "string" ? opt : opt.id;
+                  const lab = typeof opt === "object" && opt.label ? opt.label : key;
+                  const sel = vals.includes(key) ? " is-selected" : "";
+                  return `<button type="button" class="path-chip multi-chip${sel}" data-multi-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${vals.includes(key) ? "true" : "false"}">${esc(lab)}</button>`;
+                })
+                .join("");
+              const needOther = vals.includes("other");
+              extras.push(`<div class="multi-row" data-multi-row="${i}">
+                <div class="path-chips multi-chips" role="group" aria-label="主开项目多选">${chips}</div>
+                <label class="other-text-wrap${needOther ? "" : " is-hidden"}" data-other-wrap>
+                  其他说明
+                  <input type="text" data-other-text data-block="${id}" data-row="${i}" value="${esc(r.otherText || "")}" placeholder="写明其他要开的项目" ${needOther ? "" : "disabled"}/>
+                </label>
+                <div class="path-hint">可多选 · 至少选一项</div>
+              </div>`);
+            }
+
+            // #2 路径 A/B/C
+            if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
+              const pathVal = r.pathValue || "";
               const chips = r.pathOptions
                 .map((p) => {
                   const key = typeof p === "string" ? p : p.value;
@@ -389,27 +412,55 @@
                 })
                 .join("");
               const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径";
-              pathHtml = `<div class="path-row" data-path-row="${i}">
+              extras.push(`<div class="path-row" data-path-row="${i}">
                 <div class="path-chips" role="group" aria-label="路径选择">${chips}</div>
                 <div class="path-hint" data-path-hint>${esc(hint)}</div>
-              </div>`;
+              </div>`);
             }
-            // 负责人填空：姓名 / 部门 / 备用
-            let ownerHtml = "";
-            if (r.ownerFields) {
+
+            // #3 费用可改填
+            if (r.feeFields) {
+              const f = r.feeFields;
+              extras.push(`<div class="fee-fields" data-fee-row="${i}">
+                <label>全期约 <input type="text" inputmode="numeric" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/> 元</label>
+                <label>首月止损 <input type="text" inputmode="numeric" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/> 元</label>
+                <label>全期止损 <input type="text" inputmode="numeric" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/> 元</label>
+                <label class="fee-other">其他费用说明 <input type="text" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
+              </div>`);
+            }
+
+            // #4 最多 3 位负责人
+            if (Array.isArray(r.owners) && r.owners.length) {
+              const cards = r.owners
+                .map((of, oi) => {
+                  const ofx = of || {};
+                  return `<div class="owner-card" data-owner-idx="${oi}">
+                    <div class="owner-card-title">负责人 ${oi + 1}</div>
+                    <div class="owner-fields">
+                      <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name"/></label>
+                      <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部"/></label>
+                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="如 客服 Agent"/></label>
+                    </div>
+                  </div>`;
+                })
+                .join("");
+              extras.push(`<div class="owners-grid" data-owners-row="${i}">${cards}</div>`);
+            } else if (r.ownerFields) {
+              // 兼容旧单人结构
               const of = r.ownerFields;
-              ownerHtml = `<div class="owner-fields" data-owner-row="${i}">
+              extras.push(`<div class="owner-fields" data-owner-row="${i}">
                 <label>姓名 <input type="text" data-owner="name" data-block="${id}" data-row="${i}" value="${esc(of.name || "")}" placeholder="必填" autocomplete="name"/></label>
                 <label>部门 <input type="text" data-owner="dept" data-block="${id}" data-row="${i}" value="${esc(of.dept || "")}" placeholder="如 客服部"/></label>
                 <label>备用 <input type="text" data-owner="backup" data-block="${id}" data-row="${i}" value="${esc(of.backup || "")}" placeholder="可联系"/></label>
-              </div>`;
+              </div>`);
             }
-            return `<tr data-row="${i}" class="${on ? "is-checked" : ""}${hasPath ? " has-path" : ""}">
+
+            const hasExtra = extras.length > 0;
+            return `<tr data-row="${i}" class="${on ? "is-checked" : ""}${hasExtra ? " has-path" : ""}">
             <td class="label narrow" data-editable="true" data-field="no">${esc(r.no)}</td>
             <td class="chk-body">
               <div class="chk-html" data-editable="true" data-field="html">${r.html || ""}</div>
-              ${pathHtml}
-              ${ownerHtml}
+              ${extras.join("")}
             </td>
             <td class="chk">
               <button type="button" class="chk-btn${on ? " is-on" : ""}" data-check-toggle data-block="${id}" data-row="${i}" aria-pressed="${on ? "true" : "false"}" aria-label="勾选第 ${esc(r.no)} 项">
@@ -518,6 +569,34 @@
     C: "C 不立",
   };
 
+  function multiLabelsOf(row) {
+    const opts = row.multiOptions || [];
+    const vals = Array.isArray(row.multiValues) ? row.multiValues : [];
+    const map = {};
+    opts.forEach((o) => {
+      const id = typeof o === "string" ? o : o.id;
+      const lab = typeof o === "object" && o.label ? o.label : id;
+      map[id] = lab;
+    });
+    return vals.map((v) => {
+      if (v === "other") {
+        const t = (row.otherText || "").trim();
+        return t ? "其他（" + t + "）" : "其他";
+      }
+      return map[v] || v;
+    });
+  }
+
+  function namedOwnersOf(row) {
+    if (Array.isArray(row.owners)) {
+      return row.owners.filter((o) => o && String(o.name || "").trim());
+    }
+    if (row.ownerFields && String(row.ownerFields.name || "").trim()) {
+      return [row.ownerFields];
+    }
+    return [];
+  }
+
   /** 散会最低要求：选 A/B 须 #1 #3 #4 #6；选 C 只须 #2=C */
   function evaluateCheckGate(block) {
     const rows = block.rows || [];
@@ -525,6 +604,9 @@
     const done = rows.filter((r) => r.checked).length;
     const pathRow = rows.find((r) => Array.isArray(r.pathOptions) && r.pathOptions.length);
     const path = pathRow ? pathRow.pathValue || "" : "";
+    const multiRow = rows.find((r) => Array.isArray(r.multiOptions) && r.multiOptions.length);
+    const feeRow = rows.find((r) => r.feeFields);
+    const ownerRow = rows.find((r) => Array.isArray(r.owners) || r.ownerFields);
     const needNos = path === "C" ? ["2"] : ["1", "3", "4", "6"];
     const missing = [];
     needNos.forEach((no) => {
@@ -532,17 +614,18 @@
       if (!r) return;
       if (no === "2") {
         if (!r.pathValue || !r.checked) missing.push("#2 路径");
+      } else if (no === "1") {
+        const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
+        if (!vals.length || !r.checked) missing.push("#1 主开");
+        else if (vals.includes("other") && !(r.otherText || "").trim()) missing.push("#1 其他说明");
+      } else if (no === "4") {
+        if (!namedOwnersOf(r).length || !r.checked) missing.push("#4 负责人");
       } else if (!r.checked) {
         missing.push("#" + no);
       }
     });
     if (pathRow && !pathRow.pathValue && path !== "C") {
       if (!missing.includes("#2 路径")) missing.push("#2 路径");
-    }
-    const ownerRow = rows.find((r) => r.ownerFields);
-    if (ownerRow && ownerRow.checked) {
-      const n = (ownerRow.ownerFields.name || "").trim();
-      if (!n && !missing.includes("#4 姓名")) missing.push("#4 姓名");
     }
     return {
       rows,
@@ -552,6 +635,8 @@
       pathLab: PATH_LABELS[path] || (path ? path : "未选"),
       missing,
       isMinOk: !!path && missing.length === 0,
+      multiRow,
+      feeRow,
       ownerRow,
     };
   }
@@ -599,14 +684,34 @@
     lines.push("【AI 赋能立项 · 本场结论】");
     lines.push("时间：" + stamp);
     lines.push("路径：" + g.pathLab + (g.isMinOk ? "（最低要求已齐）" : "（最低要求未齐）"));
-    lines.push("主开两项：客服 Agent · 供应链备案识别");
-    lines.push("费用口径：全期约 7000 元 · 首月止损 5000 · 全期止损 10000");
-    if (g.ownerRow && g.ownerRow.ownerFields) {
-      const of = g.ownerRow.ownerFields;
-      const name = (of.name || "").trim() || "（未填）";
-      const dept = (of.dept || "").trim() || "—";
-      const backup = (of.backup || "").trim() || "—";
-      lines.push("业务负责人：" + name + " · 部门 " + dept + " · 备用 " + backup);
+    if (g.multiRow) {
+      const labs = multiLabelsOf(g.multiRow);
+      lines.push("主开项目：" + (labs.length ? labs.join(" · ") : "（未选）"));
+    } else {
+      lines.push("主开项目：（未选）");
+    }
+    if (g.feeRow && g.feeRow.feeFields) {
+      const f = g.feeRow.feeFields;
+      let fee =
+        "费用口径：全期约 " +
+        (f.total || "—") +
+        " 元 · 首月止损 " +
+        (f.monthCap || "—") +
+        " · 全期止损 " +
+        (f.allCap || "—");
+      if ((f.otherNote || "").trim()) fee += " · 其他：" + f.otherNote.trim();
+      lines.push(fee);
+    } else {
+      lines.push("费用口径：（未填）");
+    }
+    const owners = g.ownerRow ? namedOwnersOf(g.ownerRow) : [];
+    if (owners.length) {
+      owners.forEach((of, i) => {
+        const name = (of.name || "").trim() || "（未填）";
+        const dept = (of.dept || "").trim() || "—";
+        const scope = (of.scope || of.backup || "").trim() || "—";
+        lines.push("业务负责人" + (owners.length > 1 ? i + 1 : "") + "：" + name + " · 部门 " + dept + " · 负责 " + scope);
+      });
     } else {
       lines.push("业务负责人：（未填）");
     }
@@ -614,8 +719,33 @@
     g.rows.forEach((r) => {
       const mark = r.checked ? "☑" : "☐";
       let line = "  " + mark + " #" + (r.no || "") + " " + stripHtmlText(r.html);
+      if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
+        const labs = multiLabelsOf(r);
+        line += labs.length ? " → " + labs.join("、") : " → 未选项目";
+      }
       if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
         line += r.pathValue ? " → 路径 " + (PATH_LABELS[r.pathValue] || r.pathValue) : " → 路径未选";
+      }
+      if (r.feeFields) {
+        const f = r.feeFields;
+        line +=
+          " → 全期" +
+          (f.total || "—") +
+          "/首月止损" +
+          (f.monthCap || "—") +
+          "/全期止损" +
+          (f.allCap || "—");
+        if ((f.otherNote || "").trim()) line += "；其他 " + f.otherNote.trim();
+      }
+      if (Array.isArray(r.owners)) {
+        const named = namedOwnersOf(r);
+        if (named.length) {
+          line +=
+            " → " +
+            named
+              .map((o) => (o.name || "").trim() + (o.scope ? "(" + o.scope + ")" : ""))
+              .join("、");
+        }
       }
       lines.push(line);
     });
@@ -703,6 +833,28 @@
     else if (neu && !old) wrap.appendChild(neu);
   }
 
+  function setRowCheckedUI(tr, checked) {
+    if (!tr) return;
+    tr.classList.toggle("is-checked", !!checked);
+    const btn = tr.querySelector("[data-check-toggle]");
+    if (!btn) return;
+    btn.classList.toggle("is-on", !!checked);
+    btn.setAttribute("aria-pressed", checked ? "true" : "false");
+    const box = btn.querySelector(".chk-box");
+    if (box) box.textContent = checked ? "☑" : "☐";
+  }
+
+  function pulseChips(el) {
+    if (!el) return;
+    el.classList.add("is-pulse");
+    setTimeout(() => el.classList.remove("is-pulse"), 600);
+  }
+
+  function bindNoSwipe(inp) {
+    inp.addEventListener("pointerdown", (e) => e.stopPropagation());
+    inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+  }
+
   function wireCheckTables() {
     // 勾选框：任何模式可点（会议现场用）
     $$("[data-check-toggle]").forEach((btn) => {
@@ -714,21 +866,76 @@
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
         const r = block.rows[row];
-        // 有路径选项时：未选路径不能空勾；点勾=切换，但 C/A/B 以 path 为准
+        const tr = btn.closest("tr");
         if (Array.isArray(r.pathOptions) && r.pathOptions.length && !r.pathValue) {
           toast("请先点选路径 A / B / C");
-          const chips = btn.closest("tr")?.querySelector(".path-chips");
-          if (chips) chips.classList.add("is-pulse");
-          setTimeout(() => chips && chips.classList.remove("is-pulse"), 600);
+          pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
           return;
         }
+        if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
+          const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
+          if (!vals.length) {
+            toast("请先多选主开项目（至少一项）");
+            pulseChips(tr && tr.querySelector(".multi-chips"));
+            return;
+          }
+          if (vals.includes("other") && !(r.otherText || "").trim()) {
+            toast("选了「其他」，请填写说明");
+            const ot = tr && tr.querySelector("[data-other-text]");
+            if (ot) ot.focus();
+            return;
+          }
+        }
+        if (Array.isArray(r.owners) && !namedOwnersOf(r).length && !r.checked) {
+          // 允许先勾，但状态条会提示缺姓名；若要严格：
+          // 不拦截，只在 gate 检查
+        }
         r.checked = !r.checked;
-        const tr = btn.closest("tr");
-        btn.classList.toggle("is-on", r.checked);
-        btn.setAttribute("aria-pressed", r.checked ? "true" : "false");
-        const box = btn.querySelector(".chk-box");
-        if (box) box.textContent = r.checked ? "☑" : "☐";
-        if (tr) tr.classList.toggle("is-checked", r.checked);
+        setRowCheckedUI(tr, r.checked);
+        saveDraft();
+        refreshCheckStatus(blockId);
+      });
+    });
+
+    // #1 主开多选
+    $$("[data-multi-pick]").forEach((chip) => {
+      chip.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockId = chip.dataset.block;
+        const row = +chip.dataset.row;
+        const val = chip.getAttribute("data-multi-pick");
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        const r = block.rows[row];
+        if (!Array.isArray(r.multiValues)) r.multiValues = [];
+        const idx = r.multiValues.indexOf(val);
+        if (idx >= 0) r.multiValues.splice(idx, 1);
+        else r.multiValues.push(val);
+        if (!r.multiValues.includes("other")) r.otherText = r.otherText || "";
+        r.checked = r.multiValues.length > 0;
+        const tr = chip.closest("tr");
+        if (tr) {
+          $$("[data-multi-pick]", tr).forEach((c) => {
+            const on = r.multiValues.includes(c.getAttribute("data-multi-pick"));
+            c.classList.toggle("is-selected", on);
+            c.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+          const wrap = tr.querySelector("[data-other-wrap]");
+          const ot = tr.querySelector("[data-other-text]");
+          const needOther = r.multiValues.includes("other");
+          if (wrap) wrap.classList.toggle("is-hidden", !needOther);
+          if (ot) {
+            ot.disabled = !needOther;
+            if (!needOther) {
+              ot.value = "";
+              r.otherText = "";
+            } else {
+              ot.focus();
+            }
+          }
+          setRowCheckedUI(tr, r.checked);
+        }
         saveDraft();
         refreshCheckStatus(blockId);
       });
@@ -745,7 +952,6 @@
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
         const r = block.rows[row];
-        // 再点同一项 = 取消
         if (r.pathValue === val) {
           r.pathValue = "";
           r.checked = false;
@@ -753,7 +959,6 @@
           r.pathValue = val;
           r.checked = true;
         }
-        // 刷新该行芯片与勾选视觉
         const tr = chip.closest("tr");
         if (tr) {
           $$("[data-path-pick]", tr).forEach((c) => {
@@ -768,21 +973,83 @@
           };
           const hintEl = tr.querySelector("[data-path-hint]");
           if (hintEl) hintEl.textContent = r.pathValue ? hints[r.pathValue] || "" : "点选一项路径";
-          tr.classList.toggle("is-checked", !!r.checked);
-          const btn = tr.querySelector("[data-check-toggle]");
-          if (btn) {
-            btn.classList.toggle("is-on", !!r.checked);
-            btn.setAttribute("aria-pressed", r.checked ? "true" : "false");
-            const box = btn.querySelector(".chk-box");
-            if (box) box.textContent = r.checked ? "☑" : "☐";
-          }
+          setRowCheckedUI(tr, r.checked);
         }
         saveDraft();
         refreshCheckStatus(blockId);
       });
     });
 
-    // 负责人填空
+    // #1 其他说明
+    $$("input[data-other-text]").forEach((inp) => {
+      const commit = () => {
+        const blockId = inp.dataset.block;
+        const row = +inp.dataset.row;
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        const r = block.rows[row];
+        r.otherText = inp.value;
+        if ((r.multiValues || []).includes("other") && inp.value.trim()) {
+          r.checked = true;
+          setRowCheckedUI(inp.closest("tr"), true);
+        }
+        saveDraft();
+        refreshCheckStatus(blockId);
+      };
+      inp.addEventListener("input", commit);
+      inp.addEventListener("change", commit);
+      bindNoSwipe(inp);
+    });
+
+    // #3 费用字段
+    $$("input[data-fee]").forEach((inp) => {
+      const commit = () => {
+        const blockId = inp.dataset.block;
+        const row = +inp.dataset.row;
+        const field = inp.dataset.fee;
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        if (!block.rows[row].feeFields) block.rows[row].feeFields = {};
+        block.rows[row].feeFields[field] = inp.value;
+        // 改过金额或点过字段 → 视为同意该口径
+        if (inp.value.trim()) {
+          block.rows[row].checked = true;
+          setRowCheckedUI(inp.closest("tr"), true);
+        }
+        saveDraft();
+        refreshCheckStatus(blockId);
+      };
+      inp.addEventListener("input", commit);
+      inp.addEventListener("change", commit);
+      bindNoSwipe(inp);
+    });
+
+    // #4 多负责人
+    $$("input[data-owner-multi]").forEach((inp) => {
+      const commit = () => {
+        const blockId = inp.dataset.block;
+        const row = +inp.dataset.row;
+        const oi = +inp.dataset.ownerIdx;
+        const field = inp.dataset.ownerMulti;
+        const block = findBlock(blockId);
+        if (!block || !block.rows || !block.rows[row]) return;
+        const r = block.rows[row];
+        if (!Array.isArray(r.owners)) r.owners = [];
+        if (!r.owners[oi]) r.owners[oi] = { name: "", dept: "", scope: "" };
+        r.owners[oi][field] = inp.value;
+        if (namedOwnersOf(r).length) {
+          r.checked = true;
+          setRowCheckedUI(inp.closest("tr"), true);
+        }
+        saveDraft();
+        refreshCheckStatus(blockId);
+      };
+      inp.addEventListener("input", commit);
+      inp.addEventListener("change", commit);
+      bindNoSwipe(inp);
+    });
+
+    // 兼容旧单人 ownerFields
     $$("input[data-owner]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -792,29 +1059,16 @@
         if (!block || !block.rows || !block.rows[row]) return;
         if (!block.rows[row].ownerFields) block.rows[row].ownerFields = {};
         block.rows[row].ownerFields[field] = inp.value;
-        // 姓名有字时自动勾 #4
         if (field === "name" && inp.value.trim()) {
           block.rows[row].checked = true;
-          const tr = inp.closest("tr");
-          if (tr) {
-            tr.classList.add("is-checked");
-            const btn = tr.querySelector("[data-check-toggle]");
-            if (btn) {
-              btn.classList.add("is-on");
-              btn.setAttribute("aria-pressed", "true");
-              const box = btn.querySelector(".chk-box");
-              if (box) box.textContent = "☑";
-            }
-          }
+          setRowCheckedUI(inp.closest("tr"), true);
         }
         saveDraft();
         refreshCheckStatus(blockId);
       };
       inp.addEventListener("input", commit);
       inp.addEventListener("change", commit);
-      // 输入时别触发翻页手势
-      inp.addEventListener("pointerdown", (e) => e.stopPropagation());
-      inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+      bindNoSwipe(inp);
     });
   }
 
@@ -857,6 +1111,16 @@
           if (!o) return;
           if (o.checked) r.checked = true;
           if (o.pathValue) r.pathValue = o.pathValue;
+          if (Array.isArray(o.multiValues) && o.multiValues.length) {
+            r.multiValues = o.multiValues.slice();
+          }
+          if (o.otherText) r.otherText = o.otherText;
+          if (o.feeFields) {
+            r.feeFields = Object.assign({}, r.feeFields || {}, o.feeFields);
+          }
+          if (Array.isArray(o.owners) && o.owners.length) {
+            r.owners = o.owners.map((x) => Object.assign({}, x));
+          }
           if (o.ownerFields) {
             r.ownerFields = Object.assign({}, r.ownerFields || {}, o.ownerFields);
           }
@@ -1061,13 +1325,34 @@
           const h = tr.querySelector("[data-field='html']");
           if (n) block.rows[i].no = n.textContent.trim();
           if (h) block.rows[i].html = h.innerHTML;
-          // 勾选 / 路径 / 负责人（按钮状态已写内存，这里再兜底收一次）
           const btn = tr.querySelector("[data-check-toggle]");
           if (btn) block.rows[i].checked = btn.classList.contains("is-on");
           const sel = tr.querySelector("[data-path-pick].is-selected");
           if (sel) block.rows[i].pathValue = sel.getAttribute("data-path-pick") || "";
-          else if (Array.isArray(block.rows[i].pathOptions)) {
-            // 若无可选中芯片，保持内存值
+          // 主开多选
+          const multiSel = $$("[data-multi-pick].is-selected", tr).map((c) =>
+            c.getAttribute("data-multi-pick")
+          );
+          if (Array.isArray(block.rows[i].multiOptions)) {
+            block.rows[i].multiValues = multiSel;
+          }
+          const ot = tr.querySelector("[data-other-text]");
+          if (ot) block.rows[i].otherText = ot.value;
+          // 费用
+          if (block.rows[i].feeFields) {
+            $$("input[data-fee]", tr).forEach((inp) => {
+              block.rows[i].feeFields[inp.dataset.fee] = inp.value;
+            });
+          }
+          // 多负责人
+          if (Array.isArray(block.rows[i].owners)) {
+            $$("input[data-owner-multi]", tr).forEach((inp) => {
+              const oi = +inp.dataset.ownerIdx;
+              if (!block.rows[i].owners[oi]) {
+                block.rows[i].owners[oi] = { name: "", dept: "", scope: "" };
+              }
+              block.rows[i].owners[oi][inp.dataset.ownerMulti] = inp.value;
+            });
           }
           if (block.rows[i].ownerFields) {
             $$("input[data-owner]", tr).forEach((inp) => {
@@ -1366,7 +1651,7 @@
       "touchstart",
       (e) => {
         if (e.touches.length !== 1) return;
-        if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields")) return;
+        if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row")) return;
         onStart(e.touches[0].clientX, e.touches[0].clientY);
       },
       { passive: true }
@@ -1400,7 +1685,7 @@
     let mouseDown = false;
     stage.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields")) return;
+      if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row")) return;
       mouseDown = true;
       onStart(e.clientX, e.clientY);
     });

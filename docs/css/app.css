@@ -2483,3 +2483,146 @@ body.is-editing #t3 .block[data-type="mermaid"] {
     text-align: center;
   }
 }
+
+/* ========== t6 多选主开 / 费用 / 多负责人 ========== */
+.multi-row {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.multi-chip.is-selected {
+  background: #EBE6EF;
+  border-color: #7A4F96;
+  color: #2A1A38;
+}
+.other-text-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+.other-text-wrap.is-hidden {
+  display: none;
+}
+.other-text-wrap input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1.5px solid var(--line, #ddd);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-height: 40px;
+  background: #fff;
+}
+.other-text-wrap input:focus {
+  outline: none;
+  border-color: var(--brand-deep, #7A4F96);
+  box-shadow: 0 0 0 3px rgba(122, 79, 150, 0.15);
+}
+
+.fee-fields {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.fee-fields label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+.fee-fields input {
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1.5px solid var(--line, #ddd);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-height: 40px;
+  width: 5.5em;
+  background: #fff;
+  color: var(--ink, #111);
+  text-align: center;
+}
+.fee-fields label.fee-other {
+  flex: 1 1 100%;
+}
+.fee-fields label.fee-other input {
+  flex: 1;
+  width: auto;
+  min-width: 12em;
+  text-align: left;
+  font-weight: 500;
+}
+.fee-fields input:focus {
+  outline: none;
+  border-color: var(--brand-deep, #7A4F96);
+  box-shadow: 0 0 0 3px rgba(122, 79, 150, 0.15);
+}
+
+.owners-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.owner-card {
+  border: 1px solid var(--line, #e5e5e5);
+  border-radius: 10px;
+  background: #faf9fc;
+  padding: 8px 10px;
+  min-width: 0;
+}
+.owner-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-deep, #7A4F96);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.owner-card .owner-fields {
+  margin-top: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+.owner-card .owner-fields label {
+  width: 100%;
+  font-size: 12px;
+}
+.owner-card .owner-fields input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .owners-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .fee-fields label {
+    width: 100%;
+  }
+  .fee-fields input {
+    flex: 1;
+    width: auto;
+  }
+  .fee-fields label.fee-other input {
+    min-width: 0;
+  }
+  .owners-grid {
+    grid-template-columns: 1fr;
+  }
+}
