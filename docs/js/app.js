@@ -852,6 +852,7 @@
       if (ok) {
         const g = evaluateCheckGate(block);
         toast(g.isMinOk ? "✅ 本场结论已复制 · 可贴周报/飞书" : "已复制当前勾选（最低要求未齐）", 2400);
+        tapHaptic("ok");
         btn.classList.add("is-copied");
         const prev = btn.textContent;
         btn.textContent = "已复制";
@@ -860,6 +861,7 @@
           btn.classList.remove("is-copied");
         }, 1600);
       } else {
+        tapHaptic("warn");
         toast("复制失败 · 请手动选中文字，或用 HTTPS/本机打开", 2800);
       }
     });
@@ -885,7 +887,13 @@
     btn.classList.toggle("is-on", !!checked);
     btn.setAttribute("aria-pressed", checked ? "true" : "false");
     const box = btn.querySelector(".chk-box");
-    if (box) box.textContent = checked ? "☑" : "☐";
+    if (box) {
+      box.textContent = checked ? "☑" : "☐";
+      box.classList.remove("is-pop");
+      void box.offsetWidth;
+      box.classList.add("is-pop");
+      setTimeout(() => box.classList.remove("is-pop"), 280);
+    }
   }
 
   function pulseChips(el) {
@@ -947,6 +955,14 @@
         }
         r.checked = !r.checked;
         setRowCheckedUI(tr, r.checked);
+        if (tr) {
+          tr.classList.remove("is-just-toggled");
+          // force reflow for pop animation
+          void tr.offsetWidth;
+          tr.classList.add("is-just-toggled");
+          setTimeout(() => tr.classList.remove("is-just-toggled"), 320);
+        }
+        tapHaptic(r.checked ? "ok" : "light");
         saveDraft();
         refreshCheckStatus(blockId);
       });
@@ -975,6 +991,12 @@
             const on = r.multiValues.includes(c.getAttribute("data-multi-pick"));
             c.classList.toggle("is-selected", on);
             c.setAttribute("aria-pressed", on ? "true" : "false");
+            if (on && c.getAttribute("data-multi-pick") === val) {
+              c.classList.remove("is-pop");
+              void c.offsetWidth;
+              c.classList.add("is-pop");
+              setTimeout(() => c.classList.remove("is-pop"), 280);
+            }
           });
           const wrap = tr.querySelector("[data-other-wrap]");
           const ot = tr.querySelector("[data-other-text]");
@@ -991,6 +1013,7 @@
           }
           setRowCheckedUI(tr, r.checked);
         }
+        tapHaptic("light");
         saveDraft();
         refreshCheckStatus(blockId);
       });
@@ -1020,6 +1043,12 @@
             const on = c.getAttribute("data-path-pick") === r.pathValue;
             c.classList.toggle("is-selected", on);
             c.setAttribute("aria-pressed", on ? "true" : "false");
+            if (on) {
+              c.classList.remove("is-pop");
+              void c.offsetWidth;
+              c.classList.add("is-pop");
+              setTimeout(() => c.classList.remove("is-pop"), 280);
+            }
           });
           const hints = {
             A: "前置齐了再开发 · 按止损线花钱",
@@ -1030,6 +1059,7 @@
           if (hintEl) hintEl.textContent = r.pathValue ? hints[r.pathValue] || "" : "点选一项路径";
           setRowCheckedUI(tr, r.checked);
         }
+        tapHaptic(r.pathValue ? "ok" : "light");
         saveDraft();
         refreshCheckStatus(blockId);
       });
@@ -1337,6 +1367,7 @@
 
   async function activate(id, dir) {
     if (!id || !findTab(id)) return;
+    if (id === activeTab && !dir) return;
     const ids = content.tabs.map((x) => x.id);
     const prevIdx = ids.indexOf(activeTab);
     const nextIdx = ids.indexOf(id);
@@ -1344,6 +1375,7 @@
     else if (prevIdx >= 0 && nextIdx >= 0) swipeDir = nextIdx >= prevIdx ? "left" : "right";
 
     activeTab = id;
+    if (document.body.classList.contains("is-mobile")) tapHaptic("light");
     $$(".tab").forEach((t) => {
       const on = t.dataset.tab === id;
       t.classList.toggle("active", on);
@@ -1835,10 +1867,42 @@
     document.body.classList.toggle("is-tiny", h > 0 && h < 700);
   }
 
+  /** 轻触反馈：iOS 上 :active 不可靠，用 pressed 类 + 可选震动 */
+  function wirePressFeedback() {
+    if (wirePressFeedback._on) return;
+    wirePressFeedback._on = true;
+    const sel =
+      "button, .tab, .path-chip, .multi-chip, .chk-btn, .copy-conclusion-btn, .chk-later-toggle, .owners-more-btn, .detail-card-btn";
+    const down = (e) => {
+      const el = e.target.closest(sel);
+      if (!el || el.disabled) return;
+      el.classList.add("is-pressed");
+    };
+    const up = () => {
+      $$(".is-pressed").forEach((el) => el.classList.remove("is-pressed"));
+    };
+    document.addEventListener("touchstart", down, { passive: true });
+    document.addEventListener("touchend", up, { passive: true });
+    document.addEventListener("touchcancel", up, { passive: true });
+    document.addEventListener("mousedown", down);
+    document.addEventListener("mouseup", up);
+    document.addEventListener("mouseleave", up);
+  }
+
+  function tapHaptic(kind) {
+    try {
+      if (!navigator.vibrate) return;
+      if (kind === "ok") navigator.vibrate(12);
+      else if (kind === "warn") navigator.vibrate([8, 30, 8]);
+      else navigator.vibrate(8);
+    } catch (_) {}
+  }
+
   async function boot() {
     applyMobileClasses();
     window.addEventListener("resize", applyMobileClasses);
     window.addEventListener("orientationchange", () => setTimeout(applyMobileClasses, 200));
+    wirePressFeedback();
 
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
