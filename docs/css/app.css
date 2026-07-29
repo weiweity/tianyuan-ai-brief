@@ -1790,3 +1790,181 @@ html, body, .stage {
     min-height: 0;
   }
 }
+
+/* ========== t2 取舍：上双卡 + 原因 + 图 + 底明细按钮卡 ========== */
+.panel-body.layout-fill[data-count="5"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 8px;
+  overflow: hidden;
+}
+/* 前两个 callout：为什么开 / 为什么不开 */
+.panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(1),
+.panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(2) {
+  flex: 0 0 auto;
+  font-size: clamp(14.5px, 1.1vw + 0.3vh, 16.5px);
+  line-height: 1.5;
+  padding: 12px 14px;
+  min-height: 0;
+}
+/* 用子网格包住前两个 —— 父级 flex-wrap */
+.panel-body.layout-fill[data-count="5"] {
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-content: flex-start;
+}
+.panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(1),
+.panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(2) {
+  flex: 1 1 calc(50% - 5px);
+  min-width: 220px;
+}
+.panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(3) {
+  flex: 1 1 100%;
+  font-size: clamp(14.5px, 1.1vw + 0.3vh, 16.5px);
+  padding: 12px 14px;
+}
+.panel-body.layout-fill[data-count="5"] > .block[data-type="mermaid"] {
+  flex: 1 1 100%;
+  min-height: 160px;
+  max-height: none;
+  height: auto;
+  flex-grow: 1;
+}
+.panel-body.layout-fill[data-count="5"] > .block[data-type="detail-card"] {
+  flex: 0 0 100%;
+  width: 100%;
+  margin-top: auto; /* 贴正文最底 */
+}
+
+/* detail-card 视觉与 chrome 统一 */
+.detail-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.detail-card-btn {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  background: linear-gradient(180deg, #fff 0%, #f7f4f9 100%);
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--brand-dark);
+  font-family: inherit;
+}
+.detail-card-btn-title {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: clamp(15px, 1.15vw + 0.3vh, 17px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.detail-card-btn-sub {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 12px;
+  color: var(--muted);
+}
+.detail-card-chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  position: relative;
+}
+.detail-card-chevron::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--brand-deep);
+  border-bottom: 2px solid var(--brand-deep);
+  transform: translate(-50%, -50%) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+.detail-card.is-open .detail-card-chevron::after {
+  transform: translate(-50%, -30%) rotate(225deg);
+}
+.detail-card-body {
+  border-top: 1px solid var(--line);
+  padding: 0;
+  max-height: min(32vh, 280px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+}
+.detail-card-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(13px, 1vw + 0.2vh, 15px);
+}
+.detail-card-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--brand);
+  color: var(--brand-dark);
+  font-weight: 700;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.detail-card-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  line-height: 1.45;
+}
+.detail-card-table tr:last-child td { border-bottom: 0; }
+.detail-card-table tbody tr:nth-child(even) td {
+  background: #faf8fc;
+}
+
+@media (max-width: 640px) {
+  .panel-body.layout-fill[data-count="5"] {
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    overflow-y: auto !important;
+    height: auto;
+    min-height: 100%;
+  }
+  .panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(1),
+  .panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(2),
+  .panel-body.layout-fill[data-count="5"] > .block[data-type="callout"]:nth-child(3) {
+    flex: 0 0 auto !important;
+    width: 100%;
+    min-width: 0;
+  }
+  .panel-body.layout-fill[data-count="5"] > .block[data-type="mermaid"] {
+    flex: 0 0 auto;
+    min-height: 200px;
+    max-height: 40vh;
+  }
+  .panel-body.layout-fill[data-count="5"] > .block[data-type="detail-card"] {
+    flex: 0 0 auto;
+    margin-top: 4px;
+  }
+  .detail-card-body { max-height: 50vh; }
+  .detail-card-table { font-size: 13px; }
+  .detail-card-table th,
+  .detail-card-table td { padding: 8px; }
+  /* 手机表明细可改为更紧 */
+  .detail-card-table th:nth-child(2),
+  .detail-card-table td:nth-child(2) {
+    /* keep */
+  }
+}

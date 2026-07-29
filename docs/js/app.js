@@ -372,6 +372,37 @@
         return `<div class="block" data-block-id="${id}" data-type="image" style="text-align:center">
           <img src="${esc(b.src)}" alt="${esc(b.alt || "")}" style="max-width:100%;max-height:40vh;object-fit:contain" data-field="src"/>
         </div>`;
+      case "detail-card": {
+        const open = b.defaultOpen !== false;
+        const heads = (b.headers || []).map((h) => `<th>${esc(h)}</th>`).join("");
+        const rows = (b.rows || [])
+          .map((r) => {
+            // support sector-table shape
+            if (r.sector != null) {
+              return `<tr>
+                <td data-editable="true" data-field="sector"><b>${esc(r.sector)}</b></td>
+                <td data-editable="true" data-field="need">${esc(r.need || "")}</td>
+                <td data-editable="true" data-field="direction">${esc(r.direction || "")}</td>
+                <td data-editable="true" data-field="choice">${esc(r.choice || "")}</td>
+              </tr>`;
+            }
+            return `<tr><td colspan="4">${esc(JSON.stringify(r))}</td></tr>`;
+          })
+          .join("");
+        return `<div class="block detail-card ${open ? "is-open" : ""}" data-block-id="${id}" data-type="detail-card">
+          <button type="button" class="detail-card-btn" data-detail-toggle="${id}" aria-expanded="${open ? "true" : "false"}">
+            <span class="detail-card-btn-title">${esc(b.title || "明细")}</span>
+            <span class="detail-card-btn-sub">${esc(b.subtitle || "点开查看")}</span>
+            <span class="detail-card-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="detail-card-body" id="detail-body-${id}" ${open ? "" : "hidden"}>
+            <table class="detail-card-table">
+              <thead><tr>${heads}</tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+      }
       default:
         return `<div class="block" data-block-id="${id}">未知类型 ${esc(b.type)}</div>`;
     }
@@ -403,7 +434,23 @@
     $("#stage").innerHTML = content.tabs.map(renderPanel).join("");
     renderedMermaid.clear();
     applyEditMode();
+    wireDetailCards();
     if (activeTab) queueMermaid(activeTab);
+  }
+
+  function wireDetailCards() {
+    $$("[data-detail-toggle]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (editing) return;
+        const id = btn.getAttribute("data-detail-toggle");
+        const card = btn.closest(".detail-card");
+        const body = document.getElementById("detail-body-" + id);
+        if (!card || !body) return;
+        const open = card.classList.toggle("is-open");
+        body.hidden = !open;
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
   }
 
   async function ensureMermaid() {
@@ -605,6 +652,20 @@
       } else if (type === "mermaid") {
         const ta = wrap.querySelector(".mermaid-src");
         if (ta) block.source = ta.value;
+      } else if (type === "detail-card") {
+        const title = wrap.querySelector(".detail-card-btn-title");
+        if (title) block.title = title.textContent.trim();
+        $$("tbody tr", wrap).forEach((tr, i) => {
+          if (!block.rows || !block.rows[i]) return;
+          const s = tr.querySelector("[data-field='sector']");
+          const n = tr.querySelector("[data-field='need']");
+          const d = tr.querySelector("[data-field='direction']");
+          const c = tr.querySelector("[data-field='choice']");
+          if (s) block.rows[i].sector = s.textContent.trim();
+          if (n) block.rows[i].need = n.textContent.trim();
+          if (d) block.rows[i].direction = d.textContent.trim();
+          if (c) block.rows[i].choice = c.textContent.trim();
+        });
       }
     });
 
