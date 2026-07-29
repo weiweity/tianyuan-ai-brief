@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.7.6",
+  "version": "5.7.7",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -184,14 +184,14 @@
     {
       "id": "t5",
       "no": "5",
-      "title": "费用 + 48h",
+      "title": "费用与止损",
       "layout": "split",
       "blocks": [
         {
           "id": "t5.chart",
           "type": "mermaid",
           "slot": "main",
-          "source": "flowchart TB\n  Q{路径} --> A[A 立 启最小环境 须 G0]\n  Q --> B[B 立 金额前不开发]\n  Q --> C[C 不立]\n  A -->|T0+2日17:00 无精确 cap| B2[视同 B + 复核至T0+2 17:00]\n  A --> GO1[G0 后 G1a]\n  B --> GO2[金额批后 G1a]\n  C --> STOP[周报锁范围]\n  style A fill:#D9F5D6,stroke:#34C724\n  style B fill:#E8F3FF,stroke:#3370FF\n  style C fill:#FEE3E2,stroke:#F54A45\n  style B2 fill:#FFF5CC,stroke:#FFC60A"
+          "source": "flowchart TB\n  Q{您怎么批}\n  Q --> A[A 立 · 同意启动<br/>前置齐了再开发]\n  Q --> B[B 立 · 先认方向<br/>费用批完再动手]\n  Q --> C[C 不立<br/>写入周报说明]\n  A --> A1[按止损线花钱<br/>超线即停]\n  B --> B1[不开发不烧工具费<br/>批完再开工]\n  C --> C1[不立项 · 不排期]\n  style A fill:#D9F5D6,stroke:#34C724,color:#111\n  style B fill:#E8F3FF,stroke:#3370FF,color:#111\n  style C fill:#FEE3E2,stroke:#F54A45,color:#111\n  style A1 fill:#D9F5D6,stroke:#34C724,color:#111\n  style B1 fill:#E8F3FF,stroke:#3370FF,color:#111\n  style C1 fill:#FEE3E2,stroke:#F54A45,color:#111\n"
         },
         {
           "id": "t5.money",
@@ -200,24 +200,24 @@
           "keyWidth": "wide",
           "rows": [
             {
-              "key": "T0 定义",
-              "html": "<b>勾选当日 0 点</b>；截止 <b>T0+2 自然日 17:00</b>（法定节假日顺延至下个工作日 17:00；FDE 建日历提醒）"
+              "key": "花什么钱",
+              "html": "全期预计约 <b>7000 元</b>：约 3 个月 Codex AI 账户 + OCR 文档识别账户 + 云服务器（服务器前期可先免费试用）"
             },
             {
-              "key": "月 API cap",
-              "html": "仅 API 调用 · 数百～数千元/月 · 48h 财务回填精确数 · <b>人力不计入</b> · 周报分列 API 与人日"
+              "key": "止损线",
+              "html": "<b>首月 5000 元</b> · <b>全期 10000 元</b>。到线就停扩，先保护预算，再决定是否加码"
             },
             {
-              "key": "fallback",
-              "html": "到期无精确数 → 下沿「数百元/月」+ <b>视同 B</b> · 企微+邮件双轨 · 复核窗=T0+2 17:00（未回默认改 C · 当日撤配删密钥）· <b>复核期仅配置不调用</b> · 改 C 零成本（清理人日不进 cap）"
+              "key": "会后 48 小时",
+              "html": "会后 <b>2 个自然日内</b>（逢节假日顺延到下个工作日）把责任人钉死、把要开通的账户清单钉死；到点还没对齐 → <b>先不开发、不烧工具费</b>，只做书面准备"
             },
             {
-              "key": "超 cap 停扩",
-              "html": "勾 A/B 即授权即停 · <b>FDE 每周一上午核算上周用量并双轨报金主</b> · 超 cap 即停 · 金主一句确认（可异步）"
+              "key": "超线怎么办",
+              "html": "当场授权：一超止损线，执行方 <b>立即停扩</b>，企微/邮件同步您；是否加预算由您一句话决定"
             },
             {
-              "key": "首期停损",
-              "html": "首期 API <b>累计停损上限万元内</b>（≠ 月 cap）· 演示不过停扩 · 无采用不加 L3/L4"
+              "key": "人工怎么算",
+              "html": "<b>IT 人工成本不算进上述 7000</b>；工具费与人日在周报里分开写，避免混在一起对不上账"
             }
           ]
         }
@@ -325,5 +325,5 @@
       ]
     }
   ],
-  "publishStamp": "1785310279940"
+  "publishStamp": "1785310369623"
 }

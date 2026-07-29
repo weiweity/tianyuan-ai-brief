@@ -124,31 +124,33 @@ flowchart LR
 
 <hr/>
 
-<h1>5 · 费用 + 48h 写实</h1>
+<h1>5 · 费用与止损</h1>
 
 <whiteboard type="mermaid">
 flowchart TB
-  Q{路径} --> A[A 立 启最小环境 须 G0]
-  Q --> B[B 立 金额前不开发]
-  Q --> C[C 不立]
-  A -->|T0+2日17:00 无精确 cap| B2[视同 B + 复核至T0+2 17:00]
-  A --> GO1[G0 后 G1a]
-  B --> GO2[金额批后 G1a]
-  C --> STOP[周报锁范围]
-  style A fill:#D9F5D6,stroke:#34C724
-  style B fill:#E8F3FF,stroke:#3370FF
-  style C fill:#FEE3E2,stroke:#F54A45
-  style B2 fill:#FFF5CC,stroke:#FFC60A
+  Q{您怎么批}
+  Q --> A[A 立 · 同意启动<br/>前置齐了再开发]
+  Q --> B[B 立 · 先认方向<br/>费用批完再动手]
+  Q --> C[C 不立<br/>写入周报说明]
+  A --> A1[按止损线花钱<br/>超线即停]
+  B --> B1[不开发不烧工具费<br/>批完再开工]
+  C --> C1[不立项 · 不排期]
+  style A fill:#D9F5D6,stroke:#34C724,color:#111
+  style B fill:#E8F3FF,stroke:#3370FF,color:#111
+  style C fill:#FEE3E2,stroke:#F54A45,color:#111
+  style A1 fill:#D9F5D6,stroke:#34C724,color:#111
+  style B1 fill:#E8F3FF,stroke:#3370FF,color:#111
+  style C1 fill:#FEE3E2,stroke:#F54A45,color:#111
 </whiteboard>
 
 <table>
-  <colgroup><col width="120"/><col width="480"/></colgroup>
+  <colgroup><col width="110"/><col width="480"/></colgroup>
   <tbody>
-    <tr><td><b>T0 定义</b></td><td><b>勾选当日 0 点</b>；48h 截止 = <b>T0+2 自然日 17:00</b>（<b>遇法定节假日顺延至下个工作日 17:00</b>；日历由 FDE 建提醒）</td></tr>
-    <tr><td><b>月 API cap</b></td><td>仅 API 调用 · 区间数百～数千元/月 · 精确数 48h 财务回填 · <b>人力不计入此 cap</b> · 周报分列 API 与人日（禁止合并）</td></tr>
-    <tr><td><b>fallback</b></td><td>到期无精确数 → 自动下沿「数百元/月」+ <b>视同 B</b> · FDE 企微+邮件双轨通知金主 · <b>快速复核窗口 = 与 48h cap 同截止 T0+2 17:00</b>（遇节假日顺延；金主确认或改 C；<b>截止未回复默认视同改 C</b>，FDE 当日撤配置+删密钥）· <b>复核期内仅配置不调用</b>（密钥/模型不入请求路径）· 改 C 零成本回退（<b>FDE 当日撤配置+删密钥</b>，金主无 API 计费；清理人日不计入 API cap）</td></tr>
-    <tr><td><b>超 cap 停扩</b></td><td>勾 A/B 即授权 FDE 即停扩 · <b>FDE 每周一上午核算上周用量并企微+邮件双轨报金主</b> · 超 cap 即停扩 · 金主一句确认（可异步）</td></tr>
-    <tr><td><b>首期停损</b></td><td>首期 API <b>累计停损上限万元内</b>（≠ 月 cap；月 cap 仍为数百～数千）· 演示不过停扩 · 无采用不加 L3/L4</td></tr>
+    <tr><td><b>花什么钱</b></td><td>全期预计约 <b>7000 元</b>：约 3 个月 Codex AI 账户 + OCR 文档识别账户 + 云服务器（前期可先免费试用）</td></tr>
+    <tr><td><b>止损线</b></td><td><b>首月 5000 元</b> · <b>全期 10000 元</b>。到线就停扩，先保护预算，再决定是否加码</td></tr>
+    <tr><td><b>会后 48 小时</b></td><td>会后 <b>2 个自然日内</b>（逢节假日顺延到下个工作日）把责任人、开通账户清单钉死；到点未对齐 → 先不开发、不烧工具费</td></tr>
+    <tr><td><b>超线怎么办</b></td><td>当场授权：一超止损线执行方 <b>立即停扩</b>，企微/邮件同步您；是否加预算由您一句话决定</td></tr>
+    <tr><td><b>人工怎么算</b></td><td><b>IT 人工成本不算进上述 7000</b>；工具费与人日在周报里分开写</td></tr>
   </tbody>
 </table>
 
