@@ -3489,27 +3489,22 @@ html, body, .stage {
     padding: 6px 10px !important;
     font-size: 13.5px !important;
   }
-  /* 费用：三数一排，藏其他说明；标签保持横排（避免「元」掉到输入框下） */
+  /* 费用：三数一排；其他说明在 later 展开时显示 */
   #t6 .fee-fields {
     display: grid !important;
     grid-template-columns: 1fr 1fr 1fr !important;
     gap: 6px !important;
     align-items: end !important;
   }
-  #t6 .fee-fields label {
+  #t6 .fee-fields label.fee-num {
     width: auto !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    font-size: 11.5px !important;
-    gap: 3px !important;
-    display: flex !important;
-  }
-  /* 把「元」贴输入框右侧：用内部横向 */
-  #t6 .fee-fields label {
-    font-size: 11px !important;
   }
   #t6 .fee-fields label.fee-other {
     display: none !important;
+    grid-column: 1 / -1;
+  }
+  #t6 .block[data-type="check-table"][data-later-open="true"] .fee-fields label.fee-other {
+    display: flex !important;
   }
   #t6 .fee-fields input {
     width: 100% !important;
@@ -3851,10 +3846,12 @@ html, body, .stage {
 
   /* 4. 短屏/小屏再砍 */
   body.is-short #t6 .panel-body > .block[data-type="callout"] {
-    display: none !important; /* 短屏：边界/散会文案让位决策，展开 later 或桌面再看 */
+    display: none !important; /* 短屏：边界文案已并入 status */
   }
-  body.is-short #t6 .owners-more-btn {
-    display: none !important; /* 短屏默认不展多人入口，1 人够散会 */
+  /* 负责人「再加」始终可见（备岗需要）；仅极小屏略缩小 */
+  body.is-tiny #t6 .owners-more-btn {
+    min-height: 40px !important;
+    font-size: 12px !important;
   }
   body.is-tiny #t1 .panel-body > .block[data-type="callout"] {
     padding: 8px 10px !important;
@@ -3963,14 +3960,15 @@ html, body, .stage {
   #t6 .chk-btn {
     min-width: 44px !important;
   }
-  /* 状态条补充最低要求（callout 隐藏后） */
-  #t6 .check-status::after {
-    content: " · 边界：不立刻上线/不代回";
-    opacity: 0.85;
-  }
-  #t6 .check-status.is-ok::after {
-    content: " · 可复制结论贴飞书";
-  }
+  /* 边界/复制提示已写入 status DOM 文案，不再用 ::after 注入 */
+}
+
+/* gate-table 多行 line 统一行高 */
+.block[data-type="gate-table"] .line,
+.block[data-type="callout"] .line {
+  display: block;
+  line-height: 1.45;
+  margin: 0.15em 0;
 }
 
 /* ========== 手机交互感 v1.78：按压 / 选中 / 翻页 / 勾选反馈 ========== */
@@ -4102,7 +4100,10 @@ html, body, .stage {
   .chk-btn .chk-box.is-pop,
   tr.is-just-toggled,
   #t6 tr.chk-tier-later,
-  .toast.show {
+  .toast.show,
+  body.ix-haptic-flash,
+  .panel.is-peek,
+  body.is-swiping .panel.active {
     animation: none !important;
     transition: none !important;
   }

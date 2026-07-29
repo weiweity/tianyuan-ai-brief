@@ -1,7 +1,7 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.16.0",
-  "ssot": "feishu-slim-board-v5.6",
+  "version": "5.17.0",
+  "ssot": "feishu-slim-board-v5.17",
   "updated": "2026-07-29",
   "meta": {
     "title": "AI 赋能立项",
@@ -179,15 +179,15 @@
           "rows": [
             {
               "gate": "① 前置",
-              "html": "三件事齐了才开开发：<br/>· <b>业务书面同意</b>（口头 ≤3 工作日补）<br/>· <b>负责人+备用具名</b><br/>· <b>费用与止损确认</b>（7000 / 5k / 10k）<br/>· 书面「出问题怎么办」"
+              "html": "<div class='line'>三件事齐了才开开发：</div><div class='line'>· <b>业务书面同意</b>（口头 ≤3 工作日补）</div><div class='line'>· <b>负责人+备用具名</b></div><div class='line'>· <b>费用与止损确认</b>（7000 / 5k / 10k）</div><div class='line'>· 书面「出问题怎么办」</div>"
             },
             {
               "gate": "② 演示",
-              "html": "约 4 周可内部演示：<br/>· 话术库可检索<br/>· 抽 20 题，≥14 题过（约 70%）<br/>· <b>0 次自动代回</b><br/>· 不过 → 停扩回前置"
+              "html": "<div class='line'>约 4 周可内部演示：</div><div class='line'>· 话术库可检索</div><div class='line'>· 抽 20 题，≥14 题过（约 70%）</div><div class='line'>· <b>0 次自动代回</b></div><div class='line'>· 不过 → 停扩回前置</div>"
             },
             {
               "gate": "③ 试用",
-              "html": "约 4 周内部小试用：<br/>· ≥3 坐席连续 2 周<br/>· 每周有使用与反馈<br/>· 仍 <b>0 代回</b> · 可写周报<br/>· 人走了当周作废，补位重测"
+              "html": "<div class='line'>约 4 周内部小试用：</div><div class='line'>· ≥3 坐席连续 2 周</div><div class='line'>· 每周有使用与反馈</div><div class='line'>· 仍 <b>0 代回</b> · 可写周报</div><div class='line'>· 人走了当周作废，补位重测</div>"
             }
           ]
         }
@@ -271,7 +271,8 @@
               ],
               "multiValues": [],
               "otherText": "",
-              "tier": "must"
+              "tier": "must",
+              "rowId": "t6-r1"
             },
             {
               "no": "2",
@@ -283,7 +284,8 @@
                 "C"
               ],
               "pathValue": "",
-              "tier": "must"
+              "tier": "must",
+              "rowId": "t6-r2"
             },
             {
               "no": "3",
@@ -295,7 +297,8 @@
                 "allCap": "10000",
                 "otherNote": ""
               },
-              "tier": "must"
+              "tier": "must",
+              "rowId": "t6-r3"
             },
             {
               "no": "4",
@@ -318,25 +321,29 @@
                   "scope": ""
                 }
               ],
-              "tier": "must"
+              "tier": "must",
+              "rowId": "t6-r4"
             },
             {
               "no": "5",
               "checked": false,
               "html": "会后 2 天钉死账户与对接人",
-              "tier": "later"
+              "tier": "later",
+              "rowId": "t6-r5"
             },
             {
               "no": "6",
               "checked": false,
               "html": "授权超止损 <b>立即停扩</b>（飞书/邮件同步）",
-              "tier": "must"
+              "tier": "must",
+              "rowId": "t6-r6"
             },
             {
               "no": "7",
               "checked": false,
               "html": "书面「出问题怎么办」齐全",
-              "tier": "later"
+              "tier": "later",
+              "rowId": "t6-r7"
             }
           ]
         },
@@ -370,11 +377,11 @@
           "rows": [
             {
               "gate": "会后 2 天",
-              "html": "钉死账户清单 + 对接人<br/>未齐 → <b>不开发、不烧工具费</b>"
+              "html": "<div class='line'>钉死账户清单 + 对接人</div><div class='line'>未齐 → <b>不开发、不烧工具费</b></div>"
             },
             {
               "gate": "会后 3 天",
-              "html": "业务 <b>书面同意</b>补齐<br/>未补 → 只记意向，不排开发"
+              "html": "<div class='line'>业务 <b>书面同意</b>补齐</div><div class='line'>未补 → 只记意向，不排开发</div>"
             },
             {
               "gate": "每周一行",
@@ -412,10 +419,10 @@
           "id": "t7.pm",
           "type": "callout",
           "variant": "ok",
-          "html": "<b>项目经理盯 4 件事：</b><br/>① 前置是否齐　② 钱是否在线内<br/>③ 负责人是否在位　④ 该停有没有停<br/>内容 → 业务负责人；工具/停扩 → 执行方并同步您"
+          "html": "<b>项目经理盯 4 件事：</b> ① 前置是否齐　② 钱是否在线内 ③ 负责人是否在位　④ 该停有没有停 内容 → 业务负责人；工具/停扩 → 执行方并同步您"
         }
       ]
     }
   ],
-  "publishStamp": ""
+  "publishStamp": "1785318445926"
 }

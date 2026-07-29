@@ -641,11 +641,11 @@
     return [];
   }
 
-  /** 散会最低要求：选 A/B 须 #1 #3 #4 #6；选 C 只须 #2=C */
+  /** 散会最低要求：选 A/B 须 #1 #3 #4 #6；选 C 只须已选路径（pathValue 即表态） */
   function evaluateCheckGate(block) {
     const rows = block.rows || [];
     const total = rows.length;
-    const done = rows.filter((r) => r.checked).length;
+    const done = rows.filter((r) => r.checked || (Array.isArray(r.pathOptions) && r.pathValue)).length;
     const pathRow = rows.find((r) => Array.isArray(r.pathOptions) && r.pathOptions.length);
     const path = pathRow ? pathRow.pathValue || "" : "";
     const multiRow = rows.find((r) => Array.isArray(r.multiOptions) && r.multiOptions.length);
@@ -657,7 +657,8 @@
       const r = rows.find((x) => String(x.no) === String(no));
       if (!r) return;
       if (no === "2") {
-        if (!r.pathValue || !r.checked) missing.push("#2 路径");
+        // 选了路径即视为 #2 完成（不依赖勾选框）
+        if (!r.pathValue) missing.push("#2 路径");
       } else if (no === "1") {
         const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
         if (!vals.length || !r.checked) missing.push("#1 主开");
@@ -668,9 +669,6 @@
         missing.push("#" + no);
       }
     });
-    if (pathRow && !pathRow.pathValue && path !== "C") {
-      if (!missing.includes("#2 路径")) missing.push("#2 路径");
-    }
     return {
       rows,
       total,
@@ -685,25 +683,26 @@
     };
   }
 
-  /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮 */
+  /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
   function checkStatusHtml(block) {
     const g = evaluateCheckGate(block);
     let cls = "check-status";
     let msg = "";
+    const bound = "边界：不立刻上线 · 不代回 · 不编假收益";
     if (!g.path && g.done === 0) {
       cls += " is-idle";
-      msg = `点右侧方框即可勾选 · 已勾 <b>${g.done}/${g.total}</b> · 建议先选路径 A / B / C`;
+      msg = `点右侧方框即可勾选 · 已勾 <b>${g.done}/${g.total}</b> · 建议先选路径 A / B / C · ${bound}`;
     } else if (g.path === "C") {
       cls += g.missing.length ? " is-warn" : " is-ok";
       msg = g.missing.length
-        ? `路径 <b>C 不立</b> · 请确认勾选 #2 · 已勾 <b>${g.done}/${g.total}</b>`
-        : `路径 <b>C 不立</b> · 最低要求已齐 · 会后写进周报即可 · 已勾 <b>${g.done}/${g.total}</b>`;
+        ? `路径 <b>C 不立</b> · 请点选路径 C · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`
+        : `路径 <b>C 不立</b> · 最低要求已齐 · 不立项 · 会后写周报说明 · 已勾 <b>${g.done}/${g.total}</b>`;
     } else if (g.missing.length) {
       cls += " is-warn";
-      msg = `路径 <b>${g.pathLab}</b> · 散会前还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b>`;
+      msg = `路径 <b>${g.pathLab}</b> · 散会前还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`;
     } else {
       cls += " is-ok";
-      msg = `路径 <b>${g.pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 已勾 <b>${g.done}/${g.total}</b>`;
+      msg = `路径 <b>${g.pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 可复制结论贴飞书 · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`;
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前勾选";
     return `<div class="${cls}" data-check-status role="status">
@@ -813,33 +812,35 @@
     return lines.join("\n");
   }
 
-  async function copyTextToClipboard(text) {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (_) {}
+  /** 同步优先 execCommand（保住 iOS user-gesture），再试 clipboard API */
+  function copyTextToClipboard(text) {
     try {
       const ta = document.createElement("textarea");
       ta.value = text;
       ta.setAttribute("readonly", "");
-      ta.style.cssText = "position:fixed;left:-9999px;top:0";
+      ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
       document.body.appendChild(ta);
+      ta.focus();
       ta.select();
+      ta.setSelectionRange(0, text.length);
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
-      return ok;
-    } catch (_) {
-      return false;
+      if (ok) return Promise.resolve(true);
+    } catch (_) {}
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(
+        () => true,
+        () => false
+      );
     }
+    return Promise.resolve(false);
   }
 
   let copyConclusionWired = false;
   function wireCopyConclusion() {
     if (copyConclusionWired) return;
     copyConclusionWired = true;
-    document.addEventListener("click", async (e) => {
+    document.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-copy-conclusion]");
       if (!btn) return;
       e.preventDefault();
@@ -848,22 +849,24 @@
       const block = findBlock(blockId);
       if (!block) return;
       const text = buildMeetingConclusion(block);
-      const ok = await copyTextToClipboard(text);
-      if (ok) {
-        const g = evaluateCheckGate(block);
-        toast(g.isMinOk ? "✅ 本场结论已复制 · 可贴周报/飞书" : "已复制当前勾选（最低要求未齐）", 2400);
-        tapHaptic("ok");
-        btn.classList.add("is-copied");
-        const prev = btn.textContent;
-        btn.textContent = "已复制";
-        setTimeout(() => {
-          btn.textContent = prev;
-          btn.classList.remove("is-copied");
-        }, 1600);
-      } else {
-        tapHaptic("warn");
-        toast("复制失败 · 请手动选中文字，或用 HTTPS/本机打开", 2800);
-      }
+      // 同步发起复制，避免 await 丢掉 gesture
+      Promise.resolve(copyTextToClipboard(text)).then((ok) => {
+        if (ok) {
+          const g = evaluateCheckGate(block);
+          toast(g.isMinOk ? "✅ 本场结论已复制 · 可贴周报/飞书" : "已复制当前勾选（最低要求未齐）", 2400);
+          tapHaptic("ok");
+          btn.classList.add("is-copied");
+          const prev = btn.textContent;
+          btn.textContent = "已复制";
+          setTimeout(() => {
+            btn.textContent = prev;
+            btn.classList.remove("is-copied");
+          }, 1600);
+        } else {
+          tapHaptic("warn");
+          toast("复制失败 · 请手动选中文字，或用 HTTPS/本机打开", 2800);
+        }
+      });
     });
   }
 
@@ -936,10 +939,16 @@
         if (!block || !block.rows || !block.rows[row]) return;
         const r = block.rows[row];
         const tr = btn.closest("tr");
-        if (Array.isArray(r.pathOptions) && r.pathOptions.length && !r.pathValue) {
-          toast("请先点选路径 A / B / C");
-          tapHaptic("warn");
-          pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
+        if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
+          // 路径行：只能通过 A/B/C 改表态，勾选框不单独翻转
+          if (!r.pathValue) {
+            toast("请先点选路径 A / B / C");
+            tapHaptic("warn");
+            pulseChips(tr && tr.querySelector(".path-chips:not(.multi-chips)"));
+            return;
+          }
+          toast("改路径请点 A / B / C");
+          tapHaptic("light");
           return;
         }
         if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
@@ -1260,7 +1269,25 @@
     });
   }
 
-  /** 热更新时保留本机勾选状态，避免远程覆盖会议中的勾 */
+  function checkRowKey(r) {
+    if (!r) return "";
+    if (r.rowId) return String(r.rowId);
+    if (r.no != null && r.no !== "") return "no:" + String(r.no);
+    return "";
+  }
+
+  function pathOptionKeys(row) {
+    return (row.pathOptions || []).map((p) => (typeof p === "string" ? p : p && p.value)).filter(Boolean);
+  }
+
+  function multiOptionKeys(row) {
+    return (row.multiOptions || []).map((p) => (typeof p === "string" ? p : p && p.id)).filter(Boolean);
+  }
+
+  /**
+   * 热更新时保留本机勾选：按 rowId/no 匹配，字段级合并；
+   * 允许 checked=false；schema 漂移时丢弃无效字段并提示。
+   */
   function mergeCheckState(prev, next) {
     if (!prev || !next || !prev.tabs || !next.tabs) return next;
     const prevMap = {};
@@ -1269,31 +1296,93 @@
         if (b.type === "check-table" && b.id) prevMap[b.id] = b;
       });
     });
+    let schemaWarn = false;
     next.tabs.forEach((t) => {
       (t.blocks || []).forEach((b) => {
         const old = prevMap[b.id];
         if (!old || b.type !== "check-table" || !old.rows || !b.rows) return;
+        const oldByKey = {};
+        old.rows.forEach((or, i) => {
+          const k = checkRowKey(or) || "idx:" + i;
+          oldByKey[k] = or;
+        });
         b.rows.forEach((r, i) => {
-          const o = old.rows[i];
+          const k = checkRowKey(r) || "idx:" + i;
+          let o = oldByKey[k];
+          if (!o) o = old.rows.find((x) => String(x.no) === String(r.no));
           if (!o) return;
-          if (o.checked) r.checked = true;
-          if (o.pathValue) r.pathValue = o.pathValue;
+
+          // checked：本机会议态完整覆盖（含 false）
+          if (typeof o.checked === "boolean") r.checked = o.checked;
+
+          // 路径：仅当仍在新 pathOptions 内
+          if (o.pathValue) {
+            if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
+              const opts = pathOptionKeys(r);
+              if (opts.includes(o.pathValue)) {
+                r.pathValue = o.pathValue;
+                r.checked = true;
+              } else {
+                schemaWarn = true;
+              }
+            } else {
+              schemaWarn = true;
+            }
+          }
+
+          // 多选：过滤非法 option
           if (Array.isArray(o.multiValues) && o.multiValues.length) {
-            r.multiValues = o.multiValues.slice();
+            if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
+              const valid = new Set(multiOptionKeys(r));
+              const kept = o.multiValues.filter((v) => valid.has(v));
+              r.multiValues = kept;
+              if (kept.length !== o.multiValues.length) schemaWarn = true;
+              if (kept.length) r.checked = true;
+            } else {
+              schemaWarn = true;
+            }
           }
-          if (o.otherText) r.otherText = o.otherText;
-          if (o.feeFields) {
-            r.feeFields = Object.assign({}, r.feeFields || {}, o.feeFields);
+          if (o.otherText != null && o.otherText !== "") {
+            if (Array.isArray(r.multiOptions)) r.otherText = o.otherText;
           }
-          if (Array.isArray(o.owners) && o.owners.length) {
-            r.owners = o.owners.map((x) => Object.assign({}, x));
+
+          // 费用：用户填过的字段覆盖
+          if (o.feeFields && r.feeFields) {
+            r.feeFields = Object.assign({}, r.feeFields, o.feeFields);
+            if (o.checked) r.checked = true;
+          } else if (o.feeFields && !r.feeFields) {
+            schemaWarn = true;
           }
-          if (o.ownerFields) {
+
+          // 负责人：owners 优先；兼容旧 ownerFields → owners[0]
+          if (Array.isArray(r.owners)) {
+            if (Array.isArray(o.owners) && o.owners.length) {
+              r.owners = o.owners.map((x) => Object.assign({}, x));
+              if (namedOwnersOf(r).length) r.checked = true;
+            } else if (o.ownerFields && String(o.ownerFields.name || "").trim()) {
+              if (!r.owners[0]) r.owners[0] = { name: "", dept: "", scope: "" };
+              r.owners[0] = Object.assign({}, r.owners[0], {
+                name: o.ownerFields.name || "",
+                dept: o.ownerFields.dept || r.owners[0].dept || "",
+                scope:
+                  o.ownerFields.scope ||
+                  o.ownerFields.backup ||
+                  r.owners[0].scope ||
+                  "",
+              });
+              r.checked = true;
+            }
+          } else if (o.ownerFields) {
             r.ownerFields = Object.assign({}, r.ownerFields || {}, o.ownerFields);
           }
         });
       });
     });
+    if (schemaWarn) {
+      try {
+        toast("检测到内容结构更新，部分旧勾选已按新结构对齐", 2600);
+      } catch (_) {}
+    }
     return next;
   }
 
@@ -1849,7 +1938,15 @@
       tracking = false,
       axis = null,
       dragging = false,
-      peekEl = null;
+      peekEl = null,
+      pendingGoTimer = null;
+
+    const cancelPendingGo = () => {
+      if (pendingGoTimer) {
+        clearTimeout(pendingGoTimer);
+        pendingGoTimer = null;
+      }
+    };
 
     const skipSel =
       "a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.multi-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row,.path-row,.check-status,.detail-card";
@@ -1927,6 +2024,8 @@
 
     const onStart = (x, y) => {
       if (editing) return;
+      // 新滑动打断未完成的 go 定时器，避免 activeTab 错位
+      cancelPendingGo();
       startX = x;
       startY = y;
       startT = Date.now();
@@ -1991,7 +2090,9 @@
         peekEl.style.opacity = "1";
       }
       const peekKeep = peekEl;
-      setTimeout(() => {
+      cancelPendingGo();
+      pendingGoTimer = setTimeout(() => {
+        pendingGoTimer = null;
         if (panel) {
           panel.style.transition = "none";
           panel.style.transform = "";
