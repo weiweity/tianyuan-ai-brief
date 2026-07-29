@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.17.0",
+  "version": "5.17.1",
   "ssot": "feishu-slim-board-v5.17",
   "updated": "2026-07-29",
   "meta": {
@@ -385,11 +385,11 @@
             },
             {
               "gate": "每周一行",
-              "html": "前置 / 工具费 / 止损线 / 人力是否被挤占"
+              "html": "<div class='line'>前置 / 工具费 / 止损线 / 人力是否被挤占</div>"
             },
             {
               "gate": "一超止损",
-              "html": "执行方 <b>立即停扩</b> · 飞书/邮件同步您"
+              "html": "<div class='line'>执行方 <b>立即停扩</b> · 飞书/邮件同步您</div>"
             }
           ]
         },
@@ -403,15 +403,15 @@
           "rows": [
             {
               "gate": "A 启动",
-              "html": "前置齐了再开发 · 按止损线开通 · 超线即停"
+              "html": "<div class='line'>前置齐了再开发 · 按止损线开通 · 超线即停</div>"
             },
             {
               "gate": "B 方向",
-              "html": "费用批完前不开发、不烧工具费"
+              "html": "<div class='line'>费用批完前不开发、不烧工具费</div>"
             },
             {
               "gate": "C 不立",
-              "html": "「不立+原因」进周报 · 不排期"
+              "html": "<div class='line'>「不立+原因」进周报 · 不排期</div>"
             }
           ]
         },
@@ -424,5 +424,5 @@
       ]
     }
   ],
-  "publishStamp": "1785318445926"
+  "publishStamp": "1785320000001"
 }

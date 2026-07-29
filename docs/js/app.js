@@ -39,43 +39,123 @@
   }
 
   // ---------- File handle (IndexedDB) ----------
+  function withTimeout(promise, ms, fallback) {
+    return new Promise((resolve) => {
+      let done = false;
+      const t = setTimeout(() => {
+        if (!done) {
+          done = true;
+          resolve(fallback);
+        }
+      }, ms);
+      Promise.resolve(promise).then(
+        (v) => {
+          if (!done) {
+            done = true;
+            clearTimeout(t);
+            resolve(v);
+          }
+        },
+        () => {
+          if (!done) {
+            done = true;
+            clearTimeout(t);
+            resolve(fallback);
+          }
+        }
+      );
+    });
+  }
+
   function idbOpen() {
     return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        reject(new Error("no idb"));
+        return;
+      }
       const req = indexedDB.open(HANDLE_DB, 1);
       req.onupgradeneeded = () => req.result.createObjectStore(HANDLE_STORE);
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error || new Error("idb open failed"));
+      req.onblocked = () => reject(new Error("idb blocked"));
     });
   }
   async function saveHandle(handle) {
     try {
-      const db = await idbOpen();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(HANDLE_STORE, "readwrite");
-        tx.objectStore(HANDLE_STORE).put(handle, "contentJson");
-        tx.oncomplete = () => res();
-        tx.onerror = () => rej(tx.error);
-      });
+      const db = await withTimeout(idbOpen(), 1200, null);
+      if (!db) return;
+      await withTimeout(
+        new Promise((res, rej) => {
+          const tx = db.transaction(HANDLE_STORE, "readwrite");
+          tx.objectStore(HANDLE_STORE).put(handle, "contentJson");
+          tx.oncomplete = () => res();
+          tx.onerror = () => rej(tx.error);
+        }),
+        1200,
+        null
+      );
     } catch (_) { /* ignore */ }
   }
   async function loadHandle() {
     try {
-      const db = await idbOpen();
-      return await new Promise((res, rej) => {
-        const tx = db.transaction(HANDLE_STORE, "readonly");
-        const r = tx.objectStore(HANDLE_STORE).get("contentJson");
-        r.onsuccess = () => res(r.result || null);
-        r.onerror = () => rej(r.error);
-      });
+      const db = await withTimeout(idbOpen(), 1200, null);
+      if (!db) return null;
+      return await withTimeout(
+        new Promise((res, rej) => {
+          const tx = db.transaction(HANDLE_STORE, "readonly");
+          const r = tx.objectStore(HANDLE_STORE).get("contentJson");
+          r.onsuccess = () => res(r.result || null);
+          r.onerror = () => rej(r.error);
+        }),
+        1200,
+        null
+      );
     } catch (_) {
       return null;
     }
   }
 
   // ---------- Load content ----------
+  /**
+   * 内容指纹：只用「作者态」字段，不含会议勾选/路径/费用手填，
+   * 避免本机勾选污染指纹导致 30s 轮询假热更。
+   */
   function fingerprintOf(obj) {
     if (!obj) return "";
-    return [obj.version || "", obj.updated || "", obj.publishStamp || "", (obj.tabs || []).length].join("|");
+    try {
+      const parts = [
+        obj.version || "",
+        obj.updated || "",
+        obj.publishStamp || "",
+        obj.ssot || "",
+        String((obj.tabs || []).length),
+      ];
+      let struct = "";
+      (obj.tabs || []).forEach((t) => {
+        struct += (t.id || "") + ":" + (t.title || "") + ";";
+        (t.blocks || []).forEach((b) => {
+          struct += (b.id || "") + "|" + (b.type || "") + "|";
+          if (b.html) struct += "h" + b.html.length + ";";
+          if (b.source) struct += "s" + b.source.length + ";";
+          (b.rows || []).forEach((r) => {
+            struct +=
+              (r.rowId || r.no || "") +
+              ":" +
+              (r.html || "").length +
+              ":" +
+              (r.gate || r.key || "").length +
+              ";";
+          });
+        });
+      });
+      // djb2 of structure (not meeting state)
+      let h = 5381;
+      for (let i = 0; i < struct.length; i++) h = ((h << 5) + h) ^ struct.charCodeAt(i);
+      parts.push(String(struct.length), (h >>> 0).toString(36));
+      return parts.join("|");
+    } catch (_) {
+      return [obj.version || "", obj.updated || "", obj.publishStamp || "", (obj.tabs || []).length].join("|");
+    }
   }
 
   async function fetchRemoteContent() {
@@ -129,6 +209,10 @@
     }
     content = next;
     contentFingerprint = fingerprintOf(content);
+    // 热更合并后写回草稿，刷新/重开仍能按 rowId 对齐勾选
+    if (reason === "poll" || reason === "reload") {
+      saveDraft();
+    }
     const stage = $("#stage");
     if (stage) {
       stage.classList.add("is-hot-updating");
@@ -693,9 +777,10 @@
       cls += " is-idle";
       msg = `点右侧方框即可勾选 · 已勾 <b>${g.done}/${g.total}</b> · 建议先选路径 A / B / C · ${bound}`;
     } else if (g.path === "C") {
+      // C：选路径即表态；missing 理论上为空，若 schema 缺 #2 才 warn
       cls += g.missing.length ? " is-warn" : " is-ok";
       msg = g.missing.length
-        ? `路径 <b>C 不立</b> · 请点选路径 C · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`
+        ? `路径 <b>C 不立</b> · 还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`
         : `路径 <b>C 不立</b> · 最低要求已齐 · 不立项 · 会后写周报说明 · 已勾 <b>${g.done}/${g.total}</b>`;
     } else if (g.missing.length) {
       cls += " is-warn";
@@ -2137,6 +2222,7 @@
       { passive: true }
     );
     stage.addEventListener("touchcancel", () => {
+      cancelPendingGo();
       tracking = false;
       axis = null;
       dragging = false;
@@ -2161,8 +2247,11 @@
       onEnd(e.clientX, e.clientY);
     });
     stage.addEventListener("pointercancel", () => {
+      cancelPendingGo();
       mouseDown = false;
       tracking = false;
+      axis = null;
+      dragging = false;
       document.body.classList.remove("is-swiping");
       clearDrag(activePanel(), true);
     });
@@ -2233,7 +2322,8 @@
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
       await loadContent({ preferDraft: isEditQuery });
-      fileHandle = await loadHandle();
+      // IndexedDB 在部分环境会挂起：超时后跳过，绝不挡首屏渲染
+      fileHandle = await withTimeout(loadHandle(), 1500, null);
       if (fileHandle) setStatus("可一键保存", "ok");
       renderAll();
       wireToolbar();
