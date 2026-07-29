@@ -1,0 +1,445 @@
+<title>AI 赋能立项汇报 · 摸底成果与费用路径（2026-07-29 · v4 全量校对）</title>
+
+<p><b>汇报人</b> 天元（内部 FDE）　<b>汇报对象</b> HR 人事总经理　<b>用途</b> 立项 / 费用路径专项（非周会流水账）</p>
+
+<hr/>
+
+<h1>〇、20 秒结论（请先看）</h1>
+
+<table>
+  <colgroup><col width="120"/><col width="480"/></colgroup>
+  <tbody>
+    <tr>
+      <td background-color="light-green"><b>建议结论</b></td>
+      <td>立 <b>客服话术库</b> 为 AI 组首个立项样板（标准答法 / 快捷语 · 人在环 · 不代回）。<b>勾 A 或 B = 立；勾 C = 不立。</b></td>
+    </tr>
+    <tr>
+      <td background-color="light-blue"><b>今日请您</b></td>
+      <td>费用路径勾 <b>A 或 B 或 C</b>；知悉供应链旁线；确认组织前置完成日；指定 48h 内月度 API 费用上限（cap）回填责任人</td>
+    </tr>
+    <tr>
+      <td><b>钱的锚（量级）</b></td>
+      <td>首期仅 MVP-A（最小可演示版本）；<b>大模型 API 调用必须设月度 cap</b>。量级占位（待财务 48h 内回填精确数，禁止假精确）：覆盖 G1a 开发调用 + G1b 小试用期间，月 cap 建议 <b>数百～数千元/月</b>；首期小计（调用 + 最小托管）建议 <b>万元内可停损</b>。超 cap 停扩调用。</td>
+    </tr>
+    <tr>
+      <td><b>工期两段</b></td>
+      <td>批后可用工作周：<b>约 4 周内部可演示（G1a）</b> → 再 <b>约 4 周内部小试用（G1b）</b>（合计约 8 周量级；旁线周另计）</td>
+    </tr>
+    <tr>
+      <td><b>诚实状态</b></td>
+      <td>软件 <b>尚未开发</b> · 正确停在 ② 立项 / 费用 · <b>批路径 ≠ 下周上线</b></td>
+    </tr>
+    <tr>
+      <td><b>角色边界</b></td>
+      <td>BI 继续「看见」结果；FDE 改岗位「怎么干」· 不建第二套看板</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>若不立：外包切换期标准仍靠个人文档，质培难审计、同问异答难追责，后续质检 / Agent 无地基，AI 组也缺可周报、可停损样板。若立：用 <b>有 cap、可停损</b> 的可控费用，换「标准可管 + 可培训 + 可周报样板」，与 BI 不打架。</p>
+
+<hr/>
+
+<h1>一、本场 Goal（今天要达成什么）</h1>
+
+<table>
+  <colgroup><col width="110"/><col width="490"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">项</th>
+      <th background-color="light-gray">内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>本场 Goal</b></td>
+      <td>您理解摸底取舍 → 认同主线选型 → 批费用路径 A/B/C（A/B=立，C=不立）→ 确认组织前置路径与日期 → 知悉钱量级与工期两段</td>
+    </tr>
+    <tr>
+      <td><b>本场非 Goal</b></td>
+      <td>不验收软件、不定试点名单、不锁死财务精确总价、不承诺上线日与周活</td>
+    </tr>
+    <tr>
+      <td><b>成功标准</b></td>
+      <td>会后有书面路径（A/B/C）+ 组织前置完成日 + 「48h 回填月 API cap 精确数」责任人；你我下一步无歧义</td>
+    </tr>
+    <tr>
+      <td><b>叙事顺序</b></td>
+      <td>① 访谈发现 → ② 选择主线/旁线 → ③ 问题·代价·收益 → ④ 费用与拍板</td>
+    </tr>
+    <tr>
+      <td><b>口播纪律</b></td>
+      <td>总时长 <b>10–12 分钟</b>：前 60 秒读〇节结论表；中间 6–8 分钟讲取舍与代价收益；末 2–3 分钟勾 A/B/C。供应链旁线 ≤1 分钟；访谈表只念「姿态」列 + 三句判断</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>回扣您 7/21：先摸底再落地、周报可见。摸底已完成；今天交「取舍后的任务包 + 路径决策」，不是一上来锁死总预算。</p>
+
+<hr/>
+
+<h1>二、访谈覆盖（先调研已闭环）</h1>
+
+<table>
+  <colgroup><col width="90"/><col width="220"/><col width="290"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">时间</th>
+      <th background-color="light-gray">对象</th>
+      <th background-color="light-gray">角色</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>7/21</td><td><b>您本人</b></td><td>开工对齐：BPR / 智能化、周报、先调研</td></tr>
+    <tr><td>7/21</td><td>HRBP</td><td>访前地图</td></tr>
+    <tr><td>7/22</td><td><b>客服</b> · 设计 · <b>仓储</b></td><td>主访谈 / 摸边界</td></tr>
+    <tr><td>7/23</td><td><b>供应链·备案</b> · <b>私域</b></td><td>布局 / 可选人效</td></tr>
+    <tr><td><b>7/28</b></td><td><b>供应链上海会</b>（温酒 / 金妍等）</td><td>任务已出（旁线）</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>三、各部门发现了什么（有取舍）</h1>
+
+<table>
+  <colgroup><col width="80"/><col width="250"/><col width="190"/><col width="90"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">端口</th>
+      <th background-color="light-gray">真痛</th>
+      <th background-color="light-gray">判断</th>
+      <th background-color="light-gray">姿态</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>客服</b></td>
+      <td>转外包 + 乙方无内网 → 标准答法散；还想质检 / 评价 / 代回</td>
+      <td>先立标准答法地基；代回风险高</td>
+      <td background-color="light-green"><b>主开</b></td>
+    </tr>
+    <tr>
+      <td>设计</td>
+      <td>已在用 AI 出图</td>
+      <td>业务已自驱，不主 R</td>
+      <td>不开</td>
+    </tr>
+    <tr>
+      <td>仓储</td>
+      <td>愿望清单长</td>
+      <td>BI / 金蝶多已接 → 先查重</td>
+      <td>查重再定</td>
+    </tr>
+    <tr>
+      <td>供应链</td>
+      <td>备案三轮人工对照差异、BOM 表（物料清单）手贴；对账 / 损耗 / 爆品预警</td>
+      <td>文稿校验可 FDE 切片；对账归 BI</td>
+      <td>旁线 ≤20%</td>
+    </tr>
+    <tr>
+      <td>私域</td>
+      <td>日报手抄；排斥高价接口、占用付费预算敏感</td>
+      <td>可人效；不抢主线样板</td>
+      <td>后置</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><b>三句总判断：</b></p>
+<ol>
+<li seq="auto">很多「要 AI」是 <b>数据 / 标准 / 流程</b> 问题 → <b>看板归 BI，动作归 FDE</b>。</li>
+<li seq="auto">FDE 先做岗位标准与动作——客服外包下的 <b>统一话术</b> 是样板。</li>
+<li seq="auto">设计不主开、仓储先查重、供应链旁线、私域后置——<b>有取舍，不是有求必应</b>。</li>
+</ol>
+
+<hr/>
+
+<h1>四、最后的选择（主线 / 旁线 / 不做）</h1>
+
+<table>
+  <colgroup><col width="100"/><col width="260"/><col width="240"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">档</th>
+      <th background-color="light-gray">选什么</th>
+      <th background-color="light-gray">不做什么</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td background-color="light-green"><b>主线</b></td>
+      <td><b>客服话术库</b>（标准答法 / 快捷语）</td>
+      <td>全自动代回 / RPA 代回</td>
+    </tr>
+    <tr>
+      <td>机制</td>
+      <td>周报可见 + 过程归档</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>旁线</td>
+      <td>供应链：样本评测 → 文稿 AI 标差异（人终审）；对账并 BI</td>
+      <td>智能排产；FDE 第二套对账数仓</td>
+    </tr>
+    <tr>
+      <td>轻 / 后</td>
+      <td>仓储查重；私域导表（可选）</td>
+      <td>设计 AI 出图主 R；抖音抓数主交付</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><b>一人带宽：</b>主开话术库；供应链 ≤20%，不计入主 KPI。超带宽则旁线自动降级，不背双主线。</p>
+
+<p><b>为何挂您这条线批：</b>您推智能化且已有 BI；本项是「岗位标准样板」，需要与 BI 并列不打架的赞助与周报可见性。业务痛在客服；话术内容正确性由 <b>业务侧 Owner（内容负责人）</b> 背，不是您替业务背口径。您批的是 <b>方向 + 费用路径 + 组织前置知悉</b>，不是客服日常预算扯皮。</p>
+
+<hr/>
+
+<h1>五、主线：问题 · 代价 · 目的 · 收益 · Goal</h1>
+
+<h2>1. 解决什么问题</h2>
+
+<p>客服逐步转外包，乙方进不了内网。标准答法若继续靠「自己人默契」和个人文档，会出现口径不统一、难更新、质量难治理。这不是缺自动回消息机器人，而是外包切换期缺少可管理、可审计的标准答法资产。</p>
+
+<h2>2. 不做的代价（为何现在值得立）</h2>
+
+<ul>
+<li>外包切换期：同问异答难追责，质培缺少可考标准，新人 / 外包上手靠「问老人 / 翻私人文档」</li>
+<li>后续质检 / Agent 没有标准答法地基，只会放大噪声</li>
+<li>AI 组若无首个可周报、可停损样板，智能化难被看见、也难复制</li>
+</ul>
+
+<h2>3. 目的与做成什么样（MVP-A）</h2>
+
+<p><b>目的：</b>标准答法做成可管理快捷语资产；检索 / 意图推荐 → <b>坐席确认</b> → 发出（人在环）。</p>
+
+<p><b>MVP-A（最小可演示版本）：</b>统一知识库 + 问答 + 管理端改库生效 + 意图 / 检索推荐；内网 Web 入口。不做桌面嵌入、不做代回。优先复用既有话术底座（如 wording 能力），盘点后再锁详细日历。</p>
+
+<h2>4. 收益（三类）</h2>
+
+<table>
+  <colgroup><col width="100"/><col width="500"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">类型</th>
+      <th background-color="light-gray">内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><b>业务结果</b></td><td>试点场景标准可审计、可更新、可培训；降低外包期同问异答与质培返工。基线与目标在 Scope 与客服共定（如：试点场景「找标准答法时长 / 质培返工次数」前后对比）；今日不编假精确 ROI 百分比</td></tr>
+    <tr><td><b>组织结果</b></td><td>AI 组第一个可周报、可停损、不与 BI 重复的样板；证明智能化 = 岗位标准，不是自动代回</td></tr>
+    <tr><td><b>能力结果</b></td><td>改一条坐席可搜到；新人 / 外包有标准；为质检 / Agent 打地基</td></tr>
+  </tbody>
+</table>
+
+<h2>5. 立项后 Goal（批后才起算 · 非本场验收）</h2>
+
+<table>
+  <colgroup><col width="90"/><col width="240"/><col width="270"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">层级</th>
+      <th background-color="light-gray">Goal</th>
+      <th background-color="light-gray">可观测成功信号</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>G0 范围</b></td>
+      <td>Scope 冻结：客服原则同意 + 话术 Owner 具名 + 复用盘点 + 月 API cap 精确数回填</td>
+      <td>书面 Scope v1；未齐 <b>不开开发日历</b></td>
+    </tr>
+    <tr>
+      <td><b>G1a 可演示</b></td>
+      <td>约 <b>4 个可用工作周</b> 到内部可演示（知识库 + 问答推荐初版）</td>
+      <td>库可管；改一条同日可检索；黄金问法可演示命中</td>
+    </tr>
+    <tr>
+      <td><b>G1b 小试用</b></td>
+      <td>再约 <b>4 个可用工作周</b> 内部小范围真实使用</td>
+      <td>≥3 人连续 2 周真实检索；<b>0 次自动代发</b></td>
+    </tr>
+    <tr>
+      <td><b>非目标</b></td>
+      <td>本期不做</td>
+      <td>外包全量开通、桌面嵌入、质检闭环、自动代回</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>合计量级约 8 可用工作周到「可汇报采用」；出差 / 旁线占用周不计入或单独加注。复用盘点若缺口大，工期书面加注，不锁死合同式日期。</p>
+
+<p><b>API 费用覆盖时段：</b>自 A 路径启动最小调用起，覆盖 <b>G1a 开发调用 + G1b 小试用</b> 两个阶段；B 路径在金额批前不产生调用费用。</p>
+
+<callout emoji="❗" background-color="light-yellow" border-color="yellow">
+  <p><b>关键：</b>批 A/B ≠ 下周上线。仍须 G0 前置齐（含月 API cap 精确数回填），才冻结 Scope、开开发日历。未批费用前不承诺开发日历、试点名单、周活。<b>勾 A 或 B = 立本样板；勾 C = 不立。</b></p>
+</callout>
+
+<hr/>
+
+<h1>六、旁线：供应链（≤1 分钟）</h1>
+
+<p>7/28 上海会后任务已出，收敛为两条线，<b>不升第二主 R</b>：</p>
+
+<table>
+  <colgroup><col width="120"/><col width="240"/><col width="240"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">线</th>
+      <th background-color="light-gray">怎么做</th>
+      <th background-color="light-gray">不做什么</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>A 备案 &amp; BOM 表</b></td>
+      <td>样本评测 → 文稿 AI 标差异（人终审）第一刀</td>
+      <td>无样本吹准确率；全自动过审</td>
+    </tr>
+    <tr>
+      <td><b>B 对账 &amp; 预警</b></td>
+      <td>BI 看板 + 财务数据治理并轨</td>
+      <td>FDE 自研第二数仓；智能排产</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>今日供应链 <b>非必须</b>大额；仅需小额文档解析试用预算即可。主 Ask 仍是话术库。</p>
+
+<hr/>
+
+<h1>七、费用路径（最后 · 请勾选）</h1>
+
+<p><b>原则：</b>今日批 <b>路径 + 量级策略</b>，精确总价 48h 内财务回填；首期只盖 MVP-A；大模型 <b>API 必须月度 cap</b>；超 cap 停扩；里程碑可停损。</p>
+
+<table>
+  <colgroup><col width="110"/><col width="490"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">量级占位</th>
+      <th background-color="light-gray">说明（非假精确报价 · 待财务回填）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>月 API cap</b></td>
+      <td>覆盖 <b>G1a 开发调用 + G1b 小试用</b> 期间，建议控制在 <b>数百～数千元/月</b> 量级；精确 cap 数字由财务 / 采购 48h 回填并写入费用单</td>
+    </tr>
+    <tr>
+      <td><b>MVP-A 首期小计</b></td>
+      <td>调用 + 最小托管建议控制在 <b>万元内可停损</b> 量级；L3/L4（推送治理 / 桌面嵌入）另立里程碑再申请</td>
+    </tr>
+    <tr>
+      <td><b>A 的 48h 门禁</b></td>
+      <td>若勾 A：会后 48h 未回填月 cap 精确数 → <b>视同按 B 执行</b>（金额未批前不扩调用、不签大额合同）</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <colgroup><col width="50"/><col width="180"/><col width="370"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">选项</th>
+      <th background-color="light-gray">含义</th>
+      <th background-color="light-gray">后果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td background-color="light-green"><b>A</b></td>
+      <td><b>批方向 + 批费用路径 = 立</b></td>
+      <td>可启最小环境与试用调用；精确金额 / 月 cap 48h 财务回填；仍受 G0 Scope 前置约束；48h 未回填 cap → 视同 B</td>
+    </tr>
+    <tr>
+      <td background-color="light-blue"><b>B</b></td>
+      <td><b>批方向；费用走统一采购 / IT = 立（钱后置）</b></td>
+      <td>可做 Owner 协调、复用盘点；<b>金额未批前不开发</b>、不签调用合同</td>
+    </tr>
+    <tr>
+      <td><b>C</b></td>
+      <td><b>暂缓或书面降级 = 不立主样板</b></td>
+      <td><b>C1</b> 本季不做 · <b>C2</b> 仅结构化库 + 关键词（无智能问答）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><b>唯一口径：</b>降级不占 B；降级只走 C2。B ≠「降级范围」。<b>勾 A 或 B = 立本样板；勾 C = 不立。</b></p>
+
+<table>
+  <colgroup><col width="120"/><col width="280"/><col width="200"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">里程碑</th>
+      <th background-color="light-gray">钱 / 动作怎么用</th>
+      <th background-color="light-gray">停损</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>您批路径</td><td><b>A</b>：最小环境 / 试用调用；<b>B</b>：复用盘点 + Owner 协调（不签调用合同、不扩调用）；<b>C</b>：停开发、书面锁范围</td><td>不批 / 勾 C = 0 调用支出</td></tr>
+    <tr><td>G1a 可演示</td><td>开发期调用 + 托管（A 路径；B 须金额批后再启）</td><td>演示不过停扩</td></tr>
+    <tr><td>G1b 小试用</td><td>试用调用（在月 cap 内）</td><td>无采用不加 L3/L4 预算</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>八、请您今天拍板</h1>
+
+<table>
+  <colgroup><col width="40"/><col width="430"/><col width="90"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">#</th>
+      <th background-color="light-gray">决策</th>
+      <th background-color="light-gray">建议</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>认同摸底取舍（主开话术库、设计不主开、仓储查重、对账归 BI、私域后置、供应链旁线）</td><td><b>认同</b></td></tr>
+    <tr><td>2</td><td>话术库作首样板 + 费用路径 <b>A / B / C</b>（知悉钱量级与 48h cap 规则）。<b>勾 A 或 B = 立；勾 C = 不立</b></td><td><b>A 或 B</b></td></tr>
+    <tr><td>3</td><td><b>组织前置：</b>① 客服负责人主责出具原则同意；② 话术真源 Owner 具名（姓名 / 部门）；③ 金主知悉并催办未闭环项。完成日请填（例：2026-07-31）</td><td><b>填日期</b></td></tr>
+    <tr><td>4</td><td>48h 内：财务 / 采购回填 <b>月 API cap 精确数</b>（责任人请填姓名）</td><td><b>填人</b></td></tr>
+    <tr><td>5</td><td>供应链旁线：评测 + 第一刀；≤20%；不单独立项抢主线</td><td><b>同意</b></td></tr>
+  </tbody>
+</table>
+
+<p><b>只给 1 分钟：</b>请勾 <b>A 或 B</b>（= 立）或 <b>C</b>（= 不立）+ 第 3 项日期 + 第 4 项责任人；其余知悉即可。</p>
+
+<hr/>
+
+<h1>九、边界（主动说）</h1>
+
+<ul>
+<li>未批费用 → 不承诺日历 / 名单 / 周活</li>
+<li>客服 <b>不代回</b> · 备案 <b>不代审</b> · 无样本不承诺准确率</li>
+<li>对账 / 预警归 BI + 财务 · FDE <b>不建第二套看板</b></li>
+<li>不做：智能排产、设计 AI 出图主 R、抖音抓数主交付</li>
+<li>金额量级为占位区间，<b>精确数以财务回填为准</b>；禁止用假 ROI 百分比换批准</li>
+<li><b>勾 A 或 B = 立本样板；勾 C = 不立</b></li>
+</ul>
+
+<hr/>
+
+<h1>十、会后 48 小时</h1>
+
+<table>
+  <colgroup><col width="140"/><col width="460"/></colgroup>
+  <thead>
+    <tr>
+      <th background-color="light-gray">若结果</th>
+      <th background-color="light-gray">立刻动作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>A（立）</td><td>业务侧推客服原则同意 + Owner 具名；财务回填月 API cap；启动既有话术底座复用盘点；48h 未回填 cap → 按 B 执行</td></tr>
+    <tr><td>B（立·钱后置）</td><td>同上组织前置 + 复用盘点；<b>不启调用、不签 API 合同</b>，等金额批后再进 G1a</td></tr>
+    <tr><td>仅知悉供应链</td><td>收样本；评测一页；BI / 财务需求摘要</td></tr>
+    <tr><td>C（不立）</td><td>书面降级范围进周报；旁线极轻；不承诺话术库开发</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<p><b>本地对照：</b><code>01/19</code> · <code>11</code> · <code>12</code> · <code>24</code> 最终结果 · <code>25</code> 校对报告 · 供应链 <code>05/18</code>。叙事 v4 全量校对：电梯（立/不立）→ Goal → 访谈 → 选择 → 代价/收益 → G0/G1a/G1b → 费用 A/B/C → 五拍板 · 2026-07-29</p>

@@ -1,0 +1,184 @@
+<title>AI 赋能立项 · 金主一页（少字画板版 v5.6 · P0闭环）</title>
+
+<p><b>天元</b> → <b>HR 人事总经理</b> · 软件<b>尚未开发</b> · 批路径 ≠ 上线 · 详版 v4 归档</p>
+<p><b>您批：</b>方向 + 费用路径 + 组织催办 · <b>您不背：</b>话术口径 · <b>BI</b> 看服务结果指标 · <b>FDE</b> 改岗位动作并催办/停扩（须留痕 · 追责挂钩派工 SLA）</p>
+
+<hr/>
+
+<h1>1 · 20 秒结论</h1>
+
+<table>
+  <colgroup><col width="90"/><col width="510"/></colgroup>
+  <tbody>
+    <tr><td background-color="light-green"><b>建议</b></td><td>立 <b>客服话术库</b>（人在环 · 不代回）· <b>A/B=立 · C=不立</b></td></tr>
+    <tr><td background-color="light-blue"><b>请勾</b></td><td>A/B/C + 前置日 + Owner 当场具名 + 48h cap 责任人 + <b>勾 A 即授权 FDE 超 cap 即停</b></td></tr>
+    <tr><td><b>钱</b></td><td>月 API cap 数百～数千元（仅当月 API 调用，不含 FDE 人力）· 精确数 48h 回填 · fallback 下沿数百元/月 · <b>首期累计停损上限=API 万元内</b>（与月 cap 两层：月控节奏、万元控总停损）· A 超时视同 B（复核窗=T0+2 17:00 留痕）· <b>复核期仅配置不调用</b></td></tr>
+    <tr><td><b>工期</b></td><td>G0 齐 → ~4 周可演示 → ~4 周小试用 · <b>勾 A 到首次演示最短 ~6–7 周</b>（假设 #3=≤8/15；若改前置日则按 G0 齐+4 周顺延，'6–7 周'自动失效）· <b>到 G1b 闭环约 ~11 周</b> · 中途不过停扩重测时钟不归零 · 未齐 G0 不开开发日历 · 旁线 ≤20% FDE 人日/周 · 超 20% 金主一句话仲裁（默认主开优先）</td></tr>
+  </tbody>
+</table>
+
+<p><b>换：</b>标准可管 + 可质培 + 可周报样板。· <b>不立：</b>同问异答难追责 · 质培无标准 · 无样板。</p>
+<p><b>本场不做：</b>验收软件 · 定名单 · 锁死总价 · 承诺上线/周活。· <b>人力口径：</b>FDE 工时另计组织成本，不混进「万元内 API 累计停损」；月 cap 与万元停损是两层口径，禁止混读；周报分列 API 用量与人日，禁止合并。</p>
+
+<hr/>
+
+<h1>2 · 取舍</h1>
+
+<whiteboard type="mermaid">
+flowchart TB
+  subgraph MAIN[主开]
+    K[客服 话术库<br/>外包标准散]
+  end
+  subgraph SIDE[旁线 ≤20% 人日/周]
+    S[供应链 文稿校验<br/>对账归 BI]
+  end
+  subgraph HOLD[轻/后 · 有触发再开]
+    W[仓储 先查重]
+    P[私域 后置]
+  end
+  subgraph NO[不开]
+    D[设计 已自驱]
+  end
+  K --> BI[BI 结果 · FDE 动作]
+  S --> BI
+  style K fill:#D9F5D6,stroke:#34C724
+  style S fill:#FFF5CC,stroke:#FFC60A
+  style W fill:#F0F0F0,stroke:#8F959E
+  style P fill:#F0F0F0,stroke:#8F959E
+  style D fill:#FEE3E2,stroke:#F54A45
+  style BI fill:#E8F3FF,stroke:#3370FF
+</whiteboard>
+
+<p>后置启动触发（可共改）：仓储查重结论有缺口再议；私域有 Owner 主动要人再议。对账归 BI：会后 FDE 发 1 页需求摘要给 BI 接口人（知会记录）。</p>
+<p><b>旁线刹车：</b>FDE 周人日基线以派工 SLA 为准（默认 30 人日/周为占位；实际按当前生效人头核定，规模变更当周双轨报金主；20%=≤基线/5 人日/自然周，SLA 全文归档备查）。任一自然周旁线 &gt;20% → 金主一句话仲裁优先序；缺仲裁默认主开优先、旁线顺延（FDE 双轨留痕）。</p>
+
+<hr/>
+
+<h1>3 · 做 / 不做</h1>
+
+<whiteboard type="mermaid">
+flowchart LR
+  subgraph DO[做 MVP-A]
+    A1[统一库] --> A2[检索推荐] --> A3[人确认发出]
+  end
+  subgraph DONT[不做]
+    B1[自动代回]
+    B2[首期桌面]
+    B3[智能排产]
+    B4[第二对账看板]
+  end
+  style A1 fill:#D9F5D6,stroke:#34C724
+  style A2 fill:#D9F5D6,stroke:#34C724
+  style A3 fill:#D9F5D6,stroke:#34C724
+  style B1 fill:#FEE3E2,stroke:#F54A45
+  style B2 fill:#FEE3E2,stroke:#F54A45
+  style B3 fill:#FEE3E2,stroke:#F54A45
+  style B4 fill:#FEE3E2,stroke:#F54A45
+</whiteboard>
+
+<hr/>
+
+<h1>4 · 路径 + DoD（可共改）</h1>
+
+<whiteboard type="mermaid">
+flowchart LR
+  G0[G0 三件齐<br/>未齐=不开日历] --> G1a[G1a ~4周 可演示]
+  G1a -->|过| G1b[G1b ~4周 小试用]
+  G1a -->|不过| G0b[回 G0 停扩重测]
+  G1b -->|过| OK[可汇报 · 0 代发]
+  G1b -->|不过| STOP[停扩 · 不上报采用]
+  style G0 fill:#FFF5CC,stroke:#FFC60A
+  style G0b fill:#FEE3E2,stroke:#F54A45
+  style G1a fill:#E8F3FF,stroke:#3370FF
+  style G1b fill:#E8F3FF,stroke:#3370FF
+  style OK fill:#D9F5D6,stroke:#34C724
+  style STOP fill:#FEE3E2,stroke:#F54A45
+</whiteboard>
+
+<table>
+  <colgroup><col width="80"/><col width="520"/></colgroup>
+  <thead>
+    <tr><th background-color="light-gray">门禁</th><th background-color="light-gray">通过标准（默认 · 可共改须书面）</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>G0</b></td><td>① 客服原则同意：<b>邮件或飞书书面</b>（口头须 ≤3 工作日补书面；<b>到期日 17:00 未补 → 自动降为仅意向，停 G1a 日历，回 G0 重走</b>）② Owner+备用具名（角色=客服侧话术/质培负责人，非 HR 代理人）③ 月 API cap 精确数或 fallback 生效 · 三缺一不开日历 · <b>FDE 派工 SLA 须含追责条款（警告/换人/熔断），缺则本立项不批</b></td></tr>
+    <tr><td><b>G1a</b></td><td>有效话术 ≥200 条（可共改）含分类+Owner · 改一条同日可检索（验收条件）· 黄金问法 20 条：<b>标准答案由 Owner 在 FDE 出题前提供基线稿</b>；FDE 出题 + Owner 盲审；每题 Top3 推荐，≥14 题与标准答案完全一致（即 ≥70%，可共改）· 抽检 0 自动代发（<b>FDE 抽检 + Owner 抽复核</b>，双人留痕）· <b>不过 → 停扩回 G0 重测，不上报采用</b></td></tr>
+    <tr><td><b>G1b</b></td><td>≥3 名内部坐席（含 ≥1 正式编制；<b>Owner 在 G0 齐前锁定 ≥2 名正式编制替补池，缺则 G0 不齐</b>）连续 2 周 · 每人每周真实检索 ≥5 次（可共改上调）· 有用反馈抽样 ≥10 条/周 · 0 自动代发 · 可写进周报 · <b>中途正式编制离职/转岗/产假 → 当周作废 + 补位后重测满 2 周（替补须同为正式编制：与公司签劳动合同的在岗客服，非外包/劳务派遣）</b></td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>5 · 费用 + 48h 写实</h1>
+
+<whiteboard type="mermaid">
+flowchart TB
+  Q{路径} --> A[A 立 启最小环境 须 G0]
+  Q --> B[B 立 金额前不开发]
+  Q --> C[C 不立]
+  A -->|T0+2日17:00 无精确 cap| B2[视同 B + 复核至T0+2 17:00]
+  A --> GO1[G0 后 G1a]
+  B --> GO2[金额批后 G1a]
+  C --> STOP[周报锁范围]
+  style A fill:#D9F5D6,stroke:#34C724
+  style B fill:#E8F3FF,stroke:#3370FF
+  style C fill:#FEE3E2,stroke:#F54A45
+  style B2 fill:#FFF5CC,stroke:#FFC60A
+</whiteboard>
+
+<table>
+  <colgroup><col width="120"/><col width="480"/></colgroup>
+  <tbody>
+    <tr><td><b>T0 定义</b></td><td><b>勾选当日 0 点</b>；48h 截止 = <b>T0+2 自然日 17:00</b>（<b>遇法定节假日顺延至下个工作日 17:00</b>；日历由 FDE 建提醒）</td></tr>
+    <tr><td><b>月 API cap</b></td><td>仅 API 调用 · 区间数百～数千元/月 · 精确数 48h 财务回填 · <b>人力不计入此 cap</b> · 周报分列 API 与人日（禁止合并）</td></tr>
+    <tr><td><b>fallback</b></td><td>到期无精确数 → 自动下沿「数百元/月」+ <b>视同 B</b> · FDE 企微+邮件双轨通知金主 · <b>快速复核窗口 = 与 48h cap 同截止 T0+2 17:00</b>（遇节假日顺延；金主确认或改 C；<b>截止未回复默认视同改 C</b>，FDE 当日撤配置+删密钥）· <b>复核期内仅配置不调用</b>（密钥/模型不入请求路径）· 改 C 零成本回退（<b>FDE 当日撤配置+删密钥</b>，金主无 API 计费；清理人日不计入 API cap）</td></tr>
+    <tr><td><b>超 cap 停扩</b></td><td>勾 A/B 即授权 FDE 即停扩 · <b>FDE 每周一上午核算上周用量并企微+邮件双轨报金主</b> · 超 cap 即停扩 · 金主一句确认（可异步）</td></tr>
+    <tr><td><b>首期停损</b></td><td>首期 API <b>累计停损上限万元内</b>（≠ 月 cap；月 cap 仍为数百～数千）· 演示不过停扩 · 无采用不加 L3/L4</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+
+<h1>6 · 请您勾选（当场填）</h1>
+
+<table>
+  <colgroup><col width="30"/><col width="500"/><col width="40"/></colgroup>
+  <thead>
+    <tr><th background-color="light-gray">#</th><th background-color="light-gray">决策</th><th background-color="light-gray">□</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>认同取舍（主开话术库 · 设计不开 · 仓储查重 · 对账归 BI · 私域后置 · 旁线≤20%人日/周 · 超载主开优先）</td><td></td></tr>
+    <tr><td>2</td><td><b>A/B=立 · C=不立</b>（建议 A；勾 A=授权 FDE 超 cap 即停）</td><td></td></tr>
+    <tr><td>3</td><td>前置完成日：________（<b>硬 deadline 默认 ≤8/15</b>；超期未填=仅意向）</td><td></td></tr>
+    <tr><td>4</td><td>客服业务 Owner（话术/质培负责人）：姓名____ 部门____ · 备用____ · 同意：□书面 □口头（须 ≤3 工作日补书面；到期 17:00 未补=仅意向）</td><td></td></tr>
+    <tr><td>5</td><td>48h cap 回填：财务/采购姓名____ · 催办 FDE · 截止 T0+2 日 17:00 · 复核期仅配置不调用</td><td></td></tr>
+    <tr><td>6</td><td>供应链旁线 ≤20% FDE 人日/周（基线=派工 SLA 周人日，20%=≤1/5，按自然周统计）· 超载金主仲裁 · 不单独立项</td><td></td></tr>
+    <tr><td>7</td><td>FDE 派工 SLA 含追责条款（警告/换人/熔断）· 缺则本立项不批 · <b>会前 FDE 须书面出示 SLA 含该三段（PDF/截图归档），否则不进散会勾选</b></td><td></td></tr>
+  </tbody>
+</table>
+
+<p><b>散会门禁：</b>勾 A/B 时 #4 Owner/备用未填 或 #7 SLA 未勾/未出示验真 → 仅意向不启 G1a；#3 前置日未填 → 须当场填硬 deadline（默认 ≤8/15，超期未填自动降为仅意向）。· <b>G0 额外：</b>FDE 派工 SLA 无追责条款 → 本立项不批（与 #7 会前验真同一标准，避免会后黑洞）。</p>
+<p><b>边界：</b>未批不承诺上线/名单 · 不代回/不代审 · 不建第二看板 · 禁假 ROI · 金额以财务回填为准</p>
+
+<hr/>
+
+<h1>7 · 会后 48h + 追责</h1>
+
+<table>
+  <colgroup><col width="70"/><col width="530"/></colgroup>
+  <thead>
+    <tr><th background-color="light-gray">结果</th><th background-color="light-gray">动作 · 责任 · 留痕</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>A</b></td><td>Owner 书面（业务 · 3 日内；到期未补=仅意向停日历）· cap 回填（财务 · T0+2 日 17:00）· 盘点（FDE · 复核期仅配置不调用）· 到期无 cap：FDE 双轨通知 + 视同 B + 复核窗至 T0+2 17:00 · 改 C 零成本</td></tr>
+    <tr><td><b>B</b></td><td>组织前置同上 · 不启调用/不签 API · 金额批后 G1a</td></tr>
+    <tr><td><b>C</b></td><td>一页「不立+C1/C2」进飞书周报总册（FDE 出稿 · 金主阅）· 不开发 · <b>若后续改 B/A 重启须重走 G0 三件齐，日历不继承</b></td></tr>
+  </tbody>
+</table>
+
+<p><b>周报：</b>每周一行进总册（G0 状态 / <b>API 用量</b> / <b>旁线人日</b> 分列）。· <b>出错默认：</b>内容口径→Owner · 工具故障→FDE（按派工 SLA：警告/换人/熔断）· 费用超支未停→FDE 追责 + 金主知悉。</p>
+<p>口播：60″ 结论 · 6–8′ 取舍/DoD/钱 · 2–3′ 勾选填名 · 旁线 ≤1′</p>
+
+<hr/>
+
+<p>少字画板 v5.6 P0闭环 · 量纲/SLA验真/抽检主体 · 2026-07-29</p>
