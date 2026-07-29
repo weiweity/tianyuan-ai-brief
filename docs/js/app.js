@@ -2,24 +2,43 @@
  * app.js — 渲染 + 编辑 + 写回 content.json
  * 禁止在此文件写业务文案。内容只来自 data/content.json。
  */
+import {
+  buildDecisionReceipt,
+  buildMeetingConclusionText,
+  evaluateCheckGate,
+  namedOwnersOf,
+  verifyDecisionReceipt,
+} from "./modules/decision-model.js";
+import {
+  sanitizeAssetUrl,
+  sanitizeBrandColor,
+  sanitizeContent,
+  sanitizeRichHtml,
+  sanitizeSvg,
+} from "./modules/html-policy.js";
+import { createMermaidRuntime } from "./modules/mermaid-runtime.js";
+import { mergeMeetingState } from "./modules/meeting-state.js";
+
 (function () {
   "use strict";
 
   const STORAGE_KEY = "tianyuan-brief-draft-v1";
   const HANDLE_DB = "tianyuan-brief-fs";
   const HANDLE_STORE = "handles";
+  const DECISION_SCHEMA_VERSION = 2;
 
   let content = null;
   let activeTab = "t1";
   let editing = false;
   let fileHandle = null;
-  let mermaidReady = false;
-  const renderedMermaid = new Set();
   let swipeDir = "left"; // panel animation direction
   let contentFingerprint = "";
   let hotPollTimer = null;
   const POLL_MS = 30000; // C端静默检查远端内容
   const isEditQuery = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
+  const isFileProtocol = location.protocol === "file:";
+  document.documentElement.classList.toggle("author-mode", isEditQuery);
+  document.documentElement.classList.toggle("offline-file-mode", isFileProtocol);
 
 
   const $ = (s, el = document) => el.querySelector(s);
@@ -159,10 +178,17 @@
   }
 
   async function fetchRemoteContent() {
+    if (isFileProtocol) {
+      const embedded = globalThis.__AI_BRIEF_EMBEDDED_CONTENT__;
+      if (!embedded || !Array.isArray(embedded.tabs)) {
+        throw new Error("离线内容快照缺失，请执行 npm run build:web 后重试");
+      }
+      return sanitizeContent(embedded);
+    }
     const url = "./data/content.json?_=" + Date.now();
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("无法加载 data/content.json（请用 http 服务打开，不要 file://）");
-    return res.json();
+    if (!res.ok) throw new Error("无法加载 data/content.json");
+    return sanitizeContent(await res.json());
   }
 
   async function loadContent(opts) {
@@ -172,8 +198,12 @@
       try {
         const draft = localStorage.getItem(STORAGE_KEY);
         if (draft) {
-          const parsed = JSON.parse(draft);
-          if (parsed && parsed.tabs) {
+          const parsed = sanitizeContent(JSON.parse(draft));
+          if (
+            parsed &&
+            parsed.tabs &&
+            Number(parsed.decisionSchemaVersion || 1) === DECISION_SCHEMA_VERSION
+          ) {
             content = parsed;
             contentFingerprint = fingerprintOf(content);
             setStatus("草稿(本机)", "warn");
@@ -188,20 +218,21 @@
     try {
       const draft = localStorage.getItem(STORAGE_KEY);
       if (draft) {
-        const parsed = JSON.parse(draft);
+        const parsed = sanitizeContent(JSON.parse(draft));
         if (parsed && parsed.tabs) {
           content = mergeCheckState(parsed, content);
         }
       }
     } catch (_) {}
     contentFingerprint = fingerprintOf(content);
-    setStatus("已是最新", "ok");
-    return { from: "remote" };
+    setStatus(isFileProtocol ? "本地快照" : "已是最新", isFileProtocol ? "warn" : "ok");
+    return { from: isFileProtocol ? "offline" : "remote" };
   }
 
   /** 无感应用新内容：保留当前 Tab，轻闪刷新，不整页跳转 */
   function softApplyContent(next, reason) {
     if (!next || !next.tabs) return;
+    next = sanitizeContent(next);
     const keep = activeTab;
     // poll/reload 时合并本机勾选，避免会议中途被远端文案覆盖掉勾
     if (reason === "poll" || reason === "reload") {
@@ -224,10 +255,9 @@
     } else {
       activeTab = keep;
     }
-    renderedMermaid.clear();
+    mermaidRuntime.clear();
     renderAll();
     document.body.classList.toggle("is-check-page", activeTab === "t6");
-    syncCheckStatusFloat();
     setStatus(reason === "save" ? "已更新" : "已同步最新", "ok");
   }
 
@@ -283,6 +313,7 @@
   }
 
   function startHotPoll() {
+    if (isFileProtocol) return;
     if (hotPollTimer) clearInterval(hotPollTimer);
     hotPollTimer = setInterval(() => checkRemoteUpdate(true), POLL_MS);
     document.addEventListener("visibilitychange", () => {
@@ -303,9 +334,22 @@
       .replace(/"/g, "&quot;");
   }
 
+  const mermaidRuntime = createMermaidRuntime({
+    windowLike: window,
+    documentLike: document,
+    getBlock: (id) => findBlock(id),
+    getActiveTab: () => activeTab,
+    isEditing: () => editing,
+    sanitizeSvg,
+  });
+  const queueMermaid = (tabId) => mermaidRuntime.queue(tabId);
+  const queueAllMermaid = () =>
+    Promise.allSettled((content && content.tabs ? content.tabs : []).map((tab) => queueMermaid(tab.id)));
+  const wireMermaidLightbox = () => mermaidRuntime.wireLightbox();
+
   function renderHeader() {
     const m = content.meta || {};
-    const logo = m.logoDataUrl || m.logo || "assets/logo.png";
+    const logo = sanitizeAssetUrl(m.logoDataUrl || m.logo, "./assets/logo.png");
     $("#logo-img").src = logo;
     $("#logo-img").alt = m.title || "logo";
     $("#doc-title").textContent = m.title || "AI 赋能立项";
@@ -345,7 +389,7 @@
     }
     if (fr) {
       // 底栏默认极简，不塞版本号/派工说明
-      fr.innerHTML = m.footerRight || "";
+      fr.innerHTML = sanitizeRichHtml(m.footerRight || "");
       fr.hidden = !(m.footerRight || "").trim();
     }
     // 两侧都空则藏整条 stage-meta 里的 footer 区（保留页码提示）
@@ -355,7 +399,9 @@
       const foot = meta.querySelector(".footer");
       if (foot) foot.hidden = !hasFoot;
     }
-    if (m.brand) document.documentElement.style.setProperty("--brand", m.brand);
+    if (m.brand) {
+      document.documentElement.style.setProperty("--brand", sanitizeBrandColor(m.brand));
+    }
     document.title = m.title || "AI 赋能立项";
   }
 
@@ -557,7 +603,7 @@
                 .join("");
               const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径";
               extras.push(`<div class="path-row" data-path-row="${i}">
-                <div class="path-chips" role="group" aria-label="路径选择">${chips}</div>
+                <div class="path-chips" role="group" aria-label="${esc(r.projectLabel || "项目")}路径选择">${chips}</div>
                 <div class="path-hint" data-path-hint>${esc(hint)}</div>
               </div>`);
             }
@@ -584,7 +630,7 @@
                     <div class="owner-fields">
                       <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name" enterkeyhint="next"/></label>
                       <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部" enterkeyhint="next"/></label>
-                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="如 客服 Agent" enterkeyhint="done"/></label>
+                      <label>负责 <input type="text" data-owner-multi="scope" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.scope || "")}" placeholder="${esc(r.projectLabel || "项目范围")}" enterkeyhint="done"/></label>
                     </div>
                   </div>`;
                 })
@@ -671,7 +717,7 @@
         </div>`;
       case "image":
         return `<div class="block" data-block-id="${id}" data-type="image" style="text-align:center">
-          <img src="${esc(b.src)}" alt="${esc(b.alt || "")}" style="max-width:100%;max-height:40vh;object-fit:contain" data-field="src"/>
+          <img src="${esc(sanitizeAssetUrl(b.src, ""))}" alt="${esc(b.alt || "")}" style="max-width:100%;max-height:40vh;object-fit:contain" data-field="src"/>
         </div>`;
       case "detail-card": {
         // defaultOpen 缺省 false：取舍页默认收起，避免一进页就被表撑爆
@@ -740,12 +786,12 @@
     if (layout === "split") {
       const main = tab.blocks.filter((b) => (b.slot || "main") === "main");
       const side = tab.blocks.filter((b) => b.slot === "side");
-      body = `<div class="panel-body layout-split" data-count="${count}">
+      body = `<div class="panel-body layout-split" data-count="${count}" tabindex="0" aria-label="${esc(tab.title)}内容">
         <div class="slot-main">${main.map(blockHtml).join("")}</div>
         <div class="slot-side">${side.map(blockHtml).join("")}</div>
       </div>`;
     } else {
-      body = `<div class="panel-body layout-${layout}" data-count="${count}">${tab.blocks.map(blockHtml).join("")}</div>`;
+      body = `<div class="panel-body layout-${layout}" data-count="${count}" tabindex="0" aria-label="${esc(tab.title)}内容">${tab.blocks.map(blockHtml).join("")}</div>`;
     }
     return `<section class="panel${tab.id === activeTab ? " active" : ""}" id="${esc(tab.id)}" data-tab-panel="${esc(tab.id)}" role="tabpanel" aria-labelledby="tab-${esc(tab.id)}">
       <h2><span class="tag">${esc(tab.no || "")}</span><span data-editable="true" data-field="tab-title" data-tab-id="${esc(tab.id)}">${esc(tab.title)}</span></h2>
@@ -757,94 +803,12 @@
     renderHeader();
     renderTabs();
     $("#stage").innerHTML = content.tabs.map(renderPanel).join("");
-    renderedMermaid.clear();
+    mermaidRuntime.clear();
     applyEditMode();
     wireDetailCards();
     wireCheckTables();
     wireCopyConclusion();
     if (activeTab) queueMermaid(activeTab);
-  }
-
-  function stripHtmlText(html) {
-    const d = document.createElement("div");
-    d.innerHTML = html || "";
-    return (d.textContent || "").replace(/\s+/g, " ").trim();
-  }
-
-  const PATH_LABELS = {
-    A: "A 同意启动",
-    B: "B 先认方向",
-    C: "C 不立",
-  };
-
-  function multiLabelsOf(row) {
-    const opts = row.multiOptions || [];
-    const vals = Array.isArray(row.multiValues) ? row.multiValues : [];
-    const map = {};
-    opts.forEach((o) => {
-      const id = typeof o === "string" ? o : o.id;
-      const lab = typeof o === "object" && o.label ? o.label : id;
-      map[id] = lab;
-    });
-    return vals.map((v) => {
-      if (v === "other") {
-        const t = (row.otherText || "").trim();
-        return t ? "其他（" + t + "）" : "其他";
-      }
-      return map[v] || v;
-    });
-  }
-
-  function namedOwnersOf(row) {
-    if (Array.isArray(row.owners)) {
-      return row.owners.filter((o) => o && String(o.name || "").trim());
-    }
-    if (row.ownerFields && String(row.ownerFields.name || "").trim()) {
-      return [row.ownerFields];
-    }
-    return [];
-  }
-
-  /** 散会最低要求：选 A/B 须 #1 #3 #4 #6；选 C 只须已选路径（pathValue 即表态） */
-  function evaluateCheckGate(block) {
-    const rows = block.rows || [];
-    const total = rows.length;
-    const done = rows.filter((r) => r.checked || (Array.isArray(r.pathOptions) && r.pathValue)).length;
-    const pathRow = rows.find((r) => Array.isArray(r.pathOptions) && r.pathOptions.length);
-    const path = pathRow ? pathRow.pathValue || "" : "";
-    const multiRow = rows.find((r) => Array.isArray(r.multiOptions) && r.multiOptions.length);
-    const feeRow = rows.find((r) => r.feeFields);
-    const ownerRow = rows.find((r) => Array.isArray(r.owners) || r.ownerFields);
-    const needNos = path === "C" ? ["2"] : ["1", "3", "4", "6"];
-    const missing = [];
-    needNos.forEach((no) => {
-      const r = rows.find((x) => String(x.no) === String(no));
-      if (!r) return;
-      if (no === "2") {
-        // 选了路径即视为 #2 完成（不依赖勾选框）
-        if (!r.pathValue) missing.push("#2 路径");
-      } else if (no === "1") {
-        const vals = Array.isArray(r.multiValues) ? r.multiValues : [];
-        if (!vals.length || !r.checked) missing.push("#1 主开");
-        else if (vals.includes("other") && !(r.otherText || "").trim()) missing.push("#1 其他说明");
-      } else if (no === "4") {
-        if (!namedOwnersOf(r).length || !r.checked) missing.push("#4 负责人");
-      } else if (!r.checked) {
-        missing.push("#" + no);
-      }
-    });
-    return {
-      rows,
-      total,
-      done,
-      path,
-      pathLab: PATH_LABELS[path] || (path ? path : "未选"),
-      missing,
-      isMinOk: !!path && missing.length === 0,
-      multiRow,
-      feeRow,
-      ownerRow,
-    };
   }
 
   /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
@@ -853,29 +817,25 @@
     let cls = "check-status";
     let msg = "";
     const bound = "边界：不立刻上线 · 不代回 · 不编假收益";
-    if (!g.path && g.done === 0) {
+    if (g.done === 0) {
       cls += " is-idle";
-      msg = `点右侧方框即可勾选 · 已勾 <b>${g.done}/${g.total}</b> · 建议先选路径 A / B / C · ${bound}`;
-    } else if (g.path === "C") {
-      // C：选路径即表态；missing 理论上为空，若 schema 缺 #2 才 warn
-      cls += g.missing.length ? " is-warn" : " is-ok";
-      msg = g.missing.length
-        ? `路径 <b>C 不立</b> · 还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`
-        : `路径 <b>C 不立</b> · 最低要求已齐 · 不立项 · 会后写周报说明 · 已勾 <b>${g.done}/${g.total}</b>`;
+      msg = `先为两个项目分别选 A / B / C · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
+    } else if (g.allC && g.isMinOk) {
+      cls += " is-ok";
+      msg = `两个项目均为 <b>C 不立</b> · 最低要求已齐 · 会后记录各自不立原因 · 已确认 <b>${g.done}/${g.total}</b>`;
     } else if (g.missing.length) {
       cls += " is-warn";
-      msg = `路径 <b>${g.pathLab}</b> · 散会前还缺：<b>${g.missing.join(" · ")}</b> · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`;
+      msg = `<b>${esc(g.pathLab)}</b> · 散会前还缺：<b>${esc(g.missing.join(" · "))}</b> · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
     } else {
       cls += " is-ok";
-      msg = `路径 <b>${g.pathLab}</b> · 最低要求已齐，可记「本场可启动准备」· 可复制结论贴飞书 · 已勾 <b>${g.done}/${g.total}</b> · ${bound}`;
+      msg = `<b>${esc(g.pathLab)}</b> · 最低要求已齐 · 可复制结论或下载可校验凭证，贴入飞书/邮件确认后生效 · 已确认 <b>${g.done}/${g.total}</b> · ${bound}`;
     }
-    const copyLab = g.isMinOk ? "复制本场结论" : "复制当前勾选";
-    // 悬浮头：路径 + 进度 + 门禁，滚动多选时一眼能看见
-    const pathCls = g.path ? " path-" + String(g.path).toLowerCase() : " is-empty";
-    const pathBadge = g.path
-      ? `<span class="check-path-badge${pathCls}">${esc(g.pathLab)}</span>`
-      : `<span class="check-path-badge is-empty">路径未选</span>`;
-    const progBadge = `<span class="check-prog-badge">已勾 <b>${g.done}/${g.total}</b></span>`;
+    const copyLab = g.isMinOk ? "复制本场结论" : "复制当前状态";
+    const hasAnyPath = g.decisions.some((decision) => decision.path);
+    const pathBadge = hasAnyPath
+      ? `<span class="check-path-badge">${esc(g.pathLab)}</span>`
+      : `<span class="check-path-badge is-empty">两项目路径未选</span>`;
+    const progBadge = `<span class="check-prog-badge">已确认 <b>${g.done}/${g.total}</b></span>`;
     let gateBadge;
     if (g.isMinOk) {
       gateBadge = `<span class="check-gate-badge is-ok">最低要求已齐</span>`;
@@ -892,108 +852,46 @@
       </div>
       <div class="check-status-main">
         <div class="check-status-msg">${msg}</div>
-        <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书">${copyLab}</button>
+        <div class="check-status-actions">
+          <button type="button" class="reset-check-btn" data-reset-check="${esc(block.id)}" title="清空本机保存的会议勾选">清空本次</button>
+          <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书">${copyLab}</button>
+          <button type="button" class="download-receipt-btn" data-download-receipt="${esc(block.id)}" title="下载含 SHA-256 哈希的 JSON 会议凭证">下载凭证</button>
+        </div>
       </div>
     </div>`;
   }
 
+  function decisionReceiptContext(generatedAt) {
+    return {
+      generatedAt: generatedAt || new Date().toISOString(),
+      contentVersion: content && content.version,
+      decisionSchemaVersion: content && content.decisionSchemaVersion,
+      sourceStamp: content && (content.publishStamp || content.ssot),
+    };
+  }
+
   function buildMeetingConclusion(block) {
-    const g = evaluateCheckGate(block);
-    const date = (content && content.updated) || new Date().toISOString().slice(0, 10);
-    const now = new Date();
-    const stamp =
-      date +
-      " " +
-      String(now.getHours()).padStart(2, "0") +
-      ":" +
-      String(now.getMinutes()).padStart(2, "0");
-    const lines = [];
-    lines.push("【AI 赋能立项 · 本场结论】");
-    lines.push("时间：" + stamp);
-    lines.push("路径：" + g.pathLab + (g.isMinOk ? "（最低要求已齐）" : "（最低要求未齐）"));
-    if (g.multiRow) {
-      const labs = multiLabelsOf(g.multiRow);
-      lines.push("主开项目：" + (labs.length ? labs.join(" · ") : "（未选）"));
-    } else {
-      lines.push("主开项目：（未选）");
+    return buildMeetingConclusionText(block, decisionReceiptContext());
+  }
+
+  function downloadDecisionReceipt(block) {
+    const receipt = buildDecisionReceipt(block, decisionReceiptContext());
+    if (!verifyDecisionReceipt(receipt)) {
+      throw new Error("会议凭证校验失败");
     }
-    if (g.feeRow && g.feeRow.feeFields) {
-      const f = g.feeRow.feeFields;
-      let fee =
-        "费用口径：全期约 " +
-        (f.total || "—") +
-        " 元 · 首月止损 " +
-        (f.monthCap || "—") +
-        " · 全期止损 " +
-        (f.allCap || "—");
-      if ((f.otherNote || "").trim()) fee += " · 其他：" + f.otherNote.trim();
-      lines.push(fee);
-    } else {
-      lines.push("费用口径：（未填）");
-    }
-    const owners = g.ownerRow ? namedOwnersOf(g.ownerRow) : [];
-    if (owners.length) {
-      owners.forEach((of, i) => {
-        const name = (of.name || "").trim() || "（未填）";
-        const dept = (of.dept || "").trim() || "—";
-        const scope = (of.scope || of.backup || "").trim() || "—";
-        lines.push("业务负责人" + (owners.length > 1 ? i + 1 : "") + "：" + name + " · 部门 " + dept + " · 负责 " + scope);
-      });
-    } else {
-      lines.push("业务负责人：（未填）");
-    }
-    lines.push("勾选明细：");
-    g.rows.forEach((r) => {
-      const mark = r.checked ? "☑" : "☐";
-      let line = "  " + mark + " #" + (r.no || "") + " " + stripHtmlText(r.html);
-      if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
-        const labs = multiLabelsOf(r);
-        line += labs.length ? " → " + labs.join("、") : " → 未选项目";
-      }
-      if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
-        line += r.pathValue ? " → 路径 " + (PATH_LABELS[r.pathValue] || r.pathValue) : " → 路径未选";
-      }
-      if (r.feeFields) {
-        const f = r.feeFields;
-        line +=
-          " → 全期" +
-          (f.total || "—") +
-          "/首月止损" +
-          (f.monthCap || "—") +
-          "/全期止损" +
-          (f.allCap || "—");
-        if ((f.otherNote || "").trim()) line += "；其他 " + f.otherNote.trim();
-      }
-      if (Array.isArray(r.owners)) {
-        const named = namedOwnersOf(r);
-        if (named.length) {
-          line +=
-            " → " +
-            named
-              .map((o) => (o.name || "").trim() + (o.scope ? "(" + o.scope + ")" : ""))
-              .join("、");
-        }
-      }
-      lines.push(line);
+    const blob = new Blob([JSON.stringify(receipt, null, 2) + "\n"], {
+      type: "application/json;charset=utf-8",
     });
-    if (g.missing.length) {
-      lines.push("散会最低要求：还缺 " + g.missing.join(" · "));
-      lines.push("结论口径：只记「有意向」，不排开发（除非路径 C）。");
-    } else if (g.path === "C") {
-      lines.push("散会最低要求：已齐（不立）");
-      lines.push("会后：一页「不立+原因」进周报 · 不排期");
-    } else if (g.path === "B") {
-      lines.push("散会最低要求：已齐");
-      lines.push("会后：组织准备 · 费用没批完前不开发、不烧工具费 · 批完再开工");
-    } else if (g.path === "A") {
-      lines.push("散会最低要求：已齐");
-      lines.push("会后：负责人 3 天内补书面同意 · 2 天内钉死账户与对接人 · 按止损线开通工具 · 超线即停");
-    } else {
-      lines.push("散会最低要求：路径未选");
-    }
-    lines.push("本场边界：不承诺立刻上线 · 不自动代回客户 · 金额以确认的止损线为准");
-    lines.push("— 可直接贴周报 / 飞书纪要 —");
-    return lines.join("\n");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = receipt.generatedAt.slice(0, 10).replace(/-/g, "");
+    link.href = url;
+    link.download = `AI立项会议凭证_${date}_${receipt.integrity.digest.slice(0, 12)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return receipt;
   }
 
   /** 同步优先 execCommand（保住 iOS user-gesture），再试 clipboard API */
@@ -1025,6 +923,54 @@
     if (copyConclusionWired) return;
     copyConclusionWired = true;
     document.addEventListener("click", (e) => {
+      const resetBtn = e.target.closest("[data-reset-check]");
+      if (resetBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const block = findBlock(resetBtn.getAttribute("data-reset-check"));
+        if (!block || !Array.isArray(block.rows)) return;
+        if (!window.confirm("清空这台设备上的本次勾选、路径和负责人？")) return;
+        block.rows.forEach((r) => {
+          r.checked = false;
+          if (Array.isArray(r.pathOptions)) r.pathValue = "";
+          if (Array.isArray(r.multiOptions)) {
+            r.multiValues = [];
+            r.otherText = "";
+          }
+          if (Array.isArray(r.owners)) {
+            r.owners = r.owners.map(() => ({ name: "", dept: "", scope: "" }));
+          }
+          if (r.ownerFields) {
+            r.ownerFields = { name: "", dept: "", scope: "", backup: "" };
+          }
+        });
+        saveDraft();
+        renderAll();
+        tapHaptic("light");
+        toast("已清空本机的本次会议勾选");
+        return;
+      }
+      const receiptBtn = e.target.closest("[data-download-receipt]");
+      if (receiptBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const block = findBlock(receiptBtn.getAttribute("data-download-receipt"));
+        if (!block) return;
+        try {
+          const receipt = downloadDecisionReceipt(block);
+          tapHaptic(receipt.minimumReady ? "ok" : "light");
+          toast(
+            receipt.minimumReady
+              ? "✅ 可校验会议凭证已下载"
+              : "当前状态凭证已下载（最低要求未齐）",
+            2400
+          );
+        } catch (error) {
+          tapHaptic("warn");
+          toast(error.message || "凭证下载失败", 2800);
+        }
+        return;
+      }
       const btn = e.target.closest("[data-copy-conclusion]");
       if (!btn) return;
       e.preventDefault();
@@ -1064,34 +1010,6 @@
     const neu = tmp.firstElementChild;
     if (old && neu) old.replaceWith(neu);
     else if (neu && !old) wrap.appendChild(neu);
-    // 手机悬浮底栏：同步键盘/可视区 bottom
-    syncCheckStatusFloat();
-  }
-
-  /** 手机：进度条 fixed 时避开软键盘遮挡 */
-  function syncCheckStatusFloat() {
-    if (window.innerWidth > 640) return;
-    const el = document.querySelector("#t6.panel.active [data-check-status]");
-    if (!el) return;
-    const vv = window.visualViewport;
-    let lift = 0;
-    if (vv) {
-      // 键盘顶起时，把底栏抬到可视区上方
-      lift = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    }
-    el.style.bottom = "calc(" + (10 + lift) + "px + env(safe-area-inset-bottom, 0px))";
-  }
-
-  function wireCheckStatusFloat() {
-    if (wireCheckStatusFloat._on) return;
-    wireCheckStatusFloat._on = true;
-    const tick = () => syncCheckStatusFloat();
-    window.addEventListener("resize", tick);
-    window.addEventListener("orientationchange", () => setTimeout(tick, 200));
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", tick);
-      window.visualViewport.addEventListener("scroll", tick);
-    }
   }
 
   function setRowCheckedUI(tr, checked) {
@@ -1476,7 +1394,7 @@
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                 scrollToFirstDept();
-                renderedMermaid.clear();
+                mermaidRuntime.clear();
                 Promise.resolve(queueMermaid(activeTab)).then(() => {
                   requestAnimationFrame(scrollToFirstDept);
                 });
@@ -1497,7 +1415,7 @@
                 body.style.maxHeight = "";
                 body.style.overflow = "";
                 body.style.transition = "";
-                renderedMermaid.clear();
+                mermaidRuntime.clear();
                 queueMermaid(activeTab);
               }, 300);
             });
@@ -1509,7 +1427,7 @@
             body.style.opacity = "";
             body.style.overflow = "";
             body.style.transition = "";
-            renderedMermaid.clear();
+            mermaidRuntime.clear();
             queueMermaid(activeTab);
           } else {
             body.style.overflow = "hidden";
@@ -1526,7 +1444,7 @@
                 body.style.opacity = "";
                 body.style.overflow = "";
                 body.style.transition = "";
-                renderedMermaid.clear();
+                mermaidRuntime.clear();
                 queueMermaid(activeTab);
               }, 280);
             });
@@ -1536,241 +1454,14 @@
     });
   }
 
-  function checkRowKey(r) {
-    if (!r) return "";
-    if (r.rowId) return String(r.rowId);
-    if (r.no != null && r.no !== "") return "no:" + String(r.no);
-    return "";
-  }
-
-  function pathOptionKeys(row) {
-    return (row.pathOptions || []).map((p) => (typeof p === "string" ? p : p && p.value)).filter(Boolean);
-  }
-
-  function multiOptionKeys(row) {
-    return (row.multiOptions || []).map((p) => (typeof p === "string" ? p : p && p.id)).filter(Boolean);
-  }
-
-  /**
-   * 热更新时保留本机勾选：按 rowId/no 匹配，字段级合并；
-   * 允许 checked=false；schema 漂移时丢弃无效字段并提示。
-   */
   function mergeCheckState(prev, next) {
-    if (!prev || !next || !prev.tabs || !next.tabs) return next;
-    const prevMap = {};
-    prev.tabs.forEach((t) => {
-      (t.blocks || []).forEach((b) => {
-        if (b.type === "check-table" && b.id) prevMap[b.id] = b;
-      });
-    });
-    let schemaWarn = false;
-    next.tabs.forEach((t) => {
-      (t.blocks || []).forEach((b) => {
-        const old = prevMap[b.id];
-        if (!old || b.type !== "check-table" || !old.rows || !b.rows) return;
-        const oldByKey = {};
-        old.rows.forEach((or, i) => {
-          const k = checkRowKey(or) || "idx:" + i;
-          oldByKey[k] = or;
-        });
-        b.rows.forEach((r, i) => {
-          const k = checkRowKey(r) || "idx:" + i;
-          let o = oldByKey[k];
-          if (!o) o = old.rows.find((x) => String(x.no) === String(r.no));
-          if (!o) return;
-
-          // checked：本机会议态完整覆盖（含 false）
-          if (typeof o.checked === "boolean") r.checked = o.checked;
-
-          // 路径：仅当仍在新 pathOptions 内
-          if (o.pathValue) {
-            if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
-              const opts = pathOptionKeys(r);
-              if (opts.includes(o.pathValue)) {
-                r.pathValue = o.pathValue;
-                r.checked = true;
-              } else {
-                schemaWarn = true;
-              }
-            } else {
-              schemaWarn = true;
-            }
-          }
-
-          // 多选：过滤非法 option
-          if (Array.isArray(o.multiValues) && o.multiValues.length) {
-            if (Array.isArray(r.multiOptions) && r.multiOptions.length) {
-              const valid = new Set(multiOptionKeys(r));
-              const kept = o.multiValues.filter((v) => valid.has(v));
-              r.multiValues = kept;
-              if (kept.length !== o.multiValues.length) schemaWarn = true;
-              if (kept.length) r.checked = true;
-            } else {
-              schemaWarn = true;
-            }
-          }
-          if (o.otherText != null && o.otherText !== "") {
-            if (Array.isArray(r.multiOptions)) r.otherText = o.otherText;
-          }
-
-          // 费用：用户填过的字段覆盖
-          if (o.feeFields && r.feeFields) {
-            r.feeFields = Object.assign({}, r.feeFields, o.feeFields);
-            if (o.checked) r.checked = true;
-          } else if (o.feeFields && !r.feeFields) {
-            schemaWarn = true;
-          }
-
-          // 负责人：owners 优先；兼容旧 ownerFields → owners[0]
-          if (Array.isArray(r.owners)) {
-            if (Array.isArray(o.owners) && o.owners.length) {
-              r.owners = o.owners.map((x) => Object.assign({}, x));
-              if (namedOwnersOf(r).length) r.checked = true;
-            } else if (o.ownerFields && String(o.ownerFields.name || "").trim()) {
-              if (!r.owners[0]) r.owners[0] = { name: "", dept: "", scope: "" };
-              r.owners[0] = Object.assign({}, r.owners[0], {
-                name: o.ownerFields.name || "",
-                dept: o.ownerFields.dept || r.owners[0].dept || "",
-                scope:
-                  o.ownerFields.scope ||
-                  o.ownerFields.backup ||
-                  r.owners[0].scope ||
-                  "",
-              });
-              r.checked = true;
-            }
-          } else if (o.ownerFields) {
-            r.ownerFields = Object.assign({}, r.ownerFields || {}, o.ownerFields);
-          }
-        });
-      });
-    });
-    if (schemaWarn) {
-      try {
-        toast("检测到内容结构更新，部分旧勾选已按新结构对齐", 2600);
-      } catch (_) {}
+    const result = mergeMeetingState(prev, next);
+    if (result.outcome === "schema-mismatch") {
+      toast("决策结构已升级，旧版会议勾选未带入", 2800);
+    } else if (result.outcome === "aligned-with-drops") {
+      toast("检测到内容结构更新，部分旧勾选已按新结构对齐", 2600);
     }
-    return next;
-  }
-
-  async function ensureMermaid() {
-    if (mermaidReady) return;
-    if (!window.mermaid) throw new Error("mermaid 未加载");
-    window.mermaid.initialize({
-      startOnLoad: false,
-      theme: "base",
-      securityLevel: "loose",
-      flowchart: {
-        curve: "basis",
-        htmlLabels: true,
-        useMaxWidth: true,
-        padding: 12,
-        nodeSpacing: 32,
-        rankSpacing: 40,
-      },
-      themeVariables: {
-        fontFamily: "-apple-system, PingFang SC, Microsoft YaHei, sans-serif",
-        fontSize: "16px",
-        primaryColor: "#EBE6EF",
-        primaryTextColor: "#2A1A38",
-        primaryBorderColor: "#7A4F96",
-        lineColor: "#7A4F96",
-        secondaryColor: "#F5F0F8",
-        tertiaryColor: "#FFFFFF",
-        clusterBkg: "#F8F5FA",
-        clusterBorder: "#C9B8D9",
-      },
-    });
-    mermaidReady = true;
-  }
-
-  /** 流程图 SVG 铺满 host：裁掉空白 viewBox + meet 自适应放大 */
-  function fitMermaidSvg(host, svgEl) {
-    if (!host || !svgEl) return;
-    try {
-      svgEl.removeAttribute("width");
-      svgEl.removeAttribute("height");
-      svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
-      svgEl.style.width = "100%";
-      svgEl.style.height = "100%";
-      svgEl.style.maxWidth = "100%";
-      svgEl.style.maxHeight = "100%";
-      svgEl.style.display = "block";
-      // 下一帧按真实内容 bbox 收紧 viewBox，图更大
-      requestAnimationFrame(() => {
-        try {
-          const bbox = svgEl.getBBox();
-          if (!bbox || !(bbox.width > 0) || !(bbox.height > 0)) return;
-          const padX = Math.max(16, bbox.width * 0.06);
-          const padY = Math.max(16, bbox.height * 0.06);
-          svgEl.setAttribute(
-            "viewBox",
-            [bbox.x - padX, bbox.y - padY, bbox.width + padX * 2, bbox.height + padY * 2].join(" ")
-          );
-        } catch (_) {}
-      });
-    } catch (_) {}
-  }
-
-  async function queueMermaid(tabId) {
-    // 放大入口：渲染后给 host 打标
-    const markZoom = () => {
-      $$("#" + CSS.escape(tabId || activeTab) + " .mermaid-host").forEach((h) => {
-        if (h.querySelector("svg")) {
-          h.classList.add("is-zoomable");
-          h.setAttribute("role", "button");
-          h.setAttribute("tabindex", "0");
-          h.setAttribute("aria-label", "单击放大流程图");
-        }
-      });
-    };
-
-    if (editing) return;
-    await ensureMermaid();
-    const panel = document.getElementById(tabId);
-    if (!panel) return;
-    const hosts = $$(".mermaid-host", panel);
-    for (const host of hosts) {
-      const id = host.dataset.mermaidId;
-      if (renderedMermaid.has(id)) continue;
-      const block = findBlock(id);
-      if (!block || !block.source) {
-        host.innerHTML = '<div class="mermaid-empty">暂无流程图 · 编辑态可粘贴 mermaid</div>';
-        continue;
-      }
-      host.innerHTML = "";
-      try {
-        const { svg } = await window.mermaid.render(
-          "mmd-" + id.replace(/\W/g, "_") + "-" + Date.now(),
-          block.source
-        );
-        host.innerHTML = svg;
-        const svgEl = host.querySelector("svg");
-        if (svgEl) {
-          svgEl.setAttribute("role", "img");
-          const label = (block.source || "").replace(/\s+/g, " ").trim().slice(0, 48);
-          svgEl.setAttribute("aria-label", "流程图: " + (label || id));
-          // 自适应铺满容器（尤其 t3 双列做/不做）
-          fitMermaidSvg(host, svgEl);
-          // 隐藏文本副本供读屏
-          let desc = host.querySelector(".mermaid-a11y");
-          if (!desc) {
-            desc = document.createElement("span");
-            desc.className = "mermaid-a11y";
-            desc.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)";
-            host.style.position = "relative";
-            host.appendChild(desc);
-          }
-          desc.id = "mmd-desc-" + id.replace(/\W/g, "_");
-          desc.textContent = block.source || "";
-          svgEl.setAttribute("aria-describedby", desc.id);
-        }
-        renderedMermaid.add(id);
-      } catch (e) {
-        host.innerHTML = `<pre style="color:#b00;font-size:11px;padding:8px;white-space:pre-wrap">Mermaid 错误: ${esc(e.message || e)}</pre>`;
-      }
-    }
-    markZoom();
+    return result.content;
   }
 
   function findBlock(id) {
@@ -1851,7 +1542,6 @@
       });
     }
     await queueMermaid(id);
-    syncCheckStatusFloat();
   }
 
   function go(delta, opts) {
@@ -1889,7 +1579,7 @@
     editing = !editing;
     applyEditMode();
     if (!editing) {
-      renderedMermaid.clear();
+      mermaidRuntime.clear();
       queueMermaid(activeTab);
       toast("已退出编辑 · 记得点「保存到源码」");
     } else {
@@ -1912,7 +1602,7 @@
 
       if (type === "callout") {
         const el = wrap.querySelector("[data-field='html']");
-        if (el) block.html = el.innerHTML;
+        if (el) block.html = sanitizeRichHtml(el.innerHTML);
       } else if (type === "kv-table") {
         $$("tbody tr", wrap).forEach((tr) => {
           const i = +tr.dataset.row;
@@ -1920,7 +1610,7 @@
           const k = tr.querySelector("[data-field='key']");
           const h = tr.querySelector("[data-field='html']");
           if (k) block.rows[i].key = k.textContent.trim();
-          if (h) block.rows[i].html = h.innerHTML;
+          if (h) block.rows[i].html = sanitizeRichHtml(h.innerHTML);
         });
       } else if (type === "gate-table") {
         $$("tbody tr", wrap).forEach((tr) => {
@@ -1929,7 +1619,7 @@
           const g = tr.querySelector("[data-field='gate']");
           const h = tr.querySelector("[data-field='html']");
           if (g) block.rows[i].gate = g.textContent.trim();
-          if (h) block.rows[i].html = h.innerHTML;
+          if (h) block.rows[i].html = sanitizeRichHtml(h.innerHTML);
         });
       } else if (type === "check-table") {
         $$("tbody tr", wrap).forEach((tr) => {
@@ -1938,7 +1628,7 @@
           const n = tr.querySelector("[data-field='no']");
           const h = tr.querySelector("[data-field='html']");
           if (n) block.rows[i].no = n.textContent.trim();
-          if (h) block.rows[i].html = h.innerHTML;
+          if (h) block.rows[i].html = sanitizeRichHtml(h.innerHTML);
           const btn = tr.querySelector("[data-check-toggle]");
           if (btn) block.rows[i].checked = btn.classList.contains("is-on");
           const sel = tr.querySelector("[data-path-pick].is-selected");
@@ -2175,7 +1865,7 @@
   function wireKeys() {
     document.addEventListener("keydown", (e) => {
       if (e.target.matches("input, textarea") || e.target.isContentEditable) {
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        if (isEditQuery && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
           e.preventDefault();
           saveToSource();
         }
@@ -2194,9 +1884,9 @@
         activate(ids[0], "right");
       } else if (e.key === "End") {
         activate(ids[ids.length - 1], "left");
-      } else if (e.key.toLowerCase() === "e") {
+      } else if (isEditQuery && e.key.toLowerCase() === "e") {
         toggleEdit();
-      } else if (e.key.toLowerCase() === "s" && !e.metaKey && !e.ctrlKey) {
+      } else if (isEditQuery && e.key.toLowerCase() === "s" && !e.metaKey && !e.ctrlKey) {
         saveToSource();
       }
     });
@@ -2691,225 +2381,6 @@
       clearDrag(activePanel(), false);
     });
   }
-
-
-  /** mermaid 单击放大：clone SVG 进 lightbox；支持双指缩放 / 双击放大 / 滚轮缩放 */
-  function wireMermaidLightbox() {
-    if (wireMermaidLightbox._on) return;
-    wireMermaidLightbox._on = true;
-    const box = $("#diagram-lightbox");
-    const stageEl = $("#diagram-lightbox-stage");
-    const closeBtn = $("#diagram-lightbox-close");
-    if (!box || !stageEl) return;
-
-    let lastTrigger = null;
-    let scale = 1;
-    let tx = 0;
-    let ty = 0;
-    let pinchStartDist = 0;
-    let pinchStartScale = 1;
-    let panStart = null;
-    let lastTapT = 0;
-
-    const viewport = () => stageEl.querySelector(".diagram-zoom-viewport");
-    const clampPan = () => {
-      // 保证缩放后图仍有一部分在视口内（约 20% 边距）
-      const vp = viewport();
-      if (!vp || scale <= 1) {
-        tx = 0;
-        ty = 0;
-        return;
-      }
-      const boxR = stageEl.getBoundingClientRect();
-      const maxX = (boxR.width * (scale - 1)) / 2 + boxR.width * 0.15;
-      const maxY = (boxR.height * (scale - 1)) / 2 + boxR.height * 0.15;
-      tx = Math.min(maxX, Math.max(-maxX, tx));
-      ty = Math.min(maxY, Math.max(-maxY, ty));
-    };
-    const applyTransform = (rubber) => {
-      const vp = viewport();
-      if (!vp) return;
-      if (!rubber) {
-        scale = Math.min(5, Math.max(1, scale));
-        clampPan();
-      } else {
-        // 双指中可短暂 <1，松手回弹
-        scale = Math.min(5, Math.max(0.85, scale));
-      }
-      if (scale <= 1 && !rubber) {
-        tx = 0;
-        ty = 0;
-      }
-      vp.style.transition = rubber ? "none" : scale === 1 ? "transform 0.18s cubic-bezier(0.25,0.1,0.25,1)" : "none";
-      vp.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
-    };
-    const resetZoom = () => {
-      scale = 1;
-      tx = 0;
-      ty = 0;
-      applyTransform();
-    };
-
-    const close = () => {
-      box.hidden = true;
-      document.body.classList.remove("is-lightbox");
-      stageEl.innerHTML = "";
-      document.body.style.overflow = "";
-      resetZoom();
-      if (lastTrigger && lastTrigger.focus) {
-        try {
-          lastTrigger.focus();
-        } catch (_) {}
-      }
-      lastTrigger = null;
-    };
-    const openFrom = (host) => {
-      if (editing || document.body.classList.contains("is-swiping")) return;
-      const svg = host.querySelector("svg");
-      if (!svg) return;
-      lastTrigger = host;
-      stageEl.innerHTML = "";
-      const wrap = document.createElement("div");
-      wrap.className = "diagram-zoom-viewport";
-      const clone = svg.cloneNode(true);
-      clone.removeAttribute("width");
-      clone.removeAttribute("height");
-      clone.style.width = "100%";
-      clone.style.height = "auto";
-      clone.style.maxHeight = "none";
-      wrap.appendChild(clone);
-      const hint = document.createElement("div");
-      hint.className = "diagram-zoom-hint";
-      hint.textContent = "双指缩放 · 双击放大/还原 · 单指拖移";
-      stageEl.appendChild(wrap);
-      stageEl.appendChild(hint);
-      resetZoom();
-      box.hidden = false;
-      document.body.classList.add("is-lightbox");
-      document.body.style.overflow = "hidden";
-      if (closeBtn) closeBtn.focus();
-    };
-
-    // 点击 mermaid-host：tap 判定 movement < 8
-    let sx = 0,
-      sy = 0;
-    document.addEventListener(
-      "pointerdown",
-      (e) => {
-        const host = e.target.closest(".mermaid-host");
-        if (!host || box && !box.hidden) return;
-        sx = e.clientX;
-        sy = e.clientY;
-        host._tapCand = true;
-      },
-      true
-    );
-    document.addEventListener(
-      "pointerup",
-      (e) => {
-        const host = e.target.closest(".mermaid-host");
-        if (!host || !host._tapCand) return;
-        host._tapCand = false;
-        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
-        e.preventDefault();
-        e.stopPropagation();
-        openFrom(host);
-      },
-      true
-    );
-
-    if (closeBtn)
-      closeBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        close();
-      });
-    box.addEventListener("click", (e) => {
-      if (e.target === box) close();
-    });
-
-    // —— 双指缩放 + 单指拖移 + 双击 ——
-    const dist = (t0, t1) => Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
-
-    stageEl.addEventListener(
-      "touchstart",
-      (e) => {
-        e.stopPropagation();
-        if (e.touches.length === 2) {
-          pinchStartDist = dist(e.touches[0], e.touches[1]) || 1;
-          pinchStartScale = scale;
-          panStart = null;
-        } else if (e.touches.length === 1 && scale > 1) {
-          panStart = { x: e.touches[0].clientX - tx, y: e.touches[0].clientY - ty };
-        }
-      },
-      { passive: true }
-    );
-    stageEl.addEventListener(
-      "touchmove",
-      (e) => {
-        e.stopPropagation();
-        if (e.touches.length === 2) {
-          if (e.cancelable) e.preventDefault();
-          const d = dist(e.touches[0], e.touches[1]) || 1;
-          scale = pinchStartScale * (d / pinchStartDist);
-          applyTransform(true);
-        } else if (e.touches.length === 1 && panStart && scale > 1) {
-          if (e.cancelable) e.preventDefault();
-          tx = e.touches[0].clientX - panStart.x;
-          ty = e.touches[0].clientY - panStart.y;
-          applyTransform(false);
-        }
-      },
-      { passive: false }
-    );
-    stageEl.addEventListener(
-      "touchend",
-      (e) => {
-        e.stopPropagation();
-        if (e.touches.length < 2) {
-          pinchStartDist = 0;
-          // 缩放过小松手回弹到 1
-          if (scale < 1) resetZoom();
-          else applyTransform(false);
-        }
-        if (e.touches.length === 0) panStart = null;
-        // 双击放大 / 还原
-        if (e.changedTouches.length === 1 && e.touches.length === 0) {
-          const now = Date.now();
-          if (now - lastTapT < 280) {
-            if (scale > 1.05) resetZoom();
-            else {
-              scale = 2.2;
-              applyTransform(false);
-            }
-            lastTapT = 0;
-          } else {
-            lastTapT = now;
-          }
-        }
-      },
-      { passive: true }
-    );
-
-    // 桌面滚轮缩放
-    stageEl.addEventListener(
-      "wheel",
-      (e) => {
-        if (box.hidden) return;
-        e.preventDefault();
-        e.stopPropagation();
-        const delta = e.deltaY > 0 ? -0.12 : 0.12;
-        scale += delta;
-        applyTransform();
-      },
-      { passive: false }
-    );
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !box.hidden) close();
-    });
-  }
-
   // ---------- boot ----------
   function applyMobileClasses() {
     const w = window.innerWidth || 0;
@@ -2971,6 +2442,8 @@
     window.addEventListener("resize", applyMobileClasses);
     window.addEventListener("orientationchange", () => setTimeout(applyMobileClasses, 200));
     wirePressFeedback();
+    const offlineNotice = $("#offline-notice");
+    if (offlineNotice) offlineNotice.hidden = !isFileProtocol;
 
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
@@ -2984,18 +2457,18 @@
       wireKeys();
       wireSwipe();
       wireMermaidLightbox();
-      wireCheckStatusFloat();
-      startHotPoll();
+      void queueAllMermaid();
+      window.addEventListener("beforeprint", () => void queueAllMermaid());
+      if (!isFileProtocol) startHotPoll();
       document.body.classList.toggle("is-check-page", activeTab === "t6");
-      syncCheckStatusFloat();
       // title editable only in edit mode
       $("#doc-title").dataset.editable = "true";
     } catch (e) {
       $("#stage").innerHTML = `<div style="padding:24px;color:#b00">
         <h2>加载失败</h2>
         <p>${esc(e.message || e)}</p>
-        <p style="margin-top:8px;color:#666">请在仓库根执行：<code>python3 -m http.server 8080 -d docs</code><br/>
-        然后打开 <code>http://localhost:8080</code></p>
+        <p style="margin-top:8px;color:#666">请在仓库根执行：<code>npm run serve</code><br/>
+        然后打开 <code>http://localhost:8765</code></p>
       </div>`;
       setStatus("加载失败", "warn");
     }

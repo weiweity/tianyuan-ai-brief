@@ -1,174 +1,188 @@
-# HTML 架构说明（给 AI / 人）
+# AI 立项决策台 · 架构契约
 
-> 大厂投屏页标准拆法：**内容 SSOT 与渲染壳分离**。  
-> 目标：AI 改内容不碰布局；人可在浏览器改字/改图并写回源码；满屏自适应少留白。
+> 当前版本：Web v5.20 · 决策状态 Schema v2
+> 原则：内容、决策规则、渲染和样式各有唯一归属；默认入口只负责开会，作者能力必须显式进入。
 
----
+## 1. 目录与职责
 
-## 1. 目录（禁止乱放）
-
-```
+```text
 docs/
-├── index.html              # 壳：只挂载 DOM 节点，几乎无文案
-├── ARCHITECTURE.md         # 本文件 —— AI 改前必读
-├── css/app.css             # 布局/主题/满屏自适应（无业务文案）
-├── js/app.js               # 渲染 + 编辑 + 写回（无业务文案）
-├── data/content.json       # ★ 唯一内容 SSOT（字、表、mermaid、图路径）
-├── data/content.schema.json
-└── assets/logo.png         # 静态资源；换 logo 只换文件
+├── index.html                         # 安全壳、挂载点、固定依赖
+├── css/app.css                        # UI contract v2：token → shell → component → page → responsive
+├── js/bootstrap.js                    # 协议感知启动：HTTP ESM / file IIFE
+├── js/app.js                          # UI 编排：渲染、导航、作者模式、持久化
+├── js/app.offline.bundle.js           # 生成物：应用 + content.json 离线快照
+├── js/modules/decision-model.js       # 纯决策域：门禁、结论、凭证、SHA-256 校验
+├── js/modules/meeting-state.js        # 草稿兼容：Schema 隔离、字段白名单、长度钳制
+├── js/modules/html-policy.js          # 输入边界：富文本、资源 URL、品牌色、SVG 清洗
+├── js/modules/mermaid-runtime.js       # 图表渲染、无障碍描述、缩放灯箱
+├── data/content.json                  # Web 内容 SSOT
+├── data/content.schema.json           # 内容与决策行结构约束
+├── vendor/mermaid-10.9.6.min.js       # 固定版本、本地运行时
+├── vendor/mermaid-LICENSE.txt
+├── vendor/dompurify-3.4.12.es.mjs      # 固定版本、本地 HTML / SVG 清洗器
+├── vendor/dompurify-LICENSE.txt
+└── assets/logo.png
+
+scripts/
+└── build-web.mjs                      # 生成 / 校验离线 Bundle 与内容 SHA-256
+
+tests/
+├── decision-model.test.mjs            # 项目级 A/B/C 与凭证单元测试
+├── meeting-state.test.mjs              # 状态版本、白名单与不变性测试
+├── html-policy.test.mjs                # XSS、URL、颜色与 Mermaid SVG 安全测试
+├── content-contract.test.mjs           # Schema、内容、依赖、单入口与模块体积契约
+└── ui-audit.mjs                       # 3×7 页、file、打印、交互、a11y、截图
+
+.github/workflows/quality.yml           # PR / main 的完整质量门禁
+.github/dependabot.yml                  # npm / Actions 每周依赖更新 PR
+.node-version                           # CI 基线 Node 24
 ```
 
-| 你想改什么 | 改哪个文件 | 禁止 |
-|-|-|-|
-| 改一句话 / 表 / 勾选 / mermaid | **`data/content.json`** | 不要改 `index.html` 塞文案 |
-| 改颜色、间距、满屏策略 | `css/app.css` | 不要在 json 写 style |
-| 改交互（Tab/保存/编辑） | `js/app.js` | 不要复制粘贴整页 HTML |
-| 换 logo | `assets/logo.png` + json `meta.logo` | 不要 base64 塞进 html |
+| 改动 | 唯一落点 | 禁止 |
+|---|---|---|
+| 业务文案、表格、图源 | `data/content.json` | 在 HTML / CSS / JS 写业务正文 |
+| A/B/C、Owner、费用门禁、凭证 | `decision-model.js` | 在点击事件里复制一份判断逻辑 |
+| 旧会议草稿合并 | `meeting-state.js` | 按对象展开或跨 Schema 猜测合并 |
+| 富文本、资源地址、SVG 安全 | `html-policy.js` | 未清洗地写入 `innerHTML` |
+| Mermaid 渲染与灯箱 | `mermaid-runtime.js` | 在 `app.js` 维护第二套实现 |
+| HTTP / file 启动选择 | `bootstrap.js` | 放宽浏览器安全策略或让页面永久骨架 |
+| 离线快照 | `build-web.mjs` 生成 | 手改 `app.offline.bundle.js` |
+| DOM 渲染、导航、保存 | `app.js` | 把业务规则塞回 UI 编排 |
+| 颜色、间距、响应式 | `app.css` 对应分层 | 文件尾追加“vN 修复补丁” |
+| 内容字段结构 | `content.schema.json` | 无版本地改变本机会议状态 |
 
----
+## 2. 运行模式
 
-## 2. 稳定定位 ID（AI 定位契约）
+- `/`：会议演示入口。作者工具和 E / S 快捷键不可见、不可触发。
+- `/?edit=1`：作者入口。可编辑、绑定 `content.json`、写回或导出。
+- `file:///.../docs/index.html`：离线演示入口。读取构建时快照，显示离线标记，不执行远端轮询。
+- 历史 HTML 在 HTTP 和 file 两种协议下都跳入同一正式壳，不拥有业务正文。
+- 会议勾选会保存到当前设备，用于刷新恢复，但始终是本机草稿。
+- 飞书 / 邮件确认才是组织留痕；页面不宣称“已审批”。
 
-每个可改块有 **永不重排的 id**（`tabId.blockName`）：
+## 3. 项目级决策模型
 
-| id | 含义 |
-|-|-|
-| `t1.role` | 您批/您不背 |
-| `t1.kpi` | 建议/请勾/钱/工期表 |
-| `t1.swap` / `t1.scope` | 换/不立、本场不做 |
-| `t2.chart` | 取舍 mermaid |
-| `t2.trigger` / `t2.brake` | 后置触发、旁线刹车 |
-| `t3.chart` | 做/不做 mermaid |
-| `t4.chart` / `t4.dod` | 路径图、门禁表 |
-| `t5.chart` / `t5.money` | 费用图、钱表 |
-| `t6.check` / `t6.gate` / `t6.bound` | 勾选、门禁、边界 |
-| `t7.raci` / `t7.weekly` / `t7.speak` | 会后、周报、口播 |
+`content.decisionSchemaVersion` 是本机会议状态的兼容边界。结构性变化必须递增；版本不同的旧状态不会合并。
 
-**AI 改内容时：**
+每个候选项目都有独立 `projectId`、`projectLabel` 和 A / B / C：
 
-1. 只打开 `data/content.json`
-2. 用 id 定位，例如：`blocks` 里 `"id": "t1.kpi"` 的 `rows[2].html`（钱）
-3. 不要全文重写 json；不要改 id 字符串
-4. 改完在 PR/说明里写：`touch: t1.kpi.rows[2]`
+- A：同意启动；前置齐后按止损线开工。
+- B：先认方向；只补前置，未批不开发、不烧工具费。
+- C：不立；记录原因，不排期。
 
-DOM 上同 id 渲染为 `data-block-id="t1.kpi"`，浏览器检查/脚本也可定位。
+散会门禁由 `evaluateCheckGate()` 唯一计算：
 
----
+1. 每个项目必须独立选 A / B / C。
+2. 每个 A / B 项目必须有自己具名且确认的 Owner。
+3. 只要存在 A / B，就必须确认共享费用口径和超线停扩权。
+4. 全部 C 时，不强制费用与 Owner。
+5. 目标预算、首月止损、全期止损必须为正数，且目标预算与首月止损不能高于全期止损。
 
-## 3. 编辑写回源码（不是 localStorage 假改）
+## 4. 可校验会议凭证
 
-### 3.1 三种保存通道（优先级）
+页面可复制人类可读结论，也可下载 JSON 凭证。凭证包含：
 
-| 通道 | 行为 | 刷新后 |
-|-|-|-|
-| **A. File System Access** | 点「绑定 content.json」选中 `docs/data/content.json`，之后「保存」直接 **写入磁盘文件** | ✅ 真写源码 |
-| **B. 下载** | 「导出 content.json」下载文件，你覆盖仓库里的 json 再 commit | ✅ 真写源码（多一步） |
-| **C. 草稿** | 自动 `localStorage` 备份，防误关页 | 仅本机草稿，**不是源码** |
+- 内容版本、决策 Schema 版本、生成时间和源版本戳；
+- 每个项目的路径和 Owner；
+- 费用、止损、停扩授权和缺项；
+- `localDraft: true`；
+- 对规范化 payload 计算的 SHA-256。
 
-Chrome/Edge 支持 A；Safari 等走 B。
+`verifyDecisionReceipt()` 可在浏览器和 Node 中复算哈希。哈希只能证明文件自生成后未被修改，不能替代审批人身份、电子签名或飞书审批。
 
-### 3.2 编辑什么
+## 5. 内容与 DOM 稳定定位
 
-- 工具栏 **编辑**（或按 `E`）：所有 `data-editable` 区域 `contenteditable`
-- 点 logo / 图：选本地图片 → 写入 `assets/` 需你本机替换文件；编辑态会把 **dataURL 暂存到 json 的 `meta.logoDataUrl`（可选）**，导出后你可再落地为文件
-- **保存**（或 `S`）：把 DOM 读回 content 对象 → 通道 A 或 B
+业务块使用稳定 `id`，渲染为 `data-block-id`。当前核心 ID：
 
-### 3.3 投屏模式
+| ID | 含义 |
+|---|---|
+| `t1.kpi` / `t1.swap` / `t1.scope` | 今日拍板 |
+| `t2.chart` / `t2.dept` | 项目取舍与部门依据 |
+| `t3.chart` | 做 / 不做 |
+| `t4.chart` / `t4.dod` | 阶段路径与门禁 |
+| `t5.chart` / `t5.money` | 费用和止损 |
+| `t6.check` / `t6.gate` / `t6.bound` | 项目级确认、最低门禁、留痕边界 |
+| `t7.timeline` / `t7.path` / `t7.pm` | 会后责任 |
 
-默认 **只读**。不要在金主会场开编辑。
+改文案时不要改 ID；PR 说明使用 `touch: t6.check` 之类的定位。
 
----
+## 6. CSS 分层契约
 
-## 4. 满屏自适应原则
+`app.css` 是单一有效样式源，按固定顺序组织：
 
-- 根布局：`100dvh` 网格 = 顶栏 + Tab + 内容 + 底栏
-- 内容区 `flex:1; min-height:0`，块之间均分，**不靠大 padding 撑**
-- 图（mermaid）：`height:100%` + `max-height` 吃满侧栏/主栏
-- 字号：`clamp()` 随视口缩放
-- 禁止：固定 800px 内容宽 + 两侧大留白（已用 `max-width:100%` 满宽）
+1. tokens / reset
+2. shell / header / tabs / stage
+3. 通用内容组件
+4. 页面专用布局
+5. 交互状态
+6. 1024 / 640 / 370 / 横屏响应式
+7. print / reduced motion
 
----
+旧版 5500 行级联补丁不参与加载。修复必须回到所属层，不得在文件尾追加版本覆盖。
 
-## 5. 数据块类型
+## 7. 依赖与安全
 
-| type | 用途 | 主要字段 |
-|-|-|-|
-| `callout` | 提示条 | `html`, `variant` |
-| `kv-table` | 键值表 | `rows[].key/html/variant` |
-| `gate-table` | 门禁/结果表 | `rows[].gate/html` |
-| `check-table` | 勾选表 | `rows[].no/html` |
-| `mermaid` | 流程图 | `source`（纯 mermaid 文本） |
-| `image` | 图 | `src`, `alt` |
+- Mermaid 固定为 10.9.6 并随站点发布，不依赖 CDN。
+- DOMPurify 固定为 3.4.12；远端 JSON、本机草稿、编辑器富文本和 Mermaid SVG 都在进入 DOM 前经过显式白名单。
+- HTTP 启动由 `bootstrap.js` 为 Mermaid 设置 SRI；file 启动不设置会触发 `origin null` CORS 的 `crossorigin`，但仍只允许仓库内固定脚本。
+- Mermaid 使用 `securityLevel: "strict"`；离线 Bundle 携带内容 SHA-256，并由 `build:check` 保证与 SSOT 同步。
+- HTML 保持 CSP，无运行时第三方 CDN，不要求关闭 CORS 或浏览器安全策略。
+- 动态样式与 Mermaid SVG 仍需要 CSP `style-src 'unsafe-inline'`；脚本侧不允许 `unsafe-eval`，内容侧由 DOMPurify 和字段白名单收口。
+- 更新 Mermaid 或 DOMPurify 时同步替换 vendor 文件、许可证、SRI（适用时）、`package.json` 和测试断言。
 
-`layout`：`stack` | `split` | `fill`  
-`split` 时 block 可带 `slot`: `main` | `side`
-
----
-
-## 6. 发布
+## 8. 本地开发与质量门禁
 
 ```bash
-# 改内容
-vim docs/data/content.json
+npm install
+npm run build:web
+npm run serve
+# http://localhost:8765
 
-# 本地
-python3 -m http.server 8080 -d docs
-# 打开 http://localhost:8080
-
-# 推送 Pages
-git add docs && git commit -m "content: touch t1.kpi" && git push
-# https://weiweity.github.io/tianyuan-ai-brief/
+npm test
+npm run test:ui
+npm run audit:deps
+npm run test:all
 ```
 
-> 注意：`file://` 打开时 **fetch content.json 会失败**。必须用 http.server 或 Pages。
+本地 `test:ui` 使用系统 Chrome；CI 使用 Node 24 和 Playwright 固定 Chromium。两者执行相同逻辑门禁，但浏览器二进制证据分别保留。覆盖：
 
----
+- 390×844、768×1024、1440×900；
+- 三个视口的七页逐页截图、overflow 与 axe；
+- 手机七页可见操作区至少 40px（主要动作按 44px 设计）；
+- 键盘导航、演示 / 作者隔离；
+- Mermaid 本地渲染；
+- C/C、A/C 混合路径、Owner / 费用 / 停扩门禁；
+- 复制结论、下载 JSON、SHA-256 复验；
+- HTTP 正式 / 历史入口和 file 直接 / 历史入口；
+- 七个面板、全部 Mermaid、恰好七页的 A4 打印 PDF；
+- axe WCAG 2A / 2AA / 2.1AA 每页 serious / critical 为 0；
+- npm 生产 / 开发依赖已知漏洞为 0；
+- Bundle 新鲜度、vendor SHA-384 与协议分支契约。
 
-## 7. 反模式（越改越乱的根源）
+## 9. 历史打印入口
 
-1. ❌ 在 `index.html` 里贴大段业务字  
-2. ❌ 复制整页生成 `index-v2.html`  
-3. ❌ 改 mermaid 时重写整个 app.js  
-4. ❌ 只靠 localStorage「改完刷新还在」却不导出 json  
-5. ❌ 给块随机改 id（AI/脚本全部失效）
+`01-立项主线/print/AI赋能立项_金主一页汇报.html` 是无业务正文的兼容入口：
 
----
+- `noindex` + canonical 指向 `docs/index.html`；
+- meta refresh 与可点击链接都进入唯一正式入口；
+- 不加载脚本、Mermaid，也不复制任何旧会议口径；
+- file 双击场景由正式壳加载可校验离线 Bundle，不再永久停在骨架屏；
+- 正式浏览和七页 A4 打印统一由 `docs/index.html` 及其 `@media print` 提供。
 
-## 8. 与飞书 SSOT 关系
+## 10. 发布
 
-- 飞书少字画板 XML = 组织侧 SSOT（上会定稿）  
-- `content.json` = **Web 呈现 SSOT**（应与飞书 v5.6 表述一致）  
-- 改口径：先改飞书 XML / 或先改 json，再人工对齐另一边；不要两套长期漂移
-
-
----
-
-## 9. 多端一屏与触屏（v1.1）
-
-- 布局：`100dvh` + `safe-area-inset`；手机压顶栏、工具进「⋯」
-- 翻页：左右滑（水平主导阈值）· 圆点 · 边缘 ‹ › · 键盘 ←→ / 1–7
-- 编辑态关闭滑动，避免改字时误翻页
-- 测法：Chrome 设备模拟 iPhone + 真机 Safari
-
-
----
-
-## 10. 无感保存与 C 端热更新（v1.4）
-
-### 编辑者（一次点「保存并更新」）
-1. 页面收割 → 内存 content  
-2. 写盘（已绑定则静默；首次弹一次选文件）  
-3. **不整页刷新**，舞台轻闪 + 保留当前 Tab  
-4. 退出编辑态，Toast 提示  
-
-### 浏览客户（GitHub Pages）
-- 打开即 `cache: no-store` 拉最新 content.json  
-- 每 30s / 回前台 静默比对 `version|updated|publishStamp`  
-- 变化则 **softApply** 热替换，保留当前页码  
-- 不读 localStorage 草稿（避免客户看到编辑者未发布草稿）
-
-### 发布到远端
 ```bash
-git add docs && git commit -m "content: update" && git push
-# 客户端约 30 秒内自动看到（或切前后台触发）
+npm run test:all
+git switch -c codex/offline-file-compat
+git add -- .node-version .gitignore .github/workflows/quality.yml \
+  docs tests scripts package.json package-lock.json README.md \
+  "01-立项主线/print/AI赋能立项_金主一页汇报.html"
+git diff --cached --name-only
+git commit -m "feat: harden decision brief quality gates"
+git push -u origin codex/offline-file-compat
 ```
+
+严禁在当前工作树使用 `git add .`：仓库外层还有不属于本轮发布的业务资料目录。创建 PR 后，应先让 `quality / test` 通过再合并，并在仓库设置中把它设为必需检查；否则 GitHub Pages 的分支部署可能和 push 测试并行。
+
+GitHub Actions 第三方步骤固定到 commit SHA，Dependabot 每周检查 npm 和 Actions 更新。发布前还应人工确认：业务样本阈值、Owner 姓名、预算批准和飞书 / 邮件正式记录。自动测试不能替代这些组织事实。
