@@ -1968,3 +1968,78 @@ html, body, .stage {
     /* keep */
   }
 }
+
+/* ========== t2 取舍 v2：上图自适应 + 底部门表可折叠，绝不把页面挤没 ========== */
+#t2 .panel-body.layout-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden !important;
+  gap: 8px;
+}
+#t2 .panel-body.layout-stack > .block[data-type="mermaid"] {
+  flex: 1 1 auto;
+  min-height: 180px;
+  max-height: none;
+  overflow: hidden;
+}
+#t2 .panel-body.layout-stack > .block[data-type="detail-card"] {
+  flex: 0 0 auto;
+  max-height: 48%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 0;
+}
+#t2 .detail-card.is-open {
+  flex: 1 1 48%;
+  min-height: 140px;
+}
+#t2 .detail-card-body {
+  flex: 1 1 auto;
+  max-height: none !important;
+  min-height: 0;
+  overflow: auto !important;
+}
+#t2 .detail-card:not(.is-open) {
+  flex: 0 0 auto;
+}
+#t2 .detail-card:not(.is-open) .detail-card-body {
+  display: none;
+}
+
+/* 清掉旧的 data-count=5 强制规则干扰（若仍匹配其他页无害） */
+.panel-body.layout-fill[data-count="5"] {
+  /* 不再用于 t2；保留但不强制 height 100% 隐藏 */
+  height: auto;
+  overflow: auto;
+}
+
+@media (max-width: 640px) {
+  #t2 .panel-body.layout-stack {
+    overflow-y: auto !important;
+    height: auto;
+    min-height: 100%;
+  }
+  #t2 .panel-body.layout-stack > .block[data-type="mermaid"] {
+    flex: 0 0 auto;
+    min-height: 200px;
+    max-height: 38vh;
+  }
+  #t2 .panel-body.layout-stack > .block[data-type="detail-card"],
+  #t2 .detail-card.is-open {
+    flex: 0 0 auto;
+    max-height: none;
+  }
+  #t2 .detail-card-body {
+    max-height: 45vh !important;
+  }
+  /* 四列表手机可横向滑 */
+  #t2 .detail-card-body {
+    overflow-x: auto !important;
+  }
+  #t2 .detail-card-table {
+    min-width: 560px;
+  }
+}

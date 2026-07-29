@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.7.2",
+  "version": "5.7.3",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -70,79 +70,61 @@
       "id": "t2",
       "no": "2",
       "title": "取舍",
-      "layout": "fill",
+      "layout": "stack",
       "blocks": [
-        {
-          "id": "t2.whyOpen",
-          "type": "callout",
-          "variant": "ok",
-          "html": "<b>为什么开</b><br/>客服：外包多、口径散，先立 <b>Agent</b> 把标准答法管起来（人确认发出，不代回）。供应链：备案材料重复核验重，先立 <b>备案识别</b> 降人工翻检（人终审）。"
-        },
-        {
-          "id": "t2.whyNot",
-          "type": "callout",
-          "variant": "warn",
-          "html": "<b>为什么不开 / 后置</b><br/>设计：已自驱用 AI，不占本期资源。仓储：愿望清单长，先做查重结论再议。私域：可人效，但不抢主开；Owner 主动要人再开。对账看板：归 BI，不建第二套。"
-        },
-        {
-          "id": "t2.reason",
-          "type": "callout",
-          "variant": "brand",
-          "html": "<b>原因（一句话）</b>：先做「标准能管、材料能核」的地基，有 Owner、可停损、能周报的样板；其余有触发再开，避免什么都干、费用和指标失控。"
-        },
         {
           "id": "t2.chart",
           "type": "mermaid",
-          "source": "flowchart TB\n  subgraph MAIN[主开 · 2 项]\n    K[客服 Agent<br/>标准可管]\n    S[供应链 备案识别<br/>人终审]\n  end\n  subgraph HOLD[轻/后 · 有触发再开]\n    W[仓储 先查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计 已自驱]\n  end\n  K --> BI[BI 结果 · FDE 动作]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
+          "source": "flowchart TB\n  subgraph MAIN[主开 · 2 项]\n    K[客服 Agent]\n    S[供应链 备案识别]\n  end\n  subgraph HOLD[轻/后]\n    W[仓储 查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计]\n  end\n  K --> BI[BI · FDE]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
         },
         {
-          "id": "t2.sectors",
+          "id": "t2.dept",
           "type": "detail-card",
-          "title": "各部门需求 · 落地方向 · 取舍",
-          "subtitle": "点开/收起明细（投屏可常开）",
-          "defaultOpen": true,
+          "title": "各部门：为什么开 · 为什么不开 · 原因",
+          "subtitle": "点击展开 / 再次点击收起",
+          "defaultOpen": false,
           "headers": [
-            "板块",
-            "对方需求/痛点",
-            "已定方向",
-            "我们的取舍"
+            "部门",
+            "为什么开",
+            "为什么不开",
+            "原因"
           ],
           "rows": [
             {
               "sector": "客服",
-              "need": "外包+标准散；想质培/要统一答法",
-              "direction": "主开 · 客服 Agent",
-              "choice": "做库+检索+人确认发出；不做自动代回"
+              "whyOpen": "外包多、标准散；需要统一答法与可质培",
+              "whyNot": "不做自动代回、不首期嵌桌面",
+              "reason": "先立 Agent：检索推荐 + 人确认发出；标准能管、可停损"
             },
             {
               "sector": "供应链",
-              "need": "备案/文稿核验重、易漏",
-              "direction": "主开 · 备案识别",
-              "choice": "做人机协同识别（人终审）；对账归 BI，不建第二看板"
+              "whyOpen": "备案材料核验重、易漏、重复劳动多",
+              "whyNot": "不做对账第二看板、不做智能排产",
+              "reason": "先立备案识别：机器标差异 + 人终审；对账归 BI"
             },
             {
               "sector": "仓储",
-              "need": "愿望清单长、要智能能力",
-              "direction": "轻/后 · 先查重",
-              "choice": "查重有缺口再议；不进本期主开"
+              "whyOpen": "有查重/效率诉求",
+              "whyNot": "愿望清单长，不宜本期铺开",
+              "reason": "轻/后：先查重，有缺口再议"
             },
             {
               "sector": "私域",
-              "need": "日报手抄等人效",
-              "direction": "后置",
-              "choice": "Owner 主动要人再开；不抢两项主开"
+              "whyOpen": "有人效（如日报）诉求",
+              "whyNot": "不抢两项主开资源",
+              "reason": "后置：Owner 主动要人再开"
             },
             {
               "sector": "设计",
-              "need": "出图提效",
-              "direction": "不开",
-              "choice": "已自驱用 AI；本期不占 FDE 人日"
+              "whyOpen": "—",
+              "whyNot": "已自驱用 AI 出图",
+              "reason": "本期不开，不占 FDE 人日"
             },
             {
               "sector": "对账/数仓",
-              "need": "预警/第二看板",
-              "direction": "归 BI",
-              "choice": "不重复建看板；需要时 FDE 交 1 页需求摘要"
+              "whyOpen": "—",
+              "whyNot": "不宜再建第二套看板",
+              "reason": "归 BI；需要时 FDE 交 1 页需求摘要"
             }
           ]
         }
@@ -342,5 +324,5 @@
       ]
     }
   ],
-  "publishStamp": "1785309197850"
+  "publishStamp": "1785309481081"
 }

@@ -377,13 +377,16 @@
         const heads = (b.headers || []).map((h) => `<th>${esc(h)}</th>`).join("");
         const rows = (b.rows || [])
           .map((r) => {
-            // support sector-table shape
-            if (r.sector != null) {
+            // 部门 | 为什么开 | 为什么不开 | 原因
+            if (r.sector != null && (r.whyOpen != null || r.need != null)) {
+              const c2 = r.whyOpen != null ? r.whyOpen : r.need;
+              const c3 = r.whyNot != null ? r.whyNot : r.direction;
+              const c4 = r.reason != null ? r.reason : r.choice;
               return `<tr>
                 <td data-editable="true" data-field="sector"><b>${esc(r.sector)}</b></td>
-                <td data-editable="true" data-field="need">${esc(r.need || "")}</td>
-                <td data-editable="true" data-field="direction">${esc(r.direction || "")}</td>
-                <td data-editable="true" data-field="choice">${esc(r.choice || "")}</td>
+                <td data-editable="true" data-field="whyOpen">${esc(c2 || "")}</td>
+                <td data-editable="true" data-field="whyNot">${esc(c3 || "")}</td>
+                <td data-editable="true" data-field="reason">${esc(c4 || "")}</td>
               </tr>`;
             }
             return `<tr><td colspan="4">${esc(JSON.stringify(r))}</td></tr>`;
@@ -446,9 +449,13 @@
         const card = btn.closest(".detail-card");
         const body = document.getElementById("detail-body-" + id);
         if (!card || !body) return;
-        const open = card.classList.toggle("is-open");
+        const open = !card.classList.contains("is-open");
+        card.classList.toggle("is-open", open);
         body.hidden = !open;
         btn.setAttribute("aria-expanded", open ? "true" : "false");
+        // 展开后重绘 mermaid，避免高度被挤没
+        renderedMermaid.clear();
+        queueMermaid(activeTab);
       });
     });
   }
@@ -658,13 +665,13 @@
         $$("tbody tr", wrap).forEach((tr, i) => {
           if (!block.rows || !block.rows[i]) return;
           const s = tr.querySelector("[data-field='sector']");
-          const n = tr.querySelector("[data-field='need']");
-          const d = tr.querySelector("[data-field='direction']");
-          const c = tr.querySelector("[data-field='choice']");
+          const o = tr.querySelector("[data-field='whyOpen']");
+          const n = tr.querySelector("[data-field='whyNot']");
+          const r = tr.querySelector("[data-field='reason']");
           if (s) block.rows[i].sector = s.textContent.trim();
-          if (n) block.rows[i].need = n.textContent.trim();
-          if (d) block.rows[i].direction = d.textContent.trim();
-          if (c) block.rows[i].choice = c.textContent.trim();
+          if (o) block.rows[i].whyOpen = o.textContent.trim();
+          if (n) block.rows[i].whyNot = n.textContent.trim();
+          if (r) block.rows[i].reason = r.textContent.trim();
         });
       }
     });

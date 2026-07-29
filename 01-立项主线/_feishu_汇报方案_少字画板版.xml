@@ -25,24 +25,20 @@
 
 <h1>2 · 取舍</h1>
 
-<p><b>为什么开：</b>客服外包多、口径散 → 立 <b>客服 Agent</b>（人确认发出，不代回）。供应链备案核验重 → 立 <b>备案识别</b>（人终审）。</p>
-<p><b>为什么不开/后置：</b>设计已自驱不开；仓储先查重有缺口再议；私域后置 Owner 要人再开；对账归 BI 不建第二看板。</p>
-<p><b>原因：</b>先做标准能管、材料能核的地基；有 Owner、可停损、能周报；其余有触发再开，避免什么都干。</p>
-
 <whiteboard type="mermaid">
 flowchart TB
   subgraph MAIN[主开 · 2 项]
-    K[客服 Agent<br/>标准可管]
-    S[供应链 备案识别<br/>人终审]
+    K[客服 Agent]
+    S[供应链 备案识别]
   end
-  subgraph HOLD[轻/后 · 有触发再开]
-    W[仓储 先查重]
+  subgraph HOLD[轻/后]
+    W[仓储 查重]
     P[私域 后置]
   end
   subgraph NO[不开]
-    D[设计 已自驱]
+    D[设计]
   end
-  K --> BI[BI 结果 · FDE 动作]
+  K --> BI[BI · FDE]
   S --> BI
   style K fill:#D9F5D6,stroke:#34C724
   style S fill:#D9F5D6,stroke:#34C724
@@ -53,17 +49,17 @@ flowchart TB
 </whiteboard>
 
 <table>
-  <colgroup><col width="80"/><col width="140"/><col width="140"/><col width="220"/></colgroup>
+  <colgroup><col width="70"/><col width="160"/><col width="160"/><col width="200"/></colgroup>
   <thead>
-    <tr><th>板块</th><th>需求/痛点</th><th>已定方向</th><th>取舍</th></tr>
+    <tr><th>部门</th><th>为什么开</th><th>为什么不开</th><th>原因</th></tr>
   </thead>
   <tbody>
-    <tr><td><b>客服</b></td><td>外包+标准散</td><td>主开 Agent</td><td>库+检索+人确认；不代回</td></tr>
-    <tr><td><b>供应链</b></td><td>备案核验重</td><td>主开 备案识别</td><td>人机协同、人终审；对账归 BI</td></tr>
-    <tr><td>仓储</td><td>愿望清单长</td><td>轻/后 先查重</td><td>有缺口再议</td></tr>
-    <tr><td>私域</td><td>人效</td><td>后置</td><td>Owner 要人再开</td></tr>
-    <tr><td>设计</td><td>出图</td><td>不开</td><td>已自驱，不占本期</td></tr>
-    <tr><td>对账</td><td>预警/看板</td><td>归 BI</td><td>不建第二看板</td></tr>
+    <tr><td><b>客服</b></td><td>外包多、标准散；需统一答法与可质培</td><td>不做自动代回、不首期嵌桌面</td><td>先立 Agent：检索+人确认；标准能管、可停损</td></tr>
+    <tr><td><b>供应链</b></td><td>备案核验重、易漏</td><td>不做对账第二看板、不做智能排产</td><td>先立备案识别：机标差异+人终审；对账归 BI</td></tr>
+    <tr><td>仓储</td><td>有查重/效率诉求</td><td>愿望清单长，不宜本期铺开</td><td>轻/后：先查重，有缺口再议</td></tr>
+    <tr><td>私域</td><td>有人效诉求</td><td>不抢两项主开</td><td>后置：Owner 要人再开</td></tr>
+    <tr><td>设计</td><td>—</td><td>已自驱用 AI 出图</td><td>本期不开，不占人日</td></tr>
+    <tr><td>对账/数仓</td><td>—</td><td>不建第二看板</td><td>归 BI；必要时 1 页需求摘要</td></tr>
   </tbody>
 </table>
 
