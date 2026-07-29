@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.7.0",
+  "version": "5.7.1",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -33,7 +33,7 @@
             {
               "key": "建议",
               "variant": "ok",
-              "html": "立 <b>客服话术库</b> · 立 <b>供应链备案 OCR 程序</b>（人在环 · 不代回 / 人不替审）"
+              "html": "立 <b>客服 Agent</b> · 立 <b>供应链备案识别</b>（人在环 · 不代回 / 人不替审）"
             },
             {
               "key": "请勾",
@@ -76,7 +76,7 @@
           "id": "t2.chart",
           "type": "mermaid",
           "slot": "main",
-          "source": "flowchart TB\n  subgraph MAIN[主开]\n    K[客服 话术库<br/>外包标准散]\n  end\n  subgraph SIDE[旁线 ≤20% 人日/周]\n    S[供应链 文稿校验<br/>对账归 BI]\n  end\n  subgraph HOLD[轻/后 · 有触发再开]\n    W[仓储 先查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计 已自驱]\n  end\n  K --> BI[BI 结果 · FDE 动作]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#FFF5CC,stroke:#FFC60A\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
+          "source": "flowchart TB\n  subgraph MAIN[主开 · 2 项]\n    K[客服 Agent<br/>话术/标准可管]\n    S[供应链 备案识别<br/>文档 OCR]\n  end\n  subgraph HOLD[轻/后 · 有触发再开]\n    W[仓储 先查重]\n    P[私域 后置]\n  end\n  subgraph NO[不开]\n    D[设计 已自驱]\n  end\n  K --> BI[BI 结果 · FDE 动作]\n  S --> BI\n  style K fill:#D9F5D6,stroke:#34C724\n  style S fill:#D9F5D6,stroke:#34C724\n  style W fill:#F0F0F0,stroke:#8F959E\n  style P fill:#F0F0F0,stroke:#8F959E\n  style D fill:#FEE3E2,stroke:#F54A45\n  style BI fill:#E8F3FF,stroke:#3370FF"
         },
         {
           "id": "t2.trigger",
@@ -90,7 +90,7 @@
           "type": "callout",
           "slot": "side",
           "variant": "warn",
-          "html": "<b>旁线刹车：</b>周人日基线以派工 SLA 为准（默认 30 人日/周占位，按人头核定；20%=≤基线/5 / 自然周）。超 20% → 金主一句话仲裁；缺仲裁默认主开优先、旁线顺延（双轨留痕）。"
+          "html": "<b>人日刹车：</b>两项主开优先；其他事项不抢资源。突发加塞 → 金主一句话仲裁；缺仲裁默认主开优先、其余顺延（双轨留痕）。"
         }
       ]
     },
@@ -203,7 +203,7 @@
           "rows": [
             {
               "no": "1",
-              "html": "认同取舍：主开话术库 · 设计不开 · 仓储查重 · 对账归 BI · 私域后置 · 旁线≤20% · 超载主开优先"
+              "html": "认同取舍：主开 <b>客服 Agent</b> + <b>供应链备案识别</b> · 设计不开 · 仓储查重 · 私域后置 · 超载主开优先"
             },
             {
               "no": "2",
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "publishStamp": "1785308958070"
+  "publishStamp": "1785309033469"
 }

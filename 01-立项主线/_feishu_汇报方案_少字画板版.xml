@@ -11,7 +11,7 @@
   <colgroup><col width="90"/><col width="510"/></colgroup>
   <tbody>
         <tr><td background-color="light-blue"><b>总结</b></td><td>各部门访谈完毕，需求甄选后，剩余 <b>2 个待执行项目</b>：<b>客服 Agent</b>、供应链备案识别</td></tr>
-    <tr><td background-color="light-green"><b>建议</b></td><td>立 <b>客服话术库</b> · 立 <b>供应链备案 OCR 程序</b>（人在环 · 不代回 / 人不替审）</td></tr>
+    <tr><td background-color="light-green"><b>建议</b></td><td>立 <b>客服 Agent</b> · 立 <b>供应链备案识别</b>（人在环 · 不代回 / 人不替审）</td></tr>
     <tr><td background-color="light-blue"><b>请勾</b></td><td>本场请您当场拍 3 件事：① 是否同意立上述 2 项；② 是否同意费用与止损线（见「钱」）；③ 业务 Owner 是否当场具名，并授权超止损由 FDE <b>即停扩</b></td></tr>
     <tr><td><b>钱</b></td><td>全期预计约 <b>7000 元</b>（含约 3 个月 Codex AI 账户 · OCR 文档识别账户 · 云服务器，前期服务器可先白嫖）· <b>首月止损线 5000 元</b> · <b>全期止损线 10000 元</b></td></tr>
     <tr><td><b>工期</b></td><td>分两段走，不跳步：<b>先齐前置</b>（业务同意 + Owner 具名 + 费用确认）→ <b>约 4 周可内部演示</b> → 再 <b>约 4 周内部小试用</b> · 前置不齐不开开发日历 · 演示/试用不过则停扩重测</td></tr>
@@ -27,11 +27,9 @@
 
 <whiteboard type="mermaid">
 flowchart TB
-  subgraph MAIN[主开]
-    K[客服 话术库<br/>外包标准散]
-  end
-  subgraph SIDE[旁线 ≤20% 人日/周]
-    S[供应链 文稿校验<br/>对账归 BI]
+  subgraph MAIN[主开 · 2 项]
+    K[客服 Agent<br/>话术/标准可管]
+    S[供应链 备案识别<br/>文档 OCR]
   end
   subgraph HOLD[轻/后 · 有触发再开]
     W[仓储 先查重]
@@ -43,7 +41,7 @@ flowchart TB
   K --> BI[BI 结果 · FDE 动作]
   S --> BI
   style K fill:#D9F5D6,stroke:#34C724
-  style S fill:#FFF5CC,stroke:#FFC60A
+  style S fill:#D9F5D6,stroke:#34C724
   style W fill:#F0F0F0,stroke:#8F959E
   style P fill:#F0F0F0,stroke:#8F959E
   style D fill:#FEE3E2,stroke:#F54A45
@@ -51,7 +49,7 @@ flowchart TB
 </whiteboard>
 
 <p>后置启动触发（可共改）：仓储查重结论有缺口再议；私域有 Owner 主动要人再议。对账归 BI：会后 FDE 发 1 页需求摘要给 BI 接口人（知会记录）。</p>
-<p><b>旁线刹车：</b>FDE 周人日基线以派工 SLA 为准（默认 30 人日/周为占位；实际按当前生效人头核定，规模变更当周双轨报金主；20%=≤基线/5 人日/自然周，SLA 全文归档备查）。任一自然周旁线 &gt;20% → 金主一句话仲裁优先序；缺仲裁默认主开优先、旁线顺延（FDE 双轨留痕）。</p>
+<p><b>人日刹车：</b>两项主开优先；其他事项不抢资源。突发加塞 → 金主一句话仲裁；缺仲裁默认主开优先、其余顺延（双轨留痕）。</p>
 
 <hr/>
 
@@ -148,7 +146,7 @@ flowchart TB
     <tr><th background-color="light-gray">#</th><th background-color="light-gray">决策</th><th background-color="light-gray">□</th></tr>
   </thead>
   <tbody>
-    <tr><td>1</td><td>认同取舍（主开话术库 · 设计不开 · 仓储查重 · 对账归 BI · 私域后置 · 旁线≤20%人日/周 · 超载主开优先）</td><td></td></tr>
+    <tr><td>1</td><td>认同取舍（主开 客服 Agent + 供应链备案识别 · 设计不开 · 仓储查重 · 私域后置 · 超载主开优先）</td><td></td></tr>
     <tr><td>2</td><td><b>A/B=立 · C=不立</b>（建议 A；勾 A=授权 FDE 超 cap 即停）</td><td></td></tr>
     <tr><td>3</td><td>前置完成日：________（<b>硬 deadline 默认 ≤8/15</b>；超期未填=仅意向）</td><td></td></tr>
     <tr><td>4</td><td>客服业务 Owner（话术/质培负责人）：姓名____ 部门____ · 备用____ · 同意：□书面 □口头（须 ≤3 工作日补书面；到期 17:00 未补=仅意向）</td><td></td></tr>
