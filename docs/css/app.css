@@ -496,18 +496,22 @@ body.is-swiping .stage { user-select: none; }
 }
 .panel.active { display: flex; }
 @keyframes panelIn {
-  from { opacity: 0.35; transform: translateX(8px); }
+  from { opacity: 0.92; transform: translateX(10px); }
   to { opacity: 1; transform: none; }
 }
 .panel.slide-left { animation-name: panelInLeft; }
 .panel.slide-right { animation-name: panelInRight; }
 @keyframes panelInLeft {
-  from { opacity: 0.3; transform: translateX(28px); }
+  from { opacity: 0.94; transform: translateX(16px); }
   to { opacity: 1; transform: none; }
 }
 @keyframes panelInRight {
-  from { opacity: 0.3; transform: translateX(-28px); }
+  from { opacity: 0.94; transform: translateX(-16px); }
   to { opacity: 1; transform: none; }
+}
+.panel.slide-left, .panel.slide-right {
+  animation-duration: var(--ix-swipe, 0.18s);
+  animation-timing-function: var(--ix-swipe-ease, cubic-bezier(0.25, 0.1, 0.25, 1));
 }
 
 .panel > h2 {
@@ -774,9 +778,9 @@ body.is-editing [data-editable="true"]:focus {
   }
   .tabs { gap: 3px; }
   .tab {
-    min-height: 30px;
-    padding: 4px 9px;
-    font-size: 12px;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
   .tab .n {
     width: 15px;
@@ -4195,13 +4199,16 @@ html, body, .stage {
   }
 }
 
-/* ========== 交互维修 v1.79：动效 token + 展开动画 + 跟手 + 聚焦 ========== */
+/* ========== 交互维修 v1.79+ v1.92：动效 token 单一真相源 ========== */
 :root {
   --ix-fast: 0.12s;
   --ix-mid: 0.2s;
   --ix-slow: 0.28s;
   --ix-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* spring 仅用于 pop/chip，禁止用于翻页 */
   --ix-spring: cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  --ix-swipe: 0.18s;
+  --ix-swipe-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* 负责人额外卡：高度过渡（桌面也开，避免 display 硬切） */
@@ -5498,6 +5505,34 @@ body.is-lightbox {
     transition: none !important;
   }
   #t2 .detail-card.is-open .detail-card-body {
+    transition: none !important;
+  }
+}
+
+
+/* ========== v1.92 滑页实体感 · 热区 · reduced-motion ========== */
+body.is-swiping .panel.active:not(.is-peek),
+body.is-swiping .panel.is-peek {
+  opacity: 1 !important;
+  will-change: transform;
+}
+@media (max-width: 640px) {
+  .tab {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+  .toolbar button {
+    min-height: 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel.slide-left,
+  .panel.slide-right,
+  .panel {
+    animation: none !important;
+  }
+  body.is-swiping .panel.active,
+  body.is-swiping .panel.is-peek {
     transition: none !important;
   }
 }

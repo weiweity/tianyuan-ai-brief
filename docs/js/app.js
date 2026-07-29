@@ -393,7 +393,8 @@
    * 只改顶栏 chrome（Tab/进度/页码），不写 activeTab、不切 panel。
    * 手势过阈时乐观调用，回弹时用真实 activeTab 回滚。
    * @param {string} id tab id
-   * @param {{ smoothTab?: boolean }} [opts]
+   * @param {{ smoothTab?: boolean, scrollTab?: boolean }} [opts]
+   *   scrollTab 默认 true；拖拽中应 false，避免 scrollIntoView 抢主线程导致不跟手
    */
   function paintChrome(id, opts) {
     if (!content || !id || !findTab(id)) return;
@@ -427,11 +428,13 @@
       const tab = findTab(id);
       stage.setAttribute("aria-label", tab ? `第 ${idx + 1} 页 ${tab.title}` : "正文");
     }
-    const tabBtn = document.querySelector(`.tab[data-tab="${CSS.escape(id)}"]`);
-    if (tabBtn && tabBtn.scrollIntoView) {
-      // 跟手路径用 auto，避免 smooth 连滑拖沓
-      const behavior = opts && opts.smoothTab ? "smooth" : "auto";
-      tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior });
+    const allowScroll = !(opts && opts.scrollTab === false);
+    if (allowScroll) {
+      const tabBtn = document.querySelector(`.tab[data-tab="${CSS.escape(id)}"]`);
+      if (tabBtn && tabBtn.scrollIntoView) {
+        const behavior = opts && opts.smoothTab ? "smooth" : "auto";
+        tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior });
+      }
     }
   }
 
@@ -2374,14 +2377,17 @@
       peekEl = null;
     };
 
-    // 滑页动效用 ease-out，禁止 spring 过冲（过冲=肉眼「回弹」）
-    const SWIPE_EASE = "transform 0.18s cubic-bezier(0.25,0.1,0.25,1), opacity 0.14s ease";
+    // 翻页专用 ease-out（禁止 spring 过冲）；时长跟 velocity
+    const reduceMotion = () =>
+      typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const swipeTransition = (ms) =>
+      "transform " + ms + "ms cubic-bezier(0.25, 0.1, 0.25, 1)";
 
     const clearDrag = (panel, animate) => {
       clearPeek();
       document.body.classList.remove("is-swiping");
       if (chromeOptimisticId && chromeOptimisticId !== activeTab) {
-        paintChrome(activeTab);
+        paintChrome(activeTab, { scrollTab: true });
       }
       chromeOptimisticId = null;
       pendingDir = 0;
@@ -2389,13 +2395,23 @@
         resetAllSwipeStyles();
         return;
       }
-      if (animate) {
-        panel.style.transition = SWIPE_EASE;
+      if (animate && !reduceMotion()) {
+        const dur = 200;
+        panel.style.transition = swipeTransition(dur);
         panel.style.transform = "translateX(0)";
         panel.style.opacity = "1";
-        setTimeout(() => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          panel.removeEventListener("transitionend", onEndTr);
           resetAllSwipeStyles();
-        }, 200);
+        };
+        const onEndTr = (e) => {
+          if (e.propertyName === "transform") finish();
+        };
+        panel.addEventListener("transitionend", onEndTr);
+        setTimeout(finish, dur + 60);
       } else {
         resetAllSwipeStyles();
       }
@@ -2403,7 +2419,16 @@
 
     const passThreshold = (dx, dt, w) => {
       const abs = Math.abs(dx);
-      return abs >= 36 || (abs >= 24 && dt < 240) || abs / w >= 0.15;
+      const v = abs / Math.max(dt, 1); // px/ms
+      return abs >= 36 || (abs >= 22 && dt < 240) || abs / w >= 0.14 || v >= 0.42;
+    };
+
+    const commitDuration = (dx, dt, w) => {
+      if (reduceMotion()) return 0;
+      const rem = Math.max(24, w - Math.abs(dx));
+      const v = Math.max(0.25, Math.abs(dx) / Math.max(dt, 1));
+      // 快甩更短、慢拖更长，钳在 140–240
+      return Math.round(Math.min(240, Math.max(140, rem / v)));
     };
 
     const applyDrag = (dx) => {
@@ -2413,14 +2438,15 @@
       const idx = ids.indexOf(activeTab);
       const w = stage.clientWidth || window.innerWidth;
       let tx = dx;
-      if ((idx <= 0 && dx > 0) || (idx >= ids.length - 1 && dx < 0)) tx = dx * 0.3;
+      // 边缘 rubber：更轻，保持实体不透明
+      if ((idx <= 0 && dx > 0) || (idx >= ids.length - 1 && dx < 0)) tx = dx * 0.28;
 
       panel.style.transition = "none";
       panel.style.transform = "translateX(" + tx + "px)";
-      panel.style.opacity = String(Math.max(0.55, 1 - Math.abs(tx) / 520));
+      panel.style.opacity = "1"; // 禁止鬼影衰减 — 实体页感
       panel.style.zIndex = "3";
 
-      // 过阈乐观 chrome（同帧跟手）
+      // 过阈乐观 chrome（拖拽中不 scroll Tab，避免 jank）
       const dt = Date.now() - startT;
       if (passThreshold(dx, dt, w)) {
         const dir = dx < 0 ? 1 : -1;
@@ -2429,15 +2455,16 @@
           const nid = ids[next];
           if (chromeOptimisticId !== nid) {
             chromeOptimisticId = nid;
-            paintChrome(nid);
+            paintChrome(nid, { scrollTab: false });
+            tapHaptic("light");
           }
         }
       } else if (chromeOptimisticId && chromeOptimisticId !== activeTab) {
         chromeOptimisticId = null;
-        paintChrome(activeTab);
+        paintChrome(activeTab, { scrollTab: false });
       }
 
-      // 邻页预览
+      // 邻页预览：全不透明 + translate 露边
       let peekId = null;
       if (dx < -10 && idx < ids.length - 1) peekId = ids[idx + 1];
       else if (dx > 10 && idx > 0) peekId = ids[idx - 1];
@@ -2453,9 +2480,9 @@
       peek.classList.add("is-peek");
       peek.style.transition = "none";
       peek.style.zIndex = "2";
+      peek.style.opacity = "1";
       if (dx < 0) peek.style.transform = "translateX(" + (w + tx) + "px)";
       else peek.style.transform = "translateX(" + (-w + tx) + "px)";
-      peek.style.opacity = String(Math.min(1, 0.4 + Math.abs(tx) / w));
     };
 
     const onStart = (x, y) => {
@@ -2530,27 +2557,17 @@
       }
       // 确认 chrome（可能已乐观切过）
       const nextId = ids[next];
-      paintChrome(nextId);
+      paintChrome(nextId, { scrollTab: true });
       chromeOptimisticId = nextId;
       pendingDir = dir;
       document.body.classList.add("is-swiping");
-      if (panel) {
-        panel.style.transition = SWIPE_EASE;
-        panel.style.transform = "translateX(" + (dir > 0 ? -w : w) + "px)";
-        panel.style.opacity = "0";
-        panel.style.zIndex = "3";
-      }
-      if (peekEl) {
-        peekEl.style.transition = SWIPE_EASE;
-        peekEl.style.transform = "translateX(0)";
-        peekEl.style.opacity = "1";
-        peekEl.style.zIndex = "4";
-      }
-      cancelPendingGo(false);
-      pendingGoTimer = setTimeout(() => {
-        pendingGoTimer = null;
+
+      const finishCommit = () => {
+        if (pendingGoTimer) {
+          clearTimeout(pendingGoTimer);
+          pendingGoTimer = null;
+        }
         const d = pendingDir;
-        const commitId = ids[ids.indexOf(activeTab) + d];
         pendingDir = 0;
         chromeOptimisticId = null;
         // 先无动画落位再切 active，避免 transform 清空时「弹回」一帧
@@ -2568,13 +2585,46 @@
           p.style.bottom = "";
           p.style.margin = "";
           p.style.willChange = "";
-          p.classList.toggle("active", p.id === commitId);
+          p.classList.toggle("active", p.id === nextId);
         });
         peekEl = null;
         document.body.classList.remove("is-swiping");
-        // go 幂等：fromSwipe 不再播 panelIn
         go(d, { fromSwipe: true });
-      }, 180);
+      };
+
+      // reduced-motion 或 duration=0：瞬时切
+      const dur = commitDuration(dx, dt, w);
+      if (dur === 0 || reduceMotion()) {
+        finishCommit();
+        return;
+      }
+
+      if (panel) {
+        panel.style.transition = swipeTransition(dur);
+        panel.style.transform = "translateX(" + (dir > 0 ? -w : w) + "px)";
+        panel.style.opacity = "1";
+        panel.style.zIndex = "3";
+      }
+      if (peekEl) {
+        peekEl.style.transition = swipeTransition(dur);
+        peekEl.style.transform = "translateX(0)";
+        peekEl.style.opacity = "1";
+        peekEl.style.zIndex = "4";
+      }
+      cancelPendingGo(false);
+      let committed = false;
+      const runOnce = () => {
+        if (committed) return;
+        committed = true;
+        if (panel) panel.removeEventListener("transitionend", onTr);
+        finishCommit();
+      };
+      const onTr = (e) => {
+        if (e.target === panel && e.propertyName === "transform") runOnce();
+      };
+      if (panel) panel.addEventListener("transitionend", onTr);
+      // 兜底：防止 transitionend 丢失
+      pendingGoTimer = setTimeout(runOnce, dur + 50);
     };
 
     // —— touch 主链 ——
@@ -2662,14 +2712,35 @@
     let lastTapT = 0;
 
     const viewport = () => stageEl.querySelector(".diagram-zoom-viewport");
-    const applyTransform = () => {
+    const clampPan = () => {
+      // 保证缩放后图仍有一部分在视口内（约 20% 边距）
+      const vp = viewport();
+      if (!vp || scale <= 1) {
+        tx = 0;
+        ty = 0;
+        return;
+      }
+      const boxR = stageEl.getBoundingClientRect();
+      const maxX = (boxR.width * (scale - 1)) / 2 + boxR.width * 0.15;
+      const maxY = (boxR.height * (scale - 1)) / 2 + boxR.height * 0.15;
+      tx = Math.min(maxX, Math.max(-maxX, tx));
+      ty = Math.min(maxY, Math.max(-maxY, ty));
+    };
+    const applyTransform = (rubber) => {
       const vp = viewport();
       if (!vp) return;
-      scale = Math.min(5, Math.max(1, scale));
-      if (scale === 1) {
+      if (!rubber) {
+        scale = Math.min(5, Math.max(1, scale));
+        clampPan();
+      } else {
+        // 双指中可短暂 <1，松手回弹
+        scale = Math.min(5, Math.max(0.85, scale));
+      }
+      if (scale <= 1 && !rubber) {
         tx = 0;
         ty = 0;
       }
+      vp.style.transition = rubber ? "none" : scale === 1 ? "transform 0.18s cubic-bezier(0.25,0.1,0.25,1)" : "none";
       vp.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
     };
     const resetZoom = () => {
@@ -2781,12 +2852,12 @@
           if (e.cancelable) e.preventDefault();
           const d = dist(e.touches[0], e.touches[1]) || 1;
           scale = pinchStartScale * (d / pinchStartDist);
-          applyTransform();
+          applyTransform(true);
         } else if (e.touches.length === 1 && panStart && scale > 1) {
           if (e.cancelable) e.preventDefault();
           tx = e.touches[0].clientX - panStart.x;
           ty = e.touches[0].clientY - panStart.y;
-          applyTransform();
+          applyTransform(false);
         }
       },
       { passive: false }
@@ -2795,7 +2866,12 @@
       "touchend",
       (e) => {
         e.stopPropagation();
-        if (e.touches.length < 2) pinchStartDist = 0;
+        if (e.touches.length < 2) {
+          pinchStartDist = 0;
+          // 缩放过小松手回弹到 1
+          if (scale < 1) resetZoom();
+          else applyTransform(false);
+        }
         if (e.touches.length === 0) panStart = null;
         // 双击放大 / 还原
         if (e.changedTouches.length === 1 && e.touches.length === 0) {
@@ -2804,7 +2880,7 @@
             if (scale > 1.05) resetZoom();
             else {
               scale = 2.2;
-              applyTransform();
+              applyTransform(false);
             }
             lastTapT = 0;
           } else {
