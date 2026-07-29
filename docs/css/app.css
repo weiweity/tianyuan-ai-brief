@@ -3280,8 +3280,7 @@ html, body, .stage {
 
 /* ========== Mobile 10 分冲刺 v1.72 ========== */
 /* 负责人折叠 / 会后约定折叠（桌面默认全开） */
-.owner-card-extra { display: none; }
-.owners-grid[data-owners-collapsed="false"] .owner-card-extra { display: block; }
+/* owner-card-extra: height transition in v1.79 */
 .owners-more-btn,
 .chk-later-toggle {
   appearance: none;
@@ -3343,18 +3342,9 @@ html, body, .stage {
   .tabs-row { padding: 2px 6px 4px !important; }
   .stage-meta { padding-bottom: env(safe-area-inset-bottom, 4px); }
 
-  /* t6：首屏决策 — 藏 later，折叠额外负责人，压密度 */
-  #t6 .block[data-type="check-table"][data-later-open="false"] tr.chk-tier-later {
-    display: none !important;
-  }
-  #t6 .block[data-type="check-table"][data-later-open="true"] tr.chk-tier-later {
-    display: grid !important;
-  }
+  /* t6：首屏决策 — later/负责人用高度动画折叠（见 v1.79），勿 display:none */
   #t6 .chk-later-toggle { display: block !important; }
   #t6 .owners-more-btn { display: block !important; }
-  #t6 .owners-grid[data-owners-collapsed="true"] .owner-card-extra {
-    display: none !important;
-  }
   #t6 .path-hint { display: none; } /* 省行高，按钮本身够自解释 */
   #t6 .multi-row .path-hint { display: none; }
   #t6 .block[data-type="check-table"] tr {
@@ -4115,5 +4105,160 @@ html, body, .stage {
   .toast.show {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ========== 交互维修 v1.79：动效 token + 展开动画 + 跟手 + 聚焦 ========== */
+:root {
+  --ix-fast: 0.12s;
+  --ix-mid: 0.2s;
+  --ix-slow: 0.28s;
+  --ix-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ix-spring: cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+/* 负责人额外卡：高度过渡（桌面也开，避免 display 硬切） */
+.owner-card-extra {
+  display: block;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-width: 0 !important;
+  transform: translateY(-4px);
+  transition:
+    max-height var(--ix-slow) var(--ix-ease),
+    opacity var(--ix-mid) ease,
+    transform var(--ix-mid) var(--ix-ease),
+    margin var(--ix-slow) ease,
+    padding var(--ix-slow) ease;
+}
+.owners-grid[data-owners-collapsed="false"] .owner-card-extra {
+  max-height: 220px;
+  opacity: 1;
+  margin-top: 6px !important;
+  padding: 6px 8px !important;
+  border-width: 1px !important;
+  transform: none;
+}
+@media (min-width: 641px) {
+  .owner-card-extra {
+    max-height: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* 输入聚焦：行高亮 + 边框 */
+.block[data-type="check-table"] tr.is-focus-row {
+  border-color: var(--brand-deep, #7A4F96) !important;
+  background: rgba(122, 79, 150, 0.06) !important;
+  box-shadow: 0 0 0 2px rgba(122, 79, 150, 0.12);
+  transition: background var(--ix-mid) ease, border-color var(--ix-mid) ease, box-shadow var(--ix-mid) ease;
+}
+.block[data-type="check-table"] input:focus,
+.block[data-type="check-table"] input:focus-visible {
+  outline: none !important;
+  border-color: var(--brand-deep, #7A4F96) !important;
+  box-shadow: 0 0 0 3px rgba(122, 79, 150, 0.22) !important;
+  background: #fff !important;
+}
+
+/* 滑页跟手时关掉面板入场动画冲突 */
+body.is-swiping .panel.active {
+  animation: none !important;
+  will-change: transform, opacity;
+}
+body.is-swiping {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (max-width: 640px) {
+  /* later 行：用高度/透明度过渡，不用 display:none 硬切 */
+  #t6 .block[data-type="check-table"] tr.chk-tier-later {
+    display: grid !important;
+    overflow: hidden !important;
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-width: 0 !important;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition:
+      max-height var(--ix-slow) var(--ix-ease),
+      opacity var(--ix-mid) ease,
+      transform var(--ix-mid) var(--ix-ease),
+      margin var(--ix-slow) ease,
+      padding var(--ix-slow) ease,
+      border-width var(--ix-fast) ease;
+  }
+  #t6 .block[data-type="check-table"][data-later-open="true"] tr.chk-tier-later {
+    max-height: 320px !important;
+    opacity: 1 !important;
+    margin-bottom: 4px !important;
+    padding: 5px 6px !important;
+    border-width: 1px !important;
+    transform: none;
+    pointer-events: auto;
+  }
+  /* 覆盖旧的 display:none 规则 */
+  #t6 .block[data-type="check-table"][data-later-open="false"] tr.chk-tier-later {
+    display: grid !important;
+  }
+
+  /* 动效时长统一引用 token */
+  .path-chip,
+  .multi-chip,
+  .chk-btn,
+  .tab,
+  .copy-conclusion-btn,
+  .chk-later-toggle,
+  .owners-more-btn {
+    transition:
+      background var(--ix-mid) ease,
+      border-color var(--ix-mid) ease,
+      color var(--ix-mid) ease,
+      transform var(--ix-fast) ease,
+      box-shadow var(--ix-mid) ease !important;
+  }
+  .panel {
+    animation-duration: var(--ix-slow) !important;
+  }
+  .progress-bar i {
+    transition: width var(--ix-slow) var(--ix-ease) !important;
+  }
+  .is-pressed {
+    transition: transform var(--ix-fast) ease-out, filter var(--ix-fast) ease-out !important;
+  }
+
+  /* later 按钮状态 */
+  .chk-later-toggle[aria-expanded="true"],
+  .owners-more-btn[aria-expanded="true"] {
+    background: rgba(122, 79, 150, 0.12);
+    border-style: solid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-card-extra,
+  #t6 tr.chk-tier-later,
+  body.is-swiping .panel.active {
+    transition: none !important;
+  }
+}
+
+/* 聚焦行高亮加强（覆盖手机卡片 border） */
+@media (max-width: 640px) {
+  #t6 .block[data-type="check-table"] tr.is-focus-row {
+    border-color: #7A4F96 !important;
+    background: rgba(122, 79, 150, 0.08) !important;
+    box-shadow: 0 0 0 2px rgba(122, 79, 150, 0.18) !important;
   }
 }

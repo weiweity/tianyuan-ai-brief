@@ -905,16 +905,22 @@
   function bindNoSwipe(inp) {
     inp.addEventListener("pointerdown", (e) => e.stopPropagation());
     inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
-    // 手机软键盘弹起时把输入框滚进可视区
+    // 手机软键盘弹起时把输入框滚进可视区 + 行高亮
     inp.addEventListener("focus", () => {
+      const tr = inp.closest("tr");
+      if (tr) tr.classList.add("is-focus-row");
       setTimeout(() => {
         try {
           const r = inp.getBoundingClientRect();
-          if (r.bottom > window.innerHeight * 0.55 || r.top < 80) {
+          if (r.bottom > window.innerHeight * 0.52 || r.top < 72) {
             inp.scrollIntoView({ block: "center", behavior: "smooth" });
           }
         } catch (_) {}
-      }, 280);
+      }, 300);
+    });
+    inp.addEventListener("blur", () => {
+      const tr = inp.closest("tr");
+      if (tr) tr.classList.remove("is-focus-row");
     });
   }
 
@@ -1159,7 +1165,7 @@
       bindNoSwipe(inp);
     });
 
-    // 手机：展开「会后约定」次要勾选项
+    // 手机：展开「会后约定」次要勾选项（带动画 class）
     $$("[data-later-toggle]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1167,16 +1173,18 @@
         const wrap = btn.closest(".block[data-type='check-table']");
         if (!wrap) return;
         const open = wrap.getAttribute("data-later-open") === "true";
-        wrap.setAttribute("data-later-open", open ? "false" : "true");
-        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        const next = !open;
+        wrap.setAttribute("data-later-open", next ? "true" : "false");
+        wrap.classList.toggle("is-later-animating", true);
+        btn.setAttribute("aria-expanded", next ? "true" : "false");
         const n = wrap.querySelectorAll("tr.chk-tier-later").length;
-        btn.textContent = open
-          ? `展开会后约定（${n} 项，可后补）`
-          : "收起会后约定";
+        btn.textContent = next ? "收起会后约定" : `展开会后约定（${n} 项，可后补）`;
+        tapHaptic("light");
+        setTimeout(() => wrap.classList.remove("is-later-animating"), 360);
       });
     });
 
-    // 再加负责人
+    // 再加负责人（高度过渡）
     $$("[data-owners-more]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1184,9 +1192,11 @@
         const grid = btn.closest(".owners-grid");
         if (!grid) return;
         const open = grid.getAttribute("data-owners-collapsed") === "false";
-        grid.setAttribute("data-owners-collapsed", open ? "true" : "false");
-        btn.setAttribute("aria-expanded", open ? "false" : "true");
-        btn.textContent = open ? "+ 再加负责人（最多 3 人）" : "收起额外负责人";
+        const next = !open;
+        grid.setAttribute("data-owners-collapsed", next ? "false" : "true");
+        btn.setAttribute("aria-expanded", next ? "true" : "false");
+        btn.textContent = next ? "收起额外负责人" : "+ 再加负责人（最多 3 人）";
+        tapHaptic("light");
       });
     });
   }
@@ -1781,11 +1791,41 @@
     if (moreBtn) moreBtn.setAttribute("aria-expanded", "false");
   }
 
-  /** 触屏左右滑翻页：水平位移主导且超过阈值才触发，避免干扰正文竖滑 */
+  /** 触屏左右滑翻页：跟手位移 + 过阈吸附 / 回弹，竖滑不抢 */
   function wireSwipe() {
     const stage = $("#stage");
-    if (!stage) return;
-    let startX = 0, startY = 0, startT = 0, tracking = false;
+    if (!stage || wireSwipe._on) return;
+    wireSwipe._on = true;
+    let startX = 0,
+      startY = 0,
+      startT = 0,
+      tracking = false,
+      axis = null, // null | "h" | "v"
+      dragging = false;
+
+    const skipSel =
+      "a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.multi-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row,.path-row,.check-status";
+
+    const activePanel = () => document.querySelector(".panel.active");
+
+    const clearDrag = (panel, animate) => {
+      if (!panel) return;
+      if (animate) {
+        panel.style.transition =
+          "transform var(--ix-slow, 0.28s) var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity var(--ix-mid, 0.2s) ease";
+        panel.style.transform = "translateX(0)";
+        panel.style.opacity = "1";
+        setTimeout(() => {
+          panel.style.transition = "";
+          panel.style.transform = "";
+          panel.style.opacity = "";
+        }, 300);
+      } else {
+        panel.style.transition = "none";
+        panel.style.transform = "";
+        panel.style.opacity = "";
+      }
+    };
 
     const onStart = (x, y) => {
       if (editing) return;
@@ -1793,29 +1833,84 @@
       startY = y;
       startT = Date.now();
       tracking = true;
+      axis = null;
+      dragging = false;
     };
-    const onEnd = (x, y) => {
+
+    const onMove = (x, y, e) => {
       if (!tracking || editing) return;
+      const dx = x - startX;
+      const dy = y - startY;
+      if (!axis) {
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        axis = Math.abs(dx) > Math.abs(dy) * 1.12 ? "h" : "v";
+      }
+      if (axis !== "h") return;
+      // 跟手：阻止页面跟着横滑选中
+      if (e && e.cancelable) e.preventDefault();
+      dragging = true;
+      document.body.classList.add("is-swiping");
+      const panel = activePanel();
+      if (!panel || !content) return;
+      const ids = content.tabs.map((t) => t.id);
+      const idx = ids.indexOf(activeTab);
+      let tx = dx;
+      // 边缘橡胶带
+      if ((idx <= 0 && dx > 0) || (idx >= ids.length - 1 && dx < 0)) tx = dx * 0.32;
+      panel.style.transition = "none";
+      panel.style.transform = "translateX(" + tx + "px)";
+      panel.style.opacity = String(Math.max(0.5, 1 - Math.abs(tx) / 480));
+    };
+
+    const onEnd = (x, y) => {
+      if (!tracking || editing) {
+        tracking = false;
+        return;
+      }
       tracking = false;
       document.body.classList.remove("is-swiping");
+      const panel = activePanel();
       const dx = x - startX;
       const dy = y - startY;
       const dt = Date.now() - startT;
+      const wasH = axis === "h" && dragging;
+      axis = null;
+      dragging = false;
+      if (!wasH) {
+        clearDrag(panel, false);
+        return;
+      }
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      // 水平主导、距离够、时间不太长
-      if (absX < 48) return;
-      if (absX < absY * 1.15) return; // 竖滑优先
-      if (dt > 800) return;
-      if (dx < 0) go(1); // 左滑 → 下一页
-      else go(-1); // 右滑 → 上一页
+      // 阈值：距离或快速轻扫
+      const pass = absX >= 56 || (absX >= 36 && dt < 260);
+      if (!pass || absX < absY * 1.05) {
+        clearDrag(panel, true);
+        return;
+      }
+      // 跟手结束 → 滑出再切页
+      if (panel) {
+        panel.style.transition =
+          "transform 0.2s var(--ix-ease, cubic-bezier(0.2,0.8,0.2,1)), opacity 0.18s ease";
+        panel.style.transform = "translateX(" + (dx < 0 ? -72 : 72) + "px)";
+        panel.style.opacity = "0.25";
+      }
+      const dir = dx < 0 ? 1 : -1;
+      setTimeout(() => {
+        if (panel) {
+          panel.style.transition = "none";
+          panel.style.transform = "";
+          panel.style.opacity = "";
+        }
+        go(dir);
+      }, 110);
     };
 
     stage.addEventListener(
       "touchstart",
       (e) => {
         if (e.touches.length !== 1) return;
-        if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row")) return;
+        if (e.target.closest(skipSel)) return;
         onStart(e.touches[0].clientX, e.touches[0].clientY);
       },
       { passive: true }
@@ -1824,13 +1919,9 @@
       "touchmove",
       (e) => {
         if (!tracking || e.touches.length !== 1) return;
-        const dx = e.touches[0].clientX - startX;
-        const dy = e.touches[0].clientY - startY;
-        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
-          document.body.classList.add("is-swiping");
-        }
+        onMove(e.touches[0].clientX, e.touches[0].clientY, e);
       },
-      { passive: true }
+      { passive: false }
     );
     stage.addEventListener(
       "touchend",
@@ -1842,21 +1933,33 @@
     );
     stage.addEventListener("touchcancel", () => {
       tracking = false;
+      axis = null;
+      dragging = false;
       document.body.classList.remove("is-swiping");
+      clearDrag(activePanel(), true);
     });
 
-    // 触控板/鼠标拖拽（可选）
     let mouseDown = false;
     stage.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      if (e.target.closest("a,button,input,textarea,label,[contenteditable=true],.chk-btn,.path-chip,.owner-fields,.owners-grid,.fee-fields,.multi-row")) return;
+      if (e.target.closest(skipSel)) return;
       mouseDown = true;
       onStart(e.clientX, e.clientY);
+    });
+    stage.addEventListener("pointermove", (e) => {
+      if (!mouseDown) return;
+      onMove(e.clientX, e.clientY, null);
     });
     stage.addEventListener("pointerup", (e) => {
       if (!mouseDown) return;
       mouseDown = false;
       onEnd(e.clientX, e.clientY);
+    });
+    stage.addEventListener("pointercancel", () => {
+      mouseDown = false;
+      tracking = false;
+      document.body.classList.remove("is-swiping");
+      clearDrag(activePanel(), true);
     });
   }
 
