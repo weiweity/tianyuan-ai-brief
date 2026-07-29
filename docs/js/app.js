@@ -224,7 +224,7 @@
     host.innerHTML = content.tabs
       .map(
         (t, i) =>
-          `<button type="button" data-tab="${esc(t.id)}" class="${t.id === activeTab ? "active" : ""}" aria-label="第 ${i + 1} 页 ${esc(t.title)}"></button>`
+          `<button type="button" data-tab="${esc(t.id)}" class="${t.id === activeTab ? "active" : ""}" aria-label="第 ${i + 1} 页 ${esc(t.title)}"${t.id === activeTab ? ' aria-current="true"' : ""}></button>`
       )
       .join("");
     host.querySelectorAll("button").forEach((btn) => {

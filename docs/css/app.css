@@ -43,6 +43,8 @@ body {
   color: var(--ink);
   background: linear-gradient(165deg, #F8F5FA 0%, var(--brand) 48%, #E4DCEB 100%);
   overscroll-behavior: none;
+  overscroll-behavior-y: contain;
+  overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
 }
@@ -54,7 +56,7 @@ body {
   max-height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   padding:
     calc(var(--pad) + var(--safe-t))
     calc(var(--pad) + var(--safe-r))
@@ -229,7 +231,7 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   align-items: center;
   gap: 6px;
   margin: 0;
-  padding: 4px 8px 6px;
+  padding: 2px 8px 4px;
   flex-shrink: 0;
   min-height: 0;
   border-top: 1px solid rgba(212, 203, 221, 0.65);
@@ -254,8 +256,8 @@ body.is-editing .logo-wrap .logo-edit-hint { display: flex; }
   background: rgba(255, 255, 255, 0.9);
   color: var(--brand-dark);
   border-radius: 999px;
-  padding: 2px 8px;
-  min-height: 26px;
+  padding: 3px 9px;
+  min-height: 30px;
   font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
