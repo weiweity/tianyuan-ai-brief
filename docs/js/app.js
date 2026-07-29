@@ -16,6 +16,11 @@
   let mermaidReady = false;
   const renderedMermaid = new Set();
   let swipeDir = "left"; // panel animation direction
+  let contentFingerprint = "";
+  let hotPollTimer = null;
+  const POLL_MS = 30000; // C端静默检查远端内容
+  const isEditQuery = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
+
 
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -68,25 +73,111 @@
   }
 
   // ---------- Load content ----------
-  async function loadContent() {
-    // 1) draft
+  function fingerprintOf(obj) {
+    if (!obj) return "";
+    return [obj.version || "", obj.updated || "", obj.publishStamp || "", (obj.tabs || []).length].join("|");
+  }
+
+  async function fetchRemoteContent() {
+    const url = "./data/content.json?_=" + Date.now();
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("无法加载 data/content.json（请用 http 服务打开，不要 file://）");
+    return res.json();
+  }
+
+  async function loadContent(opts) {
+    const preferDraft = opts && opts.preferDraft;
+    // C端默认不读草稿，保证打开即最新；编辑态/ ?edit=1 才恢复草稿
+    if (preferDraft || isEditQuery || editing) {
+      try {
+        const draft = localStorage.getItem(STORAGE_KEY);
+        if (draft) {
+          const parsed = JSON.parse(draft);
+          if (parsed && parsed.tabs) {
+            content = parsed;
+            contentFingerprint = fingerprintOf(content);
+            setStatus("草稿(本机)", "warn");
+            return { from: "draft" };
+          }
+        }
+      } catch (_) {}
+    }
+
+    content = await fetchRemoteContent();
+    contentFingerprint = fingerprintOf(content);
+    setStatus("已是最新", "ok");
+    return { from: "remote" };
+  }
+
+  /** 无感应用新内容：保留当前 Tab，轻闪刷新，不整页跳转 */
+  function softApplyContent(next, reason) {
+    if (!next || !next.tabs) return;
+    const keep = activeTab;
+    content = next;
+    contentFingerprint = fingerprintOf(content);
+    const stage = $("#stage");
+    if (stage) {
+      stage.classList.add("is-hot-updating");
+      setTimeout(() => stage.classList.remove("is-hot-updating"), 480);
+    }
+    // 若旧 tab 不存在，回到第一页
+    if (!content.tabs.some((x) => x.id === keep)) {
+      activeTab = content.tabs[0].id;
+    } else {
+      activeTab = keep;
+    }
+    renderedMermaid.clear();
+    renderAll();
+    setStatus(reason === "save" ? "已更新" : "已同步最新", "ok");
+  }
+
+  let pollFailCount = 0;
+  async function checkRemoteUpdate(silent) {
+    if (editing) return;
     try {
-      const draft = localStorage.getItem(STORAGE_KEY);
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        if (parsed && parsed.tabs) {
-          content = parsed;
-          setStatus("草稿(本机)", "warn");
-          return;
+      const remote = await fetchRemoteContent();
+      pollFailCount = 0;
+      const fp = fingerprintOf(remote);
+      if (!fp || fp === contentFingerprint) return;
+      // C端：静默热更新（无感）
+      if (silent) {
+        softApplyContent(remote, "poll");
+        toast("内容已自动更新", 1600);
+      } else {
+        const chip = $("#update-chip");
+        if (chip) {
+          chip.hidden = false;
+          chip.classList.add("show");
+          chip.onclick = () => {
+            softApplyContent(remote, "poll");
+            chip.classList.remove("show");
+            chip.hidden = true;
+            toast("已刷新到最新", 1400);
+          };
+        } else {
+          softApplyContent(remote, "poll");
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      pollFailCount += 1;
+      // 连续失败 3 次再提示，避免弱网刷屏
+      if (pollFailCount === 3) {
+        setStatus("离线/弱网", "warn");
+        toast("网络不稳，将在恢复后自动同步", 2000);
+      }
+    }
+  }
 
-    // 2) fetch SSOT
-    const res = await fetch("./data/content.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("无法加载 data/content.json（请用 http 服务打开，不要 file://）");
-    content = await res.json();
-    setStatus("源码 content.json", "ok");
+  function startHotPoll() {
+    if (hotPollTimer) clearInterval(hotPollTimer);
+    hotPollTimer = setInterval(() => checkRemoteUpdate(true), POLL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && !editing) checkRemoteUpdate(true);
+    });
+    // 回到前台再查一次
+    window.addEventListener("focus", () => {
+      if (!editing) checkRemoteUpdate(true);
+    });
   }
 
   // ---------- Render ----------
@@ -116,7 +207,7 @@
     nav.innerHTML = content.tabs
       .map(
         (t) =>
-          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}" role="tab" aria-selected="${t.id === activeTab}">` +
+          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}" role="tab" aria-selected="${t.id === activeTab}" aria-controls="${esc(t.id)}" id="tab-${esc(t.id)}" tabindex="${t.id === activeTab ? "0" : "-1"}">` +
           `<span class="n">${esc(t.no || "")}</span>${esc(t.title)}</button>`
       )
       .join("");
@@ -150,7 +241,15 @@
     const next = $("#nav-next");
     if (prev) prev.disabled = idx <= 0;
     if (next) next.disabled = idx >= ids.length - 1;
-    // scroll active tab into view
+    const fill = $("#progress-fill");
+    if (fill && ids.length) {
+      fill.style.width = ((idx + 1) / ids.length) * 100 + "%";
+    }
+    const stage = $("#stage");
+    if (stage) {
+      const tab = findTab(activeTab);
+      stage.setAttribute("aria-label", tab ? `第 ${idx + 1} 页 ${tab.title}` : "正文");
+    }
     const tabBtn = document.querySelector(`.tab[data-tab="${activeTab}"]`);
     if (tabBtn && tabBtn.scrollIntoView) {
       tabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
@@ -224,17 +323,18 @@
   function renderPanel(tab) {
     const layout = tab.layout || "stack";
     let body = "";
+    const count = (tab.blocks || []).length;
     if (layout === "split") {
       const main = tab.blocks.filter((b) => (b.slot || "main") === "main");
       const side = tab.blocks.filter((b) => b.slot === "side");
-      body = `<div class="panel-body layout-split">
+      body = `<div class="panel-body layout-split" data-count="${count}">
         <div class="slot-main">${main.map(blockHtml).join("")}</div>
         <div class="slot-side">${side.map(blockHtml).join("")}</div>
       </div>`;
     } else {
-      body = `<div class="panel-body layout-${layout}">${tab.blocks.map(blockHtml).join("")}</div>`;
+      body = `<div class="panel-body layout-${layout}" data-count="${count}">${tab.blocks.map(blockHtml).join("")}</div>`;
     }
-    return `<section class="panel${tab.id === activeTab ? " active" : ""}" id="${esc(tab.id)}" data-tab-panel="${esc(tab.id)}">
+    return `<section class="panel${tab.id === activeTab ? " active" : ""}" id="${esc(tab.id)}" data-tab-panel="${esc(tab.id)}" role="tabpanel" aria-labelledby="tab-${esc(tab.id)}">
       <h2><span class="tag">${esc(tab.no || "")}</span><span data-editable="true" data-field="tab-title" data-tab-id="${esc(tab.id)}">${esc(tab.title)}</span></h2>
       ${body}
     </section>`;
@@ -290,7 +390,10 @@
       const id = host.dataset.mermaidId;
       if (renderedMermaid.has(id)) continue;
       const block = findBlock(id);
-      if (!block || !block.source) continue;
+      if (!block || !block.source) {
+        host.innerHTML = '<div class="mermaid-empty">暂无流程图 · 编辑态可粘贴 mermaid</div>';
+        continue;
+      }
       host.innerHTML = "";
       try {
         const { svg } = await window.mermaid.render(
@@ -298,6 +401,24 @@
           block.source
         );
         host.innerHTML = svg;
+        const svgEl = host.querySelector("svg");
+        if (svgEl) {
+          svgEl.setAttribute("role", "img");
+          const label = (block.source || "").replace(/\s+/g, " ").trim().slice(0, 48);
+          svgEl.setAttribute("aria-label", "流程图: " + (label || id));
+          // 隐藏文本副本供读屏
+          let desc = host.querySelector(".mermaid-a11y");
+          if (!desc) {
+            desc = document.createElement("span");
+            desc.className = "mermaid-a11y";
+            desc.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)";
+            host.style.position = "relative";
+            host.appendChild(desc);
+          }
+          desc.id = "mmd-desc-" + id.replace(/\W/g, "_");
+          desc.textContent = block.source || "";
+          svgEl.setAttribute("aria-describedby", desc.id);
+        }
         renderedMermaid.add(id);
       } catch (e) {
         host.innerHTML = `<pre style="color:#b00;font-size:11px;padding:8px;white-space:pre-wrap">Mermaid 错误: ${esc(e.message || e)}</pre>`;
@@ -330,6 +451,7 @@
       const on = t.dataset.tab === id;
       t.classList.toggle("active", on);
       t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
     });
     $$("#pager-dots button").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
     $$(".panel").forEach((p) => {
@@ -487,53 +609,89 @@
   }
 
   async function saveToSource() {
-    if (editing) harvestDomToContent();
-    else harvestDomToContent();
-    saveDraft();
+    const btn = $("#btn-save");
+    if (btn) btn.classList.add("is-saving");
 
-    const text = JSON.stringify(content, null, 2);
+    try {
+      // 1) 从页面收割 → 内存 SSOT
+      harvestDomToContent();
+      content.updated = new Date().toISOString().slice(0, 10);
+      content.publishStamp = String(Date.now());
+      if (!content.version) content.version = "5.6.1";
 
-    // try bound handle
-    if (!fileHandle) fileHandle = await loadHandle();
-    if (fileHandle) {
-      try {
-        await writeToHandle(fileHandle, text);
-        localStorage.removeItem(STORAGE_KEY);
-        setStatus("已写回源码", "ok");
-        toast("✅ 已写入绑定的 content.json（真源码）");
-        return;
-      } catch (e) {
-        toast("写盘失败，改为下载: " + (e.message || e));
+      const text = JSON.stringify(content, null, 2);
+      let persisted = false;
+      let persistHint = "";
+
+      // 2) 尽量一次写盘（已绑定 → 直接写；未绑定 → 首次弹出保存位置）
+      if (!fileHandle) fileHandle = await loadHandle();
+
+      if (fileHandle) {
+        try {
+          await writeToHandle(fileHandle, text);
+          persisted = true;
+          persistHint = "已写入源码文件";
+        } catch (e) {
+          fileHandle = null;
+        }
       }
-    }
 
-    // File System Access save picker
-    if (window.showSaveFilePicker) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: "content.json",
-          types: [
-            {
-              description: "JSON",
-              accept: { "application/json": [".json"] },
-            },
-          ],
-        });
-        fileHandle = handle;
-        await saveHandle(handle);
-        await writeToHandle(handle, text);
-        localStorage.removeItem(STORAGE_KEY);
-        setStatus("已写回源码", "ok");
-        toast("✅ 已保存 content.json · 请放回 docs/data/ 并 git push");
-        return;
-      } catch (e) {
-        if (e.name === "AbortError") return;
+      if (!persisted && window.showSaveFilePicker) {
+        try {
+          // 首次引导：一键选中 docs/data/content.json，之后无感
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "content.json",
+            types: [
+              {
+                description: "JSON",
+                accept: { "application/json": [".json"] },
+              },
+            ],
+          });
+          fileHandle = handle;
+          await saveHandle(handle);
+          await writeToHandle(handle, text);
+          persisted = true;
+          persistHint = "已绑定并写入 content.json";
+        } catch (e) {
+          if (e.name === "AbortError") {
+            // 用户取消写盘，仍做内存热更新
+            persistHint = "未写文件，仅本页已更新";
+          }
+        }
       }
-    }
 
-    downloadJson();
-    setStatus("已导出下载", "warn");
-    toast("已下载 content.json · 请覆盖 docs/data/content.json 后 git push");
+      if (!persisted && !persistHint) {
+        // 兜底：下载 + 本页仍热更新
+        downloadJson();
+        persistHint = "已下载 content.json，请放回 docs/data/ 后 git push";
+      }
+
+      // 3) 清草稿 + 无感刷新本页（C端同页立即看到结果，不整页 reload）
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      contentFingerprint = fingerprintOf(content);
+
+      softApplyContent(content, "save");
+
+      if (persisted) {
+        if (editing) {
+          editing = false;
+          applyEditMode();
+        }
+        setStatus("已更新", "ok");
+        toast("✅ 已保存并更新 · 推送后客户约 30 秒内自动同步", 2600);
+      } else {
+        // 写盘未成功：页面已热更新预览，保留编辑态可再点保存（乐观 UI + 可回滚重试）
+        if (!editing) {
+          editing = true;
+          applyEditMode();
+        }
+        setStatus("预览已更新", "warn");
+        toast("本页已更新（预览）· " + (persistHint || "请再点保存写入文件"), 2800);
+      }
+    } finally {
+      if (btn) btn.classList.remove("is-saving");
+    }
   }
 
   // logo replace
@@ -574,6 +732,10 @@
         go(1);
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         go(-1);
+      } else if (e.key === "Home") {
+        activate(ids[0], "right");
+      } else if (e.key === "End") {
+        activate(ids[ids.length - 1], "left");
       } else if (e.key.toLowerCase() === "e") {
         toggleEdit();
       } else if (e.key.toLowerCase() === "s" && !e.metaKey && !e.ctrlKey) {
@@ -590,9 +752,9 @@
     };
     const reloadFn = async () => {
       localStorage.removeItem(STORAGE_KEY);
-      await loadContent();
-      renderAll();
-      toast("已从 content.json 重新加载（草稿已清）");
+      await loadContent({ preferDraft: false });
+      softApplyContent(content, "reload");
+      toast("已同步最新内容");
     };
     $("#btn-edit").addEventListener("click", toggleEdit);
     $("#btn-save").addEventListener("click", saveToSource);
@@ -705,14 +867,16 @@
   // ---------- boot ----------
   async function boot() {
     try {
-      await loadContent();
+      // C端默认拉最新；仅 ?edit=1 优先草稿
+      await loadContent({ preferDraft: isEditQuery });
       fileHandle = await loadHandle();
-      if (fileHandle) setStatus("已绑定源码(待验证)", "ok");
+      if (fileHandle) setStatus("可一键保存", "ok");
       renderAll();
       wireToolbar();
       wireLogo();
       wireKeys();
       wireSwipe();
+      startHotPoll();
       // title editable only in edit mode
       $("#doc-title").dataset.editable = "true";
     } catch (e) {

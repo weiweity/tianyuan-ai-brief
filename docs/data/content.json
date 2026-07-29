@@ -1,6 +1,6 @@
 {
   "$schema": "./content.schema.json",
-  "version": "5.6.0",
+  "version": "5.6.1",
   "ssot": "feishu-slim-board-v5.6",
   "updated": "2026-07-29",
   "meta": {
@@ -11,8 +11,8 @@
     "logo": "assets/logo.png",
     "brand": "#EBE6EF",
     "roleLine": "您批：方向 + 费用路径 + 组织催办 · 您不背：话术口径 · BI 看服务结果指标 · FDE 改岗位动作并催办/停扩（须留痕 · 追责挂钩派工 SLA）",
-    "footerLeft": "少字画板 v5.6 · 一屏自适应 · 内容驱动架构",
-    "footerRight": "左右滑翻页 · 数字 1–7 · ←→ · E 编辑 · S 保存"
+    "footerLeft": "少字画板 v5.6.1 · 一屏自适应 · 无感热更新",
+    "footerRight": "左右滑翻页 · 保存并更新 · 1–7 / ←→"
   },
   "tabs": [
     {
@@ -288,5 +288,6 @@
         }
       ]
     }
-  ]
+  ],
+  "publishStamp": ""
 }

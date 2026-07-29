@@ -149,3 +149,26 @@ git add docs && git commit -m "content: touch t1.kpi" && git push
 - 翻页：左右滑（水平主导阈值）· 圆点 · 边缘 ‹ › · 键盘 ←→ / 1–7
 - 编辑态关闭滑动，避免改字时误翻页
 - 测法：Chrome 设备模拟 iPhone + 真机 Safari
+
+
+---
+
+## 10. 无感保存与 C 端热更新（v1.4）
+
+### 编辑者（一次点「保存并更新」）
+1. 页面收割 → 内存 content  
+2. 写盘（已绑定则静默；首次弹一次选文件）  
+3. **不整页刷新**，舞台轻闪 + 保留当前 Tab  
+4. 退出编辑态，Toast 提示  
+
+### 浏览客户（GitHub Pages）
+- 打开即 `cache: no-store` 拉最新 content.json  
+- 每 30s / 回前台 静默比对 `version|updated|publishStamp`  
+- 变化则 **softApply** 热替换，保留当前页码  
+- 不读 localStorage 草稿（避免客户看到编辑者未发布草稿）
+
+### 发布到远端
+```bash
+git add docs && git commit -m "content: update" && git push
+# 客户端约 30 秒内自动看到（或切前后台触发）
+```
