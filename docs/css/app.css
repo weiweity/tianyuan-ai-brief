@@ -172,7 +172,8 @@ textarea:focus-visible,
 
 .top {
   display: grid;
-  grid-template-columns: clamp(112px, 12vw, 172px) minmax(0, 1fr) auto auto;
+  /* 方形狐狸标：列宽贴近 logo 实际尺寸，避免左侧空一截或图过小 */
+  grid-template-columns: clamp(56px, 6vw, 72px) minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
   min-height: 62px;
@@ -184,16 +185,17 @@ textarea:focus-visible,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  min-width: 44px;
+  width: 100%;
+  min-width: var(--touch);
   min-height: var(--touch);
 }
 
 .logo-wrap img {
   display: block;
-  width: 40px;
-  height: 40px;
-  max-height: 40px;
+  width: auto;
+  height: auto;
+  max-width: 56px;
+  max-height: 48px;
   object-fit: contain;
   object-position: center;
   pointer-events: none;
@@ -2628,20 +2630,20 @@ body.ix-haptic-flash::after {
   }
 
   .top {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
     gap: 6px;
-    min-height: 42px;
+    min-height: 48px;
     padding: 4px 8px;
   }
 
   .logo-wrap {
-    min-height: 36px;
-    width: 36px;
+    min-height: 44px;
+    width: 100%;
   }
 
   .logo-wrap img {
-    max-height: 28px;
-    max-width: 28px;
+    max-width: 44px;
+    max-height: 40px;
   }
 
   .top-mid h1 {
@@ -4015,7 +4017,7 @@ body.ix-haptic-flash::after {
 
 @media (max-width: 370px) {
   .top {
-    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
   }
 
   .top-mid h1 {
