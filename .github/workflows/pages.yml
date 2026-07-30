@@ -1,0 +1,48 @@
+name: pages
+
+# 站点源码在 web-decision-brief/docs；用 Actions 发布，不再依赖仓库根 /docs
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web-decision-brief/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-decision-brief
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web-decision-brief/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run build:web
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web-decision-brief/docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

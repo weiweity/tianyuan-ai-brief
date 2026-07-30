@@ -21,7 +21,7 @@
 | [汇报方案全文](https://my.feishu.cn/docx/Ccawdq8Opopn5RxhEwNcCKZjnyg) | 叙事详版 |
 | [少字画板版](https://my.feishu.cn/docx/CgGWdRkmaowkAZxA0nLcqvbfnde) | 会上投屏（与 Web 字号/布局可能略有差，以会场稿为准） |
 
-**Web 决策台（开会演示）：** 根目录 `README.md` · https://weiweity.github.io/tianyuan-ai-brief/
+**Web 决策台（开会演示）：** [`../web-decision-brief/`](../web-decision-brief/) · https://weiweity.github.io/tianyuan-ai-brief/
 
 供应链会后细节在 `../05-供应链布局/18`。  
 总导航：`../README-文档怎么用.md`

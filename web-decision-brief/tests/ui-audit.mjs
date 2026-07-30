@@ -9,7 +9,9 @@ import axe from "axe-core";
 import { chromium } from "playwright";
 import { sha256, verifyDecisionReceipt } from "../docs/js/modules/decision-model.js";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // web-decision-brief
+const monorepoRoot = path.resolve(root, "..");
+const siteBase = "/web-decision-brief/docs";
 const resultsDir =
   process.env.UI_AUDIT_RESULTS_DIR || path.join(root, "test-results", `ui-${process.pid}`);
 const port =
@@ -24,8 +26,9 @@ const port =
     });
   }));
 const origin = `http://127.0.0.1:${port}`;
+// 从 monorepo 根托管，才能同时访问软件 docs 与业务 print 兼容入口
 const server = spawn("python3", ["-m", "http.server", String(port)], {
-  cwd: root,
+  cwd: monorepoRoot,
   stdio: "ignore",
 });
 
@@ -33,7 +36,7 @@ async function waitForServer() {
   const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`${origin}/docs/`);
+      const response = await fetch(`${origin}${siteBase}/`);
       if (response.ok) return;
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -235,7 +238,7 @@ async function runCanonicalAudit(browser, viewport) {
   await page.addInitScript(() => {
     localStorage.removeItem("tianyuan-brief-draft-v1");
   });
-  await page.goto(`${origin}/docs/?audit=${viewport.width}`, { waitUntil: "networkidle" });
+  await page.goto(`${origin}${siteBase}/?audit=${viewport.width}`, { waitUntil: "networkidle" });
   await page.locator(".panel.active").waitFor();
 
   assert.equal(await page.locator(".toolbar").evaluate((el) => getComputedStyle(el).display), "none");
@@ -504,7 +507,7 @@ async function runCanonicalAudit(browser, viewport) {
   });
 
   const authorPage = await context.newPage();
-  await authorPage.goto(`${origin}/docs/?edit=1`, { waitUntil: "networkidle" });
+  await authorPage.goto(`${origin}${siteBase}/?edit=1`, { waitUntil: "networkidle" });
   assert.equal(
     await authorPage.locator(".toolbar").evaluate((el) => getComputedStyle(el).display),
     "flex"
@@ -533,7 +536,7 @@ async function runLegacyAudit(browser, viewport) {
     `${origin}/01-%E7%AB%8B%E9%A1%B9%E4%B8%BB%E7%BA%BF/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
     { waitUntil: "networkidle" }
   );
-  await page.waitForURL(/\/docs\/index\.html\?from=legacy-print/);
+  await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
   assert.equal(await page.title(), "天元 · AI 立项决策台");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
@@ -563,14 +566,14 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   });
 
   const entryPath = useLegacyEntry
-    ? path.join(root, "01-立项主线/print/AI赋能立项_金主一页汇报.html")
+    ? path.join(root, "../01-立项主线/print/AI赋能立项_金主一页汇报.html")
     : path.join(root, "docs/index.html");
   const entryUrl = `${pathToFileURL(entryPath).href}${
     useLegacyEntry ? "" : "?audit=file-direct"
   }`;
   await page.goto(entryUrl, { waitUntil: "load" });
   if (useLegacyEntry) {
-    await page.waitForURL(/\/docs\/index\.html\?from=legacy-print/);
+    await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
@@ -669,7 +672,7 @@ async function runMermaidResilienceAudit(browser, mode) {
   }
 
   const started = Date.now();
-  await page.goto(`${origin}/docs/?audit=mermaid-${mode}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${origin}${siteBase}/?audit=mermaid-${mode}`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready", null, {
     timeout: 1500,
   });
@@ -703,7 +706,7 @@ async function runLastKnownGoodAudit(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const first = await context.newPage();
   await first.addInitScript(() => localStorage.clear());
-  await first.goto(`${origin}/docs/?audit=lkg-seed`, { waitUntil: "networkidle" });
+  await first.goto(`${origin}${siteBase}/?audit=lkg-seed`, { waitUntil: "networkidle" });
   await first.waitForFunction(() => document.documentElement.dataset.appState === "ready");
   assert.equal(
     await first.evaluate(() => Boolean(localStorage.getItem("tianyuan-brief-content-lkg-v1"))),
@@ -718,7 +721,7 @@ async function runLastKnownGoodAudit(browser) {
   await fallback.route(/\/docs\/data\/release\.json/, (route) =>
     route.fulfill({ status: 503, body: "unavailable" })
   );
-  await fallback.goto(`${origin}/docs/?audit=lkg-fallback`, { waitUntil: "domcontentloaded" });
+  await fallback.goto(`${origin}${siteBase}/?audit=lkg-fallback`, { waitUntil: "domcontentloaded" });
   await fallback.waitForFunction(() => document.documentElement.dataset.appState === "ready");
   assert.equal(await fallback.locator("[role=tab]").count(), 7);
   assert.match(await fallback.locator("#status-pill").innerText(), /缓存快照/);
@@ -739,7 +742,7 @@ async function runColdStartRecoveryAudit(browser) {
       : route.continue()
   );
 
-  await page.goto(`${origin}/docs/?audit=cold-start-recovery`, {
+  await page.goto(`${origin}${siteBase}/?audit=cold-start-recovery`, {
     waitUntil: "domcontentloaded",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "error");
@@ -794,7 +797,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
       : route.continue();
   });
 
-  await page.goto(`${origin}/docs/?audit=equal-length-hot-update`, {
+  await page.goto(`${origin}${siteBase}/?audit=equal-length-hot-update`, {
     waitUntil: "networkidle",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready");
@@ -841,7 +844,7 @@ async function runCrossReleaseRefreshAudit(browser) {
       : route.continue();
   });
 
-  await page.goto(`${origin}/docs/?audit=cross-release-refresh`, {
+  await page.goto(`${origin}${siteBase}/?audit=cross-release-refresh`, {
     waitUntil: "networkidle",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready");
@@ -869,7 +872,7 @@ async function runImmediatePrintFallbackAudit(browser) {
     await new Promise((resolve) => setTimeout(resolve, 3000));
     await route.continue();
   });
-  await page.goto(`${origin}/docs/?audit=immediate-print`, {
+  await page.goto(`${origin}${siteBase}/?audit=immediate-print`, {
     waitUntil: "domcontentloaded",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready", null, {
@@ -927,7 +930,7 @@ async function runPrintAudit(browser) {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
-  await page.goto(`${origin}/docs/?audit=print`, { waitUntil: "networkidle" });
+  await page.goto(`${origin}${siteBase}/?audit=print`, { waitUntil: "networkidle" });
   await page.locator(".panel.active").waitFor();
   const mermaidHosts = await page.locator(".mermaid-host").count();
   await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
