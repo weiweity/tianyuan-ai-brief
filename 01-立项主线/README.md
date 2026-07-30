@@ -1,6 +1,7 @@
 # 01 · 立项主线
 
-**主交付 SSOT。** 软件未开发；主线 = 立项 + AI 费用。
+**主交付 SSOT。** 软件未开发；主线 = 立项 + AI 费用。  
+过程打分 / autoplan / 设计体检已迁到 `../99-归档/reviews-2026-07/`。
 
 | 文件 | 一句话 |
 |------|--------|
@@ -10,18 +11,17 @@
 | `13-…` | 需求池 C/S + S-A/S-B（BOM 表） |
 | `15-…` | eng-review |
 | `16-…` | 验收模板 |
-| **`19-…工作情况`** | 今日金主详版 |
-| **`19-…打印提纲.md`** | **打印一页 SSOT** |
+| **`19-…工作情况`** | 金主详版 |
+| **`19-…打印提纲.md`** | 打印一页 SSOT |
 | **`print/19-…打印提纲.html`** | 浏览器打开 → 打印/PDF |
-| **`20-…双视角交叉打分`** | FDE×PM 是否可上会 · Conditional |
-| **飞书汇报方案 v4 全文** | https://my.feishu.cn/docx/Ccawdq8Opopn5RxhEwNcCKZjnyg · 归档详版 |
-| **飞书少字画板版** | https://my.feishu.cn/docx/CgGWdRkmaowkAZxA0nLcqvbfnde · **会上投屏** |
-| **`26` 画板适配** | 什么该画 / 什么留表 · 少字策略 |
-| **`27` PM 评审画板版** | 初评 7.4 · 壳/有货 |
-| **`28` Claude PM 打分** | 画板 v2 · **8.3** · 0 空壳 |
-| **`22` 交叉综合** | Grok×Claude 红线 → 9.5 目标 |
-| **`23` 9.5 记分卡** | 十维均分 9.50 · why 9.5 |
-| **`24` 最终结果** | Autoplan 交叉审核 · 最终结论 |
+| **`print/AI赋能立项_金主一页汇报.html`** | 兼容跳转 → 唯一 Web 决策台 |
 
-供应链会后细节在 `../05-供应链布局/18` · 打分 `../05/19-FDE…`。  
+| 飞书 | 用途 |
+|------|------|
+| [汇报方案全文](https://my.feishu.cn/docx/Ccawdq8Opopn5RxhEwNcCKZjnyg) | 叙事详版 |
+| [少字画板版](https://my.feishu.cn/docx/CgGWdRkmaowkAZxA0nLcqvbfnde) | 会上投屏（与 Web 字号/布局可能略有差，以会场稿为准） |
+
+**Web 决策台（开会演示）：** 根目录 `README.md` · https://weiweity.github.io/tianyuan-ai-brief/
+
+供应链会后细节在 `../05-供应链布局/18`。  
 总导航：`../README-文档怎么用.md`

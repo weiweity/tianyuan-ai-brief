@@ -1,30 +1,36 @@
 # 天元 · AI 立项决策台
 
-## 在线浏览
+本场 Goal：选项目 · 定预算 · 定 Owner · 授权止损。  
+**在线：** https://weiweity.github.io/tianyuan-ai-brief/
 
-**https://weiweity.github.io/tianyuan-ai-brief/**
+业务文档导航（立项材料、纪要、周报）见 **[README-文档怎么用.md](README-文档怎么用.md)**。  
+技术架构见 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**。
+
+## 产品能力（v5.24）
+
+- **七页会议壳：** 拍板 → 取舍 → 边界 → 门禁 → 预算 → 当场确认 → 会后责任
+- **项目级 A/B/C：** 客服 Agent 与供应链备案识别可分别选路径，不再共用一条
+- **门禁与凭证：** Owner / 费用 / 超线停扩；可复制结论；可下载 SHA-256 JSON 凭证（本机草稿，飞书/邮件确认后才算正式留痕）
+- **手机适配：** 页签与按钮短文案；t6 路径/预算/Owner 单屏；触控 ≥44px；四视口 UI 审计
+- **品牌：** 方形狐狸 favicon + 顶栏 logo（横版 wordmark 不再塞进标签页）
+- **离线：** `file://` 用构建时快照；HTTP 用 release + content SHA 热更
 
 ## 架构（防越改越乱）
 
-详见 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
-
 | 层级 | 文件 | 职责 |
 |-|-|-|
-| 壳 | `docs/index.html` | 挂载点，无业务文案 |
-| 协议启动 | `docs/js/bootstrap.js` | HTTP 加载版本化单文件 Bundle；file 加载带正文快照的离线 Bundle |
-| 样式 | `docs/css/app.css` | 满屏自适应 |
+| 壳 | `docs/index.html` | 挂载点，无业务文案；favicon / apple-touch-icon |
+| 协议启动 | `docs/js/bootstrap.js` | HTTP 版本化 Bundle；file 离线 Bundle |
+| 样式 | `docs/css/app.css` | 满屏自适应 + 手机/桌面分层 |
 | UI 编排 | `docs/js/app.js` | 渲染 / 导航 / 编辑 / 写回 |
 | 决策域 | `docs/js/modules/decision-model.js` | 项目级 A/B/C、门禁、结论与凭证 |
 | 状态兼容 | `docs/js/modules/meeting-state.js` | 版本隔离、字段白名单与草稿合并 |
-| 内容安全 | `docs/js/modules/html-policy.js` | 富文本、资源 URL 与 SVG 统一清洗 |
-| 内容加载 | `docs/js/modules/content-loader.js` | release manifest、SHA 校验、超时与可信缓存 |
-| 图表运行时 | `docs/js/modules/mermaid-runtime.js` | Mermaid 渲染、无障碍与缩放灯箱 |
+| 内容安全 | `docs/js/modules/html-policy.js` | 富文本、资源 URL 与 SVG 清洗 |
+| 内容加载 | `docs/js/modules/content-loader.js` | release、SHA、超时与可信缓存 |
+| 图表 | `docs/js/modules/mermaid-runtime.js` | Mermaid、字号随 body、灯箱 |
 | **内容 SSOT** | **`docs/data/content.json`** | **所有字、表、mermaid** |
-| 发布 manifest | `docs/data/release.json` | 构建生成的统一 releaseId 与内容 SHA |
-| HTTP 生成物 | `docs/js/app.bundle.js` | 整个模块图原子打包并绑定 release，禁止手改 |
-| 离线生成物 | `docs/js/app.offline.bundle.js` | 由 SSOT 自动生成，禁止手改 |
-| 固定依赖 | `docs/vendor/` | Mermaid 10.9.6、DOMPurify 3.4.12 与许可证 |
-| 质量门禁 | `tests/` + `.github/workflows/quality.yml` | 单测、Schema、四视口 UI、故障注入、a11y、截图、依赖审计 |
+| 发布 | `docs/data/release.json` + 生成 Bundle | 禁止手改生成物 |
+| 质量门禁 | `tests/` + `.github/workflows/quality.yml` | 单测、Schema、四视口 UI、a11y |
 
 **AI 改内容：只改 `content.json` 里带稳定 id 的块（如 `t1.kpi`）。**
 
@@ -36,40 +42,22 @@ npm run serve
 # 打开 http://localhost:8765
 ```
 
-HTTP 是作者编辑和获取最新内容的推荐方式。直接双击 `docs/index.html` 或历史 HTML 也能演示，但页面会明确标记为“本地离线快照”，不会轮询远端，也不会宣称内容最新。
+推荐用 HTTP 做作者编辑与最新内容。双击 `docs/index.html` 可演示离线快照（不轮询远端）。
 
-发布 manifest 将“运行时壳版本”和“正文 SHA”分离：正文更新经 SHA 校验后可在约 30 秒内无感合并，CSS/JS 或决策 Schema 变化则带新壳版本整页刷新，避免新旧模块混用。
+`npm run serve` 会先重建离线 Bundle；`content.json` 与 Bundle 不一致时 `npm test` 会阻断。
 
-`npm run serve` 会先自动重建离线 Bundle；若 `content.json` 与 Bundle 不一致，`npm test` 会阻断。
+## 浏览器内编辑 → 写回源码
 
-## 浏览器内编辑 → 写回源码（无感）
+1. 打开 `http://localhost:8765/?edit=1`，点 **编辑** 改字  
+2. 点 **保存并更新** → 写文件 + 本页热刷新（保留当前 Tab）  
+3. 或 **绑定源码** 后写盘；不支持时用 **导出 JSON** 覆盖 `docs/data/content.json`  
+4. `npm run build:web` 后走 PR 发布；在线约 30 秒内可静默同步正文  
 
-1. 打开 `http://localhost:8765/?edit=1`，点 **编辑** 改字
-2. 点 **保存并更新** → 自动写文件 + **本页热刷新**（不整页跳转，保留当前 Tab）  
-3. 运行 `npm run build:web`，再按下方 PR 发布流程提交 → 在线客户约 **30 秒内自动同步**（静默轮询）
-
-> C 端客户：打开即最新；后台有更新会自动刷新内容，无需手动 F5。
-
-## 浏览器内编辑 → 写回源码（完整）
-
-1. 打开页面并加 `?edit=1` → 点 **编辑**（或 `E`）改字
-2. 点 **绑定源码** → 选中本仓库 `docs/data/content.json`（Chrome/Edge）  
-3. 点 **保存到源码**（或 `S`）→ **直接写入磁盘文件**  
-4. 若不支持写盘：用 **导出 JSON** 覆盖 `docs/data/content.json`  
-5. 运行 `npm run build:web`，再按架构文档的白名单方式提交 PR
-
-> 仅 localStorage 草稿 ≠ 源码。刷新后草稿还在，但 Git 里仍是旧文件，除非「保存到源码/导出」。
+> 仅 localStorage 草稿 ≠ 源码。未「保存到源码/导出」时 Git 仍是旧文件。
 
 ## 键盘
 
 `1`–`7` 切 Tab · `←` `→` 翻页 · 作者模式（`?edit=1`）：`E` 编辑 · `S` 保存
-
-## 项目级结论与凭证
-
-- 客服 Agent、供应链备案识别可分别选择 A / B / C，不再共用一条路径。
-- A / B 项目分别要求自己的 Owner，并共同确认费用止损与超线停扩。
-- 可复制会议结论，也可下载带 SHA-256 的 JSON 凭证。
-- 两者仍是本机会议草稿；贴入飞书 / 邮件并由相关人确认后才构成正式留痕。
 
 ## 自动验收
 
@@ -81,16 +69,35 @@ npm run audit:deps
 npm run test:all
 ```
 
-Pull Request 和 `main` 推送会在 Node 24 + 固定 Playwright Chromium 上复跑同一套逻辑门禁，并上传逐页截图和七页打印 PDF。发布应走 PR，并把 `quality / test` 设为必需检查。
+PR 与 `main` 推送在 Node 24 + 固定 Playwright Chromium 上复跑门禁。发布走 PR，`quality / test` 为必需检查。
+
+## 仓库目录（业务资料）
+
+```text
+01-立项主线/     立项卡 · 费用 · 门禁 · 金主包 · print 兼容入口
+02-角色与边界/   干系人 · FDE/BI
+03-调研与叙事/   Goal 叙事 · notes 纪要
+04-实施参考/     批后才用
+05-供应链布局/   上海会后任务（旁线）
+06-周会与周报/
+07-图与素材/
+08-工具/         术语 / 人名校验脚本
+99-归档/         废稿 · 过程打分 · Web 计划 · 飞书 XML（勿当现行）
+docs/            Web 决策台唯一运行时
+```
+
+根目录只留：`README.md`、`README-文档怎么用.md`、`分类汇总.md`（及 `package.json` 等工程文件）。
 
 ## 历史 HTML
 
-`01-立项主线/print/AI赋能立项_金主一页汇报.html` 仅保留兼容跳转，不再保存第二份业务正文。HTTP 下进入在线正式页；双击打开时进入同一正式壳的离线快照。打印统一生成七页 A4 PDF。
+`01-立项主线/print/AI赋能立项_金主一页汇报.html` 仅兼容跳转，无第二份业务正文。打印统一七页 A4 PDF。
 
-## 飞书定稿（仍为 v5.6，待与 Web v5.22 对齐）
+## 飞书
 
-https://my.feishu.cn/docx/CgGWdRkmaowkAZxA0nLcqvbfnde （v5.6）
+- 总册 / 画板 / 汇报方案：见 [README-文档怎么用.md](README-文档怎么用.md)  
+- 少字画板投屏稿可能与 Web v5.24 字号略有差；**开会演示以 Web 决策台为准**，投屏以会场飞书稿为准。
 
 ## 版本
 
-v5.24 配色回暖 + 字号再 +3 · 2026-07-30
+**v5.24.0** · 2026-07-30  
+自适应大字号与配色 · 手机页签/确认页适配 · 方形 favicon
