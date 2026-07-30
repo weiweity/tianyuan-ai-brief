@@ -4,7 +4,7 @@
   const isFileProtocol = location.protocol === "file:";
   const releaseId = document.documentElement.dataset.release || "dev";
   const mermaidIntegrity =
-    "sha384-qX9VvWkP79m/O121ZE6sOYp0nf/pldQgtvWDbkpzi+3mUo4Wn4Ix4cFzNPay3VaB";
+    "sha384-Asq0U/k3ZZtwxNKq9h/GDVcCNBdm7qVwU38pyYd6T6SFoxYzjByOvTckozijf+j0";
   let bootFinished = false;
   let mermaidLoadPromise = null;
 

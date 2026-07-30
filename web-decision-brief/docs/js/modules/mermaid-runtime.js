@@ -378,11 +378,24 @@ export function createMermaidRuntime({
       const clone = svg.cloneNode(true);
       clone.removeAttribute("width");
       clone.removeAttribute("height");
+      clone.setAttribute("preserveAspectRatio", "xMidYMid meet");
       clone.classList.add("diagram-lightbox-svg");
+      // 整图适配：用 viewBox 保证缩放时整幅图一体放大，而非局部裁切感
+      try {
+        const box = clone.getBBox?.() || null;
+        if (box && box.width > 0 && box.height > 0 && !clone.getAttribute("viewBox")) {
+          const padX = Math.max(12, box.width * 0.04);
+          const padY = Math.max(12, box.height * 0.04);
+          clone.setAttribute(
+            "viewBox",
+            [box.x - padX, box.y - padY, box.width + padX * 2, box.height + padY * 2].join(" ")
+          );
+        }
+      } catch (_) {}
       wrapper.appendChild(clone);
       const hint = documentLike.createElement("div");
       hint.className = "diagram-zoom-hint";
-      hint.textContent = "双指缩放 · 双击放大/还原 · 单指拖移 · Esc 关闭";
+      hint.textContent = "滚轮/双指：整图缩放 · 双击放大/还原 · 放大后可拖移 · Esc 关闭";
       stage.replaceChildren(wrapper, hint);
       resetZoom();
       box.hidden = false;
@@ -392,6 +405,21 @@ export function createMermaidRuntime({
       }
       documentLike.body.classList.add("is-lightbox");
       documentLike.body.style.overflow = "hidden";
+      // 下一帧再量一次，确保 SVG 已布局后整图居中铺满
+      windowLike.requestAnimationFrame(() => {
+        try {
+          const svgEl = wrapper.querySelector("svg");
+          if (!svgEl) return;
+          const stageRect = stage.getBoundingClientRect();
+          const hintH = (stage.querySelector(".diagram-zoom-hint")?.offsetHeight || 0) + 24;
+          const availW = Math.max(120, stageRect.width - 32);
+          const availH = Math.max(120, stageRect.height - hintH - 32);
+          svgEl.style.width = `${availW}px`;
+          svgEl.style.height = `${availH}px`;
+          svgEl.style.maxWidth = "100%";
+          svgEl.style.maxHeight = "100%";
+        } catch (_) {}
+      });
       notifyLightbox(true);
       if (closeButton) closeButton.focus();
     };
@@ -483,9 +511,12 @@ export function createMermaidRuntime({
         if (event.changedTouches.length === 1 && event.touches.length === 0) {
           const now = Date.now();
           if (now - lastTapTime < 280) {
+            // 整图缩放：复位平移后统一放大，避免「局部放大」观感
+            translateX = 0;
+            translateY = 0;
             if (scale > 1.05) resetZoom();
             else {
-              scale = 2.2;
+              scale = 1.85;
               applyTransform();
             }
             lastTapTime = 0;
@@ -502,11 +533,35 @@ export function createMermaidRuntime({
         if (box.hidden) return;
         event.preventDefault();
         event.stopPropagation();
-        scale += event.deltaY > 0 ? -0.12 : 0.12;
+        // 以视口中心为原点整图缩放（不跟鼠标局部锚点，避免「只放大一角」）
+        const prev = scale;
+        scale += event.deltaY > 0 ? -0.14 : 0.14;
+        scale = Math.min(5, Math.max(1, scale));
+        if (scale <= 1) {
+          translateX = 0;
+          translateY = 0;
+        } else if (prev > 0) {
+          // 保持中心不漂：缩放比变化时按中心等比收束平移
+          const ratio = scale / prev;
+          translateX *= ratio;
+          translateY *= ratio;
+        }
         applyTransform();
       },
       { passive: false }
     );
+    // 桌面双击整图放大/还原
+    stage.addEventListener("dblclick", (event) => {
+      if (box.hidden) return;
+      event.preventDefault();
+      translateX = 0;
+      translateY = 0;
+      if (scale > 1.05) resetZoom();
+      else {
+        scale = 1.85;
+        applyTransform();
+      }
+    });
     documentLike.addEventListener(
       "keydown",
       (event) => {
