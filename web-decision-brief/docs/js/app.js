@@ -756,10 +756,10 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           })
           .join("");
         const steps = [
-          ["paths", "1 路径", "两项目 A/B/C"],
-          ["budget", "2 预算止损", "钱 + 停扩权"],
-          ["owners", "3 Owner", "负责人具名"],
-          ["record", "4 留痕", "会后约定"],
+          ["paths", "路径", "两项目 A/B/C"],
+          ["budget", "预算·止损", "钱 + 停扩"],
+          ["owners", "Owner", "负责人具名"],
+          ["record", "留痕", "会后约定"],
         ]
           .map(
             ([view, label, sub], index) =>
@@ -1538,6 +1538,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           const on = candidate === button;
           candidate.classList.toggle("is-active", on);
           candidate.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        // 桌面同屏：聚焦对应分区；手机仍靠 data-check-view 切显隐
+        $$("tr[data-check-section]", wrap).forEach((row) => {
+          row.classList.toggle(
+            "is-focus-row",
+            row.getAttribute("data-check-section") === view
+          );
         });
         const firstControl = wrap.querySelector(
           `tr[data-check-section="${CSS.escape(view)}"] button, tr[data-check-section="${CSS.escape(view)}"] input`
