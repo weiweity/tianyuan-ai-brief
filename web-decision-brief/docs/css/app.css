@@ -2649,6 +2649,7 @@ body.ix-haptic-flash::after {
 
   #t6 [data-type="check-table"][data-check-view="paths"] > table {
     min-height: 0;
+    height: auto;
     overflow: hidden;
   }
 
@@ -2664,8 +2665,19 @@ body.ix-haptic-flash::after {
     margin-top: auto;
   }
 
+  /* 默认：预算/Owner 等撑满中间行；路径另走 content-pack */
   #t6 [data-type="check-table"] {
     grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* 路径 content-pack：三行均贴内容，状态条紧跟选项卡，消灭 1fr 中空带 */
+  #t6 [data-type="check-table"][data-check-view="paths"] {
+    grid-template-rows: auto auto auto;
+    align-content: start;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] .check-status {
+    margin-top: 0;
   }
 
   #t6 [data-type="check-table"][data-check-view="budget"] .fee-fields {
