@@ -346,6 +346,13 @@ export function createMermaidRuntime({
       translateY = 0;
       applyTransform();
     };
+    const notifyLightbox = (open) => {
+      try {
+        documentLike.dispatchEvent(
+          new CustomEvent("ai-brief:lightbox", { detail: { open: Boolean(open) } })
+        );
+      } catch (_) {}
+    };
     const close = () => {
       box.hidden = true;
       if (backgroundRoot) {
@@ -356,6 +363,8 @@ export function createMermaidRuntime({
       stage.replaceChildren();
       documentLike.body.style.overflow = "";
       resetZoom();
+      // 先通知再 focus，确保翻页手势态在交互回到页面前已清零
+      notifyLightbox(false);
       if (lastTrigger && lastTrigger.focus) lastTrigger.focus();
       lastTrigger = null;
     };
@@ -373,7 +382,7 @@ export function createMermaidRuntime({
       wrapper.appendChild(clone);
       const hint = documentLike.createElement("div");
       hint.className = "diagram-zoom-hint";
-      hint.textContent = "双指缩放 · 双击放大/还原 · 单指拖移";
+      hint.textContent = "双指缩放 · 双击放大/还原 · 单指拖移 · Esc 关闭";
       stage.replaceChildren(wrapper, hint);
       resetZoom();
       box.hidden = false;
@@ -383,6 +392,7 @@ export function createMermaidRuntime({
       }
       documentLike.body.classList.add("is-lightbox");
       documentLike.body.style.overflow = "hidden";
+      notifyLightbox(true);
       if (closeButton) closeButton.focus();
     };
 
@@ -391,6 +401,8 @@ export function createMermaidRuntime({
       (event) => {
         const host = event.target.closest(".mermaid-host");
         if (!host || !box.hidden) return;
+        // 忽略非主按键；避免拖选文字时误开
+        if (typeof event.button === "number" && event.button !== 0) return;
         startX = event.clientX;
         startY = event.clientY;
         host.dataset.tapCandidate = "true";
@@ -404,9 +416,10 @@ export function createMermaidRuntime({
         if (!host || host.dataset.tapCandidate !== "true") return;
         delete host.dataset.tapCandidate;
         if (Math.hypot(event.clientX - startX, event.clientY - startY) > 8) return;
+        // 先开灯箱再 stop：避免 stage 翻页链收不到 pointerup 而卡死 mouseDown
+        openFrom(host);
         event.preventDefault();
         event.stopPropagation();
-        openFrom(host);
       },
       true
     );
