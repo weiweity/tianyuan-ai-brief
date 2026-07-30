@@ -236,7 +236,7 @@ test("历史打印入口是无业务副本的单一入口跳转", async () => {
   assert.match(legacy, /http-equiv="refresh"/);
   assert.match(legacy, /\.\.\/\.\.\/docs\/index\.html\?from=legacy-print/);
   assert.match(legacy, /rel="canonical"/);
-  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/docs\/assets\/logo\.png"/);
+  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/docs\/assets\/favicon\.png"/);
   assert.match(legacy, /robots" content="noindex"/);
   assert.doesNotMatch(legacy, /mermaid/);
   assert.doesNotMatch(legacy, /<script/);
