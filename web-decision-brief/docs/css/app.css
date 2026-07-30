@@ -52,7 +52,7 @@
   --slow: 300ms;
   --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC",
     "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  /* Adaptive type · 本轮再 +3px */
+  /* Adaptive type · 本轮再 +3px；留白靠行高/间距，字号不退 */
   --fs-2xs: clamp(16px, 0.55vw + 0.18vh, 17.5px);
   --fs-xs: clamp(17px, 0.58vw + 0.2vh, 18.5px);
   --fs-sm: clamp(18px, 0.64vw + 0.22vh, 20px);
@@ -61,6 +61,10 @@
   --fs-lg: clamp(23px, 0.88vw + 0.36vh, 26px);
   --fs-xl: clamp(24px, 1.02vw + 0.42vh, 28px);
   --fs-2xl: clamp(27px, 1.12vw + 0.44vh, 31px);
+  /* 阅读节奏：正文略透，标题更贴 */
+  --lh-body: 1.62;
+  --lh-tight: 1.35;
+  --lh-title: 1.25;
 }
 
 *,
@@ -96,8 +100,7 @@ body {
     var(--canvas);
   font-family: var(--font-sans);
   font-size: var(--fs-base);
-  /* 轻量呼吸：略增行间，字号不动 */
-  line-height: 1.62;
+  line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1396,7 +1399,7 @@ body.is-editing .mermaid-src {
 #t6 .check-gate-badge,
 #t6 .check-path-badge,
 #t6 .check-prog-badge {
-  line-height: 1.35;
+  line-height: var(--lh-tight);
 }
 
 #t6 .panel {
@@ -1793,7 +1796,6 @@ body.is-editing .mermaid-src {
   color: var(--muted);
   font-size: var(--fs-2xs);
   font-weight: 600;
-  opacity: 0.92;
 }
 
 .fee-note {
@@ -1803,7 +1805,6 @@ body.is-editing .mermaid-src {
   font-size: var(--fs-2xs);
   font-weight: 600;
   line-height: 1.35;
-  opacity: 0.92;
 }
 
 .multi-chip.is-selected {
@@ -4017,20 +4018,36 @@ body.ix-haptic-flash::after {
   }
 }
 
-/* 桌面呼吸：多松一档，t6 继续吃上方锁密规则 */
+/* 桌面呼吸 v2：侧向空气 + 块间距 + 表内行距；t6 锁密 */
 @media (min-width: 1025px) {
+  :root {
+    --space-3: 14px;
+    --space-4: 18px;
+  }
+
   body {
-    line-height: 1.65;
+    line-height: 1.68;
+  }
+
+  #app {
+    gap: 12px;
+    padding:
+      calc(14px + var(--safe-t))
+      calc(16px + var(--safe-r))
+      calc(12px + var(--safe-b))
+      calc(16px + var(--safe-l));
   }
 
   .panel {
     gap: 16px;
-    padding: 16px 18px;
+    /* 左右多松、上下略克制，避免 t2 展开部门表被挤出可视高度 */
+    padding: 16px 22px;
   }
 
   .panel > h2 {
     min-height: 44px;
     padding-bottom: 12px;
+    letter-spacing: 0.01em;
   }
 
   .panel-body.layout-stack,
@@ -4042,30 +4059,86 @@ body.ix-haptic-flash::after {
     gap: 16px;
   }
 
+  /* 展开部门详情：压图区 + 密表，保证 6 行完整露出（ui-audit 1366 硬门槛） */
+  #t2.panel:has(.panel-body.is-detail-open) {
+    gap: 10px;
+    padding: 12px 22px;
+  }
+
+  #t2 .panel-body.is-detail-open [data-type="mermaid"] {
+    flex: 0 0 40px;
+    min-height: 40px;
+    max-height: 40px;
+  }
+
+  #t2 .panel-body.is-detail-open .mermaid-context-strip {
+    display: none;
+  }
+
+  #t2 .panel-body.is-detail-open .detail-card-btn {
+    min-height: 40px;
+    padding-block: 5px;
+  }
+
+  #t2 .panel-body.is-detail-open .detail-card-table td,
+  #t2 .panel-body.is-detail-open .detail-card-table th {
+    padding: 3px 6px;
+    font-size: var(--fs-xs);
+    line-height: 1.28;
+  }
+
+  .block {
+    border-radius: var(--radius-lg);
+  }
+
   .callout {
-    min-height: 68px;
-    padding: 16px 18px 16px 22px;
-    line-height: 1.6;
-  }
-
-  #t1 .panel-body {
-    gap: 14px;
-  }
-
-  #t1 [data-type="kv-table"] td {
+    min-height: 72px;
+    padding: 18px 20px 18px 24px;
     line-height: 1.62;
   }
 
-  #t4 [data-type="gate-table"] td,
-  #t5 [data-type="kv-table"] td {
-    line-height: 1.55;
+  #t1 .panel-body {
+    gap: 16px;
   }
 
-  /* 桌面 t6 仍锁密，避免当场确认被桌面呼吸抬高 */
-  #t6.panel,
-  #t6 .panel {
+  #t1 [data-type="kv-table"] tr {
+    grid-template-columns: minmax(5.5em, 96px) minmax(0, 1fr);
+  }
+
+  #t1 [data-type="kv-table"] td {
+    line-height: 1.65;
+    padding-block: 2px;
+  }
+
+  #t1 [data-type="kv-table"] td.label {
+    letter-spacing: 0.04em;
+  }
+
+  #t1 [data-type="kv-table"] .kv-cell {
+    padding: 4px 8px 4px 12px;
+  }
+
+  #t4 [data-type="gate-table"] td,
+  #t5 [data-type="kv-table"] td,
+  #t7 [data-type="gate-table"] td {
+    line-height: 1.58;
+    padding: 11px 14px;
+  }
+
+  #t4 [data-type="gate-table"] td:not(.label),
+  #t5 [data-type="kv-table"] td:not(.label),
+  #t7 [data-type="gate-table"] td:not(.label) {
+    letter-spacing: 0.01em;
+  }
+
+  .mermaid-host {
+    padding: 16px 18px;
+  }
+
+  /* 桌面 t6 仍锁密 */
+  #t6.panel {
     gap: 10px;
-    padding: 12px;
+    padding: 12px 14px;
   }
 
   #t6,
@@ -4074,7 +4147,7 @@ body.ix-haptic-flash::after {
   #t6 .fee-fields,
   #t6 .owner-fields,
   #t6 .check-status-msg {
-    line-height: 1.35;
+    line-height: var(--lh-tight);
   }
 }
 

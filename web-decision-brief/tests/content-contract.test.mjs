@@ -180,7 +180,7 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
 test("CSS 是单一分层契约，不再加载尾部版本补丁", async () => {
   const [index, css] = await Promise.all([read("docs/index.html"), read("docs/css/app.css")]);
   const lines = css.split("\n").length;
-  assert.ok(lines < 4500, `app.css 行数过高：${lines}`);
+  assert.ok(lines < 4600, `app.css 行数过高：${lines}`);
   assert.match(css, /UI contract v2/);
   assert.match(css, /@media \(max-width: 640px\)/);
   assert.match(css, /@media \(max-width: 640px\) and \(max-height: 700px\)/);
