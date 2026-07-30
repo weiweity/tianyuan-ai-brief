@@ -87,10 +87,10 @@ Pull Request 和 `main` 推送会在 Node 24 + 固定 Playwright Chromium 上复
 
 `01-立项主线/print/AI赋能立项_金主一页汇报.html` 仅保留兼容跳转，不再保存第二份业务正文。HTTP 下进入在线正式页；双击打开时进入同一正式壳的离线快照。打印统一生成七页 A4 PDF。
 
-## 飞书定稿（仍为 v5.6，待与 Web v5.21 对齐）
+## 飞书定稿（仍为 v5.6，待与 Web v5.22 对齐）
 
 https://my.feishu.cn/docx/CgGWdRkmaowkAZxA0nLcqvbfnde （v5.6）
 
 ## 版本
 
-v5.21 秒开与可信降级 + 可读流程图 + 手机/桌面单屏决策 · 2026-07-30
+v5.24 配色回暖 + 字号再 +3 · 2026-07-30

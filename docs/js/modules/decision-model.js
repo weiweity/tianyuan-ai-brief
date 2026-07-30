@@ -100,7 +100,7 @@ export function evaluateCheckGate(block) {
 
   const feeRow = rows.find((row) => row && (row.kind === "fee" || row.feeFields));
   const stopRow = rows.find(
-    (row) => row && (row.kind === "stop-authority" || String(row.no) === "6")
+    (row) => row && (row.kind === "stop-authority" || String(row.no) === "5")
   );
   const ownerRows = rows.filter(
     (row) => row && (row.kind === "owner" || Array.isArray(row.owners) || row.ownerFields)
