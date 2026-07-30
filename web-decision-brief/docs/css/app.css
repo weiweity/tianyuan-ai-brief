@@ -889,7 +889,7 @@ tr.row-warn td.label {
     "summary summary" minmax(0, 1fr)
     "goal scope" auto
     / minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 #t1 [data-type="kv-table"] {
@@ -918,7 +918,8 @@ tr.row-warn td.label {
   align-items: center;
   border-bottom: 1px solid var(--line);
   font-size: var(--fs-md);
-  line-height: 1.58;
+  line-height: 1.65;
+  padding-block: 3px;
 }
 
 #t1 [data-type="kv-table"] tr:last-child td {
@@ -937,6 +938,12 @@ tr.row-warn td.label {
 
 #t1 [data-type="kv-table"] .kv-cell {
   width: 100%;
+  padding: 4px 10px 4px 14px;
+}
+
+#t1 [data-block-id="t1.swap"],
+#t1 [data-block-id="t1.scope"] {
+  padding: 2px;
 }
 
 #t1 [data-block-id="t1.swap"] {
@@ -2387,7 +2394,7 @@ body.is-editing .mermaid-src {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 16px;
   background: rgb(23 16 27 / 82%);
   backdrop-filter: blur(10px);
 }
@@ -2396,10 +2403,11 @@ body.is-editing .mermaid-src {
   display: flex;
   align-items: stretch;
   flex-direction: column;
-  width: min(94vw, 1280px);
-  max-height: 88vh;
+  width: min(96vw, 1400px);
+  height: min(90vh, 920px);
+  max-height: 90vh;
   overflow: hidden;
-  padding: 16px;
+  padding: 12px 14px 10px;
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-2);
@@ -2420,16 +2428,28 @@ body.is-editing .mermaid-src {
   cursor: pointer;
 }
 
+/* 整图缩放容器：居中 + 统一 transform-origin，避免局部放大观感 */
 .diagram-zoom-viewport {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  transform-origin: center;
+  min-height: 0;
+  overflow: hidden;
+  transform-origin: center center;
   will-change: transform;
 }
 
 .diagram-lightbox-svg {
+  display: block;
   width: 100%;
-  height: auto;
-  max-height: none;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  /* meet = 整图完整可见后等比放大 */
+  overflow: visible;
 }
 
 .diagram-zoom-hint {
