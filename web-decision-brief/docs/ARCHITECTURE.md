@@ -168,7 +168,7 @@ npm run test:all
 
 ## 9. 历史打印入口
 
-仓库内 `01-立项主线/print/AI赋能立项_金主一页汇报.html`（相对本包为 `../01-立项主线/print/…`）是无业务正文的兼容入口：
+`business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html`（相对本包为 `../business-docs/01-立项主线/print/…`）是无业务正文的兼容入口：
 
 - 跳转到 `web-decision-brief/docs/index.html`；
 - 不加载脚本、Mermaid，也不复制任何旧会议口径；
@@ -183,4 +183,4 @@ npm run test:all
 # Pages 由 .github/workflows/pages.yml 发布 docs/
 ```
 
-`main` 受保护。过程计划与评审打分稿放在仓库 `99-归档/`，不要堆进本包 `docs/`。
+`main` 受保护。业务文档与过程稿只放在 `business-docs/`（含 `99-归档/`），不要堆进本包 `docs/`。

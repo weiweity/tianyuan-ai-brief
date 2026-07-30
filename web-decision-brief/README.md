@@ -4,7 +4,7 @@
 **在线：** https://weiweity.github.io/tianyuan-ai-brief/
 
 本目录是 **软件工程根**（包名 `tianyuan-ai-decision-brief`）。  
-业务资料在上一级工作区，导航见 **[../README-文档怎么用.md](../README-文档怎么用.md)**。  
+业务文档集中在 **[../business-docs/](../business-docs/)**。  
 技术架构见 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**。
 
 ## 产品能力（v5.24）
@@ -84,11 +84,11 @@ PR 与 `main` 推送在 Node 24 + 固定 Playwright Chromium 上复跑门禁。�
 
 ## 历史 HTML
 
-上一级 `../01-立项主线/print/AI赋能立项_金主一页汇报.html` 仅兼容跳转至本目录 `docs/`，无第二份业务正文。
+`../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html` 仅兼容跳转至本目录 `docs/`，无第二份业务正文。
 
 ## 飞书
 
-- 总册 / 画板 / 汇报方案：见 [../README-文档怎么用.md](../README-文档怎么用.md)  
+- 总册 / 画板 / 汇报方案：见 [../business-docs/README.md](../business-docs/README.md)  
 - 开会演示以本决策台为准，投屏以会场飞书稿为准。
 
 ## 版本
