@@ -535,7 +535,7 @@ async function runLegacyAudit(browser, viewport) {
   );
   await page.waitForURL(/\/docs\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
-  assert.equal(await page.title(), "AI 立项决策台");
+  assert.equal(await page.title(), "天元 · AI 立项决策台");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
   if (viewport.width <= 640) {
     await assertTouchTargets(page, `历史兼容入口 ${viewport.width}px`);
@@ -574,7 +574,7 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
-  assert.equal(await page.locator("#doc-title").innerText(), "AI 立项决策台");
+  assert.equal(await page.locator("#doc-title").innerText(), "天元 · AI 立项决策台");
   assert.equal(await page.locator("#offline-notice").isVisible(), true);
   assert.equal(await page.locator("[role=tab]").count(), 7);
   assert.equal(

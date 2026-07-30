@@ -1,4 +1,4 @@
-const MERMAID_CONFIG = Object.freeze({
+const MERMAID_BASE = Object.freeze({
   startOnLoad: false,
   theme: "base",
   securityLevel: "strict",
@@ -13,17 +13,48 @@ const MERMAID_CONFIG = Object.freeze({
   },
   themeVariables: {
     fontFamily: "-apple-system, PingFang SC, Microsoft YaHei, sans-serif",
-    fontSize: "16px",
+    fontSize: "18px",
     primaryColor: "#EBE6EF",
-    primaryTextColor: "#2A1A38",
-    primaryBorderColor: "#7A4F96",
-    lineColor: "#7A4F96",
+    primaryTextColor: "#2F2139",
+    primaryBorderColor: "#6F5088",
+    lineColor: "#6F5088",
     secondaryColor: "#F5F0F8",
     tertiaryColor: "#FFFFFF",
-    clusterBkg: "#F8F5FA",
-    clusterBorder: "#C9B8D9",
+    clusterBkg: "#F7F4FA",
+    clusterBorder: "#C4AED6",
   },
 });
+
+/** 跟随 body 字号，流程图与页面整体同级放大（不再锁 16px） */
+function resolveDiagramFontPx(documentLike, windowLike) {
+  try {
+    const bodyPx = parseFloat(windowLike.getComputedStyle(documentLike.body).fontSize) || 18;
+    const width = windowLike.innerWidth || 1024;
+    // 与正文字号几乎同级：手机 ~18、桌面 ~20–21
+    if (width <= 640) return Math.round(Math.min(19, Math.max(16, bodyPx * 0.92)));
+    if (width <= 1024) return Math.round(Math.min(20, Math.max(17, bodyPx * 0.93)));
+    return Math.round(Math.min(22, Math.max(18, bodyPx * 0.95)));
+  } catch {
+    return 18;
+  }
+}
+
+function buildMermaidConfig(fontSize) {
+  const fs = Number(fontSize) || 18;
+  return {
+    ...MERMAID_BASE,
+    flowchart: {
+      ...MERMAID_BASE.flowchart,
+      padding: Math.round(fs * 0.7),
+      nodeSpacing: Math.round(fs * 1.9),
+      rankSpacing: Math.round(fs * 2.3),
+    },
+    themeVariables: {
+      ...MERMAID_BASE.themeVariables,
+      fontSize: `${fs}px`,
+    },
+  };
+}
 
 export function createMermaidRuntime({
   windowLike,
@@ -37,11 +68,19 @@ export function createMermaidRuntime({
   let ready = false;
   let initPromise = null;
   let lightboxWired = false;
+  let lastFontSize = null;
   const rendered = new Set();
   const queryAll = (selector, root = documentLike) => [...root.querySelectorAll(selector)];
 
   async function ensure() {
-    if (ready) return;
+    const fontSize = resolveDiagramFontPx(documentLike, windowLike);
+    if (ready && lastFontSize === fontSize) return;
+    // 字号变化时必须重初始化 + 强制重绘，否则流程图仍停留在旧 16px
+    if (ready && lastFontSize !== fontSize) {
+      ready = false;
+      rendered.clear();
+      initPromise = null;
+    }
     if (initPromise) return initPromise;
     initPromise = (async () => {
       if (!windowLike.mermaid) {
@@ -61,7 +100,8 @@ export function createMermaidRuntime({
         }
       }
       if (!windowLike.mermaid) throw new Error("流程图库未能加载");
-      windowLike.mermaid.initialize(MERMAID_CONFIG);
+      windowLike.mermaid.initialize(buildMermaidConfig(fontSize));
+      lastFontSize = fontSize;
       ready = true;
     })();
     try {
@@ -136,12 +176,20 @@ export function createMermaidRuntime({
     svgElement.removeAttribute("height");
     svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
     svgElement.classList.add("mermaid-fitted-svg");
+    // 保险：若主题字号未完全落到 text，按当前目标字号同步属性
+    const targetFs = lastFontSize || resolveDiagramFontPx(documentLike, windowLike);
+    svgElement.querySelectorAll("text, tspan").forEach((node) => {
+      const current = parseFloat(node.getAttribute("font-size") || "0");
+      if (!current || current + 0.5 < targetFs) {
+        node.setAttribute("font-size", String(targetFs));
+      }
+    });
     windowLike.requestAnimationFrame(() => {
       try {
         const box = svgElement.getBBox();
         if (!box || !(box.width > 0) || !(box.height > 0)) return;
-        const paddingX = Math.max(16, box.width * 0.06);
-        const paddingY = Math.max(16, box.height * 0.06);
+        const paddingX = Math.max(18, box.width * 0.05);
+        const paddingY = Math.max(18, box.height * 0.05);
         svgElement.setAttribute(
           "viewBox",
           [

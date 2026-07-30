@@ -612,9 +612,9 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           .map((h) => `<th>${esc(h)}</th>`)
           .join("");
         const pathMeta = {
-          A: { label: "A 同意启动", hint: "前置齐了再开发 · 按止损线花钱" },
-          B: { label: "B 先认方向", hint: "费用批完再动手 · 不烧工具费" },
-          C: { label: "C 不立", hint: "写进周报说明 · 不排期" },
+          A: { label: "A 同意启动", short: "A 启动", hint: "前置齐了再开发 · 按止损线花钱" },
+          B: { label: "B 先认方向", short: "B 方向", hint: "费用批完再动手 · 不烧工具费" },
+          C: { label: "C 不立", short: "C 不立", hint: "写进周报说明 · 不排期" },
         };
         const rows = (b.rows || [])
           .map((r, i) => {
@@ -643,34 +643,42 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
               </div>`);
             }
 
-            // #2 路径 A/B/C
+            // #2 路径 A/B/C — 每项带含义，避免只看见三个空按钮
             if (Array.isArray(r.pathOptions) && r.pathOptions.length) {
               const pathVal = r.pathValue || "";
               const chips = r.pathOptions
                 .map((p) => {
                   const key = typeof p === "string" ? p : p.value;
-                  const meta = pathMeta[key] || { label: key, hint: "" };
+                  const meta = pathMeta[key] || { label: key, short: key, hint: "" };
                   const lab = typeof p === "object" && p.label ? p.label : meta.label;
                   const sel = pathVal === key ? " is-selected" : "";
                   const cls = "path-chip path-" + String(key).toLowerCase() + sel;
-                  return `<button type="button" class="${cls}" data-path-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${pathVal === key ? "true" : "false"}">${esc(lab)}</button>`;
+                  return `<button type="button" class="${cls}" data-path-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${pathVal === key ? "true" : "false"}" title="${esc(meta.hint)}">
+                    <span class="path-chip-lab">${esc(lab)}</span>
+                    <span class="path-chip-hint">${esc(meta.hint)}</span>
+                  </button>`;
                 })
                 .join("");
-              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径";
+              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径 · 两项目可不同";
+              const blurb = r.projectBlurb
+                ? `<div class="path-blurb">${esc(r.projectBlurb)}</div>`
+                : "";
               extras.push(`<div class="path-row" data-path-row="${i}">
+                ${blurb}
                 <div class="path-chips" role="group" aria-label="${esc(r.projectLabel || "项目")}路径选择">${chips}</div>
                 <div class="path-hint" data-path-hint>${esc(hint)}</div>
               </div>`);
             }
 
-            // #3 费用可改填
+            // #3 费用可改填 + 口径说明
             if (r.feeFields) {
               const f = r.feeFields;
               extras.push(`<div class="fee-fields" data-fee-row="${i}">
-                <label class="fee-num"><span class="fee-lab">全期约</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">目标预算</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
                 <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">全期止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">全期硬止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
                 <label class="fee-other">其他费用说明 <input type="text" enterkeyhint="done" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
+                <div class="fee-note">两项合计工具费 · 不含 IT 人力 · 10000 是停扩上限不是默认预算</div>
               </div>`);
             }
 
@@ -681,7 +689,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
                   const ofx = of || {};
                   const moreCls = oi > 0 ? " owner-card-extra" : "";
                   return `<div class="owner-card${moreCls}" data-owner-idx="${oi}">
-                    <div class="owner-card-title">负责人 ${oi + 1}</div>
+                    <div class="owner-card-title">负责人 ${oi + 1}${oi === 0 ? "（必填）" : "（选填）"}</div>
                     <div class="owner-fields">
                       <label>姓名 <input type="text" data-owner-multi="name" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.name || "")}" placeholder="${oi === 0 ? "至少填 1 位" : "选填"}" autocomplete="name" enterkeyhint="next"/></label>
                       <label>部门 <input type="text" data-owner-multi="dept" data-owner-idx="${oi}" data-block="${id}" data-row="${i}" value="${esc(ofx.dept || "")}" placeholder="如 客服部" enterkeyhint="next"/></label>
@@ -730,19 +738,32 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           })
           .join("");
         const steps = [
-          ["paths", "1 路径"],
-          ["budget", "2 预算止损"],
-          ["owners", "3 Owner"],
-          ["record", "4 留痕"],
+          ["paths", "1 路径", "两项目 A/B/C"],
+          ["budget", "2 预算止损", "钱 + 停扩权"],
+          ["owners", "3 Owner", "负责人具名"],
+          ["record", "4 留痕", "会后约定"],
         ]
           .map(
-            ([view, label], index) =>
-              `<button type="button" class="check-step${index === 0 ? " is-active" : ""}" data-check-view-button="${view}" aria-pressed="${index === 0 ? "true" : "false"}">${label}</button>`
+            ([view, label, sub], index) =>
+              `<button type="button" class="check-step${index === 0 ? " is-active" : ""}" data-check-view-button="${view}" aria-pressed="${index === 0 ? "true" : "false"}">
+                <span class="check-step-lab">${label}</span>
+                <span class="check-step-sub">${sub}</span>
+              </button>`
           )
           .join("");
+        const legend = `<div class="check-legend" aria-label="路径含义">
+          <span class="check-legend-item tone-a"><b>A 启动</b>前置齐再开发 · 按止损线花钱</span>
+          <span class="check-legend-item tone-b"><b>B 方向</b>费用批完再动手 · 不烧工具费</span>
+          <span class="check-legend-item tone-c"><b>C 不立</b>写进周报说明 · 不排期</span>
+        </div>`;
+        const board = checkBoardHtml(b);
         const status = checkStatusHtml(b);
         return `<div class="block" data-block-id="${id}" data-type="check-table" data-check-view="paths">
-          <div class="check-steps" role="group" aria-label="当场确认步骤">${steps}</div>
+          <div class="check-header">
+            <div class="check-steps" role="group" aria-label="当场确认步骤">${steps}</div>
+            ${legend}
+            ${board}
+          </div>
           <table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>
           ${status}
         </div>`;
@@ -893,6 +914,52 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     wireCheckViews();
     wireCopyConclusion();
     if (activeTab) queueMermaid(activeTab);
+  }
+
+  /** 顶部决策看板：两项目路径 + 费用口径一眼可见，不挤在底部 */
+  function checkBoardHtml(block) {
+    const g = evaluateCheckGate(block);
+    const pathLabels = {
+      A: "A 同意启动",
+      B: "B 先认方向",
+      C: "C 不立",
+    };
+    const cards = (g.decisions || [])
+      .map((decision) => {
+        const path = decision.path || "";
+        const pathLab = path ? pathLabels[path] || path : "未选路径";
+        const tone = path === "A" ? "tone-a" : path === "B" ? "tone-b" : path === "C" ? "tone-c" : "tone-idle";
+        const ownerRow = (g.ownerRows || []).find((row) => row && row.projectId === decision.projectId);
+        const owners = namedOwnersOf(ownerRow || {});
+        const ownerTxt =
+          path === "C"
+            ? "C 不立 · 无需 Owner"
+            : owners.length
+              ? owners.map((o) => o.name).join("、")
+              : path === "A" || path === "B"
+                ? "待填 Owner"
+                : "选路径后补 Owner";
+        return `<div class="check-board-card ${tone}" data-project="${esc(decision.projectId || "")}">
+          <div class="check-board-title">${esc(decision.projectLabel || decision.projectId || "项目")}</div>
+          <div class="check-board-path">${esc(pathLab)}</div>
+          <div class="check-board-owner">${esc(ownerTxt)}</div>
+        </div>`;
+      })
+      .join("");
+    const fee = g.feeRow && g.feeRow.feeFields ? g.feeRow.feeFields : null;
+    const feeTxt = fee
+      ? `目标 ${fee.total || "—"} · 首月 ${fee.monthCap || "—"} · 硬止损 ${fee.allCap || "—"}`
+      : "费用口径待确认";
+    const feeOn = g.feeRow && g.feeRow.checked;
+    const stopOn = g.stopRow && g.stopRow.checked;
+    return `<div class="check-board" data-check-board aria-label="本场决策总览">
+      <div class="check-board-projects">${cards || '<div class="check-board-card tone-idle"><div class="check-board-title">暂无项目</div></div>'}</div>
+      <div class="check-board-meta">
+        <div class="check-board-meta-row"><b>费用</b><span class="${feeOn ? "is-on" : ""}">${esc(feeTxt)}${feeOn ? " · 已确认" : " · 未勾选"}</span></div>
+        <div class="check-board-meta-row"><b>停扩</b><span class="${stopOn ? "is-on" : ""}">${stopOn ? "超线立即停扩 · 已授权" : "A/B 时需授权超线停扩"}</span></div>
+        <div class="check-board-meta-row"><b>边界</b><span>未批不开发 · 不代回 · 不编假收益 · 本机草稿</span></div>
+      </div>
+    </div>`;
   }
 
   /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
@@ -1094,6 +1161,16 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     const neu = tmp.firstElementChild;
     if (old && neu) old.replaceWith(neu);
     else if (neu && !old) wrap.appendChild(neu);
+
+    const oldBoard = wrap.querySelector("[data-check-board]");
+    const boardTmp = document.createElement("div");
+    boardTmp.innerHTML = checkBoardHtml(block);
+    const neuBoard = boardTmp.firstElementChild;
+    if (oldBoard && neuBoard) oldBoard.replaceWith(neuBoard);
+    else if (neuBoard && !oldBoard) {
+      const header = wrap.querySelector(".check-header");
+      if (header) header.appendChild(neuBoard);
+    }
   }
 
   function setRowCheckedUI(tr, checked) {
