@@ -1834,7 +1834,6 @@ body.is-editing .mermaid-src {
   background: var(--brand-100);
 }
 
-
 .other-text-wrap,
 .fee-other {
   display: flex;
@@ -2317,7 +2316,7 @@ body.is-editing .mermaid-src {
 }
 
 .toast {
-  bottom: calc(24px + var(--safe-b));
+  bottom: calc(56px + var(--safe-b));
   max-width: min(92vw, 520px);
   padding: 10px 16px;
   opacity: 0;
@@ -2328,6 +2327,24 @@ body.is-editing .mermaid-src {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(-4px);
+}
+
+/* t6：toast 改顶部，避开底栏操作 + 避免叠在状态绿底上触发对比度误报 */
+body:has(#t6.panel.active) .toast {
+  top: calc(64px + var(--safe-t));
+  bottom: auto;
+  color: #fff;
+  background: #2f2139;
+  border-color: #2f2139;
+}
+
+@media (max-width: 640px) {
+  body:has(#t6.panel.active) .toast {
+    top: calc(56px + var(--safe-t));
+    bottom: auto;
+    max-width: min(88vw, 360px);
+    font-size: 17px;
+  }
 }
 
 .update-chip {
@@ -2395,7 +2412,6 @@ body.is-editing .mermaid-src {
 .diagram-zoom-viewport:active {
   cursor: grabbing;
 }
-
 
 .diagram-lightbox-svg {
   display: block;
@@ -2496,63 +2512,28 @@ body.ix-haptic-flash::after {
     display: none;
   }
 
-  /*
-   * t6 桌面 · 同屏决策台（10 分目标）
-   * 路径 / 预算止损 / Owner / 留痕 合并一屏，用内容铺满可用高度，消灭中空带。
-   * 顶栏四步仅作「聚焦高亮」导航，不再切换隐藏整块内容。
-   */
-  #t6 .panel {
-    gap: 6px;
-    padding: 8px 10px;
-  }
-
-  #t6 .panel > h2 {
-    min-height: 32px;
-    padding-bottom: 4px;
-  }
-
+  /* t6 桌面同屏：8 卡 mosaic + 聚焦 dim + 防裁切 */
+  #t6 .panel { gap: 6px; padding: 8px 10px; }
+  #t6 .panel > h2 { min-height: 32px; padding-bottom: 4px; }
   #t6 [data-type="check-table"] {
     grid-template-rows: auto minmax(0, 1fr) auto;
     min-height: 0;
     height: 100%;
   }
-
-  #t6 .check-header {
-    gap: 0;
-    padding: 3px 4px 4px;
-    border-bottom: 1px solid var(--line);
-  }
-
+  #t6 .check-header { gap: 0; padding: 3px 4px 4px; border-bottom: 1px solid var(--line); }
   #t6 .check-legend,
-  #t6 .check-board {
-    display: none !important;
-  }
-
-  #t6 .check-steps {
-    gap: 4px;
-  }
-
-  #t6 .check-step {
-    min-height: 40px;
-    padding: 4px 6px;
-    border-radius: 9px;
-    font-size: 17px;
-  }
-
-  #t6 .check-step-sub {
-    display: none;
-  }
-
+  #t6 .check-board { display: none !important; }
+  #t6 .check-steps { gap: 4px; }
+  #t6 .check-step { min-height: 44px; padding: 4px 6px; border-radius: 9px; font-size: 17px; }
+  #t6 .check-step-sub { display: none; }
   #t6 .check-status {
     position: relative;
     z-index: 2;
-    flex: 0 0 auto;
     margin-top: 0;
     padding: 5px 8px 6px;
     border-top: 1px solid var(--brand-200);
     background: linear-gradient(180deg, var(--brand-50), var(--surface));
   }
-
   #t6 .check-status-msg {
     display: -webkit-box;
     overflow: hidden;
@@ -2560,42 +2541,30 @@ body.ix-haptic-flash::after {
     -webkit-line-clamp: 1;
     line-height: 1.25;
   }
-
   #t6 [data-type="check-table"] > table {
     display: block;
     height: 100%;
     min-height: 0;
     overflow: hidden;
   }
-
-  #t6 [data-type="check-table"] > table > thead {
-    display: none;
-  }
-
-  /* 8 行 → 2×4 决策 mosaic：路径 | 路径 / 费用 | 停扩 / Owner | Owner / 留痕 | 留痕 */
+  #t6 [data-type="check-table"] > table > thead { display: none; }
   #t6 [data-type="check-table"] > table > tbody {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1.05fr) minmax(0, 1.2fr) minmax(0, 1.15fr) minmax(0, 0.9fr);
-    grid-template-areas:
-      "p1 p2"
-      "fee stop"
-      "o1 o2"
-      "r1 r2";
+    grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.15fr) minmax(0, 1.35fr) minmax(0, 0.85fr);
+    grid-template-areas: "p1 p2" "fee stop" "o1 o2" "r1 r2";
     gap: 6px;
     height: 100%;
     min-height: 0;
     padding: 5px 4px 4px;
-    align-content: stretch;
   }
-
   #t6 [data-type="check-table"] tr[data-check-section="paths"],
   #t6 [data-type="check-table"] tr[data-check-section="budget"],
   #t6 [data-type="check-table"] tr[data-check-section="owners"],
   #t6 [data-type="check-table"] tr[data-check-section="record"] {
     display: grid;
     grid-template-columns: 28px minmax(0, 1fr) 44px;
-    align-items: center;
+    align-items: start;
     min-width: 0;
     min-height: 0;
     height: 100%;
@@ -2604,157 +2573,104 @@ body.ix-haptic-flash::after {
     border-radius: 11px;
     background: var(--surface);
     box-shadow: 0 1px 0 rgb(40 20 60 / 4%);
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    /* 不用 opacity dim：会拉低 muted 字对比度，axe 直接 fail */
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(1) {
-    grid-area: p1;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(2) {
-    grid-area: p2;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(3) {
-    grid-area: fee;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(4) {
-    grid-area: o1;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(5) {
-    grid-area: o2;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(6) {
-    grid-area: r1;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(7) {
-    grid-area: stop;
-  }
-
-  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(8) {
-    grid-area: r2;
-  }
-
-  /* 顶栏点击：聚焦对应分区，不隐藏其它卡 */
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(1) { grid-area: p1; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(2) { grid-area: p2; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(3) { grid-area: fee; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(4) { grid-area: o1; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(5) { grid-area: o2; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(6) { grid-area: r1; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(7) { grid-area: stop; }
+  #t6 [data-type="check-table"] tr[data-check-section]:nth-child(8) { grid-area: r2; }
   #t6 [data-type="check-table"][data-check-view="paths"] tr[data-check-section="paths"],
   #t6 [data-type="check-table"][data-check-view="budget"] tr[data-check-section="budget"],
   #t6 [data-type="check-table"][data-check-view="owners"] tr[data-check-section="owners"],
   #t6 [data-type="check-table"][data-check-view="record"] tr[data-check-section="record"] {
     border-color: var(--brand-400);
+    background: var(--brand-50);
     box-shadow: inset 0 0 0 1px rgb(111 80 136 / 18%), 0 1px 0 rgb(40 20 60 / 4%);
   }
-
+  #t6 [data-type="check-table"] .fee-lab,
+  #t6 [data-type="check-table"] .owner-fields label {
+    color: var(--text);
+    font-size: 12px;
+  }
   #t6 [data-type="check-table"] td {
     display: block;
     width: auto;
-    padding: 5px 5px;
+    padding: 4px 5px;
     border-bottom: 0;
   }
-
   #t6 [data-type="check-table"] td.label {
-    padding-top: 8px;
+    padding-top: 6px;
     color: var(--muted);
     font-size: 12px;
     font-weight: 800;
   }
-
+  #t6 [data-type="check-table"] td.chk { padding-top: 6px; justify-self: center; }
+  #t6 [data-type="check-table"] .chk-body { min-width: 0; min-height: 0; }
   #t6 [data-type="check-table"] .chk-html {
     display: -webkit-box;
     overflow: hidden;
     margin-bottom: 2px;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
+    -webkit-line-clamp: 2;
     font-size: 13px;
     font-weight: 750;
     line-height: 1.2;
   }
-
+  #t6 [data-type="check-table"] tr[data-check-section="owners"] .chk-html {
+    -webkit-line-clamp: 1;
+    font-size: 12.5px;
+  }
   #t6 [data-type="check-table"] .path-chips {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     margin-top: 2px;
   }
-
   #t6 [data-type="check-table"] .path-chip {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 40px;
+    min-height: 44px;
     padding: 3px 2px;
     border-radius: 9px;
+    overflow: hidden;
   }
-
   #t6 [data-type="check-table"] .path-chip-hint,
   #t6 [data-type="check-table"] .path-blurb,
   #t6 [data-type="check-table"] .path-hint,
   #t6 [data-type="check-table"] .fee-note,
-  #t6 [data-type="check-table"] .fee-other {
+  #t6 [data-type="check-table"] .fee-other,
+  #t6 [data-type="check-table"] .owners-more-btn,
+  #t6 [data-type="check-table"] .owner-card-extra,
+  #t6 [data-type="check-table"] .owner-card-title {
     display: none !important;
   }
-
-  #t6 [data-type="check-table"] .path-chip-lab {
-    font-size: 12.5px;
-    line-height: 1.1;
-  }
-
+  #t6 [data-type="check-table"] .path-chip-lab { font-size: 12.5px; line-height: 1.1; }
   #t6 [data-type="check-table"] .fee-fields {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     margin-top: 2px;
   }
-
   #t6 [data-type="check-table"] .fee-fields input {
     min-height: 36px;
     padding: 4px 6px;
     font-size: 13px;
   }
-
-  #t6 [data-type="check-table"] .fee-lab {
-    font-size: 11px;
-  }
-
-  #t6 [data-type="check-table"] .owners-grid {
-    margin-top: 2px;
-    gap: 4px;
-  }
-
-  #t6 [data-type="check-table"] .owner-card {
-    padding: 5px 6px;
-  }
-
-  #t6 [data-type="check-table"] .owner-card-title {
-    margin-bottom: 3px;
-    font-size: 12px;
-  }
-
-  #t6 [data-type="check-table"] .owner-fields {
-    gap: 4px;
-  }
-
-  #t6 [data-type="check-table"] .owner-fields label {
-    gap: 2px;
-    font-size: 11px;
-  }
-
+  #t6 [data-type="check-table"] .fee-lab { font-size: 11px; }
+  #t6 [data-type="check-table"] .owners-grid { margin-top: 2px; gap: 4px; }
+  #t6 [data-type="check-table"] .owner-card { padding: 5px 6px; }
+  #t6 [data-type="check-table"] .owner-fields { gap: 4px; }
+  #t6 [data-type="check-table"] .owner-fields label { gap: 2px; font-size: 11px; }
   #t6 [data-type="check-table"] .owner-fields input {
     min-height: 34px;
     padding: 3px 5px;
     font-size: 12.5px;
   }
-
-  #t6 [data-type="check-table"] .owners-more-btn,
-  #t6 [data-type="check-table"] .owner-card-extra {
-    display: none !important;
-  }
-
-  #t6 [data-type="check-table"] .chk-btn {
-    min-width: 40px;
-    min-height: 40px;
-  }
+  #t6 [data-type="check-table"] .chk-btn { min-width: 44px; min-height: 44px; }
 }
 
 /* Tablet */
@@ -4428,7 +4344,6 @@ body.ix-haptic-flash::after {
     display: none;
   }
 }
-
 
 /* Wide desktop: room to breathe, keep same +2 adaptive ceiling */
 @media (min-width: 1440px) and (min-height: 900px) {
