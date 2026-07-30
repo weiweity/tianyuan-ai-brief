@@ -460,14 +460,30 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     document.title = m.title || "AI 赋能立项";
   }
 
+  /** 手机顶栏宽度有限：完整标题 + 短标题双写，CSS 切换 */
+  const TAB_TITLE_SHORT = Object.freeze({
+    今日拍板: "拍板",
+    项目取舍: "取舍",
+    交付边界: "边界",
+    阶段门禁: "门禁",
+    预算止损: "预算",
+    当场确认: "确认",
+    会后责任: "会后",
+  });
+
   function renderTabs() {
     const nav = $("#tabs");
     nav.innerHTML = content.tabs
-      .map(
-        (t) =>
-          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}" role="tab" aria-selected="${t.id === activeTab}" aria-controls="${esc(t.id)}" id="tab-${esc(t.id)}" tabindex="${t.id === activeTab ? "0" : "-1"}">` +
-          `<span class="n">${esc(t.no || "")}</span>${esc(t.title)}</button>`
-      )
+      .map((t) => {
+        const full = t.title || "";
+        const short = TAB_TITLE_SHORT[full] || full.slice(0, 2);
+        return (
+          `<button type="button" class="tab${t.id === activeTab ? " active" : ""}" data-tab="${esc(t.id)}" role="tab" aria-selected="${t.id === activeTab}" aria-controls="${esc(t.id)}" id="tab-${esc(t.id)}" tabindex="${t.id === activeTab ? "0" : "-1"}" title="${esc(full)}" aria-label="${esc((t.no ? t.no + " " : "") + full)}">` +
+          `<span class="n" aria-hidden="true">${esc(t.no || "")}</span>` +
+          `<span class="tab-title-full" aria-hidden="true">${esc(full)}</span>` +
+          `<span class="tab-title-short" aria-hidden="true">${esc(short)}</span></button>`
+        );
+      })
       .join("");
     nav.querySelectorAll(".tab").forEach((btn) => {
       btn.addEventListener("click", () => activate(btn.dataset.tab));
@@ -653,9 +669,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
                   const lab = typeof p === "object" && p.label ? p.label : meta.label;
                   const sel = pathVal === key ? " is-selected" : "";
                   const cls = "path-chip path-" + String(key).toLowerCase() + sel;
-                  return `<button type="button" class="${cls}" data-path-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${pathVal === key ? "true" : "false"}" title="${esc(meta.hint)}">
-                    <span class="path-chip-lab">${esc(lab)}</span>
-                    <span class="path-chip-hint">${esc(meta.hint)}</span>
+                  const shortLab = meta.short || lab;
+                  return `<button type="button" class="${cls}" data-path-pick="${esc(key)}" data-block="${id}" data-row="${i}" aria-pressed="${pathVal === key ? "true" : "false"}" title="${esc(meta.hint)}" aria-label="${esc(lab)}">
+                    <span class="path-chip-lab path-chip-lab-full" aria-hidden="true">${esc(lab)}</span>
+                    <span class="path-chip-lab path-chip-lab-short" aria-hidden="true">${esc(shortLab)}</span>
+                    <span class="path-chip-hint" aria-hidden="true">${esc(meta.hint)}</span>
                   </button>`;
                 })
                 .join("");
@@ -982,10 +1000,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       msg = "结论可复制或下载；贴入飞书/邮件确认后生效。边界：不立刻上线、不代回、不编收益。";
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前状态";
+    const copyLabShort = g.isMinOk ? "复制结论" : "复制";
     const hasAnyPath = g.decisions.some((decision) => decision.path);
     const pathBadge = hasAnyPath
       ? `<span class="check-path-badge">${esc(g.pathLab)}</span>`
-      : `<span class="check-path-badge is-empty">两项目路径未选</span>`;
+      : `<span class="check-path-badge is-empty">路径未选</span>`;
     const progBadge = `<span class="check-prog-badge">已确认 <b>${g.done}/${g.total}</b></span>`;
     let gateBadge;
     if (g.isMinOk) {
@@ -993,7 +1012,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     } else if (g.missing.length) {
       gateBadge = `<span class="check-gate-badge is-warn">还缺 ${esc(g.missing.join(" · "))}</span>`;
     } else {
-      gateBadge = `<span class="check-gate-badge is-idle">先选路径 A / B / C</span>`;
+      gateBadge = `<span class="check-gate-badge is-idle">先选 A/B/C</span>`;
     }
     return `<div class="${cls}" data-check-status role="status">
       <div class="check-status-dock">
@@ -1004,9 +1023,9 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       <div class="check-status-main">
         <div class="check-status-msg">${msg}</div>
         <div class="check-status-actions">
-          <button type="button" class="reset-check-btn" data-reset-check="${esc(block.id)}" title="清空本机保存的会议勾选">清空本次</button>
-          <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书">${copyLab}</button>
-          <button type="button" class="download-receipt-btn" data-download-receipt="${esc(block.id)}" title="下载含 SHA-256 哈希的 JSON 会议凭证">下载凭证</button>
+          <button type="button" class="reset-check-btn" data-reset-check="${esc(block.id)}" title="清空本机保存的会议勾选" aria-label="清空本次"><span class="btn-lab-full" aria-hidden="true">清空本次</span><span class="btn-lab-short" aria-hidden="true">清空</span></button>
+          <button type="button" class="copy-conclusion-btn" data-copy-conclusion="${esc(block.id)}" title="复制到剪贴板，可贴周报/飞书" aria-label="${esc(copyLab)}"><span class="btn-lab-full" aria-hidden="true">${esc(copyLab)}</span><span class="btn-lab-short" aria-hidden="true">${esc(copyLabShort)}</span></button>
+          <button type="button" class="download-receipt-btn" data-download-receipt="${esc(block.id)}" title="下载含 SHA-256 哈希的 JSON 会议凭证" aria-label="下载凭证"><span class="btn-lab-full" aria-hidden="true">下载凭证</span><span class="btn-lab-short" aria-hidden="true">下载</span></button>
         </div>
       </div>
     </div>`;

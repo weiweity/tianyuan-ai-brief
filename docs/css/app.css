@@ -460,6 +460,31 @@ body.is-editing .edit-banner {
     transform var(--fast) ease;
 }
 
+.tab-title-short {
+  display: none;
+}
+
+.tab-title-full {
+  display: inline;
+}
+
+.btn-lab-short {
+  display: none;
+}
+
+.btn-lab-full {
+  display: inline;
+}
+
+/* 路径芯片：桌面全称，手机短称（aria-label 仍用全称） */
+.path-chip .path-chip-lab-short {
+  display: none;
+}
+
+.path-chip .path-chip-lab-full {
+  display: block;
+}
+
 .tab:hover {
   color: var(--brand-700);
   border-color: var(--brand-300);
@@ -1694,7 +1719,6 @@ body.is-editing .mermaid-src {
 }
 
 .path-chip-lab {
-  display: block;
   font-size: var(--fs-sm);
   font-weight: 850;
   line-height: 1.2;
@@ -2602,27 +2626,78 @@ body.ix-haptic-flash::after {
   }
 
   .top {
-    grid-template-columns: 104px minmax(0, 1fr) auto;
-    gap: 7px;
-    min-height: 50px;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 6px;
+    min-height: 42px;
     padding: 4px 8px;
   }
 
   .logo-wrap {
-    min-height: 40px;
+    min-height: 36px;
+    width: 36px;
   }
 
   .logo-wrap img {
-    max-height: 31px;
+    max-height: 28px;
+    max-width: 28px;
   }
 
   .top-mid h1 {
-    font-size: 23px;
+    font-size: var(--fs-lg);
+    letter-spacing: 0;
   }
 
   .top-mid .sub,
   .top-right {
     display: none !important;
+  }
+
+  /* 页签：短标题 + 可横滑，避免「交付边:」类截断 */
+  .tab-title-full {
+    display: none;
+  }
+
+  .tab-title-short {
+    display: inline;
+  }
+
+  .tab {
+    gap: 5px;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 15px;
+  }
+
+  .tabs-row {
+    padding: 3px 4px 5px;
+  }
+
+  .stage-meta .footer-left,
+  .stage-meta .footer-right {
+    display: none;
+  }
+
+  .stage-meta {
+    justify-content: center;
+    min-height: 22px;
+    font-size: 12px;
+  }
+
+  /* 按钮/路径芯片双文案：手机用短标签 */
+  .btn-lab-full {
+    display: none;
+  }
+
+  .btn-lab-short {
+    display: inline;
+  }
+
+  .path-chip .path-chip-lab-full {
+    display: none;
+  }
+
+  .path-chip .path-chip-lab-short {
+    display: block;
   }
 
   .toolbar {
@@ -2669,13 +2744,12 @@ body.ix-haptic-flash::after {
   }
 
   .tab {
-    min-height: var(--touch);
-    padding: 0 12px;
-    font-size: 20px;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 15px;
   }
 
   .tab .n {
-    /* keep em-based centering; only nudge relative size on mobile */
     font-size: 0.8em;
   }
 
@@ -2916,7 +2990,7 @@ body.ix-haptic-flash::after {
   }
 
   #t2 [data-type="mermaid"] .mermaid-host {
-    padding: 52px 8px 112px;
+    padding: 40px 6px 88px;
   }
 
   #t2 [data-type="mermaid"] .mermaid-host.is-zoomable::after {
@@ -3080,58 +3154,35 @@ body.ix-haptic-flash::after {
   }
 
   .check-step {
-    padding: 5px 4px;
+    min-height: 44px;
+    padding: 5px 3px;
     text-align: center;
   }
 
   .check-step-lab {
-    font-size: var(--fs-sm);
+    font-size: 13px;
   }
 
   .check-step-sub {
-    font-size: var(--fs-2xs);
+    display: none !important;
   }
 
   .check-legend {
-    display: none;
-  }
-
-  .check-legend-item {
-    padding: 3px 7px;
-    font-size: 17.5px;
+    display: none !important;
   }
 
   .check-board {
-    grid-template-columns: 1fr;
-    gap: 5px;
+    display: none !important;
   }
 
-  .check-board-projects {
-    gap: 5px;
-  }
-
-  .check-board-card {
-    padding: 5px 7px;
-  }
-
-  .check-board-title {
-    font-size: 18px;
-  }
-
-  .check-board-path {
-    font-size: 19px;
-  }
-
-  .check-board-owner {
-    font-size: 17.5px;
-  }
-
-  .check-board-meta {
-    display: none;
+  .check-header {
+    gap: 4px;
+    padding: 4px 4px 5px;
   }
 
   [data-type="check-table"] > table {
     display: block;
+    min-height: 140px;
     overflow: hidden;
   }
 
@@ -3141,10 +3192,23 @@ body.ix-haptic-flash::after {
 
   [data-type="check-table"] > table > tbody {
     display: grid;
-    gap: 7px;
-    height: 100%;
-    padding: 6px;
+    gap: 8px;
+    min-height: min-content;
+    padding: 4px 2px 8px;
     align-content: start;
+  }
+
+  #t6 .panel-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #t6 [data-type="check-table"] {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
   }
 
   [data-type="check-table"] tr {
@@ -3156,13 +3220,304 @@ body.ix-haptic-flash::after {
   [data-type="check-table"][data-check-view="owners"] tr[data-check-section="owners"],
   [data-type="check-table"][data-check-view="record"] tr[data-check-section="record"] {
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) 48px;
+    grid-template-columns: 28px minmax(0, 1fr) 44px;
     align-items: start;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid var(--line);
     border-radius: 12px;
     background: var(--surface);
     box-shadow: var(--shadow-1);
+  }
+
+  /* 路径卡必须露出 A/B/C：藏 blurb/hint，芯片紧凑三列 */
+  #t6 .path-blurb,
+  #t6 .path-hint,
+  #t6 .path-chip-hint {
+    display: none !important;
+  }
+
+  #t6 .path-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  #t6 .path-chip {
+    min-height: 44px;
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+
+  #t6 .path-chip-lab {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  #t6 .chk-html {
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  #t6 [data-type="check-table"] td {
+    padding: 6px 4px;
+    font-size: 14px;
+  }
+
+  #t6 .check-status {
+    padding: 6px 6px 8px;
+  }
+
+  #t6 .check-status-dock {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  #t6 .check-path-badge,
+  #t6 .check-prog-badge,
+  #t6 .check-gate-badge {
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+
+  #t6 .check-status-msg {
+    font-size: 12px;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+  }
+
+  #t6 .check-status-actions {
+    gap: 6px;
+  }
+
+  #t6 .copy-conclusion-btn,
+  #t6 .download-receipt-btn,
+  #t6 .reset-check-btn {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  /* 预算：三列数字输入，藏说明与冗长标签文案 */
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-other,
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-note {
+    display: none !important;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-num {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-lab {
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-inp {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-fields input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] .fee-inp i {
+    flex: 0 0 auto;
+    font-size: 11px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="budget"] tr[data-check-section="budget"],
+  #t6 [data-type="check-table"][data-check-view="owners"] tr[data-check-section="owners"] {
+    overflow: visible;
+  }
+
+  /* Owner：三列姓名/部门/负责均可见可填，压密度防内滚 */
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-card {
+    padding: 4px 5px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-card-title {
+    margin-bottom: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-fields input {
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owner-card-extra {
+    display: none !important;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .owners-more-btn {
+    display: none !important;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="owners"] .chk-html {
+    font-size: 12px;
+    line-height: 1.25;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 状态说明藏长文，门禁徽章保留「最低要求已齐」 */
+  #t6 .check-status-msg {
+    display: none;
+  }
+
+  @media (max-height: 720px) {
+    #t6 .check-path-badge,
+    #t6 .check-prog-badge {
+      display: none !important;
+    }
+
+    #t6 .check-status-dock {
+      display: flex;
+      flex-wrap: nowrap;
+      max-height: none;
+      overflow: visible;
+    }
+
+    #t6 .check-gate-badge {
+      max-width: 100%;
+      overflow: hidden;
+      font-size: 12px;
+      min-height: 28px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #t6 .check-status {
+      padding: 4px 6px 6px;
+    }
+
+    #t6 .check-header {
+      padding: 2px 2px 3px;
+    }
+
+    #t6 .check-step {
+      min-height: 44px;
+      padding: 4px 2px;
+    }
+
+    #t6 [data-type="check-table"] > table > tbody {
+      gap: 5px;
+      padding: 2px;
+    }
+
+    #t6 [data-type="check-table"] td {
+      padding: 4px 3px;
+    }
+  }
+
+  /* 流程图：保证 SVG 可视区 ≥80px，可点放大 */
+  .slot-main [data-type="mermaid"],
+  [data-type="mermaid"] {
+    min-height: 168px;
+    max-height: 30vh;
+  }
+
+  #t2 [data-type="mermaid"] {
+    min-height: 220px;
+    max-height: 38vh;
+  }
+
+  #t2 [data-type="mermaid"] .mermaid-host {
+    /* 顶角标 + 底缩略条：为 SVG 留出高度 */
+    padding: 28px 4px 72px;
+  }
+
+  #t2 [data-type="mermaid"] .mermaid-context-strip {
+    bottom: 4px;
+    gap: 4px;
+  }
+
+  #t2 [data-type="mermaid"] .mermaid-context-item {
+    padding: 4px 5px;
+  }
+
+  #t2 [data-type="mermaid"] .mermaid-context-item b {
+    font-size: 11px;
+  }
+
+  #t2 [data-type="mermaid"] .mermaid-context-item span {
+    font-size: 10.5px;
+  }
+
+  .mermaid-corner-label {
+    max-width: calc(100% - 16px);
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .mermaid-host {
+    padding-bottom: 36px;
+  }
+
+  .mermaid-host.is-zoomable::after {
+    z-index: 5;
+    right: 8px;
+    bottom: 8px;
+    padding: 5px 9px;
+    font-size: 11px;
+    box-shadow: var(--shadow-1);
+  }
+
+  #t4 .slot-side,
+  #t5 .slot-side {
+    min-height: 0;
+  }
+
+  #t4 [data-type="gate-table"] td,
+  #t5 [data-type="kv-table"] td {
+    font-size: var(--fs-sm);
+    padding: 8px;
+  }
+
+  #t4 [data-type="gate-table"] td.label,
+  #t5 [data-type="kv-table"] td.label {
+    font-size: var(--fs-xs);
   }
 
   [data-type="check-table"] tr.is-checked {
@@ -3658,24 +4013,36 @@ body.ix-haptic-flash::after {
 
 @media (max-width: 370px) {
   .top {
-    grid-template-columns: 88px minmax(0, 1fr) auto;
+    grid-template-columns: 36px minmax(0, 1fr);
   }
 
   .top-mid h1 {
-    font-size: 22px;
+    font-size: var(--fs-md);
   }
 
   .tab {
-    padding: 0 10px;
+    padding: 0 8px;
+    font-size: 14px;
   }
 
-  .path-chips,
+  /* 极窄屏仍保持 A/B/C 与预算三列，避免堆叠撑破单屏 */
+  .path-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+  }
+
   .multi-chips {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
-  .fee-fields {
-    grid-template-columns: 1fr;
+  .fee-fields,
+  .owner-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .path-chip-lab {
+    font-size: 11px;
   }
 }
 
