@@ -1,51 +1,34 @@
 # AI 立项决策台 · 架构契约
 
-> 当前版本：Web v5.24 · 决策状态 Schema v2
+> 当前版本：Web v5.24 · 决策状态 Schema v2  
+> 软件工程根：仓库内 **`web-decision-brief/`**（与业务资料 `01`–`99` 分离）  
 > 原则：内容、决策规则、渲染和样式各有唯一归属；默认入口只负责开会，作者能力必须显式进入。
 
 ## 1. 目录与职责
 
 ```text
-docs/
-├── index.html                         # 安全壳、挂载点、固定依赖
-├── css/app.css                        # UI contract v2：token → shell → component → page → responsive
-├── js/bootstrap.js                    # 协议感知启动：HTTP / file 均加载版本化 IIFE
-├── js/app.js                          # UI 编排：渲染、导航、作者模式、持久化
-├── js/app.bundle.js                   # 生成物：HTTP 原子运行时，不含正文
-├── js/app.offline.bundle.js           # 生成物：应用 + content.json 离线快照
-├── js/modules/content-loader.js        # release manifest、内容 SHA、超时与可信旧快照
-├── js/modules/decision-model.js       # 纯决策域：门禁、结论、凭证、SHA-256 校验
-├── js/modules/meeting-state.js        # 草稿兼容：Schema 隔离、字段白名单、长度钳制
-├── js/modules/html-policy.js          # 输入边界：富文本、资源 URL、品牌色、SVG 清洗
-├── js/modules/mermaid-runtime.js       # 图表渲染、无障碍描述、缩放灯箱
-├── data/content.json                  # Web 内容 SSOT
-├── data/release.json                  # 生成物：统一 releaseId 与内容/源码 SHA
-├── data/content.schema.json           # 内容与决策行结构约束
-├── vendor/mermaid-10.9.6.min.js       # 固定版本、本地运行时
-├── vendor/mermaid-LICENSE.txt
-├── vendor/dompurify-3.4.12.es.mjs      # 固定版本、本地 HTML / SVG 清洗器
-├── vendor/dompurify-LICENSE.txt
-└── assets/
-    ├── logo.png                       # 顶栏方形狐狸标（128²）
-    ├── favicon.png / favicon-32.png   # 浏览器标签（勿用横版 wordmark）
-    ├── apple-touch-icon.png           # iOS 主屏
-    └── logo-mark.png                  # 高清方形标
+web-decision-brief/                    # 软件包根（在此 npm install / test / serve）
+├── package.json
+├── .node-version                      # CI 基线 Node 24
+├── docs/                              # 站点与运行时（Pages 发布此目录）
+│   ├── index.html                     # 安全壳、挂载点、固定依赖
+│   ├── css/app.css                    # UI contract v2
+│   ├── js/bootstrap.js                # 协议感知启动
+│   ├── js/app.js                      # UI 编排
+│   ├── js/app.bundle.js               # 生成物：HTTP 原子运行时
+│   ├── js/app.offline.bundle.js       # 生成物：离线快照
+│   ├── js/modules/…                  # decision / meeting / html-policy / content-loader / mermaid
+│   ├── data/content.json              # 内容 SSOT
+│   ├── data/release.json              # 生成物：releaseId + SHA
+│   ├── vendor/                        # Mermaid / DOMPurify 固定版
+│   └── assets/
+│       ├── logo.png                   # Header 横版 wordmark（狐狸+英文）
+│       ├── favicon*.png               # 浏览器标签：单独狐狸头
+│       └── apple-touch-icon.png
+├── scripts/build-web.mjs
+└── tests/                             # 单测 + ui-audit
 
-scripts/
-└── build-web.mjs                      # 生成 / 校验 Bundle、release manifest 与入口版本
-
-tests/
-├── decision-model.test.mjs            # 项目级 A/B/C 与凭证单元测试
-├── content-loader.test.mjs             # 超时、SHA、可信旧快照与混版阻断
-├── meeting-state.test.mjs              # 状态版本、白名单与不变性测试
-├── html-policy.test.mjs                # XSS、URL、颜色与 Mermaid SVG 安全测试
-├── content-contract.test.mjs           # Schema、内容、依赖、单入口与模块体积契约
-├── layout-type-contract.test.mjs       # 字号 / 徽章居中 / 标签列不压正文
-└── ui-audit.mjs                       # 4×7 页、故障注入、file、打印、交互、a11y、截图
-
-.github/workflows/quality.yml           # PR / main 的完整质量门禁
-.github/dependabot.yml                  # npm / Actions 每周依赖更新 PR
-.node-version                           # CI 基线 Node 24
+仓库根 .github/workflows/              # quality（cwd=本目录）+ pages 发布 docs/
 ```
 
 | 改动 | 唯一落点 | 禁止 |
@@ -185,26 +168,19 @@ npm run test:all
 
 ## 9. 历史打印入口
 
-`01-立项主线/print/AI赋能立项_金主一页汇报.html` 是无业务正文的兼容入口：
+仓库内 `01-立项主线/print/AI赋能立项_金主一页汇报.html`（相对本包为 `../01-立项主线/print/…`）是无业务正文的兼容入口：
 
-- `noindex` + canonical 指向 `docs/index.html`；
-- meta refresh 与可点击链接都进入唯一正式入口；
+- 跳转到 `web-decision-brief/docs/index.html`；
 - 不加载脚本、Mermaid，也不复制任何旧会议口径；
-- file 双击场景由正式壳加载可校验离线 Bundle，不再永久停在骨架屏；
-- 正式浏览和七页 A4 打印统一由 `docs/index.html` 及其 `@media print` 提供。
+- 正式浏览和七页 A4 打印统一由本包 `docs/index.html` 提供。
 
 ## 10. 发布
 
 ```bash
+cd web-decision-brief
 npm run test:all
-git switch -c fix/your-topic
-# 只 add 本轮白名单文件；禁止 git add .
-git push -u origin HEAD
-gh pr create   # squash merge；quality / test 为必需检查
+# 在仓库根提交 PR；quality 的 working-directory 为本目录
+# Pages 由 .github/workflows/pages.yml 发布 docs/
 ```
 
-`main` 受保护：直推会被拒。合并后 GitHub Pages 从 `main` 发布。
-
-严禁 `git add .`：工作树含业务资料、`tmp/`、`test-results/` 等。发布前人工确认样本、Owner、预算与飞书/邮件留痕——自动测试不能替代组织事实。
-
-过程计划与评审打分稿放在 `99-归档/`，不要堆进 `docs/` 运行时目录。
+`main` 受保护。过程计划与评审打分稿放在仓库 `99-归档/`，不要堆进本包 `docs/`。
