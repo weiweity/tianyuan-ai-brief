@@ -1492,8 +1492,12 @@ body.is-editing .mermaid-src {
 }
 
 .check-step {
-  display: grid;
-  gap: 1px;
+  /* flex + 居中：仅 lab 或 lab+sub 时都垂直水平居中 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   min-width: 0;
   min-height: var(--touch);
   padding: 6px 8px;
@@ -1501,27 +1505,34 @@ body.is-editing .mermaid-src {
   border-radius: 10px;
   color: var(--muted);
   background: var(--surface);
+  /* 压掉 button 默认行高，避免文字在 min-height 内偏上 */
   font-size: 19px;
   font-weight: 800;
+  line-height: 1;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
 }
 
 .check-step-lab {
   display: block;
+  max-width: 100%;
+  overflow: hidden;
   color: inherit;
   font-size: var(--fs-sm);
   font-weight: 850;
-  line-height: 1.2;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .check-step-sub {
   display: block;
+  max-width: 100%;
   overflow: hidden;
   color: var(--muted);
   font-size: var(--fs-2xs);
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1741,9 +1752,11 @@ body.is-editing .mermaid-src {
 }
 
 .path-chip {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 3px;
-  align-content: start;
   min-width: 0;
   min-height: var(--touch);
   padding: 8px 10px;
@@ -1753,7 +1766,8 @@ body.is-editing .mermaid-src {
   background: var(--surface);
   font-size: 20px;
   font-weight: 800;
-  text-align: left;
+  line-height: 1;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -2562,9 +2576,10 @@ body.ix-haptic-flash::after {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
     height: 100%;
-    padding: 10px;
+    min-height: 0;
+    padding: 6px 8px 8px;
   }
 
   #t6 [data-type="check-table"][data-check-view="paths"] tr[data-check-section="paths"],
@@ -2572,7 +2587,7 @@ body.ix-haptic-flash::after {
   #t6 [data-type="check-table"][data-check-view="owners"] tr[data-check-section="owners"],
   #t6 [data-type="check-table"][data-check-view="record"] tr[data-check-section="record"] {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 58px;
+    grid-template-columns: 36px minmax(0, 1fr) 52px;
     align-items: start;
     min-width: 0;
     height: 100%;
@@ -2589,31 +2604,47 @@ body.ix-haptic-flash::after {
   #t6 [data-type="check-table"][data-check-view="record"] td {
     display: block;
     width: auto;
-    padding: 10px 8px;
+    padding: 8px 6px;
     border-bottom: 0;
   }
 
-  /* 双卡并排时 A/B/C 必须横排三列，竖排会撑高并与底部状态栏遮挡 */
-  #t6 [data-type="check-table"][data-check-view="paths"] .path-chips {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip {
-    min-height: 48px;
-    padding: 6px 4px;
-    align-content: center;
-  }
-
-  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip-hint {
-    display: none !important;
+  /* 路径：贴内容高度，去掉双卡撑满后的大片留白 */
+  #t6 [data-type="check-table"][data-check-view="paths"] > table > tbody {
+    align-items: start;
+    align-content: start;
+    height: auto;
   }
 
   #t6 [data-type="check-table"][data-check-view="paths"] tr[data-check-section="paths"] {
-    align-content: start;
+    align-items: center;
     height: auto;
     max-height: 100%;
-    overflow: hidden;
+  }
+
+  /* A/B/C 横排紧凑 */
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 4px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 4px 3px;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip-hint,
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-blurb,
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-hint {
+    display: none !important;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip-lab {
+    font-size: 13px;
+    line-height: 1.15;
   }
 
   #t6 [data-type="check-table"][data-check-view="paths"] > table {
@@ -2621,11 +2652,16 @@ body.ix-haptic-flash::after {
     overflow: hidden;
   }
 
-  /* 状态条始终在文档流底部，不被卡片盖住 */
+  #t6 .check-header {
+    gap: 4px;
+    padding: 4px 6px 6px;
+  }
+
   #t6 .check-status {
     position: relative;
     z-index: 2;
     flex: 0 0 auto;
+    margin-top: auto;
   }
 
   #t6 [data-type="check-table"] {
@@ -3260,18 +3296,22 @@ body.ix-haptic-flash::after {
   }
 
   .check-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     min-width: 0;
-    padding: 5px 2px;
-    text-align: center;
+    padding: 4px 2px;
     overflow: hidden;
+    text-align: center;
   }
 
   .check-step-lab {
     display: block;
     overflow: hidden;
     font-size: 12px;
-    line-height: 1.15;
+    line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -3279,6 +3319,25 @@ body.ix-haptic-flash::after {
   .check-steps {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  /* 手机路径卡：贴内容，少大块空白 */
+  #t6 [data-type="check-table"] > table > tbody {
+    gap: 6px;
+    padding: 2px 2px 6px;
+    align-content: start;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] tr[data-check-section="paths"] {
+    align-items: center;
+  }
+
+  #t6 .path-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 4px 2px;
   }
 
   .check-step-sub {
