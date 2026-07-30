@@ -2209,10 +2209,24 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         resetAllSwipeStyles();
       }
     };
-    cancelPendingGoSwipe = cancelPendingGo;
 
-    // 仅控件吞手势；卡片空白区可滑（方案 skip 最终表）
-    const skipSel = "a,button,input,textarea,select,label,[contenteditable=true]";
+    /** 灯箱开关时强制清零，避免手势态残留导致「一动就切 Tab」 */
+    const hardResetGesture = () => {
+      cancelPendingGo(true);
+      tracking = false;
+      axis = null;
+      dragging = false;
+      clearDrag(activePanel(), false);
+    };
+    cancelPendingGoSwipe = (hard) => {
+      if (hard) hardResetGesture();
+      else cancelPendingGo(false);
+    };
+
+    // 仅控件吞手势；流程图与灯箱不参与翻页滑（点图=放大，不是滑页）
+    const skipSel =
+      "a,button,input,textarea,select,label,[contenteditable=true],.mermaid-host,#diagram-lightbox,.diagram-lightbox-close,.diagram-zoom-viewport,.diagram-zoom-hint";
+    const lightboxOpen = () => document.body.classList.contains("is-lightbox");
 
     const activePanel = () => document.querySelector(".panel.active:not(.is-peek)");
 
@@ -2355,7 +2369,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     };
 
     const onStart = (x, y) => {
-      if (editing || document.body.classList.contains("is-lightbox")) return;
+      if (editing || lightboxOpen()) return;
       if (!inSwipeBand(y)) return;
       cancelPendingGo(true);
       startX = x;
@@ -2369,7 +2383,10 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     };
 
     const onMove = (x, y, e) => {
-      if (!tracking || editing) return;
+      if (!tracking || editing || lightboxOpen()) {
+        if (lightboxOpen()) hardResetGesture();
+        return;
+      }
       const dx = x - startX;
       const dy = y - startY;
       if (!axis) {
@@ -2379,8 +2396,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           axis = "v";
           return;
         }
-        // 认横：滞回 1.15
-        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.15) axis = "h";
+        // 认横：滞回 1.25，略提高，减少误触
+        if (Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.25) axis = "h";
         else return;
       }
       if (axis !== "h") return;
@@ -2391,8 +2408,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     };
 
     const onEnd = (x, y) => {
-      if (!tracking || editing) {
+      if (!tracking || editing || lightboxOpen()) {
         tracking = false;
+        axis = null;
+        dragging = false;
+        if (lightboxOpen()) hardResetGesture();
         return;
       }
       tracking = false;
@@ -2410,7 +2430,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       const w = stage.clientWidth || window.innerWidth;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      const pass = passThreshold(dx, dt, w) && absX >= absY * 0.95;
+      // 鼠标/触控松手：更严阈值，避免轻移就翻页
+      const pass = passThreshold(dx, dt, w) && absX >= absY * 1.05 && absX >= 40;
       if (!pass) {
         clearDrag(panel, true);
         return;
@@ -2530,35 +2551,16 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       clearDrag(activePanel(), false);
     });
 
-    // —— pointer 仅 mouse，禁与 touch 双 fire ——
-    let mouseDown = false;
-    stage.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "touch" || e.pointerType === "pen") return;
-      if (e.button !== 0) return;
-      if (e.target.closest(skipSel)) return;
-      mouseDown = true;
-      onStart(e.clientX, e.clientY);
-    });
-    stage.addEventListener("pointermove", (e) => {
-      if (e.pointerType === "touch" || e.pointerType === "pen") return;
-      if (!mouseDown) return;
-      onMove(e.clientX, e.clientY, null);
-    });
-    stage.addEventListener("pointerup", (e) => {
-      if (e.pointerType === "touch" || e.pointerType === "pen") return;
-      if (!mouseDown) return;
-      mouseDown = false;
-      onEnd(e.clientX, e.clientY);
-    });
-    stage.addEventListener("pointercancel", (e) => {
-      if (e.pointerType === "touch" || e.pointerType === "pen") return;
-      cancelPendingGo(true);
-      mouseDown = false;
-      tracking = false;
-      axis = null;
-      dragging = false;
-      clearDrag(activePanel(), false);
-    });
+    // 桌面不启鼠标拖页（与点图放大冲突）；仅 touch 翻页。灯箱开关硬清手势态。
+    document.addEventListener("ai-brief:lightbox", () => hardResetGesture());
+    document.addEventListener(
+      "pointerup",
+      (e) => {
+        if (e.pointerType === "touch" || e.pointerType === "pen") return;
+        if (tracking || lightboxOpen()) hardResetGesture();
+      },
+      true
+    );
   }
   // ---------- boot ----------
   function applyMobileClasses() {
