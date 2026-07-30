@@ -14,9 +14,9 @@
 
 | 用途 | 入口 |
 |------|------|
-| Web 决策台 | 根目录 `README.md` · 线上 Pages |
-| 业务文档导航 | `README-文档怎么用.md` · `分类汇总.md` |
-| 立项主交付 | `01-立项主线/`（10–16、19、print） |
-| 架构 | `docs/ARCHITECTURE.md` |
+| Web 决策台 | `../../web-decision-brief/` · 线上 Pages |
+| 业务文档导航 | `../README.md` · `../分类汇总.md` |
+| 立项主交付 | `../01-立项主线/`（10–16、19、print） |
+| 架构 | `../../web-decision-brief/docs/ARCHITECTURE.md` |
 
-现行文档只在 `01`–`08`、`docs/` 与根目录入口。
+现行业务正文在 `business-docs/01`–`08`；软件在 `web-decision-brief/`。

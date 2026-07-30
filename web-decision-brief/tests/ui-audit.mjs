@@ -533,7 +533,7 @@ async function runLegacyAudit(browser, viewport) {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
   await page.goto(
-    `${origin}/01-%E7%AB%8B%E9%A1%B9%E4%B8%BB%E7%BA%BF/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
+    `${origin}/business-docs/01-%E7%AB%8B%E9%A1%B9%E4%B8%BB%E7%BA%BF/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
     { waitUntil: "networkidle" }
   );
   await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
@@ -566,7 +566,7 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   });
 
   const entryPath = useLegacyEntry
-    ? path.join(root, "../01-立项主线/print/AI赋能立项_金主一页汇报.html")
+    ? path.join(root, "../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html")
     : path.join(root, "docs/index.html");
   const entryUrl = `${pathToFileURL(entryPath).href}${
     useLegacyEntry ? "" : "?audit=file-direct"

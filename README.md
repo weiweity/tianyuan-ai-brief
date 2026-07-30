@@ -1,27 +1,25 @@
 # 天元 · AI 赋能立项（工作区）
 
-本仓库分两块，**软件**与**业务资料**分开，避免互相踩踏。
+软件与业务资料分开放，各自集中命名。
 
 | 目录 | 是什么 |
 |------|--------|
-| **[web-decision-brief/](web-decision-brief/)** | **软件**：天元 · AI 立项决策台（Web 应用、构建、测试、发布） |
-| `01`–`08`、`99-归档` | **业务资料**：立项材料、纪要、周报、过程归档 |
-| [README-文档怎么用.md](README-文档怎么用.md) | 业务文档总导航 |
-| [分类汇总.md](分类汇总.md) | 文档分类清单 |
+| **[web-decision-brief/](web-decision-brief/)** | **软件**：AI 立项决策台（npm / 站点 / 测试） |
+| **[business-docs/](business-docs/)** | **业务文档**：立项材料、纪要、周报、归档 |
 
-## 软件（决策台）
+## 软件
 
 ```bash
 cd web-decision-brief
 npm install
 npm run serve          # http://localhost:8765
-npm test && npm run test:ui
 ```
 
-- **在线：** https://weiweity.github.io/tianyuan-ai-brief/
-- **工程说明：** [web-decision-brief/README.md](web-decision-brief/README.md)
-- **架构：** [web-decision-brief/docs/ARCHITECTURE.md](web-decision-brief/docs/ARCHITECTURE.md)
+- 在线：https://weiweity.github.io/tianyuan-ai-brief/
+- 说明：[web-decision-brief/README.md](web-decision-brief/README.md)
 
-## 业务资料
+## 业务文档
 
-从 [README-文档怎么用.md](README-文档怎么用.md) 进入；主交付在 `01-立项主线/`。
+- 导航：[business-docs/README.md](business-docs/README.md)
+- 分类清单：[business-docs/分类汇总.md](business-docs/分类汇总.md)
+- 主交付：`business-docs/01-立项主线/`
