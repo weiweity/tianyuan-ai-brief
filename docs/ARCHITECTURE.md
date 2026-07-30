@@ -25,7 +25,11 @@ docs/
 ├── vendor/mermaid-LICENSE.txt
 ├── vendor/dompurify-3.4.12.es.mjs      # 固定版本、本地 HTML / SVG 清洗器
 ├── vendor/dompurify-LICENSE.txt
-└── assets/logo.png
+└── assets/
+    ├── logo.png                       # 顶栏方形狐狸标（128²）
+    ├── favicon.png / favicon-32.png   # 浏览器标签（勿用横版 wordmark）
+    ├── apple-touch-icon.png           # iOS 主屏
+    └── logo-mark.png                  # 高清方形标
 
 scripts/
 └── build-web.mjs                      # 生成 / 校验 Bundle、release manifest 与入口版本
@@ -36,6 +40,7 @@ tests/
 ├── meeting-state.test.mjs              # 状态版本、白名单与不变性测试
 ├── html-policy.test.mjs                # XSS、URL、颜色与 Mermaid SVG 安全测试
 ├── content-contract.test.mjs           # Schema、内容、依赖、单入口与模块体积契约
+├── layout-type-contract.test.mjs       # 字号 / 徽章居中 / 标签列不压正文
 └── ui-audit.mjs                       # 4×7 页、故障注入、file、打印、交互、a11y、截图
 
 .github/workflows/quality.yml           # PR / main 的完整质量门禁
@@ -130,7 +135,9 @@ tests/
 6. 1024 / 640 / 640×700 短手机 / 1025×800 短桌面 / 370 / 横屏响应式
 7. print / reduced motion
 
-旧版 5500 行级联补丁不参与加载。修复必须回到所属层，不得在文件尾追加版本覆盖。
+手机（≤640）约定：页签/路径芯片/状态按钮可用 **全称 + 短文案** 双写，CSS 切换显示；`aria-label` 保留全称。t6 四步不得依赖表格内滚；可见控件触控高度 ≥44px。
+
+旧版 5500 行级联补丁不参与加载。修复必须回到所属层，不得在文件尾追加版本覆盖。CSS 行数门禁见 `content-contract` 测试。
 
 ## 7. 依赖与安全
 
@@ -190,15 +197,14 @@ npm run test:all
 
 ```bash
 npm run test:all
-git switch -c codex/offline-file-compat
-git add -- .node-version .gitignore .github/workflows/quality.yml \
-  docs tests scripts package.json package-lock.json README.md \
-  "01-立项主线/print/AI赋能立项_金主一页汇报.html"
-git diff --cached --name-only
-git commit -m "feat: harden decision brief quality gates"
-git push -u origin codex/offline-file-compat
+git switch -c fix/your-topic
+# 只 add 本轮白名单文件；禁止 git add .
+git push -u origin HEAD
+gh pr create   # squash merge；quality / test 为必需检查
 ```
 
-严禁在当前工作树使用 `git add .`：仓库外层还有不属于本轮发布的业务资料目录。创建 PR 后，应先让 `quality / test` 通过再合并，并在仓库设置中把它设为必需检查；否则 GitHub Pages 的分支部署可能和 push 测试并行。
+`main` 受保护：直推会被拒。合并后 GitHub Pages 从 `main` 发布。
 
-GitHub Actions 第三方步骤固定到 commit SHA，Dependabot 每周检查 npm 和 Actions 更新。发布前还应人工确认：业务样本阈值、Owner 姓名、预算批准和飞书 / 邮件正式记录。自动测试不能替代这些组织事实。
+严禁 `git add .`：工作树含业务资料、`tmp/`、`test-results/` 等。发布前人工确认样本、Owner、预算与飞书/邮件留痕——自动测试不能替代组织事实。
+
+过程计划与评审打分稿放在 `99-归档/`，不要堆进 `docs/` 运行时目录。
