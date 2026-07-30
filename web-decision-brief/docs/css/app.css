@@ -2436,10 +2436,17 @@ body.is-editing .mermaid-src {
   justify-content: center;
   width: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   transform-origin: center center;
   will-change: transform;
+  cursor: grab;
+  touch-action: none;
 }
+
+.diagram-zoom-viewport:active {
+  cursor: grabbing;
+}
+
 
 .diagram-lightbox-svg {
   display: block;
@@ -2586,13 +2593,43 @@ body.ix-haptic-flash::after {
     border-bottom: 0;
   }
 
+  /* 双卡并排时 A/B/C 必须横排三列，竖排会撑高并与底部状态栏遮挡 */
   #t6 [data-type="check-table"][data-check-view="paths"] .path-chips {
-    grid-template-columns: 1fr;
-    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
 
   #t6 [data-type="check-table"][data-check-view="paths"] .path-chip {
-    min-height: 52px;
+    min-height: 48px;
+    padding: 6px 4px;
+    align-content: center;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] .path-chip-hint {
+    display: none !important;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] tr[data-check-section="paths"] {
+    align-content: start;
+    height: auto;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  #t6 [data-type="check-table"][data-check-view="paths"] > table {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* 状态条始终在文档流底部，不被卡片盖住 */
+  #t6 .check-status {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+  }
+
+  #t6 [data-type="check-table"] {
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   #t6 [data-type="check-table"][data-check-view="budget"] .fee-fields {
@@ -3224,12 +3261,24 @@ body.ix-haptic-flash::after {
 
   .check-step {
     min-height: 44px;
-    padding: 5px 3px;
+    min-width: 0;
+    padding: 5px 2px;
     text-align: center;
+    overflow: hidden;
   }
 
   .check-step-lab {
-    font-size: 13px;
+    display: block;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .check-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .check-step-sub {

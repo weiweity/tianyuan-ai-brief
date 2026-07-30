@@ -463,19 +463,72 @@ export function createMermaidRuntime({
 
     const distance = (first, second) =>
       Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+
+    // —— 拖移：Pointer Events 统一鼠标左键 + 单指（此前仅 touch，桌面左键无效）——
+    let panPointerId = null;
+    let panMoved = false;
+    const endPan = (event) => {
+      if (panPointerId == null || event.pointerId !== panPointerId) return;
+      panPointerId = null;
+      panStart = null;
+      try {
+        if (stage.hasPointerCapture?.(event.pointerId)) {
+          stage.releasePointerCapture(event.pointerId);
+        }
+      } catch (_) {}
+      // 未明显拖动则当作点击，留给 dblclick；拖过则阻止误关
+      if (panMoved) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      panMoved = false;
+    };
+
+    stage.addEventListener("pointerdown", (event) => {
+      if (box.hidden) return;
+      if (event.button != null && event.button !== 0) return;
+      // 多点触控交给 pinch（touches）
+      if (event.pointerType === "touch" && event.isPrimary === false) return;
+      if (scale <= 1.02) return; // 未放大时不抢拖移，留给双击
+      if (event.target.closest(".diagram-lightbox-close")) return;
+      panPointerId = event.pointerId;
+      panMoved = false;
+      panStart = {
+        x: event.clientX - translateX,
+        y: event.clientY - translateY,
+      };
+      try {
+        stage.setPointerCapture(event.pointerId);
+      } catch (_) {}
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    stage.addEventListener("pointermove", (event) => {
+      if (panPointerId == null || event.pointerId !== panPointerId || !panStart) return;
+      if (scale <= 1) return;
+      const nx = event.clientX - panStart.x;
+      const ny = event.clientY - panStart.y;
+      if (Math.hypot(nx - translateX, ny - translateY) > 2) panMoved = true;
+      translateX = nx;
+      translateY = ny;
+      applyTransform();
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    stage.addEventListener("pointerup", endPan);
+    stage.addEventListener("pointercancel", endPan);
+
+    // 双指缩放（touch 特有）
     stage.addEventListener(
       "touchstart",
       (event) => {
+        if (box.hidden) return;
         event.stopPropagation();
         if (event.touches.length === 2) {
+          panPointerId = null;
+          panStart = null;
           pinchStartDistance = distance(event.touches[0], event.touches[1]) || 1;
           pinchStartScale = scale;
-          panStart = null;
-        } else if (event.touches.length === 1 && scale > 1) {
-          panStart = {
-            x: event.touches[0].clientX - translateX,
-            y: event.touches[0].clientY - translateY,
-          };
         }
       },
       { passive: true }
@@ -483,17 +536,13 @@ export function createMermaidRuntime({
     stage.addEventListener(
       "touchmove",
       (event) => {
-        event.stopPropagation();
+        if (box.hidden) return;
         if (event.touches.length === 2) {
+          event.stopPropagation();
           if (event.cancelable) event.preventDefault();
           const currentDistance = distance(event.touches[0], event.touches[1]) || 1;
           scale = pinchStartScale * (currentDistance / pinchStartDistance);
           applyTransform(true);
-        } else if (event.touches.length === 1 && panStart && scale > 1) {
-          if (event.cancelable) event.preventDefault();
-          translateX = event.touches[0].clientX - panStart.x;
-          translateY = event.touches[0].clientY - panStart.y;
-          applyTransform();
         }
       },
       { passive: false }
@@ -501,39 +550,23 @@ export function createMermaidRuntime({
     stage.addEventListener(
       "touchend",
       (event) => {
+        if (box.hidden) return;
         event.stopPropagation();
         if (event.touches.length < 2) {
           pinchStartDistance = 0;
           if (scale < 1) resetZoom();
           else applyTransform();
         }
-        if (event.touches.length === 0) panStart = null;
-        if (event.changedTouches.length === 1 && event.touches.length === 0) {
-          const now = Date.now();
-          if (now - lastTapTime < 280) {
-            // 整图缩放：复位平移后统一放大，避免「局部放大」观感
-            translateX = 0;
-            translateY = 0;
-            if (scale > 1.05) resetZoom();
-            else {
-              scale = 1.85;
-              applyTransform();
-            }
-            lastTapTime = 0;
-          } else {
-            lastTapTime = now;
-          }
-        }
       },
       { passive: true }
     );
+
     stage.addEventListener(
       "wheel",
       (event) => {
         if (box.hidden) return;
         event.preventDefault();
         event.stopPropagation();
-        // 以视口中心为原点整图缩放（不跟鼠标局部锚点，避免「只放大一角」）
         const prev = scale;
         scale += event.deltaY > 0 ? -0.14 : 0.14;
         scale = Math.min(5, Math.max(1, scale));
@@ -541,7 +574,6 @@ export function createMermaidRuntime({
           translateX = 0;
           translateY = 0;
         } else if (prev > 0) {
-          // 保持中心不漂：缩放比变化时按中心等比收束平移
           const ratio = scale / prev;
           translateX *= ratio;
           translateY *= ratio;
@@ -550,6 +582,7 @@ export function createMermaidRuntime({
       },
       { passive: false }
     );
+
     // 桌面双击整图放大/还原
     stage.addEventListener("dblclick", (event) => {
       if (box.hidden) return;
@@ -562,6 +595,30 @@ export function createMermaidRuntime({
         applyTransform();
       }
     });
+
+    // 触屏双击：用时间窗（pointer 已覆盖拖移）
+    stage.addEventListener(
+      "pointerup",
+      (event) => {
+        if (box.hidden || panMoved) return;
+        if (event.pointerType !== "touch") return;
+        if (scale > 1.02 && panPointerId != null) return;
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          translateX = 0;
+          translateY = 0;
+          if (scale > 1.05) resetZoom();
+          else {
+            scale = 1.85;
+            applyTransform();
+          }
+          lastTapTime = 0;
+        } else {
+          lastTapTime = now;
+        }
+      },
+      true
+    );
     documentLike.addEventListener(
       "keydown",
       (event) => {
