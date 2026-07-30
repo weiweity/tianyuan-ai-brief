@@ -96,7 +96,8 @@ body {
     var(--canvas);
   font-family: var(--font-sans);
   font-size: var(--fs-base);
-  line-height: 1.55;
+  /* 轻量呼吸：略增行间，字号不动 */
+  line-height: 1.62;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -587,10 +588,10 @@ body.is-editing .edit-banner {
   inset: 0;
   display: none;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 14px;
   min-width: 0;
   min-height: 0;
-  padding: 12px;
+  padding: 14px;
   background: transparent;
 }
 
@@ -612,8 +613,8 @@ body.is-editing .edit-banner {
   flex: 0 0 auto;
   align-items: center;
   gap: 9px;
-  min-height: 38px;
-  padding: 0 4px 9px;
+  min-height: 40px;
+  padding: 0 4px 11px;
   border-bottom: 1px solid var(--line);
   color: var(--brand-900);
   font-size: var(--fs-lg);
@@ -649,7 +650,7 @@ body.is-editing .edit-banner {
 .panel-body.layout-fill {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 14px;
 }
 
 .panel-body.layout-stack {
@@ -663,7 +664,7 @@ body.is-editing .edit-banner {
 .panel-body.layout-split {
   display: grid;
   grid-template-columns: minmax(0, 44fr) minmax(16px, 56fr);
-  gap: var(--space-3);
+  gap: 14px;
 }
 
 .slot-main,
@@ -772,11 +773,11 @@ body.is-check-page .edge-nav,
   display: flex;
   align-items: center;
   min-height: 64px;
-  padding: 14px 16px 14px 20px;
+  padding: 15px 17px 15px 20px;
   overflow: hidden;
   border-left: 4px solid var(--brand-600);
   font-size: var(--fs-sm);
-  line-height: 1.5;
+  line-height: 1.58;
 }
 
 .callout.brand {
@@ -885,7 +886,7 @@ tr.row-warn td.label {
     "summary summary" minmax(0, 1fr)
     "goal scope" auto
     / minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 #t1 [data-type="kv-table"] {
@@ -914,7 +915,7 @@ tr.row-warn td.label {
   align-items: center;
   border-bottom: 1px solid var(--line);
   font-size: var(--fs-md);
-  line-height: 1.5;
+  line-height: 1.58;
 }
 
 #t1 [data-type="kv-table"] tr:last-child td {
@@ -1381,6 +1382,33 @@ body.is-editing .mermaid-src {
   min-height: 0;
 }
 
+/* t6 锁密：不吃全站呼吸行高，保证当场确认单屏无内滚 */
+#t6,
+#t6 .chk-html,
+#t6 .path-chip-lab,
+#t6 .path-chip-hint,
+#t6 .fee-fields,
+#t6 .fee-lab,
+#t6 .owner-fields,
+#t6 .owner-card-title,
+#t6 .check-status-msg,
+#t6 .check-step-lab,
+#t6 .check-gate-badge,
+#t6 .check-path-badge,
+#t6 .check-prog-badge {
+  line-height: 1.35;
+}
+
+#t6 .panel {
+  gap: var(--space-2);
+  padding: 10px;
+}
+
+#t6 .panel > h2 {
+  min-height: 36px;
+  padding-bottom: 8px;
+}
+
 /* 信息已并入顶部看板 + 底部状态，避免双 callout 抢高度/遮挡交互区 */
 #t6 [data-block-id="t6.gate"],
 #t6 [data-block-id="t6.bound"] {
@@ -1764,7 +1792,8 @@ body.is-editing .mermaid-src {
   margin-top: 6px;
   color: var(--muted);
   font-size: var(--fs-2xs);
-  font-weight: 700;
+  font-weight: 600;
+  opacity: 0.92;
 }
 
 .fee-note {
@@ -1772,8 +1801,9 @@ body.is-editing .mermaid-src {
   margin-top: 2px;
   color: var(--muted);
   font-size: var(--fs-2xs);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.35;
+  opacity: 0.92;
 }
 
 .multi-chip.is-selected {
@@ -2608,7 +2638,8 @@ body.ix-haptic-flash::after {
 
   body {
     font-size: var(--fs-base);
-    line-height: 1.5;
+    /* 手机轻提行高；t6 仍由 #t6 锁密覆盖 */
+    line-height: 1.58;
     background: var(--canvas);
   }
 
@@ -2760,14 +2791,21 @@ body.ix-haptic-flash::after {
   }
 
   .panel {
-    gap: 8px;
-    padding: 8px;
+    gap: 10px;
+    padding: 10px;
   }
 
   .panel > h2 {
     min-height: 42px;
-    padding: 0 3px 8px;
+    padding: 0 3px 9px;
     font-size: var(--fs-lg);
+  }
+
+  /* 手机 t6 不跟 panel 呼吸，继续贴边密排 */
+  #t6.panel,
+  #t6 .panel {
+    gap: 6px;
+    padding: 6px;
   }
 
   .panel > h2 .tag {
@@ -2780,11 +2818,19 @@ body.ix-haptic-flash::after {
   .panel-body.layout-split {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #t6 .panel-body,
+  #t6 .panel-body.layout-stack,
+  #t6 .panel-body.layout-fill,
+  #t6 .panel-body.layout-split {
+    gap: 0;
+    overflow: hidden;
   }
 
   .slot-main,
@@ -3968,6 +4014,67 @@ body.ix-haptic-flash::after {
   #t7 [data-type="gate-table"] td.label,
   #t7 [data-block-id="t7.pm"] {
     font-size: 18.5px;
+  }
+}
+
+/* 桌面呼吸：多松一档，t6 继续吃上方锁密规则 */
+@media (min-width: 1025px) {
+  body {
+    line-height: 1.65;
+  }
+
+  .panel {
+    gap: 16px;
+    padding: 16px 18px;
+  }
+
+  .panel > h2 {
+    min-height: 44px;
+    padding-bottom: 12px;
+  }
+
+  .panel-body.layout-stack,
+  .panel-body.layout-fill {
+    gap: 16px;
+  }
+
+  .panel-body.layout-split {
+    gap: 16px;
+  }
+
+  .callout {
+    min-height: 68px;
+    padding: 16px 18px 16px 22px;
+    line-height: 1.6;
+  }
+
+  #t1 .panel-body {
+    gap: 14px;
+  }
+
+  #t1 [data-type="kv-table"] td {
+    line-height: 1.62;
+  }
+
+  #t4 [data-type="gate-table"] td,
+  #t5 [data-type="kv-table"] td {
+    line-height: 1.55;
+  }
+
+  /* 桌面 t6 仍锁密，避免当场确认被桌面呼吸抬高 */
+  #t6.panel,
+  #t6 .panel {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  #t6,
+  #t6 .chk-html,
+  #t6 .path-chip-lab,
+  #t6 .fee-fields,
+  #t6 .owner-fields,
+  #t6 .check-status-msg {
+    line-height: 1.35;
   }
 }
 

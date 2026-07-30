@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "releaseId": "shell-v2-74614a03c44c",
+  "releaseId": "shell-v2-d4deb423914b",
   "decisionSchemaVersion": 2,
   "contentVersion": "5.24.0",
   "publishStamp": "1785348966720",
   "contentSha256": "d683f25b08601165f13a6ed08ca8d6935aee99531f74bc8c46cfa9fd507e3fb1",
-  "sourceSha256": "74614a03c44cabf63f2a9897f044a40ee563d500dc190a9cef7574695e19a473"
+  "sourceSha256": "d4deb423914b8e77f5ace7998d0af43c588195af46ee6ce763ea7ed0509a536b"
 }
