@@ -1,25 +1,33 @@
-# 天元 · AI 赋能立项（工作区）
+# 天元 · AI 赋能立项
 
-软件与业务资料分开放，各自集中命名。
+这是工作区总入口。项目状态、业务文档和软件分开管理。
 
-| 目录 | 是什么 |
-|------|--------|
-| **[web-decision-brief/](web-decision-brief/)** | **软件**：AI 立项决策台（npm / 站点 / 测试） |
-| **[business-docs/](business-docs/)** | **业务文档**：立项材料、纪要、周报、归档 |
+## 先打开
 
-## 软件
+| 你要做什么 | 入口 |
+|------------|------|
+| **看当前项目状态、卡点、下一步** | **[项目驾驶舱](business-docs/00-项目驾驶舱.md)** |
+| 找立项、纪要、周报或历史资料 | [业务文档地图](business-docs/README.md) |
+| 查完整文件清单 | [业务文档分类汇总](business-docs/分类汇总.md) |
+| 打开客服立项执行补录台 | [软件说明](web-decision-brief/README.md) |
+
+> **口径边界：** README 只负责找路，不维护项目细节。当前组合状态以项目驾驶舱为准；客服的[章程](business-docs/01-立项主线/20-2026-07-31客服项目_立项决定与项目章程.md)、[G0 证据台账](business-docs/01-立项主线/21-客服话术库_G0启动清单与责任台账.md)与[验收模板](business-docs/01-立项主线/16-验收与评测模板.md)分别维护各自真相。
+
+## 工作区结构
+
+| 目录 | 内容 |
+|------|------|
+| **[business-docs/](business-docs/)** | 业务：项目驾驶舱、立项材料、原始纪要、周报与归档 |
+| **[web-decision-brief/](web-decision-brief/)** | 软件：客服立项执行补录台，本机草稿与测试 |
+
+## 本地打开软件
 
 ```bash
 cd web-decision-brief
 npm install
-npm run serve          # http://localhost:8765
+npm run serve
 ```
 
-- 在线：https://weiweity.github.io/tianyuan-ai-brief/
-- 说明：[web-decision-brief/README.md](web-decision-brief/README.md)
+打开 `http://localhost:8765`。在线 Pages 可能仍是上次发布的旧稿，不能替代本地业务真源。
 
-## 业务文档
-
-- 导航：[business-docs/README.md](business-docs/README.md)
-- 分类清单：[business-docs/分类汇总.md](business-docs/分类汇总.md)
-- 主交付：`business-docs/01-立项主线/`
+> **防丢失提醒：** 本仓库有本地排除和未跟踪文档。交接或换电脑前先看[驾驶舱的“防丢失与交付风险”](business-docs/00-项目驾驶舱.md#7-防丢失与交付风险)，不要把“本机能打开”等同于“Git 已备份”。
