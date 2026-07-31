@@ -311,6 +311,62 @@ html:not(.author-mode) .toolbar {
   border-radius: 10px;
   text-align: left;
 }
+.archive-guard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 5px 12px;
+  border-top: 1px solid #ead9a4;
+  color: var(--ink);
+  background: var(--warn-bg);
+}
+.archive-guard-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-width: 0;
+}
+.archive-guard-copy strong {
+  flex: 0 0 auto;
+  color: #674d00;
+  font-size: 17px;
+  font-weight: 850;
+}
+.archive-guard-copy span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.archive-guard-links {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+.archive-guard-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--brand-300);
+  border-radius: 999px;
+  color: var(--brand-700);
+  background: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.archive-guard-links a:hover,
+.archive-guard-links a:focus-visible {
+  border-color: var(--brand-600);
+  background: var(--brand-50);
+}
 .progress-bar {
   height: 3px;
   background: var(--brand-100);
@@ -617,6 +673,9 @@ body.is-editing .edit-banner {
 }
 .swipe-hint {
   flex: 0 0 auto;
+}
+.nav-hint-touch {
+  display: none;
 }
 .footer {
   display: flex;
@@ -2516,6 +2575,38 @@ body.ix-haptic-flash::after {
   .top-right {
     display: none !important;
   }
+  .archive-guard {
+    gap: 5px;
+    min-height: 48px;
+    padding: 2px 5px;
+  }
+  .archive-guard-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .archive-guard-copy strong {
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .archive-guard-copy span {
+    display: none;
+  }
+  .archive-guard-links {
+    gap: 4px;
+  }
+  .archive-guard-links a {
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+  .nav-hint-desktop {
+    display: none;
+  }
+  .nav-hint-touch {
+    display: inline;
+  }
 
   /* 页签：短标题 + 可横滑，避免「交付边:」类截断 */
   .tab-title-full {
@@ -3725,7 +3816,7 @@ body.ix-haptic-flash::after {
   }
   #t2 .panel-body.is-detail-open .detail-card-table td,
   #t2 .panel-body.is-detail-open .detail-card-table th {
-    padding: 3px 6px;
+    padding: 2px 6px;
     font-size: var(--fs-xs);
     line-height: 1.28;
   }

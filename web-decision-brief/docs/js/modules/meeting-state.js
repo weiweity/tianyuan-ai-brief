@@ -30,6 +30,46 @@ function safeText(value) {
   return typeof value === "string" ? value : "";
 }
 
+export function createMeetingBlockPersister(persist, rollback, onFailure) {
+  return (block, previousBlock) => {
+    if (persist()) return true;
+    Object.assign(block, JSON.parse(previousBlock));
+    rollback();
+    onFailure();
+    return false;
+  };
+}
+
+/**
+ * 还原单个会议补录块的本机状态，保留行 ID、文案和选项结构。
+ * 返回新对象，避免清空操作留下半更新的原对象。
+ */
+export function clearMeetingBlockState(block) {
+  const cleared = clone(block);
+  if (!cleared || !Array.isArray(cleared.rows)) return cleared;
+
+  cleared.rows.forEach((row) => {
+    row.checked = false;
+    if (Array.isArray(row.pathOptions)) row.pathValue = "";
+    if (Array.isArray(row.multiOptions)) {
+      row.multiValues = [];
+      row.otherText = "";
+    }
+    if (row.feeFields && typeof row.feeFields === "object") {
+      Object.keys(row.feeFields).forEach((field) => {
+        row.feeFields[field] = "";
+      });
+    }
+    if (Array.isArray(row.owners)) {
+      row.owners = row.owners.map(() => ({ name: "", dept: "", scope: "" }));
+    }
+    if (row.ownerFields) {
+      row.ownerFields = { name: "", dept: "", scope: "", backup: "" };
+    }
+  });
+  return cleared;
+}
+
 function mergeFeeFields(target, source) {
   const merged = { ...target };
   FEE_FIELDS.forEach((field) => {
@@ -93,15 +133,20 @@ export function mergeMeetingState(previous, incoming) {
       block.rows.forEach((row, index) => {
         const oldRow =
           oldRows.get(rowKey(row) || `idx:${index}`) ||
-          oldBlock.rows.find((candidate) => String(candidate.no) === String(row.no));
+          oldBlock.rows.find(
+            (candidate) =>
+              String(candidate.no) === String(row.no) && (!row.rowId || !candidate.rowId)
+          );
         if (!oldRow) return;
         mergedRows += 1;
 
         if (typeof oldRow.checked === "boolean") row.checked = oldRow.checked;
 
-        if (oldRow.pathValue) {
+        if (Array.isArray(row.pathOptions) && typeof oldRow.pathValue === "string") {
           const validPaths = optionKeys(row.pathOptions, "value");
-          if (validPaths.includes(oldRow.pathValue)) {
+          if (!oldRow.pathValue) {
+            row.pathValue = "";
+          } else if (validPaths.includes(oldRow.pathValue)) {
             row.pathValue = oldRow.pathValue;
             row.checked = true;
           } else {
@@ -109,7 +154,7 @@ export function mergeMeetingState(previous, incoming) {
           }
         }
 
-        if (Array.isArray(oldRow.multiValues) && oldRow.multiValues.length) {
+        if (Array.isArray(row.multiOptions) && Array.isArray(oldRow.multiValues)) {
           const validMulti = new Set(optionKeys(row.multiOptions, "id"));
           if (validMulti.size) {
             const kept = oldRow.multiValues.filter((value) => validMulti.has(value));

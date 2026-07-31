@@ -38,6 +38,8 @@ business-docs/
 │   ├── 05-全栈交付计划.md
 │   ├── 06-启动会与周推进.md
 │   ├── 07-客服Agent立项PRD.html
+│   ├── 07-客服Agent立项PRD.sources.json
+│   ├── 08-客服Agent立项执行中心.html
 │   ├── 80-参考/
 │   ├── 90-评审/
 │   └── 99-历史/
@@ -60,7 +62,7 @@ business-docs/
 
 | 角色 | 先看 | 需要行动时 |
 |------|------|------------|
-| 决策人 / 金主 | 驾驶舱、[项目章程](01-客服Agent项目/00-项目章程.md) | 在飞书、邮件或会议纪要形成正式决定，再把原文与链接登记到 G0 台账 |
+| 公司批准人候选 | 驾驶舱、[项目章程](01-客服Agent项目/00-项目章程.md) | 在受控系统形成正式决定；本仓只登记人员代号、决定摘要与 `EVD-*` 证据 ID |
 | 项目经理 | [项目导航](01-客服Agent项目/README.md)、[G0 台账](01-客服Agent项目/02-G0责任与证据台账.md) | 更新门禁、RACI、RAID、DEC / CR 和证据 |
 | 客服业务 Owner | [项目章程](01-客服Agent项目/00-项目章程.md)、[Scope 与验收](01-客服Agent项目/03-Scope与验收.md) | 补需求基线、话术治理、评测和验收签发 |
 | 全栈 / FDE | [全栈交付计划](01-客服Agent项目/05-全栈交付计划.md)、[总排期](01-客服Agent项目/01-总排期与阶段门禁.md) | 完成复用、架构、安全、部署、WBS 和评测设计；Ddev 前不开发产品功能 |
@@ -107,10 +109,10 @@ README、周报、汇报 Web、PDF 和历史稿都不得自行维护当前项目
 
 ## 防丢失
 
-- 新的 `01-客服Agent项目/` 已在本地完成重排，本轮尚未提交或推送；
-- `02`～`08` 当前受本仓库本地排除规则影响；
-- 原始纪要、人员信息和飞书资源标识是否进入 Git 必须单独决策；
-- 交接前运行 `git status --short --untracked-files=all`，不能把“本机能打开”当成已备份。
+- 当前重排已有本地 checkpoint；最终修改仍须以 `git status`、真源校验与浏览器证据共同确认，不能把“本机能打开”当成已备份。
+- Git 远端是公开仓：本目录只放模板、受控状态、人员 / 角色代号与 `EVD-*` ID；真实原始材料只存受控系统。
+- 含真实状态的本地分支不得直接推送公开远端；先迁移私有仓或完成正式安全复核。
+- 交接前运行 `git status --short --untracked-files=all`，并核对 `git log -1 --oneline` 与精确 stash 名称。
 
 ---
 
@@ -119,15 +121,11 @@ README、周报、汇报 Web、PDF 和历史稿都不得自行维护当前项目
 从仓库根执行：
 
 ```bash
-python3 business-docs/08-工具/verify_term_ssot.py
-python3 business-docs/08-工具/verify_name_rename.py
-```
-
-如果未来重新修改已收尾 Web，再进入 `web-decision-brief/` 执行：
-
-```bash
-npm run build:check
-npm test
+node business-docs/08-工具/check_customer_agent_prd_sources.mjs --check
+node business-docs/08-工具/generate_customer_agent_hub.mjs --check
+cd web-decision-brief
+npm run test:business
+npm run test:all
 ```
 
 *业务文档地图 v3.0 · 2026-07-31*

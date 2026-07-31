@@ -20,7 +20,7 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -46,7 +46,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ui-audit-screenshots
+          name: historical-web-quality-evidence
+          # 公共仓库只上传历史 Web 的视觉证据；客服立项证据留在受控本地环境。
           path: web-decision-brief/test-results/
           if-no-files-found: ignore
           retention-days: 14

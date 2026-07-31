@@ -596,6 +596,10 @@
       display: none;
     }
 
+    .map-open-mobile {
+      display: none;
+    }
+
     .journey {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1347,7 +1351,20 @@
       }
 
       .map-button {
+        display: inline-flex;
+        padding: 13px 16px;
+        border: 1px solid var(--brand-200);
+        color: var(--brand-700);
+        background: var(--brand-50);
+        text-align: center;
+      }
+
+      .map-button svg {
         display: none;
+      }
+
+      .map-open-mobile {
+        display: inline;
       }
 
       .map-mobile {
@@ -1644,18 +1661,20 @@
         <p class="eyebrow">CS-AI-C11 · PRD v0.1 · 2026-07-31</p>
         <h1 id="page-title" data-pretext data-editable>客服 Agent</h1>
         <p class="hero-subtitle" data-pretext data-editable>
-          把标准答法变成可治理、可检索、可追溯的组织资产。
+          先排清真实任务，再把首期闭环做小、做实、可验收。
         </p>
 
         <ul class="status-row" aria-label="当前项目状态">
-          <li class="confirmed">P0 · 方向已确认</li>
-          <li>D0 · 08-04</li>
-          <li>G0 · 目标 08-14</li>
-          <li class="pending">Ddev · 未成立</li>
+          <li class="confirmed" data-status-axis="direction">P0 · 工作方向已登记</li>
+          <li class="pending" data-status-axis="approval">公司批准 · 未完成</li>
+          <li class="pending" data-status-axis="problem-fit">问题适配 · 待核验</li>
+          <li class="pending" data-status-axis="external">外部责任包 · 0 / 14</li>
+          <li class="pending" data-status-axis="scope" data-contract="scope-count" data-pass="0" data-total="15">Scope · 0 / 15</li>
+          <li class="pending" data-status-axis="ddev">Ddev · 未成立</li>
         </ul>
 
         <p class="hero-note">
-          首期交付：话术库 MVP-A。组织审批凭证待归档；当前未开发、未部署、未试点。
+          已登记候选首期方向：话术库 MVP-A。这不等于公司正式批准；当前 14 项外部责任包与 15 项 Scope 检查均未通过，未开发、未部署、未试点。
         </p>
 
         <div class="hero-actions">
@@ -1679,16 +1698,16 @@
       <header class="section-head">
         <p class="section-kicker">01 / Problem</p>
         <div class="section-intro">
-          <h2 id="problem-title" data-pretext data-editable>外包推进后，标准答法不能继续依赖个人文档。</h2>
-          <p>先把“谁维护正确答案、坐席如何找到并确认使用”做成稳定闭环。</p>
+          <h2 id="problem-title" data-pretext data-editable>先验证真实任务，不用候选方案代替事实。</h2>
+          <p>话术库是已登记的能力侧候选方向，不代表已证明它是业务第一优先级。</p>
         </div>
       </header>
 
       <div class="problem-layout">
         <ol class="problem-list">
-          <li><span class="index">P-01</span><span>话术分散，版本与有效期不清。</span></li>
-          <li><span class="index">P-02</span><span>新人上手慢，答复口径依赖个人。</span></li>
-          <li><span class="index">P-03</span><span>没有内容真源，搜索与问答会放大错误。</span></li>
+          <li data-evidence-grade="fact"><span class="index">F-01</span><span>已有访谈记录的短期诉求是智能质检、评价分析报告与聊天分析。</span></li>
+          <li data-evidence-grade="hypothesis"><span class="index">H-01</span><span>“外包推进、无法使用内网、依赖个人文档”是待验证假设，不是已完成基线取证的事实。</span></li>
+          <li data-evidence-grade="hypothesis"><span class="index">H-02</span><span>话术分散、版本不清与查找慢同样待样本、分母、时长与错误基线证明。</span></li>
         </ol>
 
         <aside class="user-context">
@@ -1700,6 +1719,17 @@
           </ul>
         </aside>
       </div>
+
+      <div class="exception-band" role="note" aria-label="8 月 4 日真实任务强制排序" data-force-rank="2026-08-04">
+        <strong>08-04 强制排序：</strong>
+        <span>话术库 / 检索推荐</span>
+        <span>智能质检</span>
+        <span>评价分析报告</span>
+        <span>聊天分析</span>
+      </div>
+      <p class="scenario-disclaimer" data-force-rank-rule>
+        08-03 前由一线运营角色候选（待核验）、话术 Owner 候选与至少 3 名坐席独立预评分：频次与痛点 25%、耗时 / 错误基线 25%、价值 20%、数据与责任可得性 15%、两周可验证性 15%。每候选至少 3 个真实任务，缺证据记 0；各维度取中位数，前两名差不超过 3 分则暂不决定。只有证据完整且领先超过 3 分才形成第一；若话术库 / 检索推荐不是第一，必须记录 CR / DEC 并重新冻结 Scope，不得为了匹配现有页面强行保留。
+      </p>
     </section>
 
     <section class="section-block" id="experience" aria-labelledby="experience-title">
@@ -1756,6 +1786,7 @@
               边界：不自动代发 · 不全量质检 · 不深度嵌入 · 供应链能力不进入本项目
             </text>
           </svg>
+          <span class="map-open-mobile" aria-hidden="true">打开完整能力地图</span>
         </button>
 
         <div class="map-mobile" role="list" aria-label="话术库 MVP-A 能力列表">
@@ -1771,8 +1802,8 @@
 
       <ol class="journey" aria-label="客服 Agent 产品闭环">
         <li data-step="1">起草<small>话术 Owner</small></li>
-        <li data-step="2">复核<small>业务签发</small></li>
-        <li data-step="3">发布<small>版本可追溯</small></li>
+        <li data-step="2">复核<small>业务验收内容</small></li>
+        <li data-step="3">发布<small>真源 Owner 签发</small></li>
         <li data-step="4">推荐 Top3<small>显示引用</small></li>
         <li data-step="5">坐席确认<small>人在环</small></li>
         <li data-step="6">人工发送<small>不自动代发</small></li>
@@ -1837,22 +1868,22 @@
           <span class="metric-label">有效话术</span>
           <span class="metric-note">G0 冻结；参考成功线 ≥200</span>
         </li>
-        <li class="metric">
+        <li class="metric" data-contract="top3" data-overall-min-percent="70" data-stratum-min-percent="50" data-stratum-min-hits="1">
           <span class="metric-value">≥70%</span>
           <span class="metric-label">Top3 命中</span>
-          <span class="metric-note">20 条正例全量盲测</span>
+          <span class="metric-note">20 条正例；分层 ≥50% 且至少命中 1 条</span>
         </li>
-        <li class="metric">
+        <li class="metric" data-contract="negative" data-min-cases="5" data-max-wrong-answers="0">
           <span class="metric-value">0</span>
           <span class="metric-label">错误直答</span>
           <span class="metric-note">不少于 5 条负例</span>
         </li>
-        <li class="metric">
+        <li class="metric" data-contract="citation" data-correct-percent="100">
           <span class="metric-value">100%</span>
           <span class="metric-label">引用 / 版本正确</span>
           <span class="metric-note">每条建议可追溯</span>
         </li>
-        <li class="metric">
+        <li class="metric" data-contract="pilot" data-min-people="3" data-max-people="5" data-weeks="2" data-tasks-per-person-week="5">
           <span class="metric-value">3–5 × 2周</span>
           <span class="metric-label">内部真实试点</span>
           <span class="metric-note">每人每周 ≥5 个去重任务</span>
@@ -1880,7 +1911,7 @@
       </header>
 
       <ol class="gate-timeline" aria-label="G0 立项排期">
-        <li>
+        <li data-contract="d0" data-date="2026-08-04">
           <span class="gate-date">08-04</span>
           <span class="gate-title">项目启动</span>
           <span class="gate-output">RACI、RAID、证据目录</span>
@@ -1900,16 +1931,16 @@
           <span class="gate-title">交付准备</span>
           <span class="gate-output">WBS、资源、运行与回退</span>
         </li>
-        <li>
+        <li data-contract="g0" data-date="2026-08-14" data-state="未签发">
           <span class="gate-date">08-14</span>
           <span class="gate-title">G0 决策</span>
-          <span class="gate-output">Pass / Fail，不按完成百分比放行</span>
+          <span class="gate-output">Pass / Fail，不按完成百分比放行 · 当前未签发</span>
         </li>
       </ol>
 
       <div class="gate-rule" role="note">
         <strong>通过门槛：14 / 14 + 15 / 15</strong>
-        <span>当前：外部责任包 0 / 14 Pass；Scope 检查 0 / 15 Pass；G0 未签发。全部通过后，最早 08-17 才可填写 Ddev。</span>
+        <span data-contract="ddev" data-earliest="2026-08-17" data-state="未成立">当前：外部责任包 0 / 14 Pass；Scope 检查 0 / 15 Pass；G0 未签发；Ddev 未成立。全部通过后，最早 08-17 才可填写。</span>
       </div>
 
       <div class="scenario-control" aria-label="资源排期情景">
@@ -1929,28 +1960,29 @@
       <header class="section-head">
         <p class="section-kicker">06 / Evidence</p>
         <div class="section-intro">
-          <h2 id="evidence-title" data-pretext data-editable>方向已定，证据还要补齐。</h2>
+          <h2 id="evidence-title" data-pretext data-editable>工作方向已登记，公司批准与门禁尚未完成。</h2>
           <p>未知项诚实写“待 G0”，不把文档完整度包装成项目就绪度。</p>
         </div>
       </header>
 
       <div class="evidence-grid">
         <article class="evidence-column">
-          <h3>已确认</h3>
+          <h3>工作方向登记（非公司批准）</h3>
           <ul class="evidence-list">
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">客服 Agent 为组合 P0</span></li>
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">2026-08-04 项目启动</span></li>
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">首期为话术库 MVP-A</span></li>
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">人在环，禁止自动代发</span></li>
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">汇报 Web 仅作参考</span></li>
-            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">供应链能力不进入本项目范围</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">客服 Agent 为组合 P0</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">2026-08-04 项目启动</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">首期候选为话术库 MVP-A，须经真实任务排序</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">人在环，禁止自动代发</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">汇报 Web 仅作参考</span></li>
+            <li><span class="evidence-state ok">已登记</span><span class="evidence-text">供应链能力不进入本项目范围</span></li>
           </ul>
         </article>
 
         <article class="evidence-column">
-          <h3>G0 待补</h3>
+          <h3>公司批准 / G0 待补 · 0 / 29</h3>
           <ul class="evidence-list">
-            <li><span class="evidence-state wait">待归档</span><span class="evidence-text">正式批准凭证与决定原文</span></li>
+            <li><span class="evidence-state wait">待归档</span><span class="evidence-text">正式批准证据 ID 与决定摘要</span></li>
+            <li><span class="evidence-state wait">待排序</span><span class="evidence-text">08-04 对话术库 / 检索推荐、智能质检、评价分析报告、聊天分析做真实任务强制排序</span></li>
             <li><span class="evidence-state wait">待具名</span><span class="evidence-text">业务、话术、预算、IT / 安全、运维 Owner</span></li>
             <li><span class="evidence-state wait">待基线</span><span class="evidence-text">真实任务、耗时、错误与未命中</span></li>
             <li><span class="evidence-state wait">待审计</span><span class="evidence-text"><code>dafuyan-wording</code> 复用与 12 个月 TCO</span></li>
@@ -1961,9 +1993,10 @@
         </article>
       </div>
 
-      <details>
+      <details data-contract="fee" data-path-code="B" data-selected="false" data-paid-authorization="0">
         <summary>费用路径与开发边界</summary>
         <div class="details-body">
+          <p><strong>当前费用：</strong>B · 临时管控，未签；新增付费授权 = 0。</p>
           <p>
             A：月 / 全期 cap 正式批准后按额度执行；B：保持 0 新增付费，并记录下次费用决策日；
             C：暂停，记录原因、复审条件与日期。只有 A / B 且其他 G0 门禁全部 Pass 后，才可签发 Ddev。
@@ -1988,14 +2021,14 @@
           <p><strong>会议定位：</strong>可以召开需求澄清与范围冻结准备会；不能当作 PRD 终审、G0 通过或开发开工会。</p>
           <div class="meeting-inputs">
             <section>
-              <h3>客服总监准备</h3>
+              <h3>业务决策角色候选准备（待核验）</h3>
               <ul>
                 <li>业务目标、优先级与风险边界</li>
                 <li>预算 / 决策边界、可具名 Owner 与试点资源</li>
               </ul>
             </section>
             <section>
-              <h3>客服经理准备</h3>
+              <h3>一线运营角色候选准备（待核验）</h3>
               <ul>
                 <li>话术真源、Top 场景与现状基线</li>
                 <li>正负例、转人工规则与 3～5 名试点坐席</li>

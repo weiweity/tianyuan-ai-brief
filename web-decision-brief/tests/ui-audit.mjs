@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -8,12 +8,19 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import axe from "axe-core";
 import { chromium } from "playwright";
 import { sha256, verifyDecisionReceipt } from "../docs/js/modules/decision-model.js";
+import { createSafeResultsDir } from "./support/safe-results-dir.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // web-decision-brief
 const monorepoRoot = path.resolve(root, "..");
 const siteBase = "/web-decision-brief/docs";
-const resultsDir =
-  process.env.UI_AUDIT_RESULTS_DIR || path.join(root, "test-results", `ui-${process.pid}`);
+const resultsRoot = path.join(root, "test-results");
+const resultsDir = await createSafeResultsDir({
+  trustedRootPath: root,
+  rootPath: resultsRoot,
+  prefix: "ui",
+  label: String(process.pid),
+  requestedPath: process.env.UI_AUDIT_RESULTS_DIR,
+});
 const port =
   Number(process.env.UI_AUDIT_PORT) ||
   (await new Promise((resolve, reject) => {
@@ -542,7 +549,7 @@ async function runLegacyAudit(browser, viewport) {
   );
   await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
-  assert.equal(await page.title(), "天元 · 客服立项执行台");
+  assert.equal(await page.title(), "天元 · AI 赋能汇报（历史快照）");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
   if (viewport.width <= 640) {
     await assertTouchTargets(page, `历史兼容入口 ${viewport.width}px`);
@@ -581,7 +588,10 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
-  assert.equal(await page.locator("#doc-title").innerText(), "天元 · 客服立项执行台");
+  assert.equal(
+    await page.locator("#doc-title").innerText(),
+    "天元 · AI 赋能汇报（历史快照）"
+  );
   assert.equal(await page.locator("#offline-notice").isVisible(), true);
   assert.equal(await page.locator("[role=tab]").count(), 7);
   assert.equal(
@@ -776,7 +786,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
     readFile(path.join(root, "docs/data/content.json"), "utf8"),
     readFile(path.join(root, "docs/data/release.json"), "utf8"),
   ]);
-  const updatedText = contentText.replace("当前 Goal", "即时 Goal");
+  const updatedText = contentText.replace("收尾时 Goal", "校验时 Goal");
   assert.equal(updatedText.length, contentText.length, "故障注入必须保持正文长度不变");
   assert.notEqual(updatedText, contentText, "故障注入文案必须真实变化");
   const release = JSON.parse(releaseText);
@@ -806,10 +816,10 @@ async function runSameReleaseHotUpdateAudit(browser) {
     waitUntil: "networkidle",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready");
-  assert.match(await page.locator("#t1").innerText(), /当前 Goal/);
+  assert.match(await page.locator("#t1").innerText(), /收尾时 Goal/);
   serveUpdate = true;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await waitForText(page.locator("#t1"), /即时 Goal/, 4000);
+  await waitForText(page.locator("#t1"), /校验时 Goal/, 4000);
   assert.match(await page.locator("#status-pill").innerText(), /已同步最新/);
   assert.deepEqual(errors, [], `同长度热更新产生脚本错误：${errors.join("\n")}`);
   await context.close();
@@ -976,8 +986,115 @@ async function runPrintAudit(browser) {
   return pdfPath;
 }
 
-await rm(resultsDir, { recursive: true, force: true });
-await mkdir(resultsDir, { recursive: true });
+async function runNavigationAndResetAudit(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(`console: ${message.text()}`);
+  });
+  await page.goto(`${origin}${siteBase}/?audit=history-reset`, { waitUntil: "networkidle" });
+  await page.locator("#t1.panel.active").waitFor();
+
+  await page.locator("#tab-t3").click();
+  await page.locator("#t3.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t3$/);
+  await page.locator("#tab-t4").click();
+  await page.locator("#t4.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t4$/);
+  await page.goBack();
+  await page.locator("#t3.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t3$/);
+  await page.goForward();
+  await page.locator("#t4.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t4$/);
+
+  await page.locator("#tab-t6").click();
+  await page.locator("#t6.panel.active").waitFor();
+
+  // 普通会议变更也必须在持久化失败时显式回滚，不能只保护“清空”。
+  await page.evaluate(() => {
+    window.__originalStorageSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new DOMException("quota", "QuotaExceededError"); };
+  });
+  await page.locator('[data-path-pick="A"]').first().click();
+  await waitForText(page.locator("#toast"), /保存失败：浏览器存储不可用/);
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false",
+    "普通会议变更保存失败后必须回滚"
+  );
+  await page.evaluate(() => { Storage.prototype.setItem = window.__originalStorageSetItem; });
+
+  await page.locator('[data-path-pick="A"]').first().click();
+  await page.locator('input[data-fee="total"]').first().fill("3000");
+  await page.locator('input[data-owner-multi="name"]').first().fill("回归负责人");
+  assert.equal(await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"), "true");
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "3000");
+  assert.equal(
+    await page.locator('input[data-owner-multi="name"]').first().inputValue(),
+    "回归负责人"
+  );
+
+  await page.evaluate(() => {
+    window.__originalStorageSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new DOMException("quota", "QuotaExceededError"); };
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("[data-reset-check]").click();
+  await waitForText(page.locator("#toast"), /清空失败：浏览器未能保存/);
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "3000");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "回归负责人");
+  await page.evaluate(() => { Storage.prototype.setItem = window.__originalStorageSetItem; });
+
+  const staleFee = await page.locator('input[data-fee="total"]').first().elementHandle();
+  const staleOwner = await page.locator('input[data-owner-multi="name"]').first().elementHandle();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("[data-reset-check]").click();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("input[data-fee], input[data-owner-multi], input[data-owner]")]
+      .every((input) => input.value === "")
+  );
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "");
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false"
+  );
+  assert.equal(
+    await page.locator("[data-check-toggle]").evaluateAll((items) =>
+      items.every((item) => item.getAttribute("aria-pressed") === "false")
+    ),
+    true
+  );
+
+  await staleFee.evaluate((input) => input.dispatchEvent(new Event("change", { bubbles: true })));
+  await staleOwner.evaluate((input) => input.dispatchEvent(new Event("change", { bubbles: true })));
+  await page.waitForTimeout(100);
+  assert.doesNotMatch(
+    (await page.evaluate(() => localStorage.getItem("tianyuan-brief-draft-v1"))) || "",
+    /3000|回归负责人/,
+    "重置前失效输入的延迟事件不得复活会议状态"
+  );
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator("#t6.panel.active").waitFor();
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "");
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false"
+  );
+  await page.screenshot({
+    path: path.join(resultsDir, "history-back-forward-reset.png"),
+    fullPage: true,
+  });
+  assert.deepEqual(errors, [], `历史 / 重置回归产生脚本错误：${errors.join("\n")}`);
+  await context.close();
+  return "t3 → t4 → Back → Forward；path / fee / owner / checked 清空并刷新后保持";
+}
+
 await waitForServer();
 const browser = await chromium.launch(
   process.env.CI ? { headless: true } : { channel: "chrome", headless: true }
@@ -1014,6 +1131,7 @@ try {
   await runColdStartRecoveryAudit(browser);
   await runSameReleaseHotUpdateAudit(browser);
   await runCrossReleaseRefreshAudit(browser);
+  const navigationAndReset = await runNavigationAndResetAudit(browser);
   const immediatePrint = await runImmediatePrintFallbackAudit(browser);
   const printArtifact = await runPrintAudit(browser);
   console.log(
@@ -1029,6 +1147,7 @@ try {
         coldStart: "actionable retry recovered without local-only instructions",
         hotUpdate: "equal-length content applied by verified SHA",
         crossRelease: "versioned full-page refresh",
+        navigationAndReset,
         immediatePrint,
         printArtifact,
         artifacts: resultsDir,

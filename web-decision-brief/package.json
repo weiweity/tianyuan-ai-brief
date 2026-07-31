@@ -10,13 +10,16 @@
   "scripts": {
     "build:web": "node scripts/build-web.mjs",
     "build:check": "node scripts/build-web.mjs --check",
+    "check:business-sources": "node ../business-docs/08-工具/check_customer_agent_prd_sources.mjs --check && node ../business-docs/08-工具/generate_customer_agent_hub.mjs --check",
+    "build:pages": "npm run build:check && node scripts/build-pages-artifact.mjs",
     "preserve": "npm run build:web",
-    "serve": "python3 -m http.server 8765 -d docs",
+    "serve": "npm run build:pages && python3 -m http.server 8765 -d dist/pages",
     "pretest": "npm run build:check",
     "test": "node --test tests/*.test.mjs",
     "test:ui": "node tests/ui-audit.mjs",
+    "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci",
     "audit:deps": "npm audit --registry=https://registry.npmjs.org",
-    "test:all": "npm run test && npm run test:ui && npm run audit:deps"
+    "test:all": "npm run test && npm run test:ui && npm run test:business && npm run audit:deps"
   },
   "devDependencies": {
     "ajv": "8.20.0",

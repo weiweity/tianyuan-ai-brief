@@ -20,7 +20,8 @@ import {
 } from "./modules/html-policy.js";
 import { createContentLoader } from "./modules/content-loader.js";
 import { createMermaidRuntime } from "./modules/mermaid-runtime.js";
-import { mergeMeetingState } from "./modules/meeting-state.js";
+import { clearMeetingBlockState, createMeetingBlockPersister, mergeMeetingState } from "./modules/meeting-state.js";
+import { createTabHistory } from "./modules/tab-history.js";
 
 (function () {
   "use strict";
@@ -38,6 +39,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   let swipeDir = "left"; // panel animation direction
   let currentReleaseManifest = null;
   let hotPollTimer = null;
+  let checkWiringAbort = null;
   const POLL_MS = 30000; // C端静默检查远端内容
   const isEditQuery = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
   const isFileProtocol = location.protocol === "file:";
@@ -58,6 +60,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const tabHistory = createTabHistory({
+    windowLike: window,
+    getTabIds: () => (content && content.tabs ? content.tabs.map((tab) => tab.id) : []),
+    onNavigate: (id, options) => activate(id, undefined, options),
+  });
 
   function toast(msg, ms = 2200) {
     const t = $("#toast");
@@ -109,7 +116,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     stage.replaceChildren(panel);
   }
 
-  // ---------- File handle (IndexedDB) ----------
   function withTimeout(promise, ms, fallback) {
     return new Promise((resolve) => {
       let done = false;
@@ -186,7 +192,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     }
   }
 
-  // ---------- Load content ----------
   async function fetchRemoteContent(manifestHint) {
     return contentLoader.fetchContent(manifestHint);
   }
@@ -264,6 +269,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     } else {
       activeTab = keep;
     }
+    if (activeTab !== keep) tabHistory.replace(activeTab);
     mermaidRuntime.clear();
     renderAll();
     document.body.classList.toggle("is-check-page", activeTab === "t6");
@@ -377,7 +383,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     });
   }
 
-  // ---------- Render ----------
   function esc(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
@@ -940,6 +945,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   }
 
   function renderAll() {
+    checkWiringAbort?.abort();
     renderHeader();
     renderTabs();
     $("#stage").innerHTML = content.tabs.map(renderPanel).join("");
@@ -1112,25 +1118,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         e.stopPropagation();
         const block = findBlock(resetBtn.getAttribute("data-reset-check"));
         if (!block || !Array.isArray(block.rows)) return;
-        if (!window.confirm("清空这台设备上的本次勾选、路径和负责人？")) return;
-        block.rows.forEach((r) => {
-          r.checked = false;
-          if (Array.isArray(r.pathOptions)) r.pathValue = "";
-          if (Array.isArray(r.multiOptions)) {
-            r.multiValues = [];
-            r.otherText = "";
-          }
-          if (Array.isArray(r.owners)) {
-            r.owners = r.owners.map(() => ({ name: "", dept: "", scope: "" }));
-          }
-          if (r.ownerFields) {
-            r.ownerFields = { name: "", dept: "", scope: "", backup: "" };
-          }
-        });
-        saveDraft();
+        if (!window.confirm("清空这台设备上的本次勾选、路径、费用 / cap、说明和负责人？此操作不可撤销。")) return;
+        const previousBlock = JSON.stringify(block);
+        Object.assign(block, clearMeetingBlockState(block));
+        if (!saveDraft()) { Object.assign(block, JSON.parse(previousBlock)); renderAll(); tapHaptic("warn"); toast("清空失败：浏览器未能保存，本次数据已保留"); return; }
         renderAll();
         tapHaptic("light");
-        toast("已清空本机的本次会议勾选");
+        toast("已清空本机的勾选、路径、费用和负责人");
         return;
       }
       const receiptBtn = e.target.closest("[data-download-receipt]");
@@ -1228,14 +1222,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     setTimeout(() => el.classList.remove("is-pulse"), 600);
   }
 
-  function bindNoSwipe(inp) {
-    inp.addEventListener("pointerdown", (e) => e.stopPropagation());
-    inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+  function bindNoSwipe(inp, onCheck) {
+    onCheck(inp, "pointerdown", (e) => e.stopPropagation());
+    onCheck(inp, "touchstart", (e) => e.stopPropagation(), { passive: true });
     // 手机软键盘弹起时把输入框滚进可视区 + 行高亮
-    inp.addEventListener("focus", () => {
+    onCheck(inp, "focus", () => {
       const tr = inp.closest("tr");
       if (tr) tr.classList.add("is-focus-row");
       setTimeout(() => {
+        if (document.activeElement !== inp || !document.body.classList.contains("is-mobile")) return;
         try {
           const r = inp.getBoundingClientRect();
           if (r.bottom > window.innerHeight * 0.52 || r.top < 72) {
@@ -1244,14 +1239,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         } catch (_) {}
       }, 300);
     });
-    inp.addEventListener("blur", () => {
+    onCheck(inp, "blur", () => {
       const tr = inp.closest("tr");
       if (tr) tr.classList.remove("is-focus-row");
     });
   }
 
   function wireCheckTables() {
-    // 勾选框：任何模式可点（会议现场用）
+    checkWiringAbort = new AbortController();
+    const onCheck = (target, type, listener, options = {}) => target.addEventListener(type, listener, { ...options, signal: checkWiringAbort.signal });
     const toggleCheckRow = (btn) => {
       const blockId = btn.dataset.block;
       const row = +btn.dataset.row;
@@ -1286,6 +1282,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           return;
         }
       }
+      const previousBlock = JSON.stringify(block);
       r.checked = !r.checked;
       setRowCheckedUI(tr, r.checked);
       if (tr) {
@@ -1295,30 +1292,28 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         setTimeout(() => tr.classList.remove("is-just-toggled"), 320);
       }
       tapHaptic(r.checked ? "ok" : "light");
-      saveDraft();
+      if (!persistMeetingBlock(block, previousBlock)) return;
       refreshCheckStatus(blockId);
     };
 
     $$("[data-check-toggle]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         toggleCheckRow(btn);
       });
     });
 
-    // 简勾行：整卡可点（手机 2 列热区）
     $$(".block[data-type='check-table'] tr:not(.has-path)").forEach((tr) => {
-      tr.addEventListener("click", (e) => {
+      onCheck(tr, "click", (e) => {
         if (e.target.closest("button,input,textarea,label,a,[contenteditable=true]")) return;
         const btn = tr.querySelector("[data-check-toggle]");
         if (btn) toggleCheckRow(btn);
       });
     });
 
-    // #1 主开多选
     $$("[data-multi-pick]").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
+      onCheck(chip, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const blockId = chip.dataset.block;
@@ -1326,6 +1321,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const val = chip.getAttribute("data-multi-pick");
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (!Array.isArray(r.multiValues)) r.multiValues = [];
         const idx = r.multiValues.indexOf(val);
@@ -1362,14 +1358,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           setRowCheckedUI(tr, r.checked);
         }
         tapHaptic("light");
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       });
     });
 
-    // 路径 A/B/C
     $$("[data-path-pick]").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
+      onCheck(chip, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const blockId = chip.dataset.block;
@@ -1377,6 +1372,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const val = chip.getAttribute("data-path-pick");
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (r.pathValue === val) {
           r.pathValue = "";
@@ -1400,7 +1396,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           });
           const hints = {
             A: "前置齐了再开发 · 按止损线花钱",
-            B: "费用批完再动手 · 不烧工具费",
+            B: "只做 G0 前置 · 费用未批不开发",
             C: "写进周报说明 · 不排期",
           };
           const hintEl = tr.querySelector("[data-path-hint]");
@@ -1408,12 +1404,10 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           setRowCheckedUI(tr, r.checked);
         }
         tapHaptic(r.pathValue ? "ok" : "light");
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       });
     });
-
-    // #1 其他说明
     $$("input[data-other-text]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1421,20 +1415,20 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
         const r = block.rows[row];
+        if ((r.otherText || "") === inp.value) return;
+        const previousBlock = JSON.stringify(block);
         r.otherText = inp.value;
         if ((r.multiValues || []).includes("other") && inp.value.trim()) {
           r.checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
-
-    // #3 费用字段
     $$("input[data-fee]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1442,22 +1436,23 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.fee;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         if (!block.rows[row].feeFields) block.rows[row].feeFields = {};
+        if ((block.rows[row].feeFields[field] || "") === inp.value) return;
         block.rows[row].feeFields[field] = inp.value;
         // 改过金额或点过字段 → 视为同意该口径
         if (inp.value.trim()) {
           block.rows[row].checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // #4 多负责人
     $$("input[data-owner-multi]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1466,23 +1461,24 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.ownerMulti;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (!Array.isArray(r.owners)) r.owners = [];
         if (!r.owners[oi]) r.owners[oi] = { name: "", dept: "", scope: "" };
+        if ((r.owners[oi][field] || "") === inp.value) return;
         r.owners[oi][field] = inp.value;
         if (namedOwnersOf(r).length) {
           r.checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // 兼容旧单人 ownerFields
     $$("input[data-owner]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1490,23 +1486,24 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.owner;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         if (!block.rows[row].ownerFields) block.rows[row].ownerFields = {};
+        if ((block.rows[row].ownerFields[field] || "") === inp.value) return;
         block.rows[row].ownerFields[field] = inp.value;
         if (field === "name" && inp.value.trim()) {
           block.rows[row].checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // 手机：展开「会后约定」次要勾选项（带动画 class）
     $$("[data-later-toggle]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const wrap = btn.closest(".block[data-type='check-table']");
@@ -1523,9 +1520,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       });
     });
 
-    // 再加负责人（高度过渡）
     $$("[data-owners-more]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const grid = btn.closest(".owners-grid");
@@ -1715,6 +1711,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     else if (prevIdx >= 0 && nextIdx >= 0) swipeDir = nextIdx >= prevIdx ? "left" : "right";
 
     activeTab = id;
+    if (!(opts && opts.fromHistory)) tabHistory.push(id);
     if (document.body.classList.contains("is-mobile")) tapHaptic("light");
     // 切页前强制清残留，防止上一页 transform/opacity 挂着
     resetAllSwipeStyles();
@@ -1761,7 +1758,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   /** 供 wireSwipe 暴露：点 Tab 时硬取消进位（在 wireSwipe 内赋值） */
   let cancelPendingGoSwipe = null;
 
-  // ---------- Edit mode ----------
   function applyEditMode() {
     document.body.classList.toggle("is-editing", editing);
     $$("[data-editable='true']").forEach((el) => {
@@ -1909,10 +1905,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   }
 
   function saveDraft() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-    } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(content)); return true; }
+    catch (_) { return false; }
   }
+
+  const persistMeetingBlock = createMeetingBlockPersister(saveDraft, renderAll, () => {
+    tapHaptic("warn"); toast("保存失败：浏览器存储不可用，刚才更改未生效", 3200);
+  });
 
   function downloadJson() {
     const blob = new Blob([JSON.stringify(content, null, 2)], {
@@ -2649,10 +2648,12 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
       await loadContent({ preferDraft: isEditQuery });
+      activeTab = tabHistory.initialize(activeTab) || activeTab;
       renderAll();
       wireToolbar();
       wireLogo();
       wireKeys();
+      tabHistory.start();
       wireSwipe();
       wireMermaidLightbox();
       window.addEventListener("ai-brief:mermaid-ready", () => {
