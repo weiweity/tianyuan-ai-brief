@@ -7,6 +7,7 @@ import {
   buildMeetingConclusionText,
   evaluateCheckGate,
   namedOwnersOf,
+  PATH_LABELS,
   sha256,
   verifyDecisionReceipt,
 } from "./modules/decision-model.js";
@@ -28,7 +29,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   const LKG_KEY = "tianyuan-brief-content-lkg-v1";
   const HANDLE_DB = "tianyuan-brief-fs";
   const HANDLE_STORE = "handles";
-  const DECISION_SCHEMA_VERSION = 2;
+  const DECISION_SCHEMA_VERSION = 3;
 
   let content = null;
   let activeTab = "t1";
@@ -462,6 +463,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
   /** 手机顶栏宽度有限：完整标题 + 短标题双写，CSS 切换 */
   const TAB_TITLE_SHORT = Object.freeze({
+    立项结果: "结果",
+    组合优先级: "优先级",
+    客服费用: "费用",
+    执行补录: "补录",
+    "G0 责任": "责任",
     今日拍板: "拍板",
     项目取舍: "取舍",
     交付边界: "边界",
@@ -628,9 +634,21 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           .map((h) => `<th>${esc(h)}</th>`)
           .join("");
         const pathMeta = {
-          A: { label: "A 同意启动", short: "A 启动", hint: "前置齐了再开发 · 按止损线花钱" },
-          B: { label: "B 先认方向", short: "B 方向", hint: "费用批完再动手 · 不烧工具费" },
-          C: { label: "C 不立", short: "C 不立", hint: "写进周报说明 · 不排期" },
+          A: {
+            label: PATH_LABELS.A,
+            short: "A 可执行",
+            hint: "客服费用已批 · 仍须 G0 全齐才成立 Ddev",
+          },
+          B: {
+            label: PATH_LABELS.B,
+            short: "B 钱后置",
+            hint: "只做 G0 前置 · 费用未批不开发",
+          },
+          C: {
+            label: PATH_LABELS.C,
+            short: "C 暂停",
+            hint: "记录暂停原因 · 不排期不支出",
+          },
         };
         const rows = (b.rows || [])
           .map((r, i) => {
@@ -677,7 +695,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
                   </button>`;
                 })
                 .join("");
-              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径 · 两项目可不同";
+              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "补录客服执行路径 · 不重开项目方向";
               const blurb = r.projectBlurb
                 ? `<div class="path-blurb">${esc(r.projectBlurb)}</div>`
                 : "";
@@ -692,11 +710,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
             if (r.feeFields) {
               const f = r.feeFields;
               extras.push(`<div class="fee-fields" data-fee-row="${i}">
-                <label class="fee-num"><span class="fee-lab">目标预算</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">全期硬止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">目标预算</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">月度 cap</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">全期 cap</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
                 <label class="fee-other">其他费用说明 <input type="text" enterkeyhint="done" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
-                <div class="fee-note">两项合计工具费 · 不含 IT 人力 · 10000 是停扩上限不是默认预算</div>
+                <div class="fee-note">A 路径须填客服正式金额与 cap · B 路径金额可留空并保持 0 支出 · 旧组合提案不继承</div>
               </div>`);
             }
 
@@ -756,8 +774,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           })
           .join("");
         const steps = [
-          ["paths", "路径", "两项目 A/B/C"],
-          ["budget", "预算·止损", "钱 + 停扩"],
+          ["paths", "路径", "客服 A/B/C"],
+          ["budget", "费用·止损", "单项目 cap"],
           ["owners", "Owner", "负责人具名"],
           ["record", "留痕", "会后约定"],
         ]
@@ -770,15 +788,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           )
           .join("");
         const legend = `<div class="check-legend" aria-label="路径含义">
-          <span class="check-legend-item tone-a"><b>A 启动</b>前置齐再开发 · 按止损线花钱</span>
-          <span class="check-legend-item tone-b"><b>B 方向</b>费用批完再动手 · 不烧工具费</span>
-          <span class="check-legend-item tone-c"><b>C 不立</b>写进周报说明 · 不排期</span>
+          <span class="check-legend-item tone-a"><b>A 可执行</b>费用已批 · G0 全齐才成立 Ddev</span>
+          <span class="check-legend-item tone-b"><b>B 钱后置</b>只做 G0 前置 · 不烧工具费</span>
+          <span class="check-legend-item tone-c"><b>C 暂停</b>记录原因 · 不排期不支出</span>
         </div>`;
         const board = checkBoardHtml(b);
         const status = checkStatusHtml(b);
         return `<div class="block" data-block-id="${id}" data-type="check-table" data-check-view="paths">
           <div class="check-header">
-            <div class="check-steps" role="group" aria-label="当场确认步骤">${steps}</div>
+            <div class="check-steps" role="group" aria-label="执行补录步骤">${steps}</div>
             ${legend}
             ${board}
           </div>
@@ -934,24 +952,19 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     if (activeTab) queueMermaid(activeTab);
   }
 
-  /** 顶部决策看板：两项目路径 + 费用口径一眼可见，不挤在底部 */
+  /** 顶部执行看板：客服路径 + 单项目费用口径一眼可见，不挤在底部 */
   function checkBoardHtml(block) {
     const g = evaluateCheckGate(block);
-    const pathLabels = {
-      A: "A 同意启动",
-      B: "B 先认方向",
-      C: "C 不立",
-    };
     const cards = (g.decisions || [])
       .map((decision) => {
         const path = decision.path || "";
-        const pathLab = path ? pathLabels[path] || path : "未选路径";
+        const pathLab = path ? PATH_LABELS[path] || path : "未选路径";
         const tone = path === "A" ? "tone-a" : path === "B" ? "tone-b" : path === "C" ? "tone-c" : "tone-idle";
         const ownerRow = (g.ownerRows || []).find((row) => row && row.projectId === decision.projectId);
         const owners = namedOwnersOf(ownerRow || {});
         const ownerTxt =
           path === "C"
-            ? "C 不立 · 无需 Owner"
+            ? "C 暂停 · 无需执行 Owner"
             : owners.length
               ? owners.map((o) => o.name).join("、")
               : path === "A" || path === "B"
@@ -970,34 +983,34 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       : "费用口径待确认";
     const feeOn = g.feeRow && g.feeRow.checked;
     const stopOn = g.stopRow && g.stopRow.checked;
-    return `<div class="check-board" data-check-board aria-label="本场决策总览">
+    return `<div class="check-board" data-check-board aria-label="客服执行补录总览">
       <div class="check-board-projects">${cards || '<div class="check-board-card tone-idle"><div class="check-board-title">暂无项目</div></div>'}</div>
       <div class="check-board-meta">
         <div class="check-board-meta-row"><b>费用</b><span class="${feeOn ? "is-on" : ""}">${esc(feeTxt)}${feeOn ? " · 已确认" : " · 未勾选"}</span></div>
         <div class="check-board-meta-row"><b>停扩</b><span class="${stopOn ? "is-on" : ""}">${stopOn ? "超线立即停扩 · 已授权" : "A/B 时需授权超线停扩"}</span></div>
-        <div class="check-board-meta-row"><b>边界</b><span>未批不开发 · 不代回 · 不编假收益 · 本机草稿</span></div>
+        <div class="check-board-meta-row"><b>边界</b><span>G0 未齐不开发 · 不代回 · 不继承旧组合预算 · 本机草稿</span></div>
       </div>
     </div>`;
   }
 
-  /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
+  /** 勾选进度：本机最低记录提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
   function checkStatusHtml(block) {
     const g = evaluateCheckGate(block);
     let cls = "check-status";
     let msg = "";
-    const bound = "边界：不立刻上线 · 不代回 · 不编假收益";
+    const bound = "边界：不构成 G0 通过 · 不代回 · 不继承旧组合预算";
     if (g.done === 0) {
       cls += " is-idle";
-      msg = `先为两个项目分别选 A / B / C · ${bound}`;
+      msg = `先补录客服 A / B / C 与公司正式批准凭证 · ${bound}`;
     } else if (g.allC && g.isMinOk) {
       cls += " is-ok";
-      msg = "会后分别记录不立原因；全部 C 无需补费用与 Owner。";
+      msg = "暂停执行记录已齐；C 不要求费用与执行 Owner，但不推翻已确认的项目方向。";
     } else if (g.missing.length) {
       cls += " is-warn";
-      msg = `散会前还缺：<b>${esc(g.missing.join(" · "))}</b> · ${bound}`;
+      msg = `本机记录还缺：<b>${esc(g.missing.join(" · "))}</b> · ${bound}`;
     } else {
       cls += " is-ok";
-      msg = "结论可复制或下载；贴入飞书/邮件确认后生效。边界：不立刻上线、不代回、不编收益。";
+      msg = "本机记录可复制或下载；贴入飞书/邮件并由相关 A 确认后才生效，Ddev 仍以 21 的全部 G0 门禁为准。";
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前状态";
     const copyLabShort = g.isMinOk ? "复制结论" : "复制";

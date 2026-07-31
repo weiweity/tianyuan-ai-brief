@@ -14,9 +14,12 @@
 
 | 用途 | 入口 |
 |------|------|
-| Web 决策台 | `../../web-decision-brief/` · 线上 Pages |
-| 业务文档导航 | `../README.md` · `../分类汇总.md` |
-| 立项主交付 | `../01-立项主线/`（10–16、19、print） |
-| 架构 | `../../web-decision-brief/docs/ARCHITECTURE.md` |
+| 当前组合状态 | [`../00-项目驾驶舱.md`](../00-项目驾驶舱.md) |
+| 业务文档导航 | [`../README.md`](../README.md) · [`../分类汇总.md`](../分类汇总.md) |
+| 客服 Agent 当前项目 | [`../01-客服Agent项目/README.md`](../01-客服Agent项目/README.md) |
+| 客服章程 / 台账 / 验收 | [`项目章程`](../01-客服Agent项目/00-项目章程.md) · [`G0 台账`](../01-客服Agent项目/02-G0责任与证据台账.md) · [`Scope 与验收`](../01-客服Agent项目/03-Scope与验收.md) |
+| 评审快照 | [`2026-07-31 双视角评审`](../01-客服Agent项目/90-评审/2026-07-31_双视角对抗评审.md) |
+| 已收尾汇报 Web | [`../../web-decision-brief/`](../../web-decision-brief/)；仅作历史汇报与设计参考 |
+| Web 架构参考 | [`../../web-decision-brief/docs/ARCHITECTURE.md`](../../web-decision-brief/docs/ARCHITECTURE.md) |
 
-现行业务正文在 `business-docs/01`–`08`；软件在 `web-decision-brief/`。
+现行客服正文只在 `business-docs/01-客服Agent项目/`；旧 `01-立项主线/` 是兼容与历史入口。

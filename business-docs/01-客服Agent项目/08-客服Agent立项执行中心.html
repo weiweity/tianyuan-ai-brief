@@ -1,0 +1,1959 @@
+<!doctype html>
+<!-- GENERATED FILE — source: 00-06 Markdown; DO NOT EDIT -->
+<html lang="zh-CN" data-release="hub-v1-b08b88b33c92">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f0f6">
+  <link rel="icon" href="data:,">
+  <title>客服 Agent · 立项执行中心</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand-50: #f7f4fa;
+      --brand-100: #efe8f5;
+      --brand-200: #ddd0e9;
+      --brand-300: #c4aed6;
+      --brand-500: #8b6ba4;
+      --brand-600: #6f5088;
+      --brand-700: #56406b;
+      --brand-900: #2f2139;
+      --action-bg: #56406b;
+      --action-hover: #2f2139;
+      --ink: #221a28;
+      --muted: #6d6476;
+      --line: #e2dbe8;
+      --line-strong: #cbbfd6;
+      --surface: #ffffff;
+      --surface-soft: #fbf9fc;
+      --canvas: #f3f0f6;
+      --info: #2f6ea8;
+      --info-bg: #edf5fc;
+      --ok: #1f6b38;
+      --ok-bg: #eaf7ef;
+      --warn: #7a5c00;
+      --warn-bg: #fff7e3;
+      --danger: #a83f3f;
+      --danger-bg: #fdf0f0;
+      --shadow: 0 1px 2px rgb(47 33 57 / 6%), 0 8px 24px rgb(47 33 57 / 8%);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --touch: 44px;
+      --content: 1180px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
+        "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 86px;
+      background: var(--canvas);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.62;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.copying {
+      cursor: progress;
+    }
+
+    button,
+    a,
+    summary {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button,
+    input {
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    a {
+      color: var(--brand-600);
+      text-underline-offset: .18em;
+    }
+
+    a:visited {
+      color: var(--brand-700);
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgb(111 80 136 / 38%);
+      outline-offset: 3px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--brand-900);
+      letter-spacing: -.025em;
+      line-height: 1.15;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: var(--space-5);
+      font-size: clamp(42px, 6vw, 76px);
+      font-weight: 800;
+    }
+
+    h2 {
+      margin-bottom: var(--space-3);
+      font-size: clamp(29px, 4vw, 46px);
+      font-weight: 780;
+    }
+
+    h3 {
+      margin-bottom: var(--space-2);
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 12px;
+      min-height: var(--touch);
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--action-bg);
+      transform: translateY(-160%);
+      transition: transform 160ms var(--ease);
+    }
+
+    .skip-link:focus {
+      color: #fff;
+      transform: translateY(0);
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 30;
+      top: 0;
+      border-bottom: 1px solid rgb(226 219 232 / 92%);
+      background: rgb(243 240 246 / 92%);
+      backdrop-filter: blur(16px);
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: var(--space-5);
+      align-items: center;
+      width: min(calc(100% - 32px), var(--content));
+      min-height: 70px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: inline-flex;
+      gap: 9px;
+      align-items: baseline;
+      min-height: var(--touch);
+      color: var(--brand-900);
+      font-weight: 820;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .brand small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: .04em;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 2px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .top-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .top-nav a {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 11px;
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .top-nav a:hover,
+    .top-nav a[aria-current="location"] {
+      color: var(--brand-700);
+      background: var(--brand-100);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .button,
+    .quiet-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--touch);
+      padding: 9px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 740;
+      text-decoration: none;
+    }
+
+    .button {
+      color: #fff;
+      background: var(--action-bg);
+    }
+
+    .button:hover {
+      color: #fff;
+      background: var(--action-hover);
+    }
+
+    .quiet-link {
+      color: var(--brand-700);
+      background: var(--surface);
+    }
+
+    main {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      gap: clamp(34px, 7vw, 96px);
+      align-items: end;
+      min-height: 650px;
+      padding: clamp(70px, 10vw, 126px) 0 60px;
+    }
+
+    .eyebrow,
+    .section-kicker {
+      margin-bottom: var(--space-4);
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero-summary {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+    }
+
+    .next-card {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--brand-600);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .next-label {
+      margin-bottom: var(--space-4);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .next-date {
+      display: block;
+      color: var(--brand-700);
+      font-size: 40px;
+      font-weight: 820;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .next-card h2 {
+      margin: 10px 0 8px;
+      font-size: 25px;
+    }
+
+    .next-card p:last-child {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0 0 42px;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .status-item {
+      min-height: 108px;
+      padding: 18px 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .status-item:last-child {
+      border-right: 0;
+    }
+
+    .status-value {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--brand-700);
+      font-size: 27px;
+      font-weight: 810;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .principle-band {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-bottom: 60px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--danger);
+      color: var(--muted);
+      background: var(--surface);
+    }
+
+    .principle-band strong {
+      color: var(--danger);
+    }
+
+    .section-block {
+      padding: clamp(62px, 8vw, 100px) 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: clamp(22px, 5vw, 70px);
+      margin-bottom: clamp(30px, 5vw, 52px);
+    }
+
+    .section-intro p {
+      max-width: 780px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .action-layout,
+    .scope-layout,
+    .meeting-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .action-column,
+    .scope-column,
+    .meeting-column {
+      padding: clamp(24px, 4vw, 42px);
+    }
+
+    .action-column + .action-column,
+    .scope-column + .scope-column,
+    .meeting-column + .meeting-column {
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .number-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: item;
+    }
+
+    .number-list li {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: var(--space-3);
+      align-items: start;
+      min-height: 64px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      counter-increment: item;
+    }
+
+    .number-list li:last-child {
+      border-bottom: 0;
+    }
+
+    .number-list li::before {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--brand-200);
+      border-radius: 50%;
+      color: var(--brand-700);
+      background: var(--brand-50);
+      font-size: 12px;
+      font-weight: 800;
+      content: counter(item, decimal-leading-zero);
+    }
+
+    .boundary-list {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .boundary-list li {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--surface-soft);
+    }
+
+    .boundary-list.allowed li {
+      border-left: 3px solid var(--ok);
+    }
+
+    .boundary-list.forbidden li {
+      border-left: 3px solid var(--danger);
+    }
+
+    .gate-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .gate-summary > div {
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .gate-summary strong {
+      display: block;
+      color: var(--brand-700);
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .gate-summary span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+    }
+
+    details:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+
+    summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: center;
+      min-height: 62px;
+      cursor: pointer;
+      font-weight: 760;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      color: var(--brand-600);
+      content: "展开";
+      font-size: 13px;
+    }
+
+    details[open] summary::after {
+      content: "收起";
+    }
+
+    .summary-meta {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .gate-list,
+    .compact-list {
+      display: grid;
+      gap: var(--space-3);
+      padding: 0 0 var(--space-6);
+    }
+
+    .gate-item {
+      scroll-margin-top: 94px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .gate-item-head {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .gate-id {
+      color: var(--brand-600);
+      font-size: 12px;
+      font-weight: 820;
+      letter-spacing: .06em;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .state-pill.ok {
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .gate-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .gate-evidence {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      border-top: 2px solid var(--brand-200);
+      list-style: none;
+    }
+
+    .timeline li {
+      position: relative;
+      min-height: 178px;
+      padding: 28px 22px 22px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline li:not(:nth-child(3n)) {
+      border-right: 1px solid var(--line);
+      padding-right: 22px;
+    }
+
+    .timeline li:not(:nth-child(3n + 1)) {
+      padding-left: 22px;
+    }
+
+    .timeline li::before {
+      position: absolute;
+      top: -8px;
+      left: 0;
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--canvas);
+      border-radius: 50%;
+      background: var(--brand-600);
+      content: "";
+    }
+
+    .timeline li:not(:nth-child(3n + 1))::before {
+      left: 22px;
+    }
+
+    .timeline-date {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .timeline strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .timeline p {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline small {
+      color: var(--brand-700);
+      font-weight: 680;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0 0 var(--space-8);
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .metric-grid li {
+      min-height: 148px;
+      padding: 22px 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric-grid li:last-child {
+      border-right: 0;
+    }
+
+    .metric-value {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--brand-700);
+      font-size: clamp(27px, 3vw, 38px);
+      font-weight: 820;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .metric-label {
+      display: block;
+      font-weight: 740;
+    }
+
+    .metric-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .plain-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .plain-list li {
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .plain-list li:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .plain-list strong {
+      display: block;
+      color: var(--brand-900);
+    }
+
+    .role-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .role-button {
+      min-height: var(--touch);
+      padding: 8px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .role-button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--action-bg);
+    }
+
+    .role-panel[hidden] {
+      display: none;
+    }
+
+    .meeting-position {
+      margin-bottom: var(--space-6);
+      padding: 14px 16px;
+      border-left: 3px solid var(--warn);
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .agenda {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .agenda li {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: var(--space-3);
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .agenda time {
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .agenda strong {
+      display: block;
+    }
+
+    .agenda span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .copy-row {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-top: var(--space-5);
+    }
+
+    .copy-status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .governance-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .governance-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .governance-card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-700);
+    }
+
+    .governance-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .compact-row:last-child {
+      border-bottom: 0;
+    }
+
+    .compact-row strong,
+    .compact-row span {
+      font-size: 13px;
+    }
+
+    .compact-row span {
+      color: var(--muted);
+    }
+
+    .source-drawer {
+      margin-top: var(--space-8);
+    }
+
+    .source-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0 0 var(--space-6);
+      list-style: none;
+    }
+
+    .source-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .source-list code {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .site-footer {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .site-footer p {
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 1024px) {
+      .header-inner {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+      }
+
+      .header-actions .quiet-link {
+        display: none;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 42px;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .status-item:nth-child(3) {
+        border-right: 0;
+      }
+
+      .status-item:nth-child(-n + 3) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric-grid li:nth-child(3) {
+        border-right: 0;
+      }
+
+      .metric-grid li:nth-child(-n + 3) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .governance-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 820px) {
+      html {
+        scroll-padding-top: 126px;
+      }
+
+      .header-inner {
+        grid-template-columns: 1fr auto;
+        width: min(calc(100% - 24px), var(--content));
+        min-height: 62px;
+      }
+
+      .top-nav {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin: -5px 0 5px;
+        padding-right: calc(50% - 24px);
+      }
+
+      .header-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        padding: 58px 0 52px;
+      }
+
+      .next-card {
+        max-width: 620px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+      }
+
+      .action-layout,
+      .scope-layout,
+      .meeting-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .action-column + .action-column,
+      .scope-column + .scope-column,
+      .meeting-column + .meeting-column {
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline li:not(:nth-child(3n)) {
+        border-right: 0;
+      }
+
+      .timeline li:not(:nth-child(3n + 1)) {
+        padding-left: 0;
+      }
+
+      .timeline li:not(:nth-child(2n)) {
+        padding-right: 18px;
+        border-right: 1px solid var(--line);
+      }
+
+      .timeline li:nth-child(2n) {
+        padding-left: 18px;
+      }
+
+      .timeline li:not(:nth-child(3n + 1))::before {
+        left: 0;
+      }
+
+      .timeline li:nth-child(2n)::before {
+        left: 18px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(calc(100% - 24px), var(--content));
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      .header-actions .button {
+        padding-inline: 11px;
+        font-size: 13px;
+      }
+
+      .brand small {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 48px;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .status-item,
+      .status-item:nth-child(3) {
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .status-item:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .status-item:last-child {
+        grid-column: 1 / -1;
+        border-right: 0;
+        border-bottom: 0;
+      }
+
+      .principle-band {
+        display: block;
+      }
+
+      .gate-summary {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .gate-summary > div + div {
+        border-top: 0;
+      }
+
+      .gate-item-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+        border-top: 0;
+      }
+
+      .timeline li,
+      .timeline li:not(:nth-child(2n)),
+      .timeline li:nth-child(2n) {
+        min-height: 0;
+        padding: 18px 0;
+        border-top: 1px solid var(--line);
+        border-right: 0;
+      }
+
+      .timeline li::before,
+      .timeline li:nth-child(2n)::before {
+        display: none;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid li,
+      .metric-grid li:nth-child(3) {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric-grid li:last-child {
+        border-bottom: 0;
+      }
+
+      .agenda li {
+        grid-template-columns: 58px 1fr;
+      }
+
+      .compact-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+
+      .source-list li {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --ink: #eee8f2;
+        --muted: #bdb3c5;
+        --line: #4a3e52;
+        --line-strong: #63546e;
+        --surface: #2a2230;
+        --surface-soft: #33293a;
+        --canvas: #211b26;
+        --brand-50: #33293a;
+        --brand-100: #41334b;
+        --brand-200: #5b4669;
+        --brand-300: #82669a;
+        --brand-500: #b392c8;
+        --brand-600: #c3a8d4;
+        --brand-700: #dbc9e7;
+        --brand-900: #f1e8f5;
+        --action-bg: #6f5088;
+        --action-hover: #56406b;
+        --ok: #8ed0a2;
+        --ok-bg: #183523;
+        --warn: #e1c874;
+        --warn-bg: #3d3214;
+        --danger: #eda1a1;
+        --danger-bg: #432222;
+        --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 8px 24px rgb(0 0 0 / 20%);
+      }
+
+      .site-header {
+        border-bottom-color: rgb(74 62 82 / 92%);
+        background: rgb(33 27 38 / 92%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --ink: #1f1a22;
+        --muted: #5d5663;
+        --line: #d8d2dc;
+        --line-strong: #bdb4c5;
+        --surface: #fff;
+        --surface-soft: #fff;
+        --canvas: #fff;
+      }
+
+      @page {
+        size: A4;
+        margin: 11mm;
+      }
+
+      html,
+      body {
+        background: #fff !important;
+      }
+
+      body {
+        font-size: 10pt;
+      }
+
+      .skip-link,
+      .site-header,
+      .copy-row,
+      .role-controls {
+        display: none !important;
+      }
+
+      main,
+      .site-footer {
+        width: 100%;
+      }
+
+      .hero {
+        grid-template-columns: 1.2fr .8fr;
+        min-height: 0;
+        padding: 8mm 0 10mm;
+      }
+
+      h1 {
+        font-size: 36pt;
+      }
+
+      .section-block {
+        padding: 10mm 0;
+        break-before: auto;
+      }
+
+      .next-card,
+      .gate-item,
+      .governance-card {
+        box-shadow: none;
+      }
+
+      details > :not(summary) {
+        display: block !important;
+      }
+
+      .source-drawer a::after {
+        color: var(--muted);
+        font-size: 8pt;
+        content: " (" attr(href) ")";
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+
+  <header class="site-header" aria-label="页面导航">
+    <div class="header-inner">
+      <a class="brand" href="#overview" aria-label="客服 Agent 立项执行中心首页">
+        天元
+        <small>客服 Agent · 执行中心</small>
+      </a>
+
+      <nav class="top-nav" aria-label="执行中心章节">
+        <a href="#overview">总览</a>
+        <a href="#now">现在做</a>
+        <a href="#gates">G0 门禁</a>
+        <a href="#schedule">排期</a>
+        <a href="#acceptance">范围验收</a>
+        <a href="#meeting">需求会</a>
+        <a href="#governance">责任边界</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="quiet-link" href="./07-客服Agent立项PRD.html">返回 PRD</a>
+        <button class="button" id="print-button" type="button">打印会议包</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" id="overview" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow" id="project-meta"></p>
+        <h1 id="page-title" data-pretext></h1>
+        <p class="hero-summary" id="hero-summary" data-pretext></p>
+      </div>
+
+      <aside class="next-card" aria-labelledby="next-title">
+        <p class="next-label">下一门禁</p>
+        <time class="next-date" id="next-date"></time>
+        <h2 id="next-title"></h2>
+        <p id="next-output"></p>
+      </aside>
+    </section>
+
+    <ul class="status-strip" id="status-strip" aria-label="项目当前状态"></ul>
+
+    <div class="principle-band" role="note">
+      <strong>不可破坏：</strong>
+      <span id="principle"></span>
+      <span>· 供应链能力不进入本项目</span>
+    </div>
+
+    <section class="section-block" id="now" aria-labelledby="now-title">
+      <header class="section-head">
+        <p class="section-kicker">01 / Now</p>
+        <div class="section-intro">
+          <h2 id="now-title" data-pretext>先把启动会和证据目录准备好。</h2>
+          <p>只做能帮助 G0 决策的工作，不用代码提交制造“已经开工”的错觉。</p>
+        </div>
+      </header>
+
+      <div class="action-layout">
+        <article class="action-column">
+          <h3>8 月 4 日前</h3>
+          <ol class="number-list" id="prelaunch-list"></ol>
+        </article>
+        <article class="action-column">
+          <h3>允许 / 禁止</h3>
+          <div class="scope-layout">
+            <div class="scope-column">
+              <h3>可以做</h3>
+              <ul class="boundary-list allowed" id="allowed-list"></ul>
+            </div>
+            <div class="scope-column">
+              <h3>Ddev 前禁止</h3>
+              <ul class="boundary-list forbidden" id="forbidden-list"></ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="gates" aria-labelledby="gates-title">
+      <header class="section-head">
+        <p class="section-kicker">02 / Gates</p>
+        <div class="section-intro">
+          <h2 id="gates-title" data-pretext>不是完成百分比，是逐项验真。</h2>
+          <p>外部责任包 14 项与 Scope 15 项必须同时全 Pass；证据不齐，Ddev 保持为空。</p>
+        </div>
+      </header>
+
+      <div class="gate-summary" id="gate-summary"></div>
+      <div id="gate-groups"></div>
+
+      <details>
+        <summary>
+          <span>Scope 冻结 · 15 项检查</span>
+          <span class="summary-meta" id="scope-summary"></span>
+        </summary>
+        <div class="compact-list" id="scope-checks"></div>
+      </details>
+    </section>
+
+    <section class="section-block" id="schedule" aria-labelledby="schedule-title">
+      <header class="section-head">
+        <p class="section-kicker">03 / Schedule</p>
+        <div class="section-intro">
+          <h2 id="schedule-title" data-pretext></h2>
+          <p>每天都有输出；任一硬门禁未过，后续日期按可用工作日顺延。</p>
+        </div>
+      </header>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <section class="section-block" id="acceptance" aria-labelledby="acceptance-title">
+      <header class="section-head">
+        <p class="section-kicker">04 / Scope</p>
+        <div class="section-intro">
+          <h2 id="acceptance-title" data-pretext>首期只把话术闭环做对。</h2>
+          <p>指标能量化，口径在 G0 冻结；负例错误直答、越权泄露或自动代发任一大于 0，直接不通过。</p>
+        </div>
+      </header>
+
+      <ul class="metric-grid" id="metric-grid" aria-label="MVP-A 暂定成功指标"></ul>
+
+      <div class="scope-layout">
+        <article class="scope-column">
+          <h3>In · MVP-A</h3>
+          <ul class="plain-list" id="in-scope"></ul>
+        </article>
+        <article class="scope-column">
+          <h3>Out · 本期不做</h3>
+          <ul class="plain-list" id="out-scope"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="meeting" aria-labelledby="meeting-title">
+      <header class="section-head">
+        <p class="section-kicker">05 / Meeting</p>
+        <div class="section-intro">
+          <h2 id="meeting-title" data-pretext>可以开需求会，不能宣布开工。</h2>
+          <p id="meeting-position"></p>
+        </div>
+      </header>
+
+      <div class="role-controls" aria-label="会前准备角色筛选">
+        <button class="role-button" type="button" data-role-filter="all" aria-pressed="true">全部</button>
+        <button class="role-button" type="button" data-role-filter="director" aria-pressed="false">客服总监</button>
+        <button class="role-button" type="button" data-role-filter="manager" aria-pressed="false">客服经理</button>
+      </div>
+
+      <div class="meeting-layout">
+        <article class="meeting-column">
+          <section class="role-panel" data-role-panel="director">
+            <h3>客服总监准备</h3>
+            <ul class="plain-list" id="director-list"></ul>
+          </section>
+          <section class="role-panel" data-role-panel="manager">
+            <h3>客服经理准备</h3>
+            <ul class="plain-list" id="manager-list"></ul>
+          </section>
+          <section>
+            <h3>当场回答</h3>
+            <ol class="number-list" id="core-questions"></ol>
+          </section>
+          <div class="copy-row">
+            <button class="button" id="copy-checklist" type="button">复制会前清单</button>
+            <span class="copy-status" id="copy-status" aria-live="polite"></span>
+          </div>
+        </article>
+
+        <article class="meeting-column">
+          <h3>45 分钟议程</h3>
+          <ol class="agenda" id="agenda"></ol>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="governance" aria-labelledby="governance-title">
+      <header class="section-head">
+        <p class="section-kicker">06 / Guardrails</p>
+        <div class="section-intro">
+          <h2 id="governance-title" data-pretext>费用、责任、技术与风险都要有人签。</h2>
+          <p>当前费用路径及支出状态来自费用真源；技术栈、复用、部署和运行责任都待 G0 冻结。</p>
+        </div>
+      </header>
+
+      <details open>
+        <summary>
+          <span>费用路径</span>
+          <span class="summary-meta" id="fee-summary"></span>
+        </summary>
+        <div class="governance-grid" id="fee-paths"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>待具名责任人</span>
+          <span class="summary-meta" id="role-summary"></span>
+        </summary>
+        <div class="compact-list" id="roles"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>开放风险</span>
+          <span class="summary-meta" id="risk-summary"></span>
+        </summary>
+        <div class="compact-list" id="risks"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>全栈 G0 交付</span>
+          <span class="summary-meta">技术栈未冻结</span>
+        </summary>
+        <div class="compact-list" id="functions"></div>
+      </details>
+
+      <details class="source-drawer" id="source-drawer">
+        <summary>
+          <span>维护人员：核验 7 份原始真源</span>
+          <span class="summary-meta">普通参会人无需打开</span>
+        </summary>
+        <ul class="source-list" id="source-list"></ul>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>生命周期：</strong><span id="lifecycle"></span></p>
+    <p>Release <code>hub-v1-b08b88b33c92</code> · 来源日期 2026-07-31 · 页面只读</p>
+  </footer>
+
+  <noscript>此执行中心需要浏览器启用 JavaScript；原始真源仍保存在同目录 00–06 Markdown。</noscript>
+
+  <script id="hub-data" type="application/json">{"schemaVersion":1,"project":{"name":"客服 Agent","delivery":"话术库 MVP-A","code":"CS-AI-C11","priority":"P0","d0":"2026-08-04","g0Target":"2026-08-14"},"status":{"stage":"启动前 / G0","externalPass":0,"externalTotal":14,"scopePass":0,"scopeTotal":15,"g0":"未签发","ddev":"未成立","development":"未开始","health":"黄","feePath":"B · 钱后置","paidSpend":"0 支出"},"headline":{"title":"现在不是开工，是把 G0 证据补齐。","summary":"08-04 启动项目；14 项外部责任包与 15 项 Scope 检查全部通过后，才可签发 Ddev。","nextDate":"08-04","nextTitle":"项目启动","nextOutput":"启动纪要 · RACI v1 · RAID v1","principle":"系统推荐 → 坐席确认 → 人工发送","scheduleTitle":"08-04 到 08-14，只承诺 G0。"},"prelaunchChecklist":["发送启动会邀请，明确会议不是开发开工会","邀请项目负责人、客服业务 Owner 候选、话术 Owner 候选、预算、IT / 安全、运维和 FDE","建立证据目录、会议纪要、RAID、DEC / CR 和行动项模板","准备一页范围：首期做什么、不做什么、成功标准","列出 G0-02～G0-15 的 A、R、证据和截止日","准备现状数据与话术真源清单，不把猜测写成事实","将汇报 Web 标为参考，不在会上用它证明当前状态","明确供应链不进入客服议程、预算和 WBS"],"schedule":[{"date":"08-04 周二","title":"项目启动","action":"确认项目名、首期边界、RACI、沟通节奏、证据目录；重申“推荐 → 坐席确认 → 人工发送”","output":"启动纪要、RACI v1、RAID v1"},{"date":"08-05 周三","title":"正式留痕与责任","action":"归档组织批准凭证；具名业务、话术、预算、IT / 安全 Owner；确定 A / B / C 费用路径","output":"外部凭证、Owner 留痕、费用路径"},{"date":"08-06 周四","title":"资产与复用","action":"盘点话术真源、字段、平台 × 场景、数据质量；审计 dafuyan-wording 的所有权、许可、维护、测试与 TCO","output":"内容清单、复用审计"},{"date":"08-07 周五","title":"需求与安全中检","action":"经理、话术 Owner、至少 3 名坐席复核真实任务；明确 PII、出域、账号、日志、保留删除和第三方模型边界","output":"现状基线、用户旅程、安全问题单、G0 中检结论"},{"date":"08-10 周一","title":"Scope 与交互","action":"冻结 In / Out、用户故事、异常态、权限态；形成低保真关键流","output":"Scope v1、低保真流程、CR 模板"},{"date":"08-11 周二","title":"数据、API 与架构","action":"冻结内容 Schema、检索接口草案、身份权限、审计、部署、备份与回退边界","output":"数据字典、API 草案、架构 ADR"},{"date":"08-12 周三","title":"评测与质量","action":"冻结正例、负例、盲审、关键词基线、性能、安全与可访问性门槛","output":"评测集 ID、基线结果、测试策略"},{"date":"08-13 周四","title":"WBS 与运行准备","action":"拆分前端、后端、AI、数据、QA、运维工作；确认依赖、容量、成本和试点方案","output":"WBS、关键路径、运行与试点草案"},{"date":"08-14 周五","title":"G0 决策会","action":"逐项验真，不按“完成百分比”放行","output":"Pass / Fail、Ddev 或阻塞行动项"}],"gates":[{"id":"G0-02","title":"公司正式批准凭证归档","accountable":"HR 人事总经理","responsible":"项目负责人","due":"08-05","status":"待办","evidence":"批准人、时间、原话、飞书 / 邮件 / 纪要链接","group":"approval"},{"id":"G0-03","title":"真实任务复核与现状基线","accountable":"客服业务 Owner（待具名）","responsible":"项目负责人、试点坐席","due":"08-07","status":"待办","evidence":"经理 + 话术 Owner + ≥3 坐席；耗时、错误、未命中基线","group":"business"},{"id":"G0-04","title":"客服业务 Owner 具名并接受职责","accountable":"客服负责人","responsible":"项目负责人","due":"08-05","status":"待办","evidence":"姓名、职责、代理人、接受职责留痕","group":"approval"},{"id":"G0-05","title":"话术真源 Owner 具名","accountable":"客服业务 Owner","responsible":"客服接口人","due":"08-05","status":"待办","evidence":"姓名、权限、代理人、维护 SLA","group":"approval"},{"id":"G0-06","title":"草稿、复核、发布、下架、回滚与审计规则","accountable":"客服业务 Owner","responsible":"话术 Owner、FDE","due":"08-07","status":"待办","evidence":"状态机、角色矩阵、异常处理","group":"business"},{"id":"G0-07","title":"A / B / C 费用路径、预算责任人与 cap","accountable":"预算责任人（待具名）","responsible":"财务 / 采购接口人","due":"08-05","status":"待办","evidence":"A：月 / 全期 cap；B：0 支出与下次日期；C：暂停记录","group":"approval"},{"id":"G0-08","title":"dafuyan-wording 复用 / 补齐 / 替换审计","accountable":"项目负责人","responsible":"FDE","due":"08-06","status":"待办","evidence":"所有权、许可、维护、依赖、测试、部署、回退、12 个月 TCO","group":"delivery"},{"id":"G0-09","title":"话术真源、字段、平台 × 场景与数据质量盘点","accountable":"客服业务 Owner","responsible":"话术 Owner、数据 / 内容接口人","due":"08-07","status":"待办","evidence":"数量、格式、版本、重复、过期、敏感字段与适用范围","group":"business"},{"id":"G0-10","title":"Scope v1、用户旅程、Out of Scope 与 CR","accountable":"项目负责人","responsible":"FDE、设计、客服接口人","due":"08-10","status":"待办","evidence":"Scope 版本、低保真关键流、CR 模板","group":"business"},{"id":"G0-11","title":"PII、出域、第三方模型、权限、日志与保留删除","accountable":"IT / 安全责任人（待具名）","responsible":"FDE","due":"08-11","status":"待办","evidence":"数据分级、威胁模型、批准与禁止清单","group":"safety"},{"id":"G0-12","title":"架构、部署、账号、监控、备份、恢复与回退","accountable":"IT 服务责任人（待具名）","responsible":"FDE、运维","due":"08-11","status":"待办","evidence":"架构 ADR、环境方案、RPO / RTO、运行责任人","group":"safety"},{"id":"G0-13","title":"评测集、盲审人、关键词基线和测试策略冻结","accountable":"客服业务 Owner","responsible":"话术 Owner、FDE、QA","due":"08-12","status":"待办","evidence":"评测集 ID、数据快照、公式、阈值与基线结果","group":"safety"},{"id":"G0-14","title":"WBS、资源、工作量、关键路径、成本和 Ddev 方案","accountable":"项目负责人","responsible":"FDE、各职能负责人","due":"08-13","status":"待办","evidence":"01-总排期与阶段门禁.md、容量与成本","group":"delivery"},{"id":"G0-15","title":"G1a / Pilot / G1b 运行、埋点、回退和交接方案","accountable":"项目负责人","responsible":"FDE、QA、系统管理员、业务 Owner","due":"08-13","status":"待办","evidence":"运行手册、告警、试点、支持、验收和移交草案","group":"delivery"}],"scopeChecks":[{"id":"1","title":"公司正式批准凭证已归档","accountable":"HR 人事总经理","status":"待办","evidence":"批准人 / 时间 / 原话 / 链接：____"},{"id":"2","title":"客服业务 Owner 具名并接受验收责任","accountable":"客服负责人","status":"待办","evidence":"姓名：____"},{"id":"3","title":"话术真源 Owner 具名","accountable":"客服业务 Owner","status":"待办","evidence":"姓名：____"},{"id":"4","title":"预算责任人、IT / 安全责任人、运行责任人具名","accountable":"项目负责人","status":"待办","evidence":"名单：____"},{"id":"5","title":"客服经理 + 话术 Owner + ≥3 坐席完成需求再验证","accountable":"客服业务 Owner","status":"待办","evidence":"原始记录 / 样本：____"},{"id":"6","title":"查找时长、错答 / 冲突、培训、现有使用基线已记录","accountable":"客服业务 Owner","status":"待办","evidence":"样本量与分母：____"},{"id":"7","title":"草稿、复核、发布、下架、回滚与审计规则书面化","accountable":"客服业务 Owner","status":"待办","evidence":"规则：____"},{"id":"8","title":"dafuyan-wording 所有权、维护、安全、测试、部署、TCO 审计完成","accountable":"项目负责人","status":"待办","evidence":"复用 / 补齐 / 替换：____"},{"id":"9","title":"平台 × 场景矩阵与最小内容字段冻结","accountable":"客服业务 Owner","status":"待办","evidence":"内容 Schema v：____"},{"id":"10","title":"MVP-A 与 Out of Scope、内部试点边界、CR 流程确认","accountable":"项目负责人","status":"待办","evidence":"Scope v：____"},{"id":"11","title":"客服执行路径已正式记录：A 的月 / 全期 cap 已批；或 B 明确费用后置、0 支出与下次决策日；C 则本项 Fail 并暂停","accountable":"预算责任人","status":"待办","evidence":"A / B / C、金额 / 下次日期与链接：____"},{"id":"12","title":"PII、出域、第三方模型、保留删除、访问与日志批准","accountable":"IT / 安全责任人","status":"待办","evidence":"安全记录：____"},{"id":"13","title":"部署、监控、备份、回退与运维交接方案确认","accountable":"IT 服务责任人","status":"待办","evidence":"方案：____"},{"id":"14","title":"评测集 ID、内容快照、盲审人、公式、基线和阈值冻结","accountable":"客服业务 Owner","status":"待办","evidence":"协议版本：____"},{"id":"15","title":"WBS、资源、关键路径、Ddev、测试、回退与试点计划确认","accountable":"项目负责人","status":"待办","evidence":"排期：____"}],"scope":{"in":[{"title":"内容资产","detail":"单一逻辑真源；稳定 ID、状态、Owner、来源、版本、平台 / 场景和有效期"},{"title":"管理端","detail":"起草、复核、发布、下架、回滚与审计"},{"title":"坐席端","detail":"关键词与意图检索，返回 Top3 候选"},{"title":"问答","detail":"只基于已发布且有效内容回答；显示引用；无依据时拒答"},{"title":"反馈","detail":"有用 / 无用、未命中、候选采纳和问题类型"},{"title":"权限","detail":"最小 RBAC；管理、复核、坐席和只读角色"},{"title":"可观测性","detail":"使用、质量、成本、错误、审计与安全事件"},{"title":"运行","detail":"监控、备份、恢复、回退、值班和支持边界"}],"out":["自动点击发送、自动接管客服会话或 RPA 代回；","全量智能质检、评分、处罚或合规终局判断；","客服桌面客户端深度嵌入；","外包网络、账号、终端和权限全量开通；","L3 复杂推送、完整多级审批和大规模版本治理；","供应链备案、BOM、对账、预警或相关预算；","将已收尾汇报 Web 直接改造成生产产品。"]},"metrics":[{"value":"≥70%","label":"Top3 命中","note":"20 条正例全量盲测"},{"value":"100%","label":"引用 / 版本正确","note":"每条建议可追溯"},{"value":"0","label":"错误直答","note":"不少于 5 条负例"},{"value":"3–5 × 2周","label":"内部真实试点","note":"每人每周 ≥5 个去重任务"},{"value":"0","label":"自动代发","note":"人在环硬门槛"}],"meeting":{"positioning":"可召开需求澄清与范围冻结准备会；不是 PRD 终审、G0 通过或开发开工会。","agenda":[{"time":"0～5","topic":"为什么做、首期解决什么","decision":"客服 Agent 项目；首期话术库 MVP-A"},{"time":"5～10","topic":"做什么、不做什么","decision":"人在环、不自动代发；供应链不进入本项目"},{"time":"10～20","topic":"Owner 与责任","decision":"每个关键事项唯一 A、明确 R 和代理人"},{"time":"20～30","topic":"G0 证据与日期","decision":"G0-02～15 的证据、截止日和阻塞升级"},{"time":"30～40","topic":"数据、安全、费用与复用","decision":"A / B / C、PII、部署、复用审计责任"},{"time":"40～45","topic":"推进节奏","decision":"每日更新、周五中检、08-14 G0 决策"}],"director":["业务目标、优先级及本期必须解决的问题","外包推进节奏、主要经营风险与不可突破边界","可拍板的业务 Owner、验收人、预算路径与试点资源","成功、止损、暂停条件与范围取舍"],"manager":["Top 场景、平台分布、真实任务量与脱敏案例","话术真源清单、版本状态及维护 SLA","查找时长、错答 / 冲突、未命中与新人学习基线","20 条正例、至少 5 条负例与转人工 SOP","3–5 名试点坐席、投入时间与反馈安排"],"coreQuestions":["首期最值得解决的 3–5 个真实任务是什么？","哪个来源才是正确答案，谁最终负责？","系统何时必须拒答、追问或转人工？","什么指标算成功，什么情况必须停止？"]},"governance":{"fee":[{"id":"A","title":"费用可用","detail":"月 cap、全期 cap、科目与预算责任人正式批准后执行。"},{"id":"B","title":"钱后置 · 当前临时路径","detail":"保持 0 新增付费，并写明下次费用决策日。"},{"id":"C","title":"暂停","detail":"记录原因、复审条件与日期；本项 Fail。"}],"roles":[{"role":"项目负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"客服业务 Owner","name":"待具名","proxy":"待填","status":"待填"},{"role":"话术真源 Owner","name":"待具名","proxy":"待填","status":"待填"},{"role":"预算责任人","name":"待具名","proxy":"待填","status":"待填"},{"role":"IT / 安全责任人","name":"待具名","proxy":"待填","status":"待填"},{"role":"IT 服务 / 运维责任人","name":"待具名","proxy":"待填","status":"待填"},{"role":"设计负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"前端负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"后端负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"AI / RAG 负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"QA 负责人","name":"待具名","proxy":"待填","status":"待填"},{"role":"数据 / 内容接口人","name":"待具名","proxy":"待填","status":"待填"},{"role":"业务验收人","name":"待具名","proxy":"待填","status":"待填"}],"functions":[{"name":"产品 / FDE","g0":"章程、Scope、RACI、用户故事、CR / DEC、指标与止损"},{"name":"设计","g0":"用户旅程、低保真关键流、异常 / 权限态"},{"name":"前端","g0":"UI 边界、接口需求、状态模型"},{"name":"后端","g0":"API 草案、数据状态机、身份与审计方案"},{"name":"AI / RAG","g0":"关键词基线、评测协议、拒答与降级策略"},{"name":"数据 / 内容","g0":"内容 Schema、真源与质量报告"},{"name":"QA","g0":"测试策略、环境与门禁"},{"name":"安全 / 运维","g0":"威胁模型、PII / 出域、部署与回退批准"},{"name":"业务 / 试点","g0":"Owner、真实任务、基线、标注与验收人"}],"risks":[{"id":"R-01","title":"正式批准凭证未归档","impact":"G0 无法通过","accountable":"项目负责人","due":"08-05"},{"id":"R-02","title":"核心 Owner 尚未具名","impact":"范围、验收与运行无人负责","accountable":"项目负责人","due":"08-05"},{"id":"R-03","title":"A / B / C 与 cap 未确认","impact":"不能付费或开发","accountable":"预算责任人","due":"08-05"},{"id":"R-04","title":"既有底座复用与 TCO 未知","impact":"工期和架构无法锁定","accountable":"项目负责人","due":"08-06"},{"id":"R-05","title":"需求主诉与方案可能错位","impact":"做成后无人使用","accountable":"客服业务 Owner","due":"08-07"},{"id":"R-06","title":"PII、出域、权限与保留边界未知","impact":"泄露与合规风险","accountable":"IT / 安全责任人","due":"08-11"},{"id":"R-07","title":"评测集可被挑题或重复调参","impact":"错误通过 G1a","accountable":"客服业务 Owner","due":"08-12"},{"id":"R-08","title":"资源低于最小小队","impact":"固定日期不可承诺","accountable":"项目负责人","due":"08-13"}],"allowed":[{"allowed":"启动会、访谈、现状和内容盘点","forbidden":"编写或合并客服 Agent 产品功能代码"},{"allowed":"只读复用、架构、数据与安全设计","forbidden":"付费模型调用、采购签约"},{"allowed":"Scope、评测集、API 草案、WBS","forbidden":"部署、试点、培训或承诺上线"},{"allowed":"低保真关键流程和测试策略","forbidden":"把已收尾汇报 Web 当作产品底座直接续做"},{"allowed":"更新章程、台账、决策和风险","forbidden":"将供应链任务并入客服预算、WBS 或指标"}]},"sources":[{"id":"charter","label":"项目章程","file":"00-项目章程.md","href":"./00-项目章程.md","sha256":"d07c893fc66445fa95f7e6b0dae0acd9c5129ee648bcab5d7578a26152b113bc"},{"id":"schedule","label":"总排期与阶段门禁","file":"01-总排期与阶段门禁.md","href":"./01-总排期与阶段门禁.md","sha256":"953b75144f3656e55081b0a160fc0930157a11a0dbb5dd3ee373868a8b0a8a47"},{"id":"ledger","label":"G0 责任与证据台账","file":"02-G0责任与证据台账.md","href":"./02-G0责任与证据台账.md","sha256":"676a2c0b93309079892cb96ada2dcb8295ac3841873714e98cbbb4bf848acfd2"},{"id":"scope","label":"Scope 与验收","file":"03-Scope与验收.md","href":"./03-Scope与验收.md","sha256":"68c32f0a43b14fe6e7cf924e2375e8f7584d3ee19872f369256a5b3f24891dd9"},{"id":"cost","label":"费用与成本控制","file":"04-费用与成本控制.md","href":"./04-费用与成本控制.md","sha256":"effce6c0b8e65222b505452208723535ec998536ff32ac05ed97b1511bc36004"},{"id":"delivery","label":"全栈交付计划","file":"05-全栈交付计划.md","href":"./05-全栈交付计划.md","sha256":"229b4fb38f9dea1152f92abdeb144d5f2410d8a99d31174944f0d7bdf63f5e42"},{"id":"cadence","label":"启动会与周推进","file":"06-启动会与周推进.md","href":"./06-启动会与周推进.md","sha256":"47f0c01594e12d6fff0561897d12e7b1206b203417dc9c98487df6691f06ff8f"}],"release":{"id":"hub-v1-b08b88b33c92","sourceHash":"c29d20dcb8c28e535a8ac535bb15bfc628d694f03d92e73eebdec2995808c008","sourceDate":"2026-07-31","lifecycle":"00–06 Markdown 的只读生成视图，不替代真源或正式审批记录"}}</script>
+
+  <script id="pretext-source" type="text/plain">
+var x0=["BN","BN","BN","BN","BN","BN","BN","BN","BN","S","B","S","WS","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","B","B","B","S","WS","ON","ON","ET","ET","ET","ON","ON","ON","ON","ON","ON","CS","ON","CS","ON","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","ON","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","BN","BN","BN","BN","BN","BN","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","CS","ON","ET","ET","ET","ET","ON","ON","ON","ON","L","ON","ON","ON","ON","ON","ET","ET","EN","EN","ON","L","ON","ON","ON","EN","L","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L"],g0=["AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","CS","AL","ON","ON","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AN","AN","AN","AN","AN","AN","AN","AN","AN","AN","ET","AN","AN","AL","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","ON","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL"];function m0(O){if(O<=255)return x0[O];if(1424<=O&&O<=1524)return"R";if(1536<=O&&O<=1791)return g0[O&255];if(1792<=O&&O<=2220)return"AL";return"L"}function r0(O){let _=O.length;if(_===0)return null;let J=Array(_),Y=0;for(let V=0;V<_;V++){let $=m0(O.charCodeAt(V));if($==="R"||$==="AL"||$==="AN")Y++;J[V]=$}if(Y===0)return null;let X=_/Y<0.3?0:1,R=new Int8Array(_);for(let V=0;V<_;V++)R[V]=X;let Z=X&1?"R":"L",Q=Z,f=Q;for(let V=0;V<_;V++)if(J[V]==="NSM")J[V]=f;else f=J[V];f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="AL"?"AN":"EN";else if($==="R"||$==="L"||$==="AL")f=$}for(let V=0;V<_;V++)if(J[V]==="AL")J[V]="R";for(let V=1;V<_-1;V++){if(J[V]==="ES"&&J[V-1]==="EN"&&J[V+1]==="EN")J[V]="EN";if(J[V]==="CS"&&(J[V-1]==="EN"||J[V-1]==="AN")&&J[V+1]===J[V-1])J[V]=J[V-1]}for(let V=0;V<_;V++){if(J[V]!=="EN")continue;let $;for($=V-1;$>=0&&J[$]==="ET";$--)J[$]="EN";for($=V+1;$<_&&J[$]==="ET";$++)J[$]="EN"}for(let V=0;V<_;V++){let $=J[V];if($==="WS"||$==="ES"||$==="ET"||$==="CS")J[V]="ON"}f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="L"?"L":"EN";else if($==="R"||$==="L")f=$}for(let V=0;V<_;V++){if(J[V]!=="ON")continue;let $=V+1;while($<_&&J[$]==="ON")$++;let u=V>0?J[V-1]:Q,q=$<_?J[$]:Q,D=u!=="L"?"R":"L";if(D===(q!=="L"?"R":"L"))for(let K=V;K<$;K++)J[K]=D;V=$-1}for(let V=0;V<_;V++)if(J[V]==="ON")J[V]=Z;for(let V=0;V<_;V++){let $=J[V];if((R[V]&1)===0){if($==="R")R[V]++;else if($==="AN"||$==="EN")R[V]+=2}else if($==="L"||$==="AN"||$==="EN")R[V]++}return R}function u0(O,_){let J=r0(O);if(J===null)return null;let Y=new Int8Array(_.length);for(let X=0;X<_.length;X++)Y[X]=J[_[X]];return Y}var a0=/[ \t\n\r\f]+/g,s0=/[\t\n\r\f]| {2,}|^ | $/;function d0(O){let _=O??"normal";return _==="pre-wrap"?{mode:_,preserveOrdinarySpaces:!0,preserveHardBreaks:!0}:{mode:_,preserveOrdinarySpaces:!1,preserveHardBreaks:!1}}function i0(O){if(!s0.test(O))return O;let _=O.replace(a0," ");if(_.charCodeAt(0)===32)_=_.slice(1);if(_.length>0&&_.charCodeAt(_.length-1)===32)_=_.slice(0,-1);return _}function t0(O){if(!/[\r\f]/.test(O))return O.replace(/\r\n/g,`
+`);return O.replace(/\r\n/g,`
+`).replace(/[\r\f]/g,`
+`)}var d=null,V0;function n0(){if(d===null)d=new Intl.Segmenter(V0,{granularity:"word"});return d}function z0(){d=null}function j0(O){let _=O&&O.length>0?O:void 0;if(V0===_)return;V0=_,d=null}var e0=/\p{Script=Arabic}/u,O0=/\p{M}/u,b0=/\p{Nd}/u;function X0(O){return e0.test(O)}function p(O){for(let _ of O){let J=_.codePointAt(0);if(J>=19968&&J<=40959||J>=13312&&J<=19903||J>=131072&&J<=173791||J>=173824&&J<=177983||J>=177984&&J<=178207||J>=178208&&J<=183983||J>=183984&&J<=191471||J>=196608&&J<=201551||J>=63744&&J<=64255||J>=194560&&J<=195103||J>=12288&&J<=12351||J>=12352&&J<=12447||J>=12448&&J<=12543||J>=44032&&J<=55215||J>=65280&&J<=65519)return!0}return!1}var $0=new Set(["，","．","！","：","；","？","、","。","・","）","〕","〉","》","」","』","】","〗","〙","〛","ー","々","〻","ゝ","ゞ","ヽ","ヾ"]),i=new Set(['"',"(","[","{","“","‘","«","‹","（","〔","〈","《","「","『","【","〖","〘","〚"]),Q0=new Set(["'","’"]),r=new Set([".",",","!","?",":",";","،","؛","؟","।","॥","၊","။","၌","၍","၏",")","]","}","%",'"',"”","’","»","›","…"]),OO=new Set([":",".","،","؛"]),_O=new Set(["၏"]),JO=new Set(["”","’","»","›","」","』","】","》","〉","〕","）"]);function RO(O){if(q0(O))return!0;let _=!1;for(let J of O){if(r.has(J)){_=!0;continue}if(_&&O0.test(J))continue;return!1}return _}function VO(O){for(let _ of O)if(!$0.has(_)&&!r.has(_))return!1;return O.length>0}function XO(O){if(q0(O))return!0;for(let _ of O)if(!i.has(_)&&!Q0.has(_)&&!O0.test(_))return!1;return O.length>0}function q0(O){let _=!1;for(let J of O){if(J==="\\"||O0.test(J))continue;if(i.has(J)||r.has(J)||Q0.has(J)){_=!0;continue}return!1}return _}function YO(O){let _=Array.from(O),J=_.length;while(J>0){let Y=_[J-1];if(O0.test(Y)){J--;continue}if(i.has(Y)||Q0.has(Y)){J--;continue}break}if(J<=0||J===_.length)return null;return{head:_.slice(0,J).join(""),tail:_.slice(J).join("")}}function ZO(O,_){if(O.length===0)return!1;for(let J of O)if(J!==_)return!1;return!0}function $O(O){if(!X0(O)||O.length===0)return!1;return OO.has(O[O.length-1])}function QO(O){if(O.length===0)return!1;return _O.has(O[O.length-1])}function qO(O){if(O.length<2||O[0]!==" ")return null;let _=O.slice(1);if(/^\p{M}+$/u.test(_))return{space:" ",marks:_};return null}function D0(O){for(let _=O.length-1;_>=0;_--){let J=O[_];if(JO.has(J))return!0;if(!r.has(J))return!1}return!1}function DO(O,_){if(_.preserveOrdinarySpaces||_.preserveHardBreaks){if(O===" ")return"preserved-space";if(O==="\t")return"tab";if(_.preserveHardBreaks&&O===`
+`)return"hard-break"}if(O===" ")return"space";if(O===" "||O===" "||O==="⁠"||O==="\uFEFF")return"glue";if(O==="​")return"zero-width-break";if(O==="­")return"soft-hyphen";return"text"}function NO(O,_,J,Y){let X=[],R=null,Z="",Q=J,f=!1,V=0;for(let $ of O){let u=DO($,Y),q=u==="text"&&_;if(R!==null&&u===R&&q===f){Z+=$,V+=$.length;continue}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});R=u,Z=$,Q=J+V,f=q,V+=$.length}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});return X}function Y0(O){return O==="space"||O==="preserved-space"||O==="zero-width-break"||O==="hard-break"}var fO=/^[A-Za-z][A-Za-z0-9+.-]*:$/;function HO(O,_){let J=O.texts[_];if(J.startsWith("www."))return!0;return fO.test(J)&&_+1<O.len&&O.kinds[_+1]==="text"&&O.texts[_+1]==="//"}function UO(O){return O.includes("?")&&(O.includes("://")||O.startsWith("www."))}function MO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let Z=0;Z<O.len;Z++){if(Y[Z]!=="text"||!HO(O,Z))continue;let Q=Z+1;while(Q<O.len&&!Y0(Y[Q])){_[Z]+=_[Q],J[Z]=!0;let f=_[Q].includes("?");if(Y[Q]="text",_[Q]="",Q++,f)break}}let R=0;for(let Z=0;Z<_.length;Z++){let Q=_[Z];if(Q.length===0)continue;if(R!==Z)_[R]=Q,J[R]=J[Z],Y[R]=Y[Z],X[R]=X[Z];R++}return _.length=R,J.length=R,Y.length=R,X.length=R,{len:R,texts:_,isWordLike:J,kinds:Y,starts:X}}function CO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R]),!UO(Z))continue;let Q=R+1;if(Q>=O.len||Y0(O.kinds[Q]))continue;let f="",V=O.starts[Q],$=Q;while($<O.len&&!Y0(O.kinds[$]))f+=O.texts[$],$++;if(f.length>0)_.push(f),J.push(!0),Y.push("text"),X.push(V),R=$-1}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}var FO=new Set([":","-","/","×",",",".","+","–","—"]),K0=/^[A-Za-z0-9_]+[,:;]*$/,vO=/[,:;]+$/;function E0(O){for(let _ of O)if(b0.test(_))return!0;return!1}function Z0(O){if(O.length===0)return!1;for(let _ of O){if(b0.test(_)||FO.has(_))continue;return!1}return!0}function uO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R];if(Q==="text"&&Z0(Z)&&E0(Z)){let f=Z,V=R+1;while(V<O.len&&O.kinds[V]==="text"&&Z0(O.texts[V]))f+=O.texts[V],V++;_.push(f),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=V-1;continue}_.push(Z),J.push(O.isWordLike[R]),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function KO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R],f=O.isWordLike[R];if(Q==="text"&&f&&K0.test(Z)){let V=Z,$=R+1;while(vO.test(V)&&$<O.len&&O.kinds[$]==="text"&&O.isWordLike[$]&&K0.test(O.texts[$]))V+=O.texts[$],$++;_.push(V),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=$-1;continue}_.push(Z),J.push(f),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function zO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(O.kinds[R]==="text"&&Z.includes("-")){let Q=Z.split("-"),f=Q.length>1;for(let V=0;V<Q.length;V++){let $=Q[V];if(!f)break;if($.length===0||!E0($)||!Z0($))f=!1}if(f){let V=0;for(let $=0;$<Q.length;$++){let u=Q[$],q=$<Q.length-1?`${u}-`:u;_.push(q),J.push(!0),Y.push("text"),X.push(O.starts[R]+V),V+=q.length}continue}}_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function jO(O){let _=[],J=[],Y=[],X=[],R=0;while(R<O.len){let Z=O.texts[R],Q=O.isWordLike[R],f=O.kinds[R],V=O.starts[R];if(f==="glue"){let $=Z,u=V;R++;while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text")Z=$+O.texts[R],Q=O.isWordLike[R],f="text",V=u,R++;else{_.push($),J.push(!1),Y.push("glue"),X.push(u);continue}}else R++;if(f==="text")while(R<O.len&&O.kinds[R]==="glue"){let $="";while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text"){Z+=$+O.texts[R],Q=Q||O.isWordLike[R],R++;continue}Z+=$}_.push(Z),J.push(Q),Y.push(f),X.push(V)}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function bO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let R=0;R<_.length-1;R++){if(Y[R]!=="text"||Y[R+1]!=="text")continue;if(!p(_[R])||!p(_[R+1]))continue;let Z=YO(_[R]);if(Z===null)continue;_[R]=Z.head,_[R+1]=Z.tail+_[R+1],X[R+1]=X[R]+Z.head.length}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function EO(O,_,J){let Y=n0(),X=0,R=[],Z=[],Q=[],f=[];for(let q of Y.segment(O))for(let D of NO(q.segment,q.isWordLike??!1,q.index,J)){let b=D.kind==="text";if(_.carryCJKAfterClosingQuote&&b&&X>0&&Q[X-1]==="text"&&p(D.text)&&p(R[X-1])&&D0(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&VO(D.text)&&p(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&QO(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&D.isWordLike&&X0(D.text)&&$O(R[X-1]))R[X-1]+=D.text,Z[X-1]=!0;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&D.text.length===1&&D.text!=="-"&&D.text!=="—"&&ZO(R[X-1],D.text))R[X-1]+=D.text;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&(RO(D.text)||D.text==="-"&&Z[X-1]))R[X-1]+=D.text;else R[X]=D.text,Z[X]=D.isWordLike,Q[X]=D.kind,f[X]=D.start,X++}for(let q=1;q<X;q++)if(Q[q]==="text"&&!Z[q]&&q0(R[q])&&Q[q-1]==="text")R[q-1]+=R[q],Z[q-1]=Z[q-1]||Z[q],R[q]="";for(let q=X-2;q>=0;q--)if(Q[q]==="text"&&!Z[q]&&XO(R[q])){let D=q+1;while(D<X&&R[D]==="")D++;if(D<X&&Q[D]==="text")R[D]=R[q]+R[D],f[D]=f[q],R[q]=""}let V=0;for(let q=0;q<X;q++){let D=R[q];if(D.length===0)continue;if(V!==q)R[V]=D,Z[V]=Z[q],Q[V]=Q[q],f[V]=f[q];V++}R.length=V,Z.length=V,Q.length=V,f.length=V;let $=jO({len:V,texts:R,isWordLike:Z,kinds:Q,starts:f}),u=bO(KO(zO(uO(CO(MO($))))));for(let q=0;q<u.len-1;q++){let D=qO(u.texts[q]);if(D===null)continue;if(u.kinds[q]!=="space"&&u.kinds[q]!=="preserved-space"||u.kinds[q+1]!=="text"||!X0(u.texts[q+1]))continue;u.texts[q]=D.space,u.isWordLike[q]=!1,u.kinds[q]=u.kinds[q]==="preserved-space"?"preserved-space":"space",u.texts[q+1]=D.marks+u.texts[q+1],u.starts[q+1]=u.starts[q]+D.space.length}return u}function GO(O,_){if(O.len===0)return[];if(!_.preserveHardBreaks)return[{startSegmentIndex:0,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len}];let J=[],Y=0;for(let X=0;X<O.len;X++){if(O.kinds[X]!=="hard-break")continue;J.push({startSegmentIndex:Y,endSegmentIndex:X,consumedEndSegmentIndex:X+1}),Y=X+1}if(Y<O.len)J.push({startSegmentIndex:Y,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len});return J}function N0(O,_,J="normal"){let Y=d0(J),X=Y.mode==="pre-wrap"?t0(O):i0(O);if(X.length===0)return{normalized:X,chunks:[],len:0,texts:[],isWordLike:[],kinds:[],starts:[]};let R=EO(X,_,Y);return{normalized:X,chunks:GO(R,Y),...R}}var a=null,f0=new Map,s=null,PO=/\p{Emoji_Presentation}/u,AO=/[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F\u20E3]/u,_0=null,H0=new Map;function U0(){if(a!==null)return a;if(typeof OffscreenCanvas<"u")return a=new OffscreenCanvas(1,1).getContext("2d"),a;if(typeof document<"u")return a=document.createElement("canvas").getContext("2d"),a;throw Error("Text measurement requires OffscreenCanvas or a DOM canvas context.")}function BO(O){let _=f0.get(O);if(!_)_=new Map,f0.set(O,_);return _}function x(O,_){let J=_.get(O);if(J===void 0)J={width:U0().measureText(O).width,containsCJK:p(O)},_.set(O,J);return J}function h(){if(s!==null)return s;if(typeof navigator>"u")return s={lineFitEpsilon:0.005,carryCJKAfterClosingQuote:!1,preferPrefixWidthsForBreakableRuns:!1,preferEarlySoftHyphenBreak:!1},s;let O=navigator.userAgent,J=navigator.vendor==="Apple Computer, Inc."&&O.includes("Safari/")&&!O.includes("Chrome/")&&!O.includes("Chromium/")&&!O.includes("CriOS/")&&!O.includes("FxiOS/")&&!O.includes("EdgiOS/"),Y=O.includes("Chrome/")||O.includes("Chromium/")||O.includes("CriOS/")||O.includes("Edg/");return s={lineFitEpsilon:J?0.015625:0.005,carryCJKAfterClosingQuote:Y,preferPrefixWidthsForBreakableRuns:J,preferEarlySoftHyphenBreak:J},s}function TO(O){let _=O.match(/(\d+(?:\.\d+)?)\s*px/);return _?parseFloat(_[1]):16}function M0(){if(_0===null)_0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return _0}function wO(O){return PO.test(O)||O.includes("️")}function G0(O){return AO.test(O)}function yO(O,_){let J=H0.get(O);if(J!==void 0)return J;let Y=U0();Y.font=O;let X=Y.measureText("\uD83D\uDE00").width;if(J=0,X>_+0.5&&typeof document<"u"&&document.body!==null){let R=document.createElement("span");R.style.font=O,R.style.display="inline-block",R.style.visibility="hidden",R.style.position="absolute",R.textContent="\uD83D\uDE00",document.body.appendChild(R);let Z=R.getBoundingClientRect().width;if(document.body.removeChild(R),X-Z>0.5)J=X-Z}return H0.set(O,J),J}function LO(O){let _=0,J=M0();for(let Y of J.segment(O))if(wO(Y.segment))_++;return _}function WO(O,_){if(_.emojiCount===void 0)_.emojiCount=LO(O);return _.emojiCount}function g(O,_,J){if(J===0)return _.width;return _.width-WO(O,_)*J}function P0(O,_,J,Y){if(_.graphemeWidths!==void 0)return _.graphemeWidths;let X=[],R=M0();for(let Z of R.segment(O)){let Q=x(Z.segment,J);X.push(g(Z.segment,Q,Y))}return _.graphemeWidths=X.length>1?X:null,_.graphemeWidths}function A0(O,_,J,Y){if(_.graphemePrefixWidths!==void 0)return _.graphemePrefixWidths;let X=[],R=M0(),Z="";for(let Q of R.segment(O)){Z+=Q.segment;let f=x(Z,J);X.push(g(Z,f,Y))}return _.graphemePrefixWidths=X.length>1?X:null,_.graphemePrefixWidths}function B0(O,_){let J=U0();J.font=O;let Y=BO(O),X=TO(O),R=_?yO(O,X):0;return{cache:Y,fontSize:X,emojiCorrection:R}}function T0(){f0.clear(),H0.clear(),_0=null}function m(O){return O==="space"||O==="preserved-space"||O==="tab"||O==="zero-width-break"||O==="soft-hyphen"}function SO(O){return O==="space"}function w0(O,_){if(_<=0)return 0;let J=O%_;if(Math.abs(J)<=0.000001)return _;return _-J}function t(O,_,J,Y){if(!Y||_===null)return O[J];return _[J]-(J>0?_[J-1]:0)}function y0(O,_,J,Y,X,R){let Z=0,Q=_;while(Z<O.length){let f=R?_+O[Z]:Q+O[Z];if((Z+1<O.length?f+X:f)>J+Y)break;Q=f,Z++}return{fitCount:Z,fittedWidth:Q}}function L0(O,_){for(let J=0;J<O.chunks.length;J++){let Y=O.chunks[J];if(_<Y.consumedEndSegmentIndex)return J}return-1}function kO(O,_){let{segmentIndex:J,graphemeIndex:Y}=_;if(J>=O.widths.length)return null;if(Y>0)return _;let X=L0(O,J);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex&&J===R.startSegmentIndex)return{segmentIndex:J,graphemeIndex:0};if(J<R.startSegmentIndex)J=R.startSegmentIndex;while(J<R.endSegmentIndex){let Z=O.kinds[J];if(Z!=="space"&&Z!=="zero-width-break"&&Z!=="soft-hyphen")return{segmentIndex:J,graphemeIndex:0};J++}if(R.consumedEndSegmentIndex>=O.widths.length)return null;return{segmentIndex:R.consumedEndSegmentIndex,graphemeIndex:0}}function W0(O,_){if(O.simpleLineWalkFastPath)return IO(O,_);return J0(O,_)}function IO(O,_){let{widths:J,kinds:Y,breakableWidths:X,breakablePrefixWidths:R}=O;if(J.length===0)return 0;let Z=h(),Q=Z.lineFitEpsilon,f=0,V=0,$=!1;function u(q){let D=J[q];if(D>_&&X[q]!==null){let b=X[q],K=R[q]??null;V=0;for(let j=0;j<b.length;j++){let B=t(b,K,j,Z.preferPrefixWidthsForBreakableRuns);if(V>0&&V+B>_+Q)f++,V=B;else{if(V===0)f++;V+=B}}}else V=D,f++;$=!0}for(let q=0;q<J.length;q++){let D=J[q],b=Y[q];if(!$){u(q);continue}let K=V+D;if(K>_+Q){if(SO(b))continue;V=0,$=!1,u(q);continue}V=K}if(!$)return f+1;return f}function cO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O;if(Y.length===0)return 0;let Q=h(),f=Q.lineFitEpsilon,V=0,$=0,u=!1,q=0,D=0,b=0,K=0,j=-1,B=0;function k(){j=-1,B=0}function y(H=b,z=K,W=$){V++,J?.({startSegmentIndex:q,startGraphemeIndex:D,endSegmentIndex:H,endGraphemeIndex:z,width:W}),$=0,u=!1,k()}function A(H,z){u=!0,q=H,D=0,b=H+1,K=0,$=z}function T(H,z,W){u=!0,q=H,D=z,b=H,K=z+1,$=W}function L(H,z){if(!u){A(H,z);return}$+=z,b=H+1,K=0}function C(H,z){if(!m(X[H]))return;j=H+1,B=$-z}function F(H){P(H,0)}function P(H,z){let W=R[H],c=Z[H]??null;for(let I=z;I<W.length;I++){let o=t(W,c,I,Q.preferPrefixWidthsForBreakableRuns);if(!u){T(H,I,o);continue}if($+o>_+f)y(),T(H,I,o);else $+=o,b=H,K=I+1}if(u&&b===H&&K===W.length)b=H+1,K=0}let E=0;while(E<Y.length){let H=Y[E],z=X[E];if(!u){if(H>_&&R[E]!==null)F(E);else A(E,H);C(E,H),E++;continue}if($+H>_+f){if(m(z)){L(E,H),y(E+1,0,$-H),E++;continue}if(j>=0){y(j,0,B);continue}if(H>_&&R[E]!==null){y(),F(E),E++;continue}y();continue}L(E,H),C(E,H),E++}if(u)y();return V}function J0(O,_,J){if(O.simpleLineWalkFastPath)return cO(O,_,J);let{widths:Y,lineEndFitAdvances:X,lineEndPaintAdvances:R,kinds:Z,breakableWidths:Q,breakablePrefixWidths:f,discretionaryHyphenWidth:V,tabStopAdvance:$,chunks:u}=O;if(Y.length===0||u.length===0)return 0;let q=h(),D=q.lineFitEpsilon,b=0,K=0,j=!1,B=0,k=0,y=0,A=0,T=-1,L=0,C=0,F=null;function P(){T=-1,L=0,C=0,F=null}function E(N=y,M=A,v=K){b++,J?.({startSegmentIndex:B,startGraphemeIndex:k,endSegmentIndex:N,endGraphemeIndex:M,width:v}),K=0,j=!1,P()}function H(N,M){j=!0,B=N,k=0,y=N+1,A=0,K=M}function z(N,M,v){j=!0,B=N,k=M,y=N,A=M+1,K=v}function W(N,M){if(!j){H(N,M);return}K+=M,y=N+1,A=0}function c(N,M){if(!m(Z[N]))return;let v=Z[N]==="tab"?0:X[N],w=Z[N]==="tab"?M:R[N];T=N+1,L=K-M+v,C=K-M+w,F=Z[N]}function I(N){o(N,0)}function o(N,M){let v=Q[N],w=f[N]??null;for(let G=M;G<v.length;G++){let l=t(v,w,G,q.preferPrefixWidthsForBreakableRuns);if(!j){z(N,G,l);continue}if(K+l>_+D)E(),z(N,G,l);else K+=l,y=N,A=G+1}if(j&&y===N&&A===v.length)y=N+1,A=0}function S(N){if(F!=="soft-hyphen")return!1;let M=Q[N];if(M===null)return!1;let v=q.preferPrefixWidthsForBreakableRuns?f[N]??M:M,w=v!==M,{fitCount:G,fittedWidth:l}=y0(v,K,_,D,V,w);if(G===0)return!1;if(K=l,y=N,A=G,P(),G===M.length)return y=N+1,A=0,!0;return E(N,G,l+V),o(N,G),!0}function U(N){b++,J?.({startSegmentIndex:N.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:N.consumedEndSegmentIndex,endGraphemeIndex:0,width:0}),P()}for(let N=0;N<u.length;N++){let M=u[N];if(M.startSegmentIndex===M.endSegmentIndex){U(M);continue}j=!1,K=0,B=M.startSegmentIndex,k=0,y=M.startSegmentIndex,A=0,P();let v=M.startSegmentIndex;while(v<M.endSegmentIndex){let w=Z[v],G=w==="tab"?w0(K,$):Y[v];if(w==="soft-hyphen"){if(j)y=v+1,A=0,T=v+1,L=K+V,C=K+V,F=w;v++;continue}if(!j){if(G>_&&Q[v]!==null)I(v);else H(v,G);c(v,G),v++;continue}if(K+G>_+D){let n=K+(w==="tab"?0:X[v]),e=K+(w==="tab"?G:R[v]);if(F==="soft-hyphen"&&q.preferEarlySoftHyphenBreak&&L<=_+D){E(T,0,C);continue}if(F==="soft-hyphen"&&S(v)){v++;continue}if(m(w)&&n<=_+D){W(v,G),E(v+1,0,e),v++;continue}if(T>=0&&L<=_+D){E(T,0,C);continue}if(G>_&&Q[v]!==null){E(),I(v),v++;continue}E();continue}W(v,G),c(v,G),v++}if(j){let w=T===M.consumedEndSegmentIndex?C:K;E(M.consumedEndSegmentIndex,0,w)}}return b}function S0(O,_,J){let Y=kO(O,_);if(Y===null)return null;if(O.simpleLineWalkFastPath)return oO(O,Y,J);let X=L0(O,Y.segmentIndex);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex)return{startSegmentIndex:R.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:R.consumedEndSegmentIndex,endGraphemeIndex:0,width:0};let{widths:Z,lineEndFitAdvances:Q,lineEndPaintAdvances:f,kinds:V,breakableWidths:$,breakablePrefixWidths:u,discretionaryHyphenWidth:q,tabStopAdvance:D}=O,b=h(),K=b.lineFitEpsilon,j=0,B=!1,k=Y.segmentIndex,y=Y.graphemeIndex,A=k,T=y,L=-1,C=0,F=0,P=null;function E(){L=-1,C=0,F=0,P=null}function H(U=A,N=T,M=j){if(!B)return null;return{startSegmentIndex:k,startGraphemeIndex:y,endSegmentIndex:U,endGraphemeIndex:N,width:M}}function z(U,N){B=!0,A=U+1,T=0,j=N}function W(U,N,M){B=!0,A=U,T=N+1,j=M}function c(U,N){if(!B){z(U,N);return}j+=N,A=U+1,T=0}function I(U,N){if(!m(V[U]))return;let M=V[U]==="tab"?0:Q[U],v=V[U]==="tab"?N:f[U];L=U+1,C=j-N+M,F=j-N+v,P=V[U]}function o(U,N){let M=$[U],v=u[U]??null;for(let w=N;w<M.length;w++){let G=t(M,v,w,b.preferPrefixWidthsForBreakableRuns);if(!B){W(U,w,G);continue}if(j+G>J+K)return H();j+=G,A=U,T=w+1}if(B&&A===U&&T===M.length)A=U+1,T=0;return null}function S(U){if(P!=="soft-hyphen"||L<0)return null;let N=$[U]??null;if(N!==null){let M=b.preferPrefixWidthsForBreakableRuns?u[U]??N:N,v=M!==N,{fitCount:w,fittedWidth:G}=y0(M,j,J,K,q,v);if(w===N.length)return j=G,A=U+1,T=0,E(),null;if(w>0)return H(U,w,G+q)}if(C<=J+K)return H(L,0,F);return null}for(let U=Y.segmentIndex;U<R.endSegmentIndex;U++){let N=V[U],M=U===Y.segmentIndex?Y.graphemeIndex:0,v=N==="tab"?w0(j,D):Z[U];if(N==="soft-hyphen"&&M===0){if(B)A=U+1,T=0,L=U+1,C=j+q,F=j+q,P=N;continue}if(!B){if(M>0){let G=o(U,M);if(G!==null)return G}else if(v>J&&$[U]!==null){let G=o(U,0);if(G!==null)return G}else z(U,v);I(U,v);continue}if(j+v>J+K){let G=j+(N==="tab"?0:Q[U]),l=j+(N==="tab"?v:f[U]);if(P==="soft-hyphen"&&b.preferEarlySoftHyphenBreak&&C<=J+K)return H(L,0,F);let n=S(U);if(n!==null)return n;if(m(N)&&G<=J+K)return c(U,v),H(U+1,0,l);if(L>=0&&C<=J+K)return H(L,0,F);if(v>J&&$[U]!==null){let e=H();if(e!==null)return e;let v0=o(U,0);if(v0!==null)return v0}return H()}c(U,v),I(U,v)}if(L===R.consumedEndSegmentIndex&&T===0)return H(R.consumedEndSegmentIndex,0,F);return H(R.consumedEndSegmentIndex,0,j)}function oO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O,Q=h(),f=Q.lineFitEpsilon,V=0,$=!1,u=_.segmentIndex,q=_.graphemeIndex,D=u,b=q,K=-1,j=0;function B(C=D,F=b,P=V){if(!$)return null;return{startSegmentIndex:u,startGraphemeIndex:q,endSegmentIndex:C,endGraphemeIndex:F,width:P}}function k(C,F){$=!0,D=C+1,b=0,V=F}function y(C,F,P){$=!0,D=C,b=F+1,V=P}function A(C,F){if(!$){k(C,F);return}V+=F,D=C+1,b=0}function T(C,F){if(!m(X[C]))return;K=C+1,j=V-F}function L(C,F){let P=R[C],E=Z[C]??null;for(let H=F;H<P.length;H++){let z=t(P,E,H,Q.preferPrefixWidthsForBreakableRuns);if(!$){y(C,H,z);continue}if(V+z>J+f)return B();V+=z,D=C,b=H+1}if($&&D===C&&b===P.length)D=C+1,b=0;return null}for(let C=_.segmentIndex;C<Y.length;C++){let F=Y[C],P=X[C],E=C===_.segmentIndex?_.graphemeIndex:0;if(!$){if(E>0){let z=L(C,E);if(z!==null)return z}else if(F>J&&R[C]!==null){let z=L(C,0);if(z!==null)return z}else k(C,F);T(C,F);continue}if(V+F>J+f){if(m(P))return A(C,F),B(C+1,0,V-F);if(K>=0)return B(K,0,j);if(F>J&&R[C]!==null){let z=B();if(z!==null)return z;let W=L(C,0);if(W!==null)return W}return B()}A(C,F),T(C,F)}return B()}var R0=null,C0=new WeakMap;function I0(){if(R0===null)R0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return R0}function lO(O){if(O)return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[],segments:[]};return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[]}}function c0(O,_,J){let Y=I0(),X=h(),{cache:R,emojiCorrection:Z}=B0(_,G0(O.normalized)),Q=g("-",x("-",R),Z),V=g(" ",x(" ",R),Z)*8;if(O.len===0)return lO(J);let $=[],u=[],q=[],D=[],b=O.chunks.length<=1,K=J?[]:null,j=[],B=[],k=J?[]:null,y=Array.from({length:O.len}),A=Array.from({length:O.len});function T(F,P,E,H,z,W,c,I){if(z!=="text"&&z!=="space"&&z!=="zero-width-break")b=!1;if($.push(P),u.push(E),q.push(H),D.push(z),K?.push(W),j.push(c),B.push(I),k!==null)k.push(F)}for(let F=0;F<O.len;F++){y[F]=$.length;let P=O.texts[F],E=O.isWordLike[F],H=O.kinds[F],z=O.starts[F];if(H==="soft-hyphen"){T(P,0,Q,Q,H,z,null,null),A[F]=$.length;continue}if(H==="hard-break"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}if(H==="tab"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}let W=x(P,R);if(H==="text"&&W.containsCJK){let S="",U=0;for(let N of Y.segment(P)){let M=N.segment;if(S.length===0){S=M,U=N.index;continue}if(i.has(S)||$0.has(M)||r.has(M)||X.carryCJKAfterClosingQuote&&p(M)&&D0(S)){S+=M;continue}let v=x(S,R),w=g(S,v,Z);T(S,w,w,w,"text",z+U,null,null),S=M,U=N.index}if(S.length>0){let N=x(S,R),M=g(S,N,Z);T(S,M,M,M,"text",z+U,null,null)}A[F]=$.length;continue}let c=g(P,W,Z),I=H==="space"||H==="preserved-space"||H==="zero-width-break"?0:c,o=H==="space"||H==="zero-width-break"?0:c;if(E&&P.length>1){let S=P0(P,W,R,Z),U=X.preferPrefixWidthsForBreakableRuns?A0(P,W,R,Z):null;T(P,c,I,o,H,z,S,U)}else T(P,c,I,o,H,z,null,null);A[F]=$.length}let L=hO(O.chunks,y,A),C=K===null?null:u0(O.normalized,K);if(k!==null)return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L,segments:k};return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L}}function hO(O,_,J){let Y=[];for(let X=0;X<O.length;X++){let R=O[X],Z=R.startSegmentIndex<_.length?_[R.startSegmentIndex]:J[J.length-1]??0,Q=R.endSegmentIndex<_.length?_[R.endSegmentIndex]:J[J.length-1]??0,f=R.consumedEndSegmentIndex<_.length?_[R.consumedEndSegmentIndex]:J[J.length-1]??0;Y.push({startSegmentIndex:Z,endSegmentIndex:Q,consumedEndSegmentIndex:f})}return Y}function o0(O,_,J,Y){let X=N0(O,h(),Y?.whiteSpace);return c0(X,_,J)}function V1(O,_,J){let Y=performance.now(),X=N0(O,h(),J?.whiteSpace),R=performance.now(),Z=c0(X,_,!1),Q=performance.now(),f=0;for(let V of Z.breakableWidths)if(V!==null)f++;return{analysisMs:R-Y,measureMs:Q-R,totalMs:Q-Y,analysisSegments:X.len,preparedSegments:Z.widths.length,breakableSegments:f}}function X1(O,_,J){return o0(O,_,!1,J)}function Y1(O,_,J){return o0(O,_,!0,J)}function F0(O){return O}function Z1(O,_,J){let Y=W0(F0(O),_);return{lineCount:Y,height:Y*J}}function k0(O,_,J){let Y=J.get(O);if(Y!==void 0)return Y;Y=[];let X=I0();for(let R of X.segment(_[O]))Y.push(R.segment);return J.set(O,Y),Y}function l0(O){let _=C0.get(O);if(_!==void 0)return _;return _=new Map,C0.set(O,_),_}function pO(O,_,J,Y){return Y>0&&O[Y-1]==="soft-hyphen"&&!(_===Y&&J>0)}function xO(O,_,J,Y,X,R,Z){let Q="",f=pO(_,Y,X,R);for(let V=Y;V<R;V++){if(_[V]==="soft-hyphen"||_[V]==="hard-break")continue;if(V===Y&&X>0)Q+=k0(V,O,J).slice(X).join("");else Q+=O[V]}if(Z>0){if(f)Q+="-";Q+=k0(R,O,J).slice(Y===R?X:0,Z).join("")}else if(f)Q+="-";return Q}function h0(O,_,J,Y,X,R,Z){return{text:xO(O.segments,O.kinds,_,Y,X,R,Z),width:J,start:{segmentIndex:Y,graphemeIndex:X},end:{segmentIndex:R,graphemeIndex:Z}}}function gO(O,_,J){return h0(O,_,J.width,J.startSegmentIndex,J.startGraphemeIndex,J.endSegmentIndex,J.endGraphemeIndex)}function p0(O){return{width:O.width,start:{segmentIndex:O.startSegmentIndex,graphemeIndex:O.startGraphemeIndex},end:{segmentIndex:O.endSegmentIndex,graphemeIndex:O.endGraphemeIndex}}}function mO(O,_,J){let Y=S0(O,_,J);if(Y===null)return null;return p0(Y)}function rO(O,_){return h0(O,l0(O),_.width,_.start.segmentIndex,_.start.graphemeIndex,_.end.segmentIndex,_.end.graphemeIndex)}function $1(O,_,J){if(O.widths.length===0)return 0;return J0(F0(O),_,(Y)=>{J(p0(Y))})}function Q1(O,_,J){let Y=mO(O,_,J);if(Y===null)return null;return rO(O,Y)}function q1(O,_,J){let Y=[];if(O.widths.length===0)return{lineCount:0,height:0,lines:Y};let X=l0(O),R=J0(F0(O),_,(Z)=>{Y.push(gO(O,X,Z))});return{lineCount:R,height:R*J,lines:Y}}function aO(){z0(),R0=null,C0=new WeakMap,T0()}function D1(O){j0(O),aO()}export{$1 as walkLineRanges,D1 as setLocale,V1 as profilePrepare,Y1 as prepareWithSegments,X1 as prepare,q1 as layoutWithLines,Q1 as layoutNextLine,Z1 as layout,aO as clearCache};
+  </script>
+
+  <script type="module">
+    const data = JSON.parse(document.querySelector("#hub-data").textContent);
+
+    function element(tag, options = {}, children = []) {
+      const node = document.createElement(tag);
+      if (options.className) node.className = options.className;
+      if (options.text !== undefined) node.textContent = options.text;
+      Object.entries(options.attrs || {}).forEach(([name, value]) => {
+        if (value !== undefined && value !== null) node.setAttribute(name, String(value));
+      });
+      const normalized = Array.isArray(children) ? children : [children];
+      normalized.filter(Boolean).forEach((child) => node.append(child));
+      return node;
+    }
+
+    function appendTextList(target, values, className = "") {
+      target.replaceChildren(
+        ...values.map((value) => element("li", { className, text: value }))
+      );
+    }
+
+    document.querySelector("#project-meta").textContent =
+      `${data.project.code} · ${data.project.name} · ${data.project.delivery} · ${data.project.priority}`;
+    document.querySelector("#page-title").textContent = data.headline.title;
+    document.querySelector("#hero-summary").textContent = data.headline.summary;
+    document.querySelector("#next-date").textContent = data.headline.nextDate;
+    document.querySelector("#next-title").textContent = data.headline.nextTitle;
+    document.querySelector("#next-output").textContent = data.headline.nextOutput;
+    document.querySelector("#principle").textContent = data.headline.principle;
+    document.querySelector("#schedule-title").textContent = data.headline.scheduleTitle;
+    document.querySelector("#meeting-position").textContent = data.meeting.positioning;
+    document.querySelector("#lifecycle").textContent = data.release.lifecycle;
+    document.querySelector("#fee-summary").textContent =
+      `${data.status.feePath} · ${data.status.paidSpend}`;
+
+    const statusItems = [
+      { value: data.status.stage, label: "当前阶段" },
+      {
+        value: `${data.status.externalPass} / ${data.status.externalTotal}`,
+        label: "外部责任包",
+      },
+      {
+        value: `${data.status.scopePass} / ${data.status.scopeTotal}`,
+        label: "Scope 检查",
+      },
+      { value: data.status.ddev, label: "Ddev" },
+      { value: `${data.status.feePath}`, label: data.status.paidSpend },
+    ];
+    document.querySelector("#status-strip").replaceChildren(
+      ...statusItems.map((item) =>
+        element("li", { className: "status-item" }, [
+          element("strong", { className: "status-value", text: item.value }),
+          element("span", { className: "status-label", text: item.label }),
+        ])
+      )
+    );
+
+    appendTextList(
+      document.querySelector("#prelaunch-list"),
+      data.prelaunchChecklist.slice(0, 4)
+    );
+    appendTextList(
+      document.querySelector("#allowed-list"),
+      data.governance.allowed.map((item) => item.allowed)
+    );
+    appendTextList(
+      document.querySelector("#forbidden-list"),
+      data.governance.allowed.map((item) => item.forbidden)
+    );
+
+    document.querySelector("#gate-summary").replaceChildren(
+      element("div", {}, [
+        element("strong", {
+          text: `${data.status.externalPass} / ${data.status.externalTotal}`,
+        }),
+        element("span", { text: "外部责任包 Pass" }),
+      ]),
+      element("div", {}, [
+        element("strong", {
+          text: `${data.status.scopePass} / ${data.status.scopeTotal}`,
+        }),
+        element("span", { text: "Scope 检查 Pass" }),
+      ]),
+      element("div", {}, [
+        element("strong", { text: data.status.ddev }),
+        element("span", { text: `G0 ${data.status.g0}` }),
+      ])
+    );
+
+    const groupOrder = ["approval", "business", "safety", "delivery"];
+    const groupMeta = {
+      approval: { label: "批准与责任", window: "08-05" },
+      business: { label: "业务与内容", window: "08-07～10" },
+      safety: { label: "安全与质量", window: "08-11～12" },
+      delivery: { label: "技术与交付", window: "08-06～13" },
+    };
+    const gateGroups = document.querySelector("#gate-groups");
+    gateGroups.replaceChildren(
+      ...groupOrder.map((group, index) => {
+        const gates = data.gates.filter((gate) => gate.group === group);
+        const summary = element("summary", {}, [
+          element("span", { text: groupMeta[group].label }),
+          element("span", {
+            className: "summary-meta",
+            text: `${groupMeta[group].window} · ${gates.length} 项待办`,
+          }),
+        ]);
+        const list = element(
+          "div",
+          { className: "gate-list" },
+          gates.map((gate) =>
+            element(
+              "article",
+              {
+                className: "gate-item",
+                attrs: { id: gate.id, "aria-labelledby": `${gate.id}-title` },
+              },
+              [
+                element("div", { className: "gate-item-head" }, [
+                  element("div", {}, [
+                    element("span", { className: "gate-id", text: gate.id }),
+                    element("h3", {
+                      text: gate.title,
+                      attrs: { id: `${gate.id}-title` },
+                    }),
+                  ]),
+                  element("span", {
+                    className: `state-pill${gate.status.includes("Pass") ? " ok" : ""}`,
+                    text: gate.status,
+                  }),
+                ]),
+                element("div", { className: "gate-meta" }, [
+                  element("span", { text: `A：${gate.accountable}` }),
+                  element("span", { text: `R：${gate.responsible}` }),
+                  element("span", { text: `截止：${gate.due}` }),
+                ]),
+                element("p", {
+                  className: "gate-evidence",
+                  text: `证据：${gate.evidence}`,
+                }),
+              ]
+            )
+          )
+        );
+        const details = element("details", {}, [summary, list]);
+        details.open = index === 0;
+        return details;
+      })
+    );
+
+    document.querySelector("#scope-summary").textContent =
+      `${data.status.scopePass} / ${data.status.scopeTotal} Pass`;
+    document.querySelector("#scope-checks").replaceChildren(
+      ...data.scopeChecks.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: `S-${String(item.id).padStart(2, "0")}` }),
+          element("span", { text: item.title }),
+          element("span", { className: "state-pill", text: item.status }),
+        ])
+      )
+    );
+
+    document.querySelector("#timeline").replaceChildren(
+      ...data.schedule.map((item) =>
+        element("li", {}, [
+          element("time", { className: "timeline-date", text: item.date }),
+          element("strong", { text: item.title }),
+          element("p", { text: item.action }),
+          element("small", { text: item.output }),
+        ])
+      )
+    );
+
+    document.querySelector("#metric-grid").replaceChildren(
+      ...data.metrics.map((metric) =>
+        element("li", {}, [
+          element("strong", { className: "metric-value", text: metric.value }),
+          element("span", { className: "metric-label", text: metric.label }),
+          element("span", { className: "metric-note", text: metric.note }),
+        ])
+      )
+    );
+
+    document.querySelector("#in-scope").replaceChildren(
+      ...data.scope.in.map((item) =>
+        element("li", {}, [
+          element("strong", { text: item.title }),
+          document.createTextNode(item.detail),
+        ])
+      )
+    );
+    appendTextList(document.querySelector("#out-scope"), data.scope.out);
+
+    appendTextList(document.querySelector("#director-list"), data.meeting.director);
+    appendTextList(document.querySelector("#manager-list"), data.meeting.manager);
+    appendTextList(document.querySelector("#core-questions"), data.meeting.coreQuestions);
+    document.querySelector("#agenda").replaceChildren(
+      ...data.meeting.agenda.map((item) =>
+        element("li", {}, [
+          element("time", { text: item.time }),
+          element("div", {}, [
+            element("strong", { text: item.topic }),
+            element("span", { text: item.decision }),
+          ]),
+        ])
+      )
+    );
+
+    const roleButtons = [...document.querySelectorAll("[data-role-filter]")];
+    const rolePanels = [...document.querySelectorAll("[data-role-panel]")];
+    function setRoleFilter(role, updateUrl = true) {
+      roleButtons.forEach((button) =>
+        button.setAttribute("aria-pressed", String(button.dataset.roleFilter === role))
+      );
+      rolePanels.forEach((panel) => {
+        panel.hidden = role !== "all" && panel.dataset.rolePanel !== role;
+      });
+      if (updateUrl) {
+        const url = new URL(location.href);
+        if (role === "all") url.searchParams.delete("role");
+        else url.searchParams.set("role", role);
+        history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
+    roleButtons.forEach((button) =>
+      button.addEventListener("click", () => setRoleFilter(button.dataset.roleFilter))
+    );
+    const requestedRole = new URL(location.href).searchParams.get("role");
+    setRoleFilter(["director", "manager"].includes(requestedRole) ? requestedRole : "all", false);
+
+    const copyText = [
+      "客服 Agent PRD 需求会会前准备",
+      "",
+      "客服总监：",
+      ...data.meeting.director.map((item) => `- ${item}`),
+      "",
+      "客服经理：",
+      ...data.meeting.manager.map((item) => `- ${item}`),
+      "",
+      "核心问题：",
+      ...data.meeting.coreQuestions.map((item, index) => `${index + 1}. ${item}`),
+    ].join("\n");
+
+    async function copyChecklist() {
+      const status = document.querySelector("#copy-status");
+      document.body.classList.add("copying");
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(copyText);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = copyText;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.append(textarea);
+          textarea.select();
+          if (!document.execCommand("copy")) throw new Error("copy failed");
+          textarea.remove();
+        }
+        status.textContent = "已复制";
+      } catch {
+        status.textContent = "复制失败，请使用打印会议包";
+      } finally {
+        document.body.classList.remove("copying");
+      }
+    }
+    document.querySelector("#copy-checklist").addEventListener("click", copyChecklist);
+
+    document.querySelector("#fee-paths").replaceChildren(
+      ...data.governance.fee.map((item) =>
+        element("article", { className: "governance-card" }, [
+          element("strong", { text: `${item.id} · ${item.title}` }),
+          element("p", { text: item.detail }),
+        ])
+      )
+    );
+
+    document.querySelector("#role-summary").textContent =
+      `${data.governance.roles.filter((item) => item.name === "待具名").length} 个角色待具名`;
+    document.querySelector("#roles").replaceChildren(
+      ...data.governance.roles.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.role }),
+          element("span", { text: `${item.name} · 代理人 ${item.proxy}` }),
+          element("span", { className: "state-pill", text: item.status }),
+        ])
+      )
+    );
+
+    document.querySelector("#risk-summary").textContent =
+      `${data.governance.risks.length} 项开放`;
+    document.querySelector("#risks").replaceChildren(
+      ...data.governance.risks.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.id }),
+          element("span", { text: `${item.title}；影响：${item.impact}` }),
+          element("span", { text: `${item.accountable} · ${item.due}` }),
+        ])
+      )
+    );
+
+    document.querySelector("#functions").replaceChildren(
+      ...data.governance.functions.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.name }),
+          element("span", { text: item.g0 }),
+          element("span", { className: "state-pill", text: "G0" }),
+        ])
+      )
+    );
+
+    document.querySelector("#source-list").replaceChildren(
+      ...data.sources.map((source) =>
+        element("li", {}, [
+          element(
+            "a",
+            { text: source.label, attrs: { href: source.href } }
+          ),
+          element("code", { text: `sha256 ${source.sha256.slice(0, 12)}` }),
+        ])
+      )
+    );
+
+    const topNav = document.querySelector(".top-nav");
+    const navLinks = [...topNav.querySelectorAll("a")];
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    function setCurrentNav(hash) {
+      let active = null;
+      navLinks.forEach((link) => {
+        const matches = link.getAttribute("href") === hash;
+        if (matches) {
+          link.setAttribute("aria-current", "location");
+          active = link;
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+      if (active && topNav.scrollWidth > topNav.clientWidth) {
+        const left = active.offsetLeft - (topNav.clientWidth - active.offsetWidth) / 2;
+        topNav.scrollTo({
+          left: Math.max(0, left),
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
+      }
+    }
+
+    navLinks.forEach((link) =>
+      link.addEventListener("click", () => setCurrentNav(link.getAttribute("href")))
+    );
+    setCurrentNav(location.hash || "#overview");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setCurrentNav(`#${visible.target.id}`);
+      },
+      { rootMargin: "-20% 0px -68% 0px", threshold: [0, .2, .6] }
+    );
+    sections.forEach((section) => observer.observe(section));
+
+    window.addEventListener("hashchange", () => {
+      const target = document.querySelector(location.hash);
+      if (target) {
+        let parent = target.closest("details");
+        while (parent) {
+          parent.open = true;
+          parent = parent.parentElement?.closest("details");
+        }
+      }
+      setCurrentNav(location.hash || "#overview");
+    });
+    if (location.hash) window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+    const main = document.querySelector("#main");
+    document.querySelector(".skip-link").addEventListener("click", () => {
+      requestAnimationFrame(() => main.focus({ preventScroll: true }));
+    });
+
+    const printableDetails = [...document.querySelectorAll("details")];
+    const printOpenState = new Map();
+    addEventListener("beforeprint", () => {
+      printableDetails.forEach((details) => {
+        printOpenState.set(details, details.open);
+        details.open = true;
+      });
+    });
+    addEventListener("afterprint", () => {
+      printableDetails.forEach((details) => {
+        details.open = printOpenState.get(details) ?? false;
+      });
+      printOpenState.clear();
+    });
+    document.querySelector("#print-button").addEventListener("click", () => window.print());
+
+    async function wirePretext() {
+      const source = document.querySelector("#pretext-source").textContent;
+      if (!source || source.includes("PRETEXT_VENDOR_MISSING")) return;
+      const moduleUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      try {
+        const { prepare, layout, setLocale } = await import(moduleUrl);
+        setLocale("zh-CN");
+        await document.fonts.ready;
+        const prepared = new Map();
+        const elements = [...document.querySelectorAll("[data-pretext]")];
+        elements.forEach((item) => {
+          const style = getComputedStyle(item);
+          prepared.set(item, prepare(item.textContent.trim(), style.font));
+        });
+        function relayout() {
+          prepared.forEach((handle, item) => {
+            const lineHeight = parseFloat(getComputedStyle(item).lineHeight);
+            const result = layout(handle, item.clientWidth, lineHeight);
+            if (Number.isFinite(result.height)) item.style.minHeight = `${Math.ceil(result.height)}px`;
+          });
+        }
+        new ResizeObserver(relayout).observe(document.body);
+        relayout();
+      } catch (error) {
+        console.warn("Pretext layout fallback:", error);
+      } finally {
+        URL.revokeObjectURL(moduleUrl);
+      }
+    }
+
+    wirePretext();
+  </script>
+</body>
+</html>

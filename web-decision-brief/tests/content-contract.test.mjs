@@ -24,8 +24,8 @@ test("content.json 通过结构 Schema", async () => {
 
 test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
   const content = JSON.parse(await read("docs/data/content.json"));
-  assert.equal(content.version, "5.24.0");
-  assert.equal(content.decisionSchemaVersion, 2);
+  assert.equal(content.version, "5.25.1");
+  assert.equal(content.decisionSchemaVersion, 3);
   assert.equal(content.tabs.length, 7);
   assert.deepEqual(
     content.tabs.map((tab) => tab.id),
@@ -43,16 +43,20 @@ test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
   const projectRows = check.rows.filter((row) => row.projectId && row.pathOptions);
   assert.deepEqual(
     projectRows.map((row) => row.projectId),
-    ["agent", "filing"]
+    ["agent"]
   );
   projectRows.forEach((row) => assert.deepEqual(row.pathOptions, ["A", "B", "C"]));
 
   const ownerProjects = check.rows
     .filter((row) => row.kind === "owner")
     .map((row) => row.projectId);
-  assert.deepEqual(ownerProjects, ["agent", "filing"]);
+  assert.deepEqual(ownerProjects, ["agent"]);
   assert.equal(check.rows.filter((row) => row.kind === "fee").length, 1);
   assert.equal(check.rows.filter((row) => row.kind === "stop-authority").length, 1);
+  assert.equal(
+    check.rows.some((row) => row.rowId === "t6-approval-evidence" && row.tier === "must"),
+    true
+  );
 });
 
 test("核心隐性知识与反误导边界存在且无旧版统一路径", async () => {
@@ -60,7 +64,7 @@ test("核心隐性知识与反误导边界存在且无旧版统一路径", async
   for (const term of [
     "未批不开发",
     "人在环",
-    "客服 Agent",
+    "客服话术库 MVP-A",
     "供应链备案识别",
     "7000",
     "5000",

@@ -6,9 +6,9 @@
  */
 
 export const PATH_LABELS = Object.freeze({
-  A: "A 同意启动",
-  B: "B 先认方向",
-  C: "C 不立",
+  A: "A 费用已批，可执行",
+  B: "B 方向已批，费用后置",
+  C: "C 暂停执行",
 });
 
 const RECEIPT_VERSION = 1;
@@ -51,11 +51,18 @@ function projectLabel(row) {
   return clean(row.projectLabel || row.projectId || plainHtml(row.html) || row.no);
 }
 
-function feeValidation(row) {
+function feeValidation(row, { required = true } = {}) {
   if (!row || !row.feeFields) {
-    return { valid: false, reason: "未设置费用与止损" };
+    return required
+      ? { valid: false, reason: "未设置费用与止损" }
+      : { valid: true, deferred: true };
   }
   const fields = row.feeFields;
+  const rawValues = [fields.total, fields.monthCap, fields.allCap];
+  const hasAnyAmount = rawValues.some((value) => clean(value));
+  if (!required && !hasAnyAmount) {
+    return { valid: true, deferred: true };
+  }
   const total = moneyNumber(fields.total);
   const monthCap = moneyNumber(fields.monthCap);
   const allCap = moneyNumber(fields.allCap);
@@ -99,12 +106,26 @@ export function evaluateCheckGate(block) {
   if (!decisions.length) missing.push("项目级路径");
 
   const feeRow = rows.find((row) => row && (row.kind === "fee" || row.feeFields));
-  const stopRow = rows.find(
-    (row) => row && (row.kind === "stop-authority" || String(row.no) === "5")
-  );
+  const stopRow =
+    rows.find((row) => row && row.kind === "stop-authority") ||
+    rows.find((row) => row && String(row.no) === "5");
   const ownerRows = rows.filter(
     (row) => row && (row.kind === "owner" || Array.isArray(row.owners) || row.ownerFields)
   );
+  const requiredAcknowledgementRows = rows.filter(
+    (row) =>
+      row &&
+      row.tier === "must" &&
+      !row.projectId &&
+      !row.feeFields &&
+      row.kind !== "stop-authority"
+  );
+
+  requiredAcknowledgementRows.forEach((row) => {
+    if (!row.checked) {
+      missing.push(plainHtml(row.html) || `第 ${clean(row.no) || "?"} 项确认`);
+    }
+  });
 
   if (activeDecisions.length) {
     activeDecisions.forEach((decision) => {
@@ -114,10 +135,11 @@ export function evaluateCheckGate(block) {
       }
     });
 
-    const feeCheck = feeValidation(feeRow);
-    if (!feeRow || !feeRow.checked) {
+    const hasApprovedFeePath = activeDecisions.some((decision) => decision.path === "A");
+    const feeCheck = feeValidation(feeRow, { required: hasApprovedFeePath });
+    if (hasApprovedFeePath && (!feeRow || !feeRow.checked)) {
       missing.push("费用与止损确认");
-    } else if (!feeCheck.valid) {
+    } else if (feeRow && feeRow.checked && !feeCheck.valid) {
       missing.push(feeCheck.reason);
     }
     if (!stopRow || !stopRow.checked) missing.push("超线停扩授权");
@@ -143,6 +165,7 @@ export function evaluateCheckGate(block) {
     decisions,
     activeDecisions,
     ownerRows,
+    requiredAcknowledgementRows,
     feeRow,
     stopRow,
     missing: [...new Set(missing)],
@@ -320,7 +343,7 @@ export function buildMeetingConclusionText(block, context = {}) {
   const displayStamp = Number.isNaN(stamp.getTime())
     ? receipt.generatedAt
     : stamp.toLocaleString("zh-CN", { hour12: false });
-  const lines = ["【AI 赋能立项 · 本场结论】", `时间：${displayStamp}`];
+  const lines = ["【客服立项 · 执行补录】", `时间：${displayStamp}`];
 
   gate.decisions.forEach((decision) => {
     lines.push(
@@ -366,15 +389,27 @@ export function buildMeetingConclusionText(block, context = {}) {
   const bProjects = gate.decisions.filter((decision) => decision.path === "B");
   const cProjects = gate.decisions.filter((decision) => decision.path === "C");
   if (aProjects.length) {
-    lines.push(`A 路径会后：${aProjects.map((item) => item.projectLabel).join("、")} 按门禁与止损线启动`);
+    lines.push(
+      `A 路径会后：${aProjects
+        .map((item) => item.projectLabel)
+        .join("、")} 费用可用；仍须 G0 全齐后才成立 Ddev`
+    );
   }
   if (bProjects.length) {
-    lines.push(`B 路径会后：${bProjects.map((item) => item.projectLabel).join("、")} 只补前置，未批不开发`);
+    lines.push(
+      `B 路径会后：${bProjects
+        .map((item) => item.projectLabel)
+        .join("、")} 只做 G0 前置，费用未批不开发`
+    );
   }
   if (cProjects.length) {
-    lines.push(`C 路径会后：${cProjects.map((item) => item.projectLabel).join("、")} 记录不立原因，不排期`);
+    lines.push(
+      `C 路径会后：${cProjects
+        .map((item) => item.projectLabel)
+        .join("、")} 记录暂停原因，不排期、不支出`
+    );
   }
-  lines.push("本场边界：不承诺立刻上线 · 不自动代回客户 · 金额以确认的止损线为准");
+  lines.push("本页边界：不构成 G0 通过 · 不承诺上线 / 外包可用 · 不自动代回客户");
   lines.push(`凭证哈希（SHA-256）：${receipt.integrity.digest}`);
   lines.push("— 本机会议草稿：贴入飞书 / 邮件并由相关人确认后才构成正式留痕 —");
   return lines.join("\n");

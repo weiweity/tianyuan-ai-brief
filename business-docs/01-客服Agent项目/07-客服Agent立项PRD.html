@@ -1,0 +1,2283 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f0f6">
+  <link rel="icon" href="data:,">
+  <title>客服 Agent · 立项 PRD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand-50: #f7f4fa;
+      --brand-100: #efe8f5;
+      --brand-200: #ddd0e9;
+      --brand-300: #c4aed6;
+      --brand-500: #8b6ba4;
+      --brand-600: #6f5088;
+      --brand-700: #56406b;
+      --brand-900: #2f2139;
+      --action-bg: #56406b;
+      --action-hover: #2f2139;
+      --ink: #221a28;
+      --muted: #6d6476;
+      --line: #e2dbe8;
+      --line-strong: #cbbfd6;
+      --surface: #ffffff;
+      --surface-soft: #fbf9fc;
+      --canvas: #f3f0f6;
+      --info: #2f6ea8;
+      --info-bg: #edf5fc;
+      --ok: #1f6b38;
+      --ok-bg: #eaf7ef;
+      --warn: #7a5c00;
+      --warn-bg: #fff7e3;
+      --danger: #a83f3f;
+      --danger-bg: #fdf0f0;
+      --shadow-1: 0 1px 2px rgb(47 33 57 / 6%), 0 6px 18px rgb(47 33 57 / 7%);
+      --shadow-2: 0 18px 48px rgb(47 33 57 / 18%);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --touch: 44px;
+      --content: 1180px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
+        "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 92px;
+      background: var(--canvas);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 4% -4%, rgb(196 174 214 / 34%), transparent 31rem),
+        radial-gradient(circle at 98% 2%, rgb(180 200 226 / 13%), transparent 27rem),
+        var(--canvas);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.dialog-open {
+      overflow: hidden;
+    }
+
+    button,
+    a,
+    summary {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button,
+    input {
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    a {
+      color: var(--brand-600);
+      text-underline-offset: .18em;
+    }
+
+    a:visited {
+      color: var(--brand-700);
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgb(111 80 136 / 36%);
+      outline-offset: 3px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 8px;
+      left: 8px;
+      min-height: var(--touch);
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      background: var(--brand-700);
+      transform: translateY(-160%);
+      transition: transform 160ms var(--ease);
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      border-bottom: 1px solid rgb(226 219 232 / 88%);
+      background: rgb(255 255 255 / 90%);
+      backdrop-filter: blur(18px);
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-4);
+      width: min(calc(100% - 32px), var(--content));
+      min-height: 72px;
+      margin: 0 auto;
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      width: 166px;
+      min-height: var(--touch);
+    }
+
+    .brand-link img {
+      display: block;
+      width: 166px;
+      height: auto;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .top-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .top-nav a {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 11px;
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+      text-decoration: none;
+      transition:
+        color 160ms var(--ease),
+        background-color 160ms var(--ease);
+    }
+
+    .top-nav a:hover,
+    .top-nav a[aria-current="location"] {
+      color: var(--brand-700);
+      background: var(--brand-50);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .quiet-button,
+    .primary-link,
+    .secondary-link,
+    .scenario-button,
+    .map-button,
+    .dialog-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--touch);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      transition:
+        transform 160ms var(--ease),
+        color 160ms var(--ease),
+        border-color 160ms var(--ease),
+        background-color 160ms var(--ease);
+    }
+
+    .quiet-button {
+      padding: 8px 13px;
+      border: 1px solid var(--line-strong);
+      color: var(--brand-700);
+      background: var(--surface);
+    }
+
+    .quiet-button:hover,
+    .secondary-link:hover,
+    .scenario-button:hover,
+    .map-button:hover,
+    .dialog-button:hover {
+      border-color: var(--brand-300);
+      background: var(--brand-50);
+    }
+
+    .quiet-button:active,
+    .primary-link:active,
+    .secondary-link:active,
+    .scenario-button:active,
+    .map-button:active,
+    .dialog-button:active {
+      transform: translateY(1px);
+    }
+
+    main {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    section {
+      scroll-margin-top: 90px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(340px, .9fr);
+      gap: clamp(36px, 6vw, 84px);
+      align-items: center;
+      min-height: min(730px, calc(100svh - 72px));
+      padding: clamp(54px, 8vw, 96px) 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 var(--space-4);
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: var(--space-4);
+      font-size: clamp(46px, 7.5vw, 92px);
+      font-weight: 790;
+      letter-spacing: -.05em;
+      line-height: 1.02;
+      text-wrap: balance;
+    }
+
+    .hero-subtitle {
+      max-width: 690px;
+      margin-bottom: var(--space-6);
+      color: var(--brand-900);
+      font-size: clamp(21px, 2.1vw, 30px);
+      font-weight: 660;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: 0 0 var(--space-5);
+      padding: 0;
+      list-style: none;
+    }
+
+    .status-row li {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgb(255 255 255 / 70%);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-row .confirmed {
+      border-color: #b8d7c2;
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .status-row .pending {
+      border-color: #ead9a7;
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .hero-note {
+      max-width: 690px;
+      margin-bottom: var(--space-6);
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .primary-link,
+    .secondary-link {
+      padding: 10px 16px;
+    }
+
+    .primary-link {
+      color: #fff;
+      background: var(--action-bg);
+      box-shadow: 0 7px 18px rgb(86 64 107 / 20%);
+    }
+
+    .primary-link:visited {
+      color: #fff;
+    }
+
+    .primary-link:hover {
+      color: #fff;
+      background: var(--action-hover);
+    }
+
+    .secondary-link {
+      border: 1px solid var(--line-strong);
+      color: var(--brand-700);
+      background: rgb(255 255 255 / 78%);
+    }
+
+    .hero-principle {
+      position: relative;
+      padding: clamp(28px, 4vw, 48px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgb(255 255 255 / 84%);
+      box-shadow: var(--shadow-1);
+    }
+
+    .hero-principle::before {
+      position: absolute;
+      top: 20px;
+      right: 22px;
+      color: var(--brand-200);
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1;
+      content: "01";
+    }
+
+    .principle-label {
+      margin-bottom: var(--space-6);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .principle-flow {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .principle-flow li {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: var(--space-3);
+      align-items: center;
+      font-size: clamp(18px, 2vw, 24px);
+      font-weight: 720;
+      line-height: 1.3;
+    }
+
+    .principle-flow li::before {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--brand-200);
+      border-radius: 50%;
+      color: var(--brand-700);
+      background: var(--brand-50);
+      font-size: 13px;
+      content: attr(data-step);
+    }
+
+    .principle-guardrail {
+      margin: var(--space-6) 0 0;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--line);
+      color: var(--danger);
+      font-size: 15px;
+      font-weight: 750;
+    }
+
+    .section-block {
+      padding: clamp(62px, 8vw, 104px) 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: clamp(22px, 5vw, 70px);
+      margin-bottom: clamp(32px, 5vw, 56px);
+    }
+
+    .section-kicker {
+      margin: 4px 0 0;
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .section-intro h2 {
+      max-width: 820px;
+      margin-bottom: var(--space-3);
+      font-size: clamp(30px, 4.2vw, 52px);
+      letter-spacing: -.035em;
+      line-height: 1.16;
+      text-wrap: balance;
+    }
+
+    .section-intro p {
+      max-width: 740px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(16px, 1.5vw, 19px);
+      text-wrap: pretty;
+    }
+
+    .problem-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, .6fr);
+      gap: clamp(28px, 5vw, 66px);
+    }
+
+    .problem-list {
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .problem-list li {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: var(--space-4);
+      align-items: center;
+      min-height: 82px;
+      border-bottom: 1px solid var(--line);
+      font-size: clamp(18px, 2vw, 23px);
+      font-weight: 690;
+    }
+
+    .problem-list .index {
+      color: var(--brand-500);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .08em;
+    }
+
+    .user-context {
+      align-self: start;
+      padding: 26px 0 0 28px;
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .user-context h3 {
+      margin-bottom: var(--space-4);
+      font-size: 16px;
+    }
+
+    .user-context ul {
+      display: grid;
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      color: var(--muted);
+      list-style: none;
+    }
+
+    .user-context li {
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .map-shell {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-1);
+    }
+
+    .map-button {
+      width: 100%;
+      padding: 0;
+      border-radius: var(--radius-lg);
+      background: transparent;
+      text-align: left;
+    }
+
+    .map-button svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .map-hint {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgb(247 244 250 / 92%);
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    .map-mobile {
+      display: none;
+    }
+
+    .journey {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0;
+      margin: var(--space-8) 0 0;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .journey li {
+      position: relative;
+      display: grid;
+      align-content: center;
+      min-height: 116px;
+      padding: 18px 14px;
+      border-right: 1px solid var(--line);
+      font-size: 15px;
+      font-weight: 720;
+      text-align: center;
+    }
+
+    .journey li:last-child {
+      border-right: 0;
+    }
+
+    .journey small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .exception-band {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      margin-top: var(--space-4);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .exception-band strong {
+      color: var(--brand-900);
+    }
+
+    .exception-band span {
+      padding: 5px 9px;
+      border: 1px solid #ead9a7;
+      border-radius: 999px;
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .scope-layout {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .scope-column {
+      padding: clamp(28px, 4vw, 48px);
+    }
+
+    .scope-column + .scope-column {
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .scope-column h3 {
+      margin-bottom: var(--space-5);
+      font-size: 21px;
+    }
+
+    .scope-list {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scope-list li {
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .scope-list li:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .scope-list strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--brand-900);
+    }
+
+    .scope-list span {
+      color: var(--muted);
+    }
+
+    .out-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .out-tags li {
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-weight: 650;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .metric {
+      min-height: 180px;
+      padding: 26px 20px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      border-right: 0;
+    }
+
+    .metric-value {
+      display: block;
+      margin-bottom: var(--space-3);
+      color: var(--brand-700);
+      font-size: clamp(30px, 3vw, 44px);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+      line-height: 1.08;
+    }
+
+    .metric-label {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 720;
+    }
+
+    .metric-note {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+    }
+
+    details:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+
+    summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-3);
+      align-items: center;
+      min-height: 58px;
+      cursor: pointer;
+      font-weight: 720;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      color: var(--brand-600);
+      content: "展开";
+      font-size: 13px;
+    }
+
+    details[open] summary::after {
+      content: "收起";
+    }
+
+    .details-body {
+      padding: 0 0 var(--space-6);
+      color: var(--muted);
+    }
+
+    .details-body p:last-child,
+    .details-body ul:last-child {
+      margin-bottom: 0;
+    }
+
+    .meeting-inputs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+
+    .meeting-inputs section {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-soft);
+    }
+
+    .meeting-inputs h3 {
+      margin-bottom: var(--space-2);
+      color: var(--brand-900);
+      font-size: 16px;
+    }
+
+    .meeting-inputs ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .meeting-question {
+      padding: 12px 14px;
+      border-left: 3px solid var(--brand-300);
+      color: var(--ink);
+      background: var(--brand-50);
+    }
+
+    .gate-timeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      border-top: 2px solid var(--brand-200);
+      list-style: none;
+    }
+
+    .gate-timeline li {
+      position: relative;
+      padding: 28px 18px 22px 0;
+    }
+
+    .gate-timeline li::before {
+      position: absolute;
+      top: -8px;
+      left: 0;
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--surface);
+      border-radius: 50%;
+      background: var(--brand-600);
+      box-shadow: 0 0 0 1px var(--brand-300);
+      content: "";
+    }
+
+    .gate-date {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--brand-700);
+      font-size: 15px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .gate-title {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 750;
+    }
+
+    .gate-output {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .gate-rule {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-4);
+      align-items: center;
+      margin: var(--space-6) 0 var(--space-8);
+      padding: 16px 18px;
+      border: 1px solid #ead9a7;
+      border-radius: var(--radius-md);
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .gate-rule strong {
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scenario-control {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .scenario-control > span {
+      margin-right: var(--space-2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .scenario-button {
+      padding: 8px 13px;
+      border: 1px solid var(--line-strong);
+      color: var(--muted);
+      background: var(--surface);
+    }
+
+    .scenario-button[aria-pressed="true"] {
+      border-color: var(--brand-600);
+      color: #fff;
+      background: var(--action-bg);
+    }
+
+    .scenario-output {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .scenario-item {
+      min-height: 118px;
+      padding: 18px;
+      border-right: 1px solid var(--line);
+    }
+
+    .scenario-item:last-child {
+      border-right: 0;
+    }
+
+    .scenario-item strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-700);
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scenario-item span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .scenario-disclaimer {
+      margin: var(--space-3) 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: .72fr 1.28fr;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .evidence-column {
+      padding: clamp(26px, 4vw, 44px);
+    }
+
+    .evidence-column + .evidence-column {
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .evidence-column h3 {
+      margin-bottom: var(--space-5);
+      font-size: 20px;
+    }
+
+    .evidence-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .evidence-list li {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: var(--space-3);
+      align-items: start;
+      min-height: 38px;
+    }
+
+    .evidence-state {
+      display: inline-flex;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .evidence-state.ok {
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .evidence-state.wait {
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .evidence-text {
+      color: var(--muted);
+    }
+
+    .source-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-top: var(--space-8);
+    }
+
+    .source-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      font-weight: 700;
+    }
+
+    .execution-handoff {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-6);
+      align-items: center;
+      margin-top: var(--space-8);
+      padding: 20px 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .execution-handoff strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--brand-900);
+      font-size: 18px;
+    }
+
+    .execution-handoff p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .execution-handoff .primary-link {
+      white-space: nowrap;
+    }
+
+    .source-maintenance .source-links {
+      margin-top: var(--space-3);
+    }
+
+    .site-footer {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+      padding: 26px 0 44px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .site-footer p {
+      margin-bottom: 4px;
+    }
+
+    .map-dialog {
+      width: min(1120px, calc(100% - 32px));
+      max-height: calc(100dvh - 32px);
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--shadow-2);
+    }
+
+    .map-dialog::backdrop {
+      background: rgb(34 26 40 / 64%);
+      backdrop-filter: blur(5px);
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .dialog-button {
+      min-width: var(--touch);
+      padding: 8px 11px;
+      border: 1px solid var(--line-strong);
+      color: var(--brand-700);
+      background: var(--surface);
+    }
+
+    .dialog-canvas {
+      overflow: auto;
+      padding: 24px;
+      touch-action: pan-x pan-y;
+    }
+
+    .dialog-map {
+      width: 1000px;
+      max-width: none;
+      transform: scale(var(--map-scale, 1));
+      transform-origin: top left;
+      transition: transform 180ms var(--ease);
+    }
+
+    .edit-mode [data-editable] {
+      border-radius: 4px;
+      outline: 1px dashed var(--brand-300);
+      outline-offset: 4px;
+    }
+
+    @media (max-width: 1024px) {
+      .header-inner {
+        grid-template-columns: 154px minmax(0, 1fr) auto;
+      }
+
+      .brand-link,
+      .brand-link img {
+        width: 148px;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 1fr) minmax(310px, .74fr);
+        gap: 36px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric:nth-child(3) {
+        border-right: 0;
+      }
+
+      .metric:nth-child(-n + 3) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric:nth-child(4),
+      .metric:nth-child(5) {
+        grid-column: span 1;
+      }
+    }
+
+    @media (max-width: 820px) {
+      html {
+        scroll-padding-top: 126px;
+      }
+
+      .header-inner {
+        grid-template-columns: 1fr auto;
+        width: min(calc(100% - 24px), var(--content));
+        min-height: 62px;
+      }
+
+      .top-nav {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin: -6px 0 6px;
+        padding-right: calc(50% - 25px);
+      }
+
+      .header-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        padding: 58px 0 70px;
+      }
+
+      .hero-principle {
+        max-width: 620px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+      }
+
+      .problem-layout,
+      .evidence-grid,
+      .meeting-inputs,
+      .execution-handoff {
+        grid-template-columns: 1fr;
+      }
+
+      .user-context {
+        padding: 24px 0 0;
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .evidence-column + .evidence-column {
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .journey {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .journey li {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .journey li:nth-child(4) {
+        border-right: 0;
+      }
+
+      .scope-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .scope-column + .scope-column {
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .gate-timeline {
+        grid-template-columns: 1fr;
+        border-top: 0;
+        border-left: 2px solid var(--brand-200);
+      }
+
+      .gate-timeline li {
+        padding: 0 0 28px 28px;
+      }
+
+      .gate-timeline li::before {
+        top: 3px;
+        left: -8px;
+      }
+
+      .scenario-output {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .scenario-item:nth-child(2) {
+        border-right: 0;
+      }
+
+      .scenario-item:nth-child(-n + 2) {
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 560px) {
+      main,
+      .site-footer {
+        width: min(calc(100% - 24px), var(--content));
+      }
+
+      .header-inner {
+        width: min(calc(100% - 20px), var(--content));
+      }
+
+      .brand-link,
+      .brand-link img {
+        width: 132px;
+      }
+
+      .quiet-button {
+        padding-inline: 11px;
+        font-size: 13px;
+      }
+
+      .hero {
+        padding-top: 44px;
+      }
+
+      h1 {
+        font-size: clamp(44px, 15vw, 64px);
+      }
+
+      .hero-subtitle {
+        font-size: 21px;
+      }
+
+      .hero-principle {
+        padding: 26px 20px;
+      }
+
+      .hero-principle::before {
+        font-size: 48px;
+      }
+
+      .section-block {
+        padding: 58px 0;
+      }
+
+      .section-intro h2 {
+        font-size: 32px;
+      }
+
+      .problem-list li {
+        grid-template-columns: 40px 1fr;
+        min-height: 74px;
+        font-size: 18px;
+      }
+
+      .map-button {
+        display: none;
+      }
+
+      .map-mobile {
+        display: grid;
+        gap: 1px;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        background: var(--line);
+      }
+
+      .map-mobile > div {
+        padding: 18px;
+        background: var(--surface);
+      }
+
+      .map-mobile strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--brand-700);
+      }
+
+      .map-hint {
+        display: none;
+      }
+
+      .journey {
+        grid-template-columns: 1fr;
+        border: 0;
+      }
+
+      .journey li {
+        grid-template-columns: 30px 1fr;
+        justify-content: start;
+        min-height: 0;
+        padding: 14px 0;
+        border-right: 0;
+        text-align: left;
+      }
+
+      .journey li::before {
+        display: grid;
+        place-items: center;
+        grid-row: 1 / span 2;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        color: var(--brand-700);
+        background: var(--brand-100);
+        font-size: 12px;
+        content: attr(data-step);
+      }
+
+      .journey small {
+        grid-column: 2;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .metric {
+        min-height: 148px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric:nth-child(odd) {
+        border-right: 1px solid var(--line);
+      }
+
+      .metric:nth-child(even) {
+        border-right: 0;
+      }
+
+      .metric:last-child {
+        grid-column: 1 / -1;
+        border-bottom: 0;
+      }
+
+      .gate-rule {
+        grid-template-columns: 1fr;
+      }
+
+      .scenario-output {
+        grid-template-columns: 1fr;
+      }
+
+      .scenario-item,
+      .scenario-item:nth-child(2) {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .scenario-item:last-child {
+        border-bottom: 0;
+      }
+
+      .scope-column,
+      .evidence-column {
+        padding-inline: 0;
+      }
+
+      .evidence-list li {
+        grid-template-columns: 76px 1fr;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --ink: #eee8f2;
+        --muted: #bdb3c5;
+        --line: #4a3e52;
+        --line-strong: #63546e;
+        --surface: #2a2230;
+        --surface-soft: #33293a;
+        --canvas: #211b26;
+        --brand-50: #33293a;
+        --brand-100: #41334b;
+        --brand-200: #5b4669;
+        --brand-300: #82669a;
+        --brand-500: #b392c8;
+        --brand-600: #c3a8d4;
+        --brand-700: #dbc9e7;
+        --brand-900: #f1e8f5;
+        --action-bg: #6f5088;
+        --action-hover: #56406b;
+        --ok: #8ed0a2;
+        --ok-bg: #183523;
+        --warn: #e1c874;
+        --warn-bg: #3d3214;
+        --danger: #eda1a1;
+        --danger-bg: #432222;
+        --shadow-1: 0 1px 2px rgb(0 0 0 / 20%), 0 8px 24px rgb(0 0 0 / 20%);
+      }
+
+      body {
+        background:
+          radial-gradient(circle at 4% -4%, rgb(111 80 136 / 34%), transparent 31rem),
+          var(--canvas);
+      }
+
+      .site-header {
+        border-bottom-color: rgb(74 62 82 / 90%);
+        background: rgb(42 34 48 / 90%);
+      }
+
+      .brand-link img {
+        filter: brightness(0) invert(1);
+      }
+
+      .status-row li,
+      .hero-principle {
+        background: rgb(42 34 48 / 82%);
+      }
+
+      .secondary-link {
+        background: rgb(42 34 48 / 78%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --ink: #1f1a22;
+        --muted: #5d5663;
+        --line: #d8d2dc;
+        --line-strong: #bdb4c5;
+        --surface: #fff;
+        --surface-soft: #fff;
+        --canvas: #fff;
+      }
+
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      html,
+      body {
+        background: #fff !important;
+      }
+
+      body {
+        font-size: 10.5pt;
+      }
+
+      .skip-link,
+      .site-header,
+      .hero-actions,
+      .map-hint,
+      .scenario-control,
+      .dialog-button,
+      .map-dialog {
+        display: none !important;
+      }
+
+      main,
+      .site-footer {
+        width: 100%;
+      }
+
+      .hero {
+        grid-template-columns: 1.12fr .88fr;
+        min-height: 0;
+        padding: 10mm 0 14mm;
+      }
+
+      h1 {
+        font-size: 40pt;
+      }
+
+      .hero-principle,
+      .map-shell {
+        box-shadow: none;
+      }
+
+      .section-block {
+        padding: 12mm 0;
+        break-inside: avoid;
+      }
+
+      .section-head {
+        margin-bottom: 7mm;
+      }
+
+      details > :not(summary) {
+        display: block !important;
+      }
+
+      summary::after {
+        display: none;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .source-links a::after {
+        content: "";
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+
+  <header class="site-header" aria-label="页面导航">
+    <div class="header-inner">
+      <a class="brand-link" href="#decision" aria-label="天元 · 客服 Agent PRD 首页">
+        <img
+          src="data:image/png;base64,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"
+          width="249"
+          height="45"
+          alt="天元 Tianyuan"
+        >
+      </a>
+
+      <nav class="top-nav" aria-label="PRD 章节">
+        <a href="#decision">立项结论</a>
+        <a href="#problem">业务问题</a>
+        <a href="#experience">产品闭环</a>
+        <a href="#scope">MVP 范围</a>
+        <a href="#success">验收线</a>
+        <a href="#schedule">排期</a>
+        <a href="#evidence">待决</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="quiet-button" id="print-button" type="button">打印 / PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" id="decision" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">CS-AI-C11 · PRD v0.1 · 2026-07-31</p>
+        <h1 id="page-title" data-pretext data-editable>客服 Agent</h1>
+        <p class="hero-subtitle" data-pretext data-editable>
+          把标准答法变成可治理、可检索、可追溯的组织资产。
+        </p>
+
+        <ul class="status-row" aria-label="当前项目状态">
+          <li class="confirmed">P0 · 方向已确认</li>
+          <li>D0 · 08-04</li>
+          <li>G0 · 目标 08-14</li>
+          <li class="pending">Ddev · 未成立</li>
+        </ul>
+
+        <p class="hero-note">
+          首期交付：话术库 MVP-A。组织审批凭证待归档；当前未开发、未部署、未试点。
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary-link" href="#experience">查看产品闭环</a>
+          <a class="secondary-link" href="#evidence">查看 G0 待决</a>
+        </div>
+      </div>
+
+      <aside class="hero-principle" aria-labelledby="principle-title">
+        <p class="principle-label" id="principle-title">首期不可破坏的原则</p>
+        <ol class="principle-flow">
+          <li data-step="1">系统推荐</li>
+          <li data-step="2">坐席确认</li>
+          <li data-step="3">人工发送</li>
+        </ol>
+        <p class="principle-guardrail">自动代发 = 0</p>
+      </aside>
+    </section>
+
+    <section class="section-block" id="problem" aria-labelledby="problem-title">
+      <header class="section-head">
+        <p class="section-kicker">01 / Problem</p>
+        <div class="section-intro">
+          <h2 id="problem-title" data-pretext data-editable>外包推进后，标准答法不能继续依赖个人文档。</h2>
+          <p>先把“谁维护正确答案、坐席如何找到并确认使用”做成稳定闭环。</p>
+        </div>
+      </header>
+
+      <div class="problem-layout">
+        <ol class="problem-list">
+          <li><span class="index">P-01</span><span>话术分散，版本与有效期不清。</span></li>
+          <li><span class="index">P-02</span><span>新人上手慢，答复口径依赖个人。</span></li>
+          <li><span class="index">P-03</span><span>没有内容真源，搜索与问答会放大错误。</span></li>
+        </ol>
+
+        <aside class="user-context">
+          <h3>首期用户</h3>
+          <ul>
+            <li><strong>客服业务 Owner（待具名）</strong><br>对业务价值与验收负责</li>
+            <li><strong>话术真源 Owner（待具名）</strong><br>维护、复核与发布内容</li>
+            <li><strong>内部试点坐席</strong><br>检索、确认、反馈</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-block" id="experience" aria-labelledby="experience-title">
+      <header class="section-head">
+        <p class="section-kicker">02 / Experience</p>
+        <div class="section-intro">
+          <h2 id="experience-title" data-pretext data-editable>推荐，不代发。</h2>
+          <p>能力地图负责边界，产品闭环负责真实使用。</p>
+        </div>
+      </header>
+
+      <figure class="map-shell" aria-labelledby="map-caption">
+        <button class="map-button" id="map-open" type="button" aria-haspopup="dialog" aria-label="放大查看话术库 MVP-A 能力地图">
+          <svg id="capability-map" viewBox="0 0 1000 470" role="img" aria-labelledby="map-title map-desc">
+            <title id="map-title">话术库 MVP-A 能力脑图</title>
+            <desc id="map-desc">中心为话术库 MVP-A，连接内容治理、坐席检索、引用与拒答、反馈与评测、权限与运行五个能力分支。</desc>
+
+            <rect width="1000" height="470" rx="18" fill="var(--surface)"/>
+            <g fill="none" stroke="var(--brand-200)" stroke-width="3">
+              <path d="M400 215 C315 215 315 105 250 105"/>
+              <path d="M400 245 C315 245 315 350 250 350"/>
+              <path d="M600 215 C685 215 685 105 750 105"/>
+              <path d="M600 245 C685 245 685 350 750 350"/>
+              <path d="M500 280 L500 355"/>
+            </g>
+
+            <g>
+              <rect x="45" y="56" width="230" height="98" rx="14" fill="var(--brand-50)" stroke="var(--brand-200)"/>
+              <text x="160" y="94" text-anchor="middle" fill="var(--brand-700)" font-size="18" font-weight="750">内容治理</text>
+              <text x="160" y="122" text-anchor="middle" fill="var(--muted)" font-size="14">草稿 · 复核 · 发布 · 回滚</text>
+
+              <rect x="45" y="301" width="230" height="98" rx="14" fill="var(--surface-soft)" stroke="var(--line-strong)"/>
+              <text x="160" y="339" text-anchor="middle" fill="var(--brand-700)" font-size="18" font-weight="750">坐席检索</text>
+              <text x="160" y="367" text-anchor="middle" fill="var(--muted)" font-size="14">关键词 · 意图 · Top3</text>
+
+              <rect x="725" y="56" width="230" height="98" rx="14" fill="var(--surface-soft)" stroke="var(--line-strong)"/>
+              <text x="840" y="94" text-anchor="middle" fill="var(--brand-700)" font-size="18" font-weight="750">引用与拒答</text>
+              <text x="840" y="122" text-anchor="middle" fill="var(--muted)" font-size="14">来源 · 版本 · 无依据拒答</text>
+
+              <rect x="725" y="301" width="230" height="98" rx="14" fill="var(--surface-soft)" stroke="var(--line-strong)"/>
+              <text x="840" y="339" text-anchor="middle" fill="var(--brand-700)" font-size="18" font-weight="750">反馈与评测</text>
+              <text x="840" y="367" text-anchor="middle" fill="var(--muted)" font-size="14">有用 · 采纳 · 未命中</text>
+
+              <rect x="385" y="355" width="230" height="72" rx="14" fill="var(--surface-soft)" stroke="var(--line-strong)"/>
+              <text x="500" y="385" text-anchor="middle" fill="var(--brand-700)" font-size="18" font-weight="750">权限与运行</text>
+              <text x="500" y="410" text-anchor="middle" fill="var(--muted)" font-size="14">RBAC · 监控 · 备份 · 回退</text>
+
+              <rect x="375" y="178" width="250" height="108" rx="18" fill="var(--action-bg)"/>
+              <text x="500" y="222" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">话术库 MVP-A</text>
+              <text x="500" y="253" text-anchor="middle" fill="#efe8f5" font-size="15">推荐 → 确认 → 人工发送</text>
+            </g>
+
+            <text x="500" y="452" text-anchor="middle" fill="var(--danger)" font-size="13" font-weight="700">
+              边界：不自动代发 · 不全量质检 · 不深度嵌入 · 供应链能力不进入本项目
+            </text>
+          </svg>
+        </button>
+
+        <div class="map-mobile" role="list" aria-label="话术库 MVP-A 能力列表">
+          <div role="listitem"><strong>内容治理</strong>草稿、复核、发布、下架、回滚</div>
+          <div role="listitem"><strong>坐席检索</strong>关键词、意图、Top3、反馈</div>
+          <div role="listitem"><strong>引用与拒答</strong>展示来源版本，无依据转人工</div>
+          <div role="listitem"><strong>反馈与评测</strong>有用、采纳、未命中、时长</div>
+          <div role="listitem"><strong>权限与运行</strong>RBAC、监控、备份、回退</div>
+        </div>
+
+        <figcaption class="map-hint" id="map-caption">点击放大 · 支持键盘</figcaption>
+      </figure>
+
+      <ol class="journey" aria-label="客服 Agent 产品闭环">
+        <li data-step="1">起草<small>话术 Owner</small></li>
+        <li data-step="2">复核<small>业务签发</small></li>
+        <li data-step="3">发布<small>版本可追溯</small></li>
+        <li data-step="4">推荐 Top3<small>显示引用</small></li>
+        <li data-step="5">坐席确认<small>人在环</small></li>
+        <li data-step="6">人工发送<small>不自动代发</small></li>
+        <li data-step="7">反馈迭代<small>质量与采用</small></li>
+      </ol>
+
+      <div class="exception-band" role="note" aria-label="异常处理">
+        <strong>异常：</strong>
+        <span>无依据 / 歧义 → 拒答或转人工</span>
+        <span>过期 → 不返回</span>
+        <span>PII / 越权 → 脱敏或拒绝</span>
+      </div>
+    </section>
+
+    <section class="section-block" id="scope" aria-labelledby="scope-title">
+      <header class="section-head">
+        <p class="section-kicker">03 / Scope</p>
+        <div class="section-intro">
+          <h2 id="scope-title" data-pretext data-editable>首期只把话术闭环做对。</h2>
+          <p>项目名是客服 Agent，MVP-A 不等于完整自治 Agent。</p>
+        </div>
+      </header>
+
+      <div class="scope-layout">
+        <article class="scope-column">
+          <h3>In · MVP-A</h3>
+          <ul class="scope-list">
+            <li><strong>内容资产</strong><span>ID、平台 / 场景、Owner、来源、版本、状态、有效期</span></li>
+            <li><strong>管理端</strong><span>草稿、复核、发布、下架、回滚、审计</span></li>
+            <li><strong>坐席端</strong><span>检索、受控问答、Top3、引用、拒答、反馈；仅用已发布且有效内容</span></li>
+            <li><strong>运行底座</strong><span>RBAC、日志、监控、备份、恢复、回退</span></li>
+          </ul>
+        </article>
+
+        <article class="scope-column">
+          <h3>Out · 本期不做</h3>
+          <ul class="out-tags">
+            <li>自动代发</li>
+            <li>全量质检</li>
+            <li>桌面深度嵌入</li>
+            <li>外包全量接入</li>
+            <li>L3 复杂治理</li>
+            <li>供应链能力</li>
+            <li>将汇报 Web 改成生产系统</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="success" aria-labelledby="success-title">
+      <header class="section-head">
+        <p class="section-kicker">04 / Success</p>
+        <div class="section-intro">
+          <h2 id="success-title" data-pretext data-editable>验收线可量化，但要在 G0 冻结。</h2>
+          <p>内容数量由 G0 共定 N；现有参考：成功线 ≥200，试点建议规模 ≤500。</p>
+        </div>
+      </header>
+
+      <ul class="metrics" aria-label="MVP-A 暂定成功指标">
+        <li class="metric">
+          <span class="metric-value">N</span>
+          <span class="metric-label">有效话术</span>
+          <span class="metric-note">G0 冻结；参考成功线 ≥200</span>
+        </li>
+        <li class="metric">
+          <span class="metric-value">≥70%</span>
+          <span class="metric-label">Top3 命中</span>
+          <span class="metric-note">20 条正例全量盲测</span>
+        </li>
+        <li class="metric">
+          <span class="metric-value">0</span>
+          <span class="metric-label">错误直答</span>
+          <span class="metric-note">不少于 5 条负例</span>
+        </li>
+        <li class="metric">
+          <span class="metric-value">100%</span>
+          <span class="metric-label">引用 / 版本正确</span>
+          <span class="metric-note">每条建议可追溯</span>
+        </li>
+        <li class="metric">
+          <span class="metric-value">3–5 × 2周</span>
+          <span class="metric-label">内部真实试点</span>
+          <span class="metric-note">每人每周 ≥5 个去重任务</span>
+        </li>
+      </ul>
+
+      <details>
+        <summary>查看完整采用与安全口径</summary>
+        <div class="details-body">
+          <p>
+            同时报有用率、采纳率、未命中率、查找时长及分子 / 分母；负例错误直答、自动代发、越权泄露任一 &gt; 0，本轮直接不通过。
+            指标一经 G0 签发，变更必须进入 CR / DEC 并整集重测。
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <section class="section-block" id="schedule" aria-labelledby="schedule-title">
+      <header class="section-head">
+        <p class="section-kicker">05 / Delivery</p>
+        <div class="section-intro">
+          <h2 id="schedule-title" data-pretext data-editable>8 月 4 日启动立项，不启动开发。</h2>
+          <p>首页只承诺 G0；后续日期按资源情景展示。</p>
+        </div>
+      </header>
+
+      <ol class="gate-timeline" aria-label="G0 立项排期">
+        <li>
+          <span class="gate-date">08-04</span>
+          <span class="gate-title">项目启动</span>
+          <span class="gate-output">RACI、RAID、证据目录</span>
+        </li>
+        <li>
+          <span class="gate-date">08-05～07</span>
+          <span class="gate-title">事实与责任</span>
+          <span class="gate-output">凭证、Owner、费用、复用、基线</span>
+        </li>
+        <li>
+          <span class="gate-date">08-10～12</span>
+          <span class="gate-title">方案冻结</span>
+          <span class="gate-output">Scope、交互、架构、安全、评测</span>
+        </li>
+        <li>
+          <span class="gate-date">08-13</span>
+          <span class="gate-title">交付准备</span>
+          <span class="gate-output">WBS、资源、运行与回退</span>
+        </li>
+        <li>
+          <span class="gate-date">08-14</span>
+          <span class="gate-title">G0 决策</span>
+          <span class="gate-output">Pass / Fail，不按完成百分比放行</span>
+        </li>
+      </ol>
+
+      <div class="gate-rule" role="note">
+        <strong>通过门槛：14 / 14 + 15 / 15</strong>
+        <span>当前：外部责任包 0 / 14 Pass；Scope 检查 0 / 15 Pass；G0 未签发。全部通过后，最早 08-17 才可填写 Ddev。</span>
+      </div>
+
+      <div class="scenario-control" aria-label="资源排期情景">
+        <span>资源情景</span>
+        <button class="scenario-button" type="button" data-scenario="team" aria-pressed="true">跨职能小队 · 资源满足</button>
+        <button class="scenario-button" type="button" data-scenario="solo" aria-pressed="false">单人全栈 · 保守基线</button>
+      </div>
+
+      <div class="scenario-output" id="scenario-output" aria-live="polite"></div>
+      <p class="scenario-disclaimer">
+        跨职能日期仅在产品 / FDE 1、前端 1、后端 1、AI / RAG 1、QA 1、设计 0.5、数据 / 内容 1、
+        IT / 安全 / 运维共享 0.5，且业务 Owner 与 3～5 名试点坐席到位时成立；否则采用单人基线或整体顺延。
+      </p>
+    </section>
+
+    <section class="section-block" id="evidence" aria-labelledby="evidence-title">
+      <header class="section-head">
+        <p class="section-kicker">06 / Evidence</p>
+        <div class="section-intro">
+          <h2 id="evidence-title" data-pretext data-editable>方向已定，证据还要补齐。</h2>
+          <p>未知项诚实写“待 G0”，不把文档完整度包装成项目就绪度。</p>
+        </div>
+      </header>
+
+      <div class="evidence-grid">
+        <article class="evidence-column">
+          <h3>已确认</h3>
+          <ul class="evidence-list">
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">客服 Agent 为组合 P0</span></li>
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">2026-08-04 项目启动</span></li>
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">首期为话术库 MVP-A</span></li>
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">人在环，禁止自动代发</span></li>
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">汇报 Web 仅作参考</span></li>
+            <li><span class="evidence-state ok">已确认</span><span class="evidence-text">供应链能力不进入本项目范围</span></li>
+          </ul>
+        </article>
+
+        <article class="evidence-column">
+          <h3>G0 待补</h3>
+          <ul class="evidence-list">
+            <li><span class="evidence-state wait">待归档</span><span class="evidence-text">正式批准凭证与决定原文</span></li>
+            <li><span class="evidence-state wait">待具名</span><span class="evidence-text">业务、话术、预算、IT / 安全、运维 Owner</span></li>
+            <li><span class="evidence-state wait">待基线</span><span class="evidence-text">真实任务、耗时、错误与未命中</span></li>
+            <li><span class="evidence-state wait">待审计</span><span class="evidence-text"><code>dafuyan-wording</code> 复用与 12 个月 TCO</span></li>
+            <li><span class="evidence-state wait">待确认</span><span class="evidence-text">A：月 / 全期 cap；或 B：0 支出与下次费用决策日；C：暂停原因与复审日</span></li>
+            <li><span class="evidence-state wait">待批准</span><span class="evidence-text">数据安全、部署、备份、恢复与回退</span></li>
+            <li><span class="evidence-state wait">待冻结</span><span class="evidence-text">评测集、关键词基线、WBS 与资源</span></li>
+          </ul>
+        </article>
+      </div>
+
+      <details>
+        <summary>费用路径与开发边界</summary>
+        <div class="details-body">
+          <p>
+            A：月 / 全期 cap 正式批准后按额度执行；B：保持 0 新增付费，并记录下次费用决策日；
+            C：暂停，记录原因、复审条件与日期。只有 A / B 且其他 G0 门禁全部 Pass 后，才可签发 Ddev。
+            旧汇报 Web 的组合预算数字不继承。
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>技术边界</summary>
+        <div class="details-body">
+          <p>
+            技术栈、是否新建代码库、真实数据接入和部署环境均待复用审计与架构 ADR。
+            Ddev 前只做方案、低保真流程、API 草案、评测与安全设计。
+          </p>
+        </div>
+      </details>
+
+      <details id="meeting-prep">
+        <summary>PRD 需求会：会前准备与当场拍板</summary>
+        <div class="details-body">
+          <p><strong>会议定位：</strong>可以召开需求澄清与范围冻结准备会；不能当作 PRD 终审、G0 通过或开发开工会。</p>
+          <div class="meeting-inputs">
+            <section>
+              <h3>客服总监准备</h3>
+              <ul>
+                <li>业务目标、优先级与风险边界</li>
+                <li>预算 / 决策边界、可具名 Owner 与试点资源</li>
+              </ul>
+            </section>
+            <section>
+              <h3>客服经理准备</h3>
+              <ul>
+                <li>话术真源、Top 场景与现状基线</li>
+                <li>正负例、转人工规则与 3～5 名试点坐席</li>
+              </ul>
+            </section>
+          </div>
+          <p class="meeting-question"><strong>当场回答：</strong>谁维护正确答案？何时必须拒答或转人工？什么指标算成功？</p>
+        </div>
+      </details>
+
+      <div class="execution-handoff">
+        <div>
+          <strong>继续推进客服 Agent</strong>
+          <p>在一个 HTML 里看下一动作、G0 门禁、排期、会前准备、费用和全栈边界。</p>
+        </div>
+        <a class="primary-link" href="./08-客服Agent立项执行中心.html">打开立项执行中心</a>
+      </div>
+
+      <details class="source-maintenance">
+        <summary>维护人员：核验 7 份原始真源</summary>
+        <div class="details-body">
+          <p>普通参会人无需打开 Markdown；状态变更仍先更新真源，再重新生成执行中心。</p>
+          <nav class="source-links" aria-label="原始业务真源">
+            <a href="./00-项目章程.md">项目章程</a>
+            <a href="./01-总排期与阶段门禁.md">总排期</a>
+            <a href="./02-G0责任与证据台账.md">G0 证据清单</a>
+            <a href="./03-Scope与验收.md">Scope 与验收</a>
+            <a href="./04-费用与成本控制.md">费用与成本控制</a>
+            <a href="./05-全栈交付计划.md">全栈交付计划</a>
+            <a href="./06-启动会与周推进.md">启动会与周推进</a>
+          </nav>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>生命周期：</strong>立项呈现视图，不替代章程、G0 台账、Scope 或正式审批记录。</p>
+    <p>客服 Agent · PRD v0.1 · 2026-07-31 · D0 2026-08-04</p>
+  </footer>
+
+  <dialog class="map-dialog" id="map-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-desc">
+    <div class="dialog-header">
+      <h2 id="dialog-title">MVP-A 能力地图</h2>
+      <p class="sr-only" id="dialog-desc">
+        话术库 MVP-A 包含内容治理、坐席检索、引用与拒答、反馈与评测、权限与运行五个能力分支。
+      </p>
+      <div class="dialog-actions" aria-label="地图控制">
+        <button class="dialog-button" id="map-minus" type="button" aria-label="缩小地图">−</button>
+        <button class="dialog-button" id="map-reset" type="button">重置</button>
+        <button class="dialog-button" id="map-plus" type="button" aria-label="放大地图">+</button>
+        <button class="dialog-button" id="map-close" type="button">关闭</button>
+      </div>
+    </div>
+    <div class="dialog-canvas" tabindex="0" role="region" aria-label="能力地图可滚动区域">
+      <div class="dialog-map" id="dialog-map" aria-hidden="true"></div>
+    </div>
+  </dialog>
+
+  <script id="pretext-source" type="text/plain">
+var x0=["BN","BN","BN","BN","BN","BN","BN","BN","BN","S","B","S","WS","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","B","B","B","S","WS","ON","ON","ET","ET","ET","ON","ON","ON","ON","ON","ON","CS","ON","CS","ON","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","ON","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","BN","BN","BN","BN","BN","BN","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","CS","ON","ET","ET","ET","ET","ON","ON","ON","ON","L","ON","ON","ON","ON","ON","ET","ET","EN","EN","ON","L","ON","ON","ON","EN","L","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L"],g0=["AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","CS","AL","ON","ON","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AN","AN","AN","AN","AN","AN","AN","AN","AN","AN","ET","AN","AN","AL","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","ON","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL"];function m0(O){if(O<=255)return x0[O];if(1424<=O&&O<=1524)return"R";if(1536<=O&&O<=1791)return g0[O&255];if(1792<=O&&O<=2220)return"AL";return"L"}function r0(O){let _=O.length;if(_===0)return null;let J=Array(_),Y=0;for(let V=0;V<_;V++){let $=m0(O.charCodeAt(V));if($==="R"||$==="AL"||$==="AN")Y++;J[V]=$}if(Y===0)return null;let X=_/Y<0.3?0:1,R=new Int8Array(_);for(let V=0;V<_;V++)R[V]=X;let Z=X&1?"R":"L",Q=Z,f=Q;for(let V=0;V<_;V++)if(J[V]==="NSM")J[V]=f;else f=J[V];f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="AL"?"AN":"EN";else if($==="R"||$==="L"||$==="AL")f=$}for(let V=0;V<_;V++)if(J[V]==="AL")J[V]="R";for(let V=1;V<_-1;V++){if(J[V]==="ES"&&J[V-1]==="EN"&&J[V+1]==="EN")J[V]="EN";if(J[V]==="CS"&&(J[V-1]==="EN"||J[V-1]==="AN")&&J[V+1]===J[V-1])J[V]=J[V-1]}for(let V=0;V<_;V++){if(J[V]!=="EN")continue;let $;for($=V-1;$>=0&&J[$]==="ET";$--)J[$]="EN";for($=V+1;$<_&&J[$]==="ET";$++)J[$]="EN"}for(let V=0;V<_;V++){let $=J[V];if($==="WS"||$==="ES"||$==="ET"||$==="CS")J[V]="ON"}f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="L"?"L":"EN";else if($==="R"||$==="L")f=$}for(let V=0;V<_;V++){if(J[V]!=="ON")continue;let $=V+1;while($<_&&J[$]==="ON")$++;let u=V>0?J[V-1]:Q,q=$<_?J[$]:Q,D=u!=="L"?"R":"L";if(D===(q!=="L"?"R":"L"))for(let K=V;K<$;K++)J[K]=D;V=$-1}for(let V=0;V<_;V++)if(J[V]==="ON")J[V]=Z;for(let V=0;V<_;V++){let $=J[V];if((R[V]&1)===0){if($==="R")R[V]++;else if($==="AN"||$==="EN")R[V]+=2}else if($==="L"||$==="AN"||$==="EN")R[V]++}return R}function u0(O,_){let J=r0(O);if(J===null)return null;let Y=new Int8Array(_.length);for(let X=0;X<_.length;X++)Y[X]=J[_[X]];return Y}var a0=/[ \t\n\r\f]+/g,s0=/[\t\n\r\f]| {2,}|^ | $/;function d0(O){let _=O??"normal";return _==="pre-wrap"?{mode:_,preserveOrdinarySpaces:!0,preserveHardBreaks:!0}:{mode:_,preserveOrdinarySpaces:!1,preserveHardBreaks:!1}}function i0(O){if(!s0.test(O))return O;let _=O.replace(a0," ");if(_.charCodeAt(0)===32)_=_.slice(1);if(_.length>0&&_.charCodeAt(_.length-1)===32)_=_.slice(0,-1);return _}function t0(O){if(!/[\r\f]/.test(O))return O.replace(/\r\n/g,`
+`);return O.replace(/\r\n/g,`
+`).replace(/[\r\f]/g,`
+`)}var d=null,V0;function n0(){if(d===null)d=new Intl.Segmenter(V0,{granularity:"word"});return d}function z0(){d=null}function j0(O){let _=O&&O.length>0?O:void 0;if(V0===_)return;V0=_,d=null}var e0=/\p{Script=Arabic}/u,O0=/\p{M}/u,b0=/\p{Nd}/u;function X0(O){return e0.test(O)}function p(O){for(let _ of O){let J=_.codePointAt(0);if(J>=19968&&J<=40959||J>=13312&&J<=19903||J>=131072&&J<=173791||J>=173824&&J<=177983||J>=177984&&J<=178207||J>=178208&&J<=183983||J>=183984&&J<=191471||J>=196608&&J<=201551||J>=63744&&J<=64255||J>=194560&&J<=195103||J>=12288&&J<=12351||J>=12352&&J<=12447||J>=12448&&J<=12543||J>=44032&&J<=55215||J>=65280&&J<=65519)return!0}return!1}var $0=new Set(["，","．","！","：","；","？","、","。","・","）","〕","〉","》","」","』","】","〗","〙","〛","ー","々","〻","ゝ","ゞ","ヽ","ヾ"]),i=new Set(['"',"(","[","{","“","‘","«","‹","（","〔","〈","《","「","『","【","〖","〘","〚"]),Q0=new Set(["'","’"]),r=new Set([".",",","!","?",":",";","،","؛","؟","।","॥","၊","။","၌","၍","၏",")","]","}","%",'"',"”","’","»","›","…"]),OO=new Set([":",".","،","؛"]),_O=new Set(["၏"]),JO=new Set(["”","’","»","›","」","』","】","》","〉","〕","）"]);function RO(O){if(q0(O))return!0;let _=!1;for(let J of O){if(r.has(J)){_=!0;continue}if(_&&O0.test(J))continue;return!1}return _}function VO(O){for(let _ of O)if(!$0.has(_)&&!r.has(_))return!1;return O.length>0}function XO(O){if(q0(O))return!0;for(let _ of O)if(!i.has(_)&&!Q0.has(_)&&!O0.test(_))return!1;return O.length>0}function q0(O){let _=!1;for(let J of O){if(J==="\\"||O0.test(J))continue;if(i.has(J)||r.has(J)||Q0.has(J)){_=!0;continue}return!1}return _}function YO(O){let _=Array.from(O),J=_.length;while(J>0){let Y=_[J-1];if(O0.test(Y)){J--;continue}if(i.has(Y)||Q0.has(Y)){J--;continue}break}if(J<=0||J===_.length)return null;return{head:_.slice(0,J).join(""),tail:_.slice(J).join("")}}function ZO(O,_){if(O.length===0)return!1;for(let J of O)if(J!==_)return!1;return!0}function $O(O){if(!X0(O)||O.length===0)return!1;return OO.has(O[O.length-1])}function QO(O){if(O.length===0)return!1;return _O.has(O[O.length-1])}function qO(O){if(O.length<2||O[0]!==" ")return null;let _=O.slice(1);if(/^\p{M}+$/u.test(_))return{space:" ",marks:_};return null}function D0(O){for(let _=O.length-1;_>=0;_--){let J=O[_];if(JO.has(J))return!0;if(!r.has(J))return!1}return!1}function DO(O,_){if(_.preserveOrdinarySpaces||_.preserveHardBreaks){if(O===" ")return"preserved-space";if(O==="\t")return"tab";if(_.preserveHardBreaks&&O===`
+`)return"hard-break"}if(O===" ")return"space";if(O===" "||O===" "||O==="⁠"||O==="\uFEFF")return"glue";if(O==="​")return"zero-width-break";if(O==="­")return"soft-hyphen";return"text"}function NO(O,_,J,Y){let X=[],R=null,Z="",Q=J,f=!1,V=0;for(let $ of O){let u=DO($,Y),q=u==="text"&&_;if(R!==null&&u===R&&q===f){Z+=$,V+=$.length;continue}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});R=u,Z=$,Q=J+V,f=q,V+=$.length}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});return X}function Y0(O){return O==="space"||O==="preserved-space"||O==="zero-width-break"||O==="hard-break"}var fO=/^[A-Za-z][A-Za-z0-9+.-]*:$/;function HO(O,_){let J=O.texts[_];if(J.startsWith("www."))return!0;return fO.test(J)&&_+1<O.len&&O.kinds[_+1]==="text"&&O.texts[_+1]==="//"}function UO(O){return O.includes("?")&&(O.includes("://")||O.startsWith("www."))}function MO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let Z=0;Z<O.len;Z++){if(Y[Z]!=="text"||!HO(O,Z))continue;let Q=Z+1;while(Q<O.len&&!Y0(Y[Q])){_[Z]+=_[Q],J[Z]=!0;let f=_[Q].includes("?");if(Y[Q]="text",_[Q]="",Q++,f)break}}let R=0;for(let Z=0;Z<_.length;Z++){let Q=_[Z];if(Q.length===0)continue;if(R!==Z)_[R]=Q,J[R]=J[Z],Y[R]=Y[Z],X[R]=X[Z];R++}return _.length=R,J.length=R,Y.length=R,X.length=R,{len:R,texts:_,isWordLike:J,kinds:Y,starts:X}}function CO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R]),!UO(Z))continue;let Q=R+1;if(Q>=O.len||Y0(O.kinds[Q]))continue;let f="",V=O.starts[Q],$=Q;while($<O.len&&!Y0(O.kinds[$]))f+=O.texts[$],$++;if(f.length>0)_.push(f),J.push(!0),Y.push("text"),X.push(V),R=$-1}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}var FO=new Set([":","-","/","×",",",".","+","–","—"]),K0=/^[A-Za-z0-9_]+[,:;]*$/,vO=/[,:;]+$/;function E0(O){for(let _ of O)if(b0.test(_))return!0;return!1}function Z0(O){if(O.length===0)return!1;for(let _ of O){if(b0.test(_)||FO.has(_))continue;return!1}return!0}function uO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R];if(Q==="text"&&Z0(Z)&&E0(Z)){let f=Z,V=R+1;while(V<O.len&&O.kinds[V]==="text"&&Z0(O.texts[V]))f+=O.texts[V],V++;_.push(f),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=V-1;continue}_.push(Z),J.push(O.isWordLike[R]),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function KO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R],f=O.isWordLike[R];if(Q==="text"&&f&&K0.test(Z)){let V=Z,$=R+1;while(vO.test(V)&&$<O.len&&O.kinds[$]==="text"&&O.isWordLike[$]&&K0.test(O.texts[$]))V+=O.texts[$],$++;_.push(V),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=$-1;continue}_.push(Z),J.push(f),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function zO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(O.kinds[R]==="text"&&Z.includes("-")){let Q=Z.split("-"),f=Q.length>1;for(let V=0;V<Q.length;V++){let $=Q[V];if(!f)break;if($.length===0||!E0($)||!Z0($))f=!1}if(f){let V=0;for(let $=0;$<Q.length;$++){let u=Q[$],q=$<Q.length-1?`${u}-`:u;_.push(q),J.push(!0),Y.push("text"),X.push(O.starts[R]+V),V+=q.length}continue}}_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function jO(O){let _=[],J=[],Y=[],X=[],R=0;while(R<O.len){let Z=O.texts[R],Q=O.isWordLike[R],f=O.kinds[R],V=O.starts[R];if(f==="glue"){let $=Z,u=V;R++;while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text")Z=$+O.texts[R],Q=O.isWordLike[R],f="text",V=u,R++;else{_.push($),J.push(!1),Y.push("glue"),X.push(u);continue}}else R++;if(f==="text")while(R<O.len&&O.kinds[R]==="glue"){let $="";while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text"){Z+=$+O.texts[R],Q=Q||O.isWordLike[R],R++;continue}Z+=$}_.push(Z),J.push(Q),Y.push(f),X.push(V)}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function bO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let R=0;R<_.length-1;R++){if(Y[R]!=="text"||Y[R+1]!=="text")continue;if(!p(_[R])||!p(_[R+1]))continue;let Z=YO(_[R]);if(Z===null)continue;_[R]=Z.head,_[R+1]=Z.tail+_[R+1],X[R+1]=X[R]+Z.head.length}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function EO(O,_,J){let Y=n0(),X=0,R=[],Z=[],Q=[],f=[];for(let q of Y.segment(O))for(let D of NO(q.segment,q.isWordLike??!1,q.index,J)){let b=D.kind==="text";if(_.carryCJKAfterClosingQuote&&b&&X>0&&Q[X-1]==="text"&&p(D.text)&&p(R[X-1])&&D0(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&VO(D.text)&&p(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&QO(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&D.isWordLike&&X0(D.text)&&$O(R[X-1]))R[X-1]+=D.text,Z[X-1]=!0;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&D.text.length===1&&D.text!=="-"&&D.text!=="—"&&ZO(R[X-1],D.text))R[X-1]+=D.text;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&(RO(D.text)||D.text==="-"&&Z[X-1]))R[X-1]+=D.text;else R[X]=D.text,Z[X]=D.isWordLike,Q[X]=D.kind,f[X]=D.start,X++}for(let q=1;q<X;q++)if(Q[q]==="text"&&!Z[q]&&q0(R[q])&&Q[q-1]==="text")R[q-1]+=R[q],Z[q-1]=Z[q-1]||Z[q],R[q]="";for(let q=X-2;q>=0;q--)if(Q[q]==="text"&&!Z[q]&&XO(R[q])){let D=q+1;while(D<X&&R[D]==="")D++;if(D<X&&Q[D]==="text")R[D]=R[q]+R[D],f[D]=f[q],R[q]=""}let V=0;for(let q=0;q<X;q++){let D=R[q];if(D.length===0)continue;if(V!==q)R[V]=D,Z[V]=Z[q],Q[V]=Q[q],f[V]=f[q];V++}R.length=V,Z.length=V,Q.length=V,f.length=V;let $=jO({len:V,texts:R,isWordLike:Z,kinds:Q,starts:f}),u=bO(KO(zO(uO(CO(MO($))))));for(let q=0;q<u.len-1;q++){let D=qO(u.texts[q]);if(D===null)continue;if(u.kinds[q]!=="space"&&u.kinds[q]!=="preserved-space"||u.kinds[q+1]!=="text"||!X0(u.texts[q+1]))continue;u.texts[q]=D.space,u.isWordLike[q]=!1,u.kinds[q]=u.kinds[q]==="preserved-space"?"preserved-space":"space",u.texts[q+1]=D.marks+u.texts[q+1],u.starts[q+1]=u.starts[q]+D.space.length}return u}function GO(O,_){if(O.len===0)return[];if(!_.preserveHardBreaks)return[{startSegmentIndex:0,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len}];let J=[],Y=0;for(let X=0;X<O.len;X++){if(O.kinds[X]!=="hard-break")continue;J.push({startSegmentIndex:Y,endSegmentIndex:X,consumedEndSegmentIndex:X+1}),Y=X+1}if(Y<O.len)J.push({startSegmentIndex:Y,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len});return J}function N0(O,_,J="normal"){let Y=d0(J),X=Y.mode==="pre-wrap"?t0(O):i0(O);if(X.length===0)return{normalized:X,chunks:[],len:0,texts:[],isWordLike:[],kinds:[],starts:[]};let R=EO(X,_,Y);return{normalized:X,chunks:GO(R,Y),...R}}var a=null,f0=new Map,s=null,PO=/\p{Emoji_Presentation}/u,AO=/[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F\u20E3]/u,_0=null,H0=new Map;function U0(){if(a!==null)return a;if(typeof OffscreenCanvas<"u")return a=new OffscreenCanvas(1,1).getContext("2d"),a;if(typeof document<"u")return a=document.createElement("canvas").getContext("2d"),a;throw Error("Text measurement requires OffscreenCanvas or a DOM canvas context.")}function BO(O){let _=f0.get(O);if(!_)_=new Map,f0.set(O,_);return _}function x(O,_){let J=_.get(O);if(J===void 0)J={width:U0().measureText(O).width,containsCJK:p(O)},_.set(O,J);return J}function h(){if(s!==null)return s;if(typeof navigator>"u")return s={lineFitEpsilon:0.005,carryCJKAfterClosingQuote:!1,preferPrefixWidthsForBreakableRuns:!1,preferEarlySoftHyphenBreak:!1},s;let O=navigator.userAgent,J=navigator.vendor==="Apple Computer, Inc."&&O.includes("Safari/")&&!O.includes("Chrome/")&&!O.includes("Chromium/")&&!O.includes("CriOS/")&&!O.includes("FxiOS/")&&!O.includes("EdgiOS/"),Y=O.includes("Chrome/")||O.includes("Chromium/")||O.includes("CriOS/")||O.includes("Edg/");return s={lineFitEpsilon:J?0.015625:0.005,carryCJKAfterClosingQuote:Y,preferPrefixWidthsForBreakableRuns:J,preferEarlySoftHyphenBreak:J},s}function TO(O){let _=O.match(/(\d+(?:\.\d+)?)\s*px/);return _?parseFloat(_[1]):16}function M0(){if(_0===null)_0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return _0}function wO(O){return PO.test(O)||O.includes("️")}function G0(O){return AO.test(O)}function yO(O,_){let J=H0.get(O);if(J!==void 0)return J;let Y=U0();Y.font=O;let X=Y.measureText("\uD83D\uDE00").width;if(J=0,X>_+0.5&&typeof document<"u"&&document.body!==null){let R=document.createElement("span");R.style.font=O,R.style.display="inline-block",R.style.visibility="hidden",R.style.position="absolute",R.textContent="\uD83D\uDE00",document.body.appendChild(R);let Z=R.getBoundingClientRect().width;if(document.body.removeChild(R),X-Z>0.5)J=X-Z}return H0.set(O,J),J}function LO(O){let _=0,J=M0();for(let Y of J.segment(O))if(wO(Y.segment))_++;return _}function WO(O,_){if(_.emojiCount===void 0)_.emojiCount=LO(O);return _.emojiCount}function g(O,_,J){if(J===0)return _.width;return _.width-WO(O,_)*J}function P0(O,_,J,Y){if(_.graphemeWidths!==void 0)return _.graphemeWidths;let X=[],R=M0();for(let Z of R.segment(O)){let Q=x(Z.segment,J);X.push(g(Z.segment,Q,Y))}return _.graphemeWidths=X.length>1?X:null,_.graphemeWidths}function A0(O,_,J,Y){if(_.graphemePrefixWidths!==void 0)return _.graphemePrefixWidths;let X=[],R=M0(),Z="";for(let Q of R.segment(O)){Z+=Q.segment;let f=x(Z,J);X.push(g(Z,f,Y))}return _.graphemePrefixWidths=X.length>1?X:null,_.graphemePrefixWidths}function B0(O,_){let J=U0();J.font=O;let Y=BO(O),X=TO(O),R=_?yO(O,X):0;return{cache:Y,fontSize:X,emojiCorrection:R}}function T0(){f0.clear(),H0.clear(),_0=null}function m(O){return O==="space"||O==="preserved-space"||O==="tab"||O==="zero-width-break"||O==="soft-hyphen"}function SO(O){return O==="space"}function w0(O,_){if(_<=0)return 0;let J=O%_;if(Math.abs(J)<=0.000001)return _;return _-J}function t(O,_,J,Y){if(!Y||_===null)return O[J];return _[J]-(J>0?_[J-1]:0)}function y0(O,_,J,Y,X,R){let Z=0,Q=_;while(Z<O.length){let f=R?_+O[Z]:Q+O[Z];if((Z+1<O.length?f+X:f)>J+Y)break;Q=f,Z++}return{fitCount:Z,fittedWidth:Q}}function L0(O,_){for(let J=0;J<O.chunks.length;J++){let Y=O.chunks[J];if(_<Y.consumedEndSegmentIndex)return J}return-1}function kO(O,_){let{segmentIndex:J,graphemeIndex:Y}=_;if(J>=O.widths.length)return null;if(Y>0)return _;let X=L0(O,J);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex&&J===R.startSegmentIndex)return{segmentIndex:J,graphemeIndex:0};if(J<R.startSegmentIndex)J=R.startSegmentIndex;while(J<R.endSegmentIndex){let Z=O.kinds[J];if(Z!=="space"&&Z!=="zero-width-break"&&Z!=="soft-hyphen")return{segmentIndex:J,graphemeIndex:0};J++}if(R.consumedEndSegmentIndex>=O.widths.length)return null;return{segmentIndex:R.consumedEndSegmentIndex,graphemeIndex:0}}function W0(O,_){if(O.simpleLineWalkFastPath)return IO(O,_);return J0(O,_)}function IO(O,_){let{widths:J,kinds:Y,breakableWidths:X,breakablePrefixWidths:R}=O;if(J.length===0)return 0;let Z=h(),Q=Z.lineFitEpsilon,f=0,V=0,$=!1;function u(q){let D=J[q];if(D>_&&X[q]!==null){let b=X[q],K=R[q]??null;V=0;for(let j=0;j<b.length;j++){let B=t(b,K,j,Z.preferPrefixWidthsForBreakableRuns);if(V>0&&V+B>_+Q)f++,V=B;else{if(V===0)f++;V+=B}}}else V=D,f++;$=!0}for(let q=0;q<J.length;q++){let D=J[q],b=Y[q];if(!$){u(q);continue}let K=V+D;if(K>_+Q){if(SO(b))continue;V=0,$=!1,u(q);continue}V=K}if(!$)return f+1;return f}function cO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O;if(Y.length===0)return 0;let Q=h(),f=Q.lineFitEpsilon,V=0,$=0,u=!1,q=0,D=0,b=0,K=0,j=-1,B=0;function k(){j=-1,B=0}function y(H=b,z=K,W=$){V++,J?.({startSegmentIndex:q,startGraphemeIndex:D,endSegmentIndex:H,endGraphemeIndex:z,width:W}),$=0,u=!1,k()}function A(H,z){u=!0,q=H,D=0,b=H+1,K=0,$=z}function T(H,z,W){u=!0,q=H,D=z,b=H,K=z+1,$=W}function L(H,z){if(!u){A(H,z);return}$+=z,b=H+1,K=0}function C(H,z){if(!m(X[H]))return;j=H+1,B=$-z}function F(H){P(H,0)}function P(H,z){let W=R[H],c=Z[H]??null;for(let I=z;I<W.length;I++){let o=t(W,c,I,Q.preferPrefixWidthsForBreakableRuns);if(!u){T(H,I,o);continue}if($+o>_+f)y(),T(H,I,o);else $+=o,b=H,K=I+1}if(u&&b===H&&K===W.length)b=H+1,K=0}let E=0;while(E<Y.length){let H=Y[E],z=X[E];if(!u){if(H>_&&R[E]!==null)F(E);else A(E,H);C(E,H),E++;continue}if($+H>_+f){if(m(z)){L(E,H),y(E+1,0,$-H),E++;continue}if(j>=0){y(j,0,B);continue}if(H>_&&R[E]!==null){y(),F(E),E++;continue}y();continue}L(E,H),C(E,H),E++}if(u)y();return V}function J0(O,_,J){if(O.simpleLineWalkFastPath)return cO(O,_,J);let{widths:Y,lineEndFitAdvances:X,lineEndPaintAdvances:R,kinds:Z,breakableWidths:Q,breakablePrefixWidths:f,discretionaryHyphenWidth:V,tabStopAdvance:$,chunks:u}=O;if(Y.length===0||u.length===0)return 0;let q=h(),D=q.lineFitEpsilon,b=0,K=0,j=!1,B=0,k=0,y=0,A=0,T=-1,L=0,C=0,F=null;function P(){T=-1,L=0,C=0,F=null}function E(N=y,M=A,v=K){b++,J?.({startSegmentIndex:B,startGraphemeIndex:k,endSegmentIndex:N,endGraphemeIndex:M,width:v}),K=0,j=!1,P()}function H(N,M){j=!0,B=N,k=0,y=N+1,A=0,K=M}function z(N,M,v){j=!0,B=N,k=M,y=N,A=M+1,K=v}function W(N,M){if(!j){H(N,M);return}K+=M,y=N+1,A=0}function c(N,M){if(!m(Z[N]))return;let v=Z[N]==="tab"?0:X[N],w=Z[N]==="tab"?M:R[N];T=N+1,L=K-M+v,C=K-M+w,F=Z[N]}function I(N){o(N,0)}function o(N,M){let v=Q[N],w=f[N]??null;for(let G=M;G<v.length;G++){let l=t(v,w,G,q.preferPrefixWidthsForBreakableRuns);if(!j){z(N,G,l);continue}if(K+l>_+D)E(),z(N,G,l);else K+=l,y=N,A=G+1}if(j&&y===N&&A===v.length)y=N+1,A=0}function S(N){if(F!=="soft-hyphen")return!1;let M=Q[N];if(M===null)return!1;let v=q.preferPrefixWidthsForBreakableRuns?f[N]??M:M,w=v!==M,{fitCount:G,fittedWidth:l}=y0(v,K,_,D,V,w);if(G===0)return!1;if(K=l,y=N,A=G,P(),G===M.length)return y=N+1,A=0,!0;return E(N,G,l+V),o(N,G),!0}function U(N){b++,J?.({startSegmentIndex:N.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:N.consumedEndSegmentIndex,endGraphemeIndex:0,width:0}),P()}for(let N=0;N<u.length;N++){let M=u[N];if(M.startSegmentIndex===M.endSegmentIndex){U(M);continue}j=!1,K=0,B=M.startSegmentIndex,k=0,y=M.startSegmentIndex,A=0,P();let v=M.startSegmentIndex;while(v<M.endSegmentIndex){let w=Z[v],G=w==="tab"?w0(K,$):Y[v];if(w==="soft-hyphen"){if(j)y=v+1,A=0,T=v+1,L=K+V,C=K+V,F=w;v++;continue}if(!j){if(G>_&&Q[v]!==null)I(v);else H(v,G);c(v,G),v++;continue}if(K+G>_+D){let n=K+(w==="tab"?0:X[v]),e=K+(w==="tab"?G:R[v]);if(F==="soft-hyphen"&&q.preferEarlySoftHyphenBreak&&L<=_+D){E(T,0,C);continue}if(F==="soft-hyphen"&&S(v)){v++;continue}if(m(w)&&n<=_+D){W(v,G),E(v+1,0,e),v++;continue}if(T>=0&&L<=_+D){E(T,0,C);continue}if(G>_&&Q[v]!==null){E(),I(v),v++;continue}E();continue}W(v,G),c(v,G),v++}if(j){let w=T===M.consumedEndSegmentIndex?C:K;E(M.consumedEndSegmentIndex,0,w)}}return b}function S0(O,_,J){let Y=kO(O,_);if(Y===null)return null;if(O.simpleLineWalkFastPath)return oO(O,Y,J);let X=L0(O,Y.segmentIndex);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex)return{startSegmentIndex:R.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:R.consumedEndSegmentIndex,endGraphemeIndex:0,width:0};let{widths:Z,lineEndFitAdvances:Q,lineEndPaintAdvances:f,kinds:V,breakableWidths:$,breakablePrefixWidths:u,discretionaryHyphenWidth:q,tabStopAdvance:D}=O,b=h(),K=b.lineFitEpsilon,j=0,B=!1,k=Y.segmentIndex,y=Y.graphemeIndex,A=k,T=y,L=-1,C=0,F=0,P=null;function E(){L=-1,C=0,F=0,P=null}function H(U=A,N=T,M=j){if(!B)return null;return{startSegmentIndex:k,startGraphemeIndex:y,endSegmentIndex:U,endGraphemeIndex:N,width:M}}function z(U,N){B=!0,A=U+1,T=0,j=N}function W(U,N,M){B=!0,A=U,T=N+1,j=M}function c(U,N){if(!B){z(U,N);return}j+=N,A=U+1,T=0}function I(U,N){if(!m(V[U]))return;let M=V[U]==="tab"?0:Q[U],v=V[U]==="tab"?N:f[U];L=U+1,C=j-N+M,F=j-N+v,P=V[U]}function o(U,N){let M=$[U],v=u[U]??null;for(let w=N;w<M.length;w++){let G=t(M,v,w,b.preferPrefixWidthsForBreakableRuns);if(!B){W(U,w,G);continue}if(j+G>J+K)return H();j+=G,A=U,T=w+1}if(B&&A===U&&T===M.length)A=U+1,T=0;return null}function S(U){if(P!=="soft-hyphen"||L<0)return null;let N=$[U]??null;if(N!==null){let M=b.preferPrefixWidthsForBreakableRuns?u[U]??N:N,v=M!==N,{fitCount:w,fittedWidth:G}=y0(M,j,J,K,q,v);if(w===N.length)return j=G,A=U+1,T=0,E(),null;if(w>0)return H(U,w,G+q)}if(C<=J+K)return H(L,0,F);return null}for(let U=Y.segmentIndex;U<R.endSegmentIndex;U++){let N=V[U],M=U===Y.segmentIndex?Y.graphemeIndex:0,v=N==="tab"?w0(j,D):Z[U];if(N==="soft-hyphen"&&M===0){if(B)A=U+1,T=0,L=U+1,C=j+q,F=j+q,P=N;continue}if(!B){if(M>0){let G=o(U,M);if(G!==null)return G}else if(v>J&&$[U]!==null){let G=o(U,0);if(G!==null)return G}else z(U,v);I(U,v);continue}if(j+v>J+K){let G=j+(N==="tab"?0:Q[U]),l=j+(N==="tab"?v:f[U]);if(P==="soft-hyphen"&&b.preferEarlySoftHyphenBreak&&C<=J+K)return H(L,0,F);let n=S(U);if(n!==null)return n;if(m(N)&&G<=J+K)return c(U,v),H(U+1,0,l);if(L>=0&&C<=J+K)return H(L,0,F);if(v>J&&$[U]!==null){let e=H();if(e!==null)return e;let v0=o(U,0);if(v0!==null)return v0}return H()}c(U,v),I(U,v)}if(L===R.consumedEndSegmentIndex&&T===0)return H(R.consumedEndSegmentIndex,0,F);return H(R.consumedEndSegmentIndex,0,j)}function oO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O,Q=h(),f=Q.lineFitEpsilon,V=0,$=!1,u=_.segmentIndex,q=_.graphemeIndex,D=u,b=q,K=-1,j=0;function B(C=D,F=b,P=V){if(!$)return null;return{startSegmentIndex:u,startGraphemeIndex:q,endSegmentIndex:C,endGraphemeIndex:F,width:P}}function k(C,F){$=!0,D=C+1,b=0,V=F}function y(C,F,P){$=!0,D=C,b=F+1,V=P}function A(C,F){if(!$){k(C,F);return}V+=F,D=C+1,b=0}function T(C,F){if(!m(X[C]))return;K=C+1,j=V-F}function L(C,F){let P=R[C],E=Z[C]??null;for(let H=F;H<P.length;H++){let z=t(P,E,H,Q.preferPrefixWidthsForBreakableRuns);if(!$){y(C,H,z);continue}if(V+z>J+f)return B();V+=z,D=C,b=H+1}if($&&D===C&&b===P.length)D=C+1,b=0;return null}for(let C=_.segmentIndex;C<Y.length;C++){let F=Y[C],P=X[C],E=C===_.segmentIndex?_.graphemeIndex:0;if(!$){if(E>0){let z=L(C,E);if(z!==null)return z}else if(F>J&&R[C]!==null){let z=L(C,0);if(z!==null)return z}else k(C,F);T(C,F);continue}if(V+F>J+f){if(m(P))return A(C,F),B(C+1,0,V-F);if(K>=0)return B(K,0,j);if(F>J&&R[C]!==null){let z=B();if(z!==null)return z;let W=L(C,0);if(W!==null)return W}return B()}A(C,F),T(C,F)}return B()}var R0=null,C0=new WeakMap;function I0(){if(R0===null)R0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return R0}function lO(O){if(O)return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[],segments:[]};return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[]}}function c0(O,_,J){let Y=I0(),X=h(),{cache:R,emojiCorrection:Z}=B0(_,G0(O.normalized)),Q=g("-",x("-",R),Z),V=g(" ",x(" ",R),Z)*8;if(O.len===0)return lO(J);let $=[],u=[],q=[],D=[],b=O.chunks.length<=1,K=J?[]:null,j=[],B=[],k=J?[]:null,y=Array.from({length:O.len}),A=Array.from({length:O.len});function T(F,P,E,H,z,W,c,I){if(z!=="text"&&z!=="space"&&z!=="zero-width-break")b=!1;if($.push(P),u.push(E),q.push(H),D.push(z),K?.push(W),j.push(c),B.push(I),k!==null)k.push(F)}for(let F=0;F<O.len;F++){y[F]=$.length;let P=O.texts[F],E=O.isWordLike[F],H=O.kinds[F],z=O.starts[F];if(H==="soft-hyphen"){T(P,0,Q,Q,H,z,null,null),A[F]=$.length;continue}if(H==="hard-break"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}if(H==="tab"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}let W=x(P,R);if(H==="text"&&W.containsCJK){let S="",U=0;for(let N of Y.segment(P)){let M=N.segment;if(S.length===0){S=M,U=N.index;continue}if(i.has(S)||$0.has(M)||r.has(M)||X.carryCJKAfterClosingQuote&&p(M)&&D0(S)){S+=M;continue}let v=x(S,R),w=g(S,v,Z);T(S,w,w,w,"text",z+U,null,null),S=M,U=N.index}if(S.length>0){let N=x(S,R),M=g(S,N,Z);T(S,M,M,M,"text",z+U,null,null)}A[F]=$.length;continue}let c=g(P,W,Z),I=H==="space"||H==="preserved-space"||H==="zero-width-break"?0:c,o=H==="space"||H==="zero-width-break"?0:c;if(E&&P.length>1){let S=P0(P,W,R,Z),U=X.preferPrefixWidthsForBreakableRuns?A0(P,W,R,Z):null;T(P,c,I,o,H,z,S,U)}else T(P,c,I,o,H,z,null,null);A[F]=$.length}let L=hO(O.chunks,y,A),C=K===null?null:u0(O.normalized,K);if(k!==null)return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L,segments:k};return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L}}function hO(O,_,J){let Y=[];for(let X=0;X<O.length;X++){let R=O[X],Z=R.startSegmentIndex<_.length?_[R.startSegmentIndex]:J[J.length-1]??0,Q=R.endSegmentIndex<_.length?_[R.endSegmentIndex]:J[J.length-1]??0,f=R.consumedEndSegmentIndex<_.length?_[R.consumedEndSegmentIndex]:J[J.length-1]??0;Y.push({startSegmentIndex:Z,endSegmentIndex:Q,consumedEndSegmentIndex:f})}return Y}function o0(O,_,J,Y){let X=N0(O,h(),Y?.whiteSpace);return c0(X,_,J)}function V1(O,_,J){let Y=performance.now(),X=N0(O,h(),J?.whiteSpace),R=performance.now(),Z=c0(X,_,!1),Q=performance.now(),f=0;for(let V of Z.breakableWidths)if(V!==null)f++;return{analysisMs:R-Y,measureMs:Q-R,totalMs:Q-Y,analysisSegments:X.len,preparedSegments:Z.widths.length,breakableSegments:f}}function X1(O,_,J){return o0(O,_,!1,J)}function Y1(O,_,J){return o0(O,_,!0,J)}function F0(O){return O}function Z1(O,_,J){let Y=W0(F0(O),_);return{lineCount:Y,height:Y*J}}function k0(O,_,J){let Y=J.get(O);if(Y!==void 0)return Y;Y=[];let X=I0();for(let R of X.segment(_[O]))Y.push(R.segment);return J.set(O,Y),Y}function l0(O){let _=C0.get(O);if(_!==void 0)return _;return _=new Map,C0.set(O,_),_}function pO(O,_,J,Y){return Y>0&&O[Y-1]==="soft-hyphen"&&!(_===Y&&J>0)}function xO(O,_,J,Y,X,R,Z){let Q="",f=pO(_,Y,X,R);for(let V=Y;V<R;V++){if(_[V]==="soft-hyphen"||_[V]==="hard-break")continue;if(V===Y&&X>0)Q+=k0(V,O,J).slice(X).join("");else Q+=O[V]}if(Z>0){if(f)Q+="-";Q+=k0(R,O,J).slice(Y===R?X:0,Z).join("")}else if(f)Q+="-";return Q}function h0(O,_,J,Y,X,R,Z){return{text:xO(O.segments,O.kinds,_,Y,X,R,Z),width:J,start:{segmentIndex:Y,graphemeIndex:X},end:{segmentIndex:R,graphemeIndex:Z}}}function gO(O,_,J){return h0(O,_,J.width,J.startSegmentIndex,J.startGraphemeIndex,J.endSegmentIndex,J.endGraphemeIndex)}function p0(O){return{width:O.width,start:{segmentIndex:O.startSegmentIndex,graphemeIndex:O.startGraphemeIndex},end:{segmentIndex:O.endSegmentIndex,graphemeIndex:O.endGraphemeIndex}}}function mO(O,_,J){let Y=S0(O,_,J);if(Y===null)return null;return p0(Y)}function rO(O,_){return h0(O,l0(O),_.width,_.start.segmentIndex,_.start.graphemeIndex,_.end.segmentIndex,_.end.graphemeIndex)}function $1(O,_,J){if(O.widths.length===0)return 0;return J0(F0(O),_,(Y)=>{J(p0(Y))})}function Q1(O,_,J){let Y=mO(O,_,J);if(Y===null)return null;return rO(O,Y)}function q1(O,_,J){let Y=[];if(O.widths.length===0)return{lineCount:0,height:0,lines:Y};let X=l0(O),R=J0(F0(O),_,(Z)=>{Y.push(gO(O,X,Z))});return{lineCount:R,height:R*J,lines:Y}}function aO(){z0(),R0=null,C0=new WeakMap,T0()}function D1(O){j0(O),aO()}export{$1 as walkLineRanges,D1 as setLocale,V1 as profilePrepare,Y1 as prepareWithSegments,X1 as prepare,q1 as layoutWithLines,Q1 as layoutNextLine,Z1 as layout,aO as clearCache};
+
+  </script>
+
+  <script type="module">
+    const scheduleScenarios = Object.freeze({
+      team: [
+        ["最早 08-17", "Ddev", "仅 G0 Pass 后"],
+        ["09-11", "G1a", "内部可演示"],
+        ["09-24", "Pilot Ready", "账号、内容、运行就绪"],
+        ["10-23 / 10-30", "G1b / M4", "试点验收 / 最终决策"],
+      ],
+      solo: [
+        ["最早 08-17", "Ddev", "仍按实际门禁"],
+        ["10-23", "G1a", "单人串行基线"],
+        ["11-02～13", "连续试点", "内部真实任务"],
+        ["11-20", "G1b / 最终验收", "继续 / 整改 / 停止"],
+      ],
+    });
+
+    const output = document.querySelector("#scenario-output");
+    const scenarioButtons = [...document.querySelectorAll("[data-scenario]")];
+
+    function renderScenario(name, updateUrl = true) {
+      const scenario = scheduleScenarios[name] || scheduleScenarios.team;
+      output.replaceChildren(
+        ...scenario.map(([date, title, note]) => {
+          const item = document.createElement("div");
+          item.className = "scenario-item";
+          const strong = document.createElement("strong");
+          strong.textContent = date;
+          const label = document.createElement("b");
+          label.textContent = title;
+          const small = document.createElement("span");
+          small.textContent = note;
+          item.append(strong, label, document.createElement("br"), small);
+          return item;
+        })
+      );
+
+      scenarioButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.scenario === name));
+      });
+
+      if (updateUrl) {
+        const url = new URL(location.href);
+        url.searchParams.set("resource", name);
+        history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
+
+    scenarioButtons.forEach((button) => {
+      button.addEventListener("click", () => renderScenario(button.dataset.scenario));
+    });
+
+    const requestedScenario = new URL(location.href).searchParams.get("resource");
+    renderScenario(requestedScenario === "solo" ? "solo" : "team", false);
+
+    const topNav = document.querySelector(".top-nav");
+    const navLinks = [...topNav.querySelectorAll("a")];
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    function setCurrentNav(hash) {
+      let activeLink = null;
+      navLinks.forEach((link) => {
+        if (link.getAttribute("href") === hash) {
+          link.setAttribute("aria-current", "location");
+          activeLink = link;
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+
+      if (activeLink && topNav.scrollWidth > topNav.clientWidth) {
+        const left = activeLink.offsetLeft - (topNav.clientWidth - activeLink.offsetWidth) / 2;
+        topNav.scrollTo({
+          left: Math.max(0, left),
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
+      }
+    }
+
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => setCurrentNav(link.getAttribute("href")));
+    });
+    window.addEventListener("hashchange", () => setCurrentNav(location.hash || "#decision"));
+    setCurrentNav(location.hash || "#decision");
+
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        setCurrentNav(`#${visible.target.id}`);
+      },
+      { rootMargin: "-20% 0px -68% 0px", threshold: [0, 0.2, 0.6] }
+    );
+    sections.forEach((section) => sectionObserver.observe(section));
+
+    const main = document.querySelector("#main");
+    document.querySelector(".skip-link").addEventListener("click", () => {
+      requestAnimationFrame(() => main.focus({ preventScroll: true }));
+    });
+
+    const printableDetails = [...document.querySelectorAll("details")];
+    const printOpenState = new Map();
+    addEventListener("beforeprint", () => {
+      printableDetails.forEach((details) => {
+        printOpenState.set(details, details.open);
+        details.open = true;
+      });
+    });
+    addEventListener("afterprint", () => {
+      printableDetails.forEach((details) => {
+        details.open = printOpenState.get(details) ?? false;
+      });
+      printOpenState.clear();
+    });
+
+    document.querySelector("#print-button").addEventListener("click", () => window.print());
+
+    const dialog = document.querySelector("#map-dialog");
+    const dialogMap = document.querySelector("#dialog-map");
+    const sourceMap = document.querySelector("#capability-map");
+    let scale = 1;
+
+    function cloneMapForDialog() {
+      const clone = sourceMap.cloneNode(true);
+      clone.removeAttribute("id");
+      clone.removeAttribute("role");
+      clone.removeAttribute("aria-labelledby");
+      clone.setAttribute("aria-hidden", "true");
+      clone.setAttribute("focusable", "false");
+      clone.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+      return clone;
+    }
+
+    function applyScale(nextScale) {
+      scale = Math.min(1.8, Math.max(0.72, nextScale));
+      dialogMap.style.setProperty("--map-scale", scale);
+    }
+
+    document.querySelector("#map-open").addEventListener("click", () => {
+      dialogMap.replaceChildren(cloneMapForDialog());
+      applyScale(1);
+      document.body.classList.add("dialog-open");
+      dialog.showModal();
+      document.querySelector("#map-close").focus();
+    });
+
+    document.querySelector("#map-close").addEventListener("click", () => dialog.close());
+    document.querySelector("#map-plus").addEventListener("click", () => applyScale(scale + 0.12));
+    document.querySelector("#map-minus").addEventListener("click", () => applyScale(scale - 0.12));
+    document.querySelector("#map-reset").addEventListener("click", () => applyScale(1));
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => document.body.classList.remove("dialog-open"));
+
+    const editMode = new URL(location.href).searchParams.get("edit") === "1";
+    if (editMode) {
+      document.body.classList.add("edit-mode");
+      document.querySelectorAll("[data-editable]").forEach((element) => {
+        element.contentEditable = "true";
+        element.spellcheck = false;
+      });
+    }
+
+    async function wirePretext() {
+      const source = document.querySelector("#pretext-source").textContent;
+      if (!source || source.includes("__PRETEXT_VENDOR__")) return;
+      const moduleUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      try {
+        const { prepare, layout, setLocale } = await import(moduleUrl);
+        setLocale("zh-CN");
+        await document.fonts.ready;
+
+        const prepared = new Map();
+        const elements = [...document.querySelectorAll("[data-pretext]")];
+
+        function prepareElement(element) {
+          const style = getComputedStyle(element);
+          prepared.set(element, prepare(element.textContent.trim(), style.font));
+        }
+
+        function relayout() {
+          prepared.forEach((handle, element) => {
+            const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+            const { height } = layout(handle, element.clientWidth, lineHeight);
+            if (Number.isFinite(height)) {
+              element.style.minHeight = `${Math.ceil(height)}px`;
+            }
+          });
+        }
+
+        elements.forEach((element) => {
+          prepareElement(element);
+          if (editMode) {
+            new MutationObserver(() => {
+              prepareElement(element);
+              relayout();
+            }).observe(element, { characterData: true, subtree: true, childList: true });
+          }
+        });
+
+        new ResizeObserver(relayout).observe(document.body);
+        relayout();
+      } catch (error) {
+        console.warn("Pretext layout fallback:", error);
+      } finally {
+        URL.revokeObjectURL(moduleUrl);
+      }
+    }
+
+    wirePretext();
+  </script>
+</body>
+</html>

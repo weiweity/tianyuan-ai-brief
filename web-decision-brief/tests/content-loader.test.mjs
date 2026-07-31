@@ -24,7 +24,7 @@ function response(body, { json = false } = {}) {
 function fixture() {
   const content = {
     version: "test",
-    decisionSchemaVersion: 2,
+    decisionSchemaVersion: 3,
     meta: { title: "测试" },
     tabs: Array.from({ length: 7 }, (_, i) => {
       const id = `t${i + 1}`;
@@ -47,29 +47,12 @@ function fixture() {
                       pathOptions: ["A", "B", "C"],
                     },
                     {
-                      rowId: "filing-path",
-                      no: "1B",
-                      html: "Filing path",
-                      checked: false,
-                      projectId: "filing",
-                      pathOptions: ["A", "B", "C"],
-                    },
-                    {
                       rowId: "agent-owner",
                       no: "3A",
                       html: "Agent owner",
                       checked: false,
                       kind: "owner",
                       projectId: "agent",
-                      owners: [{ name: "", dept: "", scope: "" }],
-                    },
-                    {
-                      rowId: "filing-owner",
-                      no: "3B",
-                      html: "Filing owner",
-                      checked: false,
-                      kind: "owner",
-                      projectId: "filing",
                       owners: [{ name: "", dept: "", scope: "" }],
                     },
                     {
@@ -97,7 +80,7 @@ function fixture() {
   const text = JSON.stringify(content);
   const manifest = {
     releaseId: "test-release",
-    decisionSchemaVersion: 2,
+    decisionSchemaVersion: 3,
     contentVersion: "test",
     contentSha256: sha256(text),
   };
@@ -323,7 +306,7 @@ test("七个空页签、重复页签或非数组 blocks 均不能毒化 LKG", as
       sanitizeContent: (value) => structuredClone(value),
       sha256,
       expectedReleaseId: manifest.releaseId,
-      expectedDecisionSchemaVersion: 2,
+      expectedDecisionSchemaVersion: 3,
       cacheKey: "lkg",
     });
 
@@ -381,7 +364,7 @@ test("空表格行、错误 headers 和错误 do/dont 均在缓存前被拒绝",
       sanitizeContent: (value) => structuredClone(value),
       sha256,
       expectedReleaseId: manifest.releaseId,
-      expectedDecisionSchemaVersion: 2,
+      expectedDecisionSchemaVersion: 3,
       cacheKey: "lkg",
     });
     await assert.rejects(loader.fetchContent(invalidManifest), /结构无效/);
@@ -412,7 +395,7 @@ test("meta 展示字段必须是字符串，不能在 renderHeader 阶段崩溃"
     sanitizeContent: (value) => structuredClone(value),
     sha256,
     expectedReleaseId: manifest.releaseId,
-    expectedDecisionSchemaVersion: 2,
+    expectedDecisionSchemaVersion: 3,
     cacheKey: "lkg",
   });
 

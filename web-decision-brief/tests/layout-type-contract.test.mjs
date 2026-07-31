@@ -133,7 +133,7 @@ test("live page: label does not overlap body text; badges centered; dept type tr
     await page.waitForFunction(
       () =>
         document.documentElement.dataset.appState === "ready" ||
-        document.body.innerText.includes("今日拍板"),
+        document.body.innerText.includes("立项结果"),
       null,
       { timeout: 20000 }
     );

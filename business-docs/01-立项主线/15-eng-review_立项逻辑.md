@@ -1,10 +1,18 @@
-# Eng Review · 立项逻辑（软件工程视角）
+# Eng Review · 立项逻辑（软件工程视角 · 历史快照）
 
+> **冻结说明（2026-07-31）：** 本文完整保留 2026-07-26 的立项前工程评审，只用于追溯当时如何形成 MVP-A，**不是当前门禁、评分或验收 SSOT**。正文中的“当前停在②”“金主 A/B/C”“6–8 周”“ENG CLEARED”等均为历史口径。
+>
+> **现行口径：** 根据本轮用户确认，方案方向已通过、客服组合 P0 先进入 G0；公司正式批准凭证、需求基线、具名 Owner、客服单项目费用、安全、复用与冻结评测协议未齐，Ddev 不成立。请只使用 `20`、`21`、`16` 和 `22-客服立项_双视角对抗评审与优化执行.md`。
+>
 > 技能：`/plan-eng-review`  
 > 日期：2026-07-26  
 > 审查目标：**B** — 本地立项计划（`10` + `11` + `13`，辅 `12`/`04`）  
 > 模式：FULL_REVIEW（无代码仓；架构/质量/验收/性能映射到立项与交付计划）  
-> 阶段现实：软件 **未开发**；正确停在 **② 立项/AI 费用**
+> 历史阶段现实：软件 **未开发**；当时停在 **② 立项/AI 费用**
+
+---
+
+> **以下全部为 2026-07-26 历史正文。**
 
 ---
 
@@ -193,7 +201,7 @@ Sequential implementation, no parallelization opportunity for **current** phase�
 
 ---
 
-## 软件工程视角 · 对立项逻辑的总判
+## 软件工程视角 · 对立项逻辑的总判（2026-07-26 历史结论）
 
 **做得对的：**
 
@@ -228,6 +236,6 @@ Sequential implementation, no parallelization opportunity for **current** phase�
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
-- **VERDICT:** ENG CLEARED (PLAN) — 立项逻辑可按拍板回写后进入材料修订；实现仍待金主批 ②。G0 安全边界与 C2 进入条件已记 TODO，非未决选项。
+- **历史 VERDICT（已被 2026-07-31 对抗评审替代）:** ENG CLEARED (PLAN) — 当时仅表示可继续修订立项材料，**不表示当前 G0 已通过或允许开发**。
 
 NO UNRESOLVED DECISIONS

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { mergeMeetingState } from "../docs/js/modules/meeting-state.js";
 
-function contentFixture(schema = 2) {
+function contentFixture(schema = 3) {
   return {
     decisionSchemaVersion: schema,
     tabs: [
@@ -49,7 +49,7 @@ function contentFixture(schema = 2) {
 test("决策 Schema 不同则整批拒绝旧会议状态", () => {
   const previous = contentFixture(1);
   previous.tabs[0].blocks[0].rows[0].pathValue = "A";
-  const incoming = contentFixture(2);
+  const incoming = contentFixture(3);
   const result = mergeMeetingState(previous, incoming);
   assert.equal(result.outcome, "schema-mismatch");
   assert.equal(result.content.tabs[0].blocks[0].rows[0].pathValue, "");
@@ -70,7 +70,7 @@ test("合并不修改输入且只保留显式白名单字段", () => {
   };
   rows[2].checked = true;
   rows[2].owners = [
-    { name: "李负责人", dept: "客服部", scope: "客服 Agent", admin: true },
+    { name: "李负责人", dept: "客服部", scope: "客服话术库 MVP-A", admin: true },
     { name: "越界人员", dept: "其他", scope: "不应新增" },
   ];
   const incoming = contentFixture();
@@ -88,7 +88,7 @@ test("合并不修改输入且只保留显式白名单字段", () => {
     otherNote: "审批中",
   });
   assert.deepEqual(merged[2].owners, [
-    { name: "李负责人", dept: "客服部", scope: "客服 Agent" },
+    { name: "李负责人", dept: "客服部", scope: "客服话术库 MVP-A" },
   ]);
 });
 

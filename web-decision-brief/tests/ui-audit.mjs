@@ -133,9 +133,9 @@ async function assertNoClippedChildren(page, selector, label) {
 
 async function assertVisibleMermaidText(page, id) {
   const expected = {
-    t2: ["客服 Agent", "供应链 备案识别", "本期主开"],
-    t4: ["先齐前置", "内部演示", "停扩"],
-    t5: ["您怎么批", "同意启动", "超线即停"],
+    t2: ["客服话术库 MVP-A", "供应链备案识别", "组合 P0"],
+    t4: ["G0", "Ddev", "停止扩面"],
+    t5: ["客服执行路径", "费用已批", "立即停扩"],
   }[id];
   await page.locator(`#${id} .mermaid-host[data-render-state="ready"] svg`).waitFor({
     timeout: 10000,
@@ -380,7 +380,7 @@ async function runCanonicalAudit(browser, viewport) {
     });
     assert.equal(compact.display, "grid");
     assert.equal(compact.count, 4);
-    assert.match(compact.text, /主开.*客服 Agent.*产出.*可周报.*后置.*仓储.*不开.*设计/s);
+    assert.match(compact.text, /现在.*客服话术库.*下一项.*供应链.*后置.*仓储.*不开.*设计/s);
     assert.ok(compact.minFont >= 10, `t2 可读缩略字号过小：${compact.minFont}px`);
     assert.equal(compact.clipped, false, "t2 可读缩略不得裁切");
   } else {
@@ -400,7 +400,7 @@ async function runCanonicalAudit(browser, viewport) {
     }));
     assert.equal(compact.display, "grid");
     assert.equal(compact.count, 4);
-    assert.match(compact.text, /主开.*产出.*后置.*不开/s);
+    assert.match(compact.text, /现在.*下一项.*后置.*不开/s);
     assert.ok(compact.minFont >= 10, `t2 桌面缩略字号过小：${compact.minFont}px`);
   }
   await page.screenshot({
@@ -420,30 +420,37 @@ async function runCanonicalAudit(browser, viewport) {
   assert.equal(
     await page.locator("#nav-next").evaluate((element) => getComputedStyle(element).display),
     "none",
-    "当场确认页翻页按钮不得覆盖交互表格"
+    "执行补录页翻页按钮不得覆盖交互表格"
   );
-  const agentGroup = page.getByRole("group", { name: "客服 Agent路径选择" });
-  const filingGroup = page.getByRole("group", { name: "供应链备案识别路径选择" });
-  await agentGroup.getByRole("button", { name: "C 不立" }).click();
-  await filingGroup.getByRole("button", { name: "C 不立" }).click();
+  const agentGroup = page.getByRole("group", { name: "客服话术库 MVP-A路径选择" });
+  await agentGroup.getByRole("button", { name: "C 暂停执行" }).click();
+  await page.locator('[data-check-view-button="record"]').click();
+  await page
+    .getByRole("row", { name: /公司正式批准凭证已归档/ })
+    .getByRole("button")
+    .click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
-  await agentGroup.getByRole("button", { name: "A 同意启动" }).click();
-  await waitForText(page.locator("[data-check-status]"), /客服 Agent Owner/);
+  await page.locator('[data-check-view-button="paths"]').click();
+  await agentGroup.getByRole("button", { name: "A 费用已批，可执行" }).click();
+  await waitForText(page.locator("[data-check-status]"), /客服话术库 MVP-A Owner/);
   await page.locator('[data-check-view-button="owners"]').click();
-  const agentOwner = page.getByRole("row", { name: /3A 客服 Agent Owner/ });
+  const agentOwner = page.getByRole("row", { name: /3 客服话术库 MVP-A Owner/ });
   await agentOwner.getByRole("textbox", { name: "姓名" }).fill("李负责人");
   await agentOwner.getByRole("textbox", { name: "部门" }).fill("客服部");
-  await agentOwner.getByRole("textbox", { name: "负责" }).fill("客服 Agent");
+  await agentOwner.getByRole("textbox", { name: "负责" }).fill("客服话术库 MVP-A");
   await page.locator('[data-check-view-button="budget"]').click();
-  await page.getByRole("row", { name: /共享工具费用与止损/ }).getByRole("button").click();
-  await page.getByRole("row", { name: /授权超止损/ }).getByRole("button").click();
+  const feeRow = page.getByRole("row", { name: /客服单项目目标预算/ });
+  await feeRow.getByRole("textbox", { name: "目标预算" }).fill("3000");
+  await feeRow.getByRole("textbox", { name: "月度 cap" }).fill("1000");
+  await feeRow.getByRole("textbox", { name: "全期 cap" }).fill("3000");
+  await page.getByRole("row", { name: /授权超客服单项目 cap/ }).getByRole("button").click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
   await page.getByRole("button", { name: "复制本场结论" }).click();
   const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-  assert.match(clipboard, /客服 Agent · 路径：A 同意启动/);
-  assert.match(clipboard, /供应链备案识别 · 路径：C 不立/);
+  assert.match(clipboard, /客服话术库 MVP-A · 路径：A 费用已批，可执行/);
+  assert.doesNotMatch(clipboard, /供应链备案识别 · 路径/);
   assert.match(clipboard, /凭证哈希（SHA-256）：[a-f0-9]{64}/);
 
   const downloadPromise = page.waitForEvent("download");
@@ -455,10 +462,7 @@ async function runCanonicalAudit(browser, viewport) {
   assert.equal(receipt.minimumReady, true);
   assert.deepEqual(
     receipt.projects.map((project) => [project.projectId, project.path]),
-    [
-      ["agent", "A"],
-      ["filing", "C"],
-    ]
+    [["agent", "A"]]
   );
 
   accessibilityByTab["t6-decision"] = await axeViolations(
@@ -486,8 +490,8 @@ async function runCanonicalAudit(browser, viewport) {
     if (view === "owners") {
       assert.equal(
         await page.locator('#t6 tr[data-check-section="owners"]:visible').count(),
-        2,
-        `${viewport.width}px Owner 步骤必须同时看见两个项目`
+        1,
+        `${viewport.width}px Owner 步骤只显示客服项目`
       );
     }
     await page.screenshot({
@@ -538,7 +542,7 @@ async function runLegacyAudit(browser, viewport) {
   );
   await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
-  assert.equal(await page.title(), "天元 · AI 立项决策台");
+  assert.equal(await page.title(), "天元 · 客服立项执行台");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
   if (viewport.width <= 640) {
     await assertTouchTargets(page, `历史兼容入口 ${viewport.width}px`);
@@ -577,7 +581,7 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
-  assert.equal(await page.locator("#doc-title").innerText(), "天元 · AI 立项决策台");
+  assert.equal(await page.locator("#doc-title").innerText(), "天元 · 客服立项执行台");
   assert.equal(await page.locator("#offline-notice").isVisible(), true);
   assert.equal(await page.locator("[role=tab]").count(), 7);
   assert.equal(
@@ -601,12 +605,13 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
 
   await page.locator("#tab-t6").click();
   await page
-    .getByRole("group", { name: "客服 Agent路径选择" })
-    .getByRole("button", { name: "C 不立" })
+    .getByRole("group", { name: "客服话术库 MVP-A路径选择" })
+    .getByRole("button", { name: "C 暂停执行" })
     .click();
+  await page.locator('[data-check-view-button="record"]').click();
   await page
-    .getByRole("group", { name: "供应链备案识别路径选择" })
-    .getByRole("button", { name: "C 不立" })
+    .getByRole("row", { name: /公司正式批准凭证已归档/ })
+    .getByRole("button")
     .click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
@@ -688,7 +693,7 @@ async function runMermaidResilienceAudit(browser, mode) {
     await page.locator('#t2 .mermaid-host[data-render-state="fallback"]').waitFor({
       timeout: 3000,
     });
-    assert.match(await page.locator("#t2 .mermaid-host").innerText(), /客服 Agent/);
+    assert.match(await page.locator("#t2 .mermaid-host").innerText(), /客服话术库/);
     for (const id of ["t4", "t5"]) {
       await page.locator(`#tab-${id}`).click();
       await page.locator(`#${id} .mermaid-host[data-render-state="fallback"]`).waitFor({
@@ -771,7 +776,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
     readFile(path.join(root, "docs/data/content.json"), "utf8"),
     readFile(path.join(root, "docs/data/release.json"), "utf8"),
   ]);
-  const updatedText = contentText.replace("项目清单", "项目名单");
+  const updatedText = contentText.replace("当前 Goal", "即时 Goal");
   assert.equal(updatedText.length, contentText.length, "故障注入必须保持正文长度不变");
   assert.notEqual(updatedText, contentText, "故障注入文案必须真实变化");
   const release = JSON.parse(releaseText);
@@ -801,10 +806,10 @@ async function runSameReleaseHotUpdateAudit(browser) {
     waitUntil: "networkidle",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready");
-  assert.match(await page.locator("#t1").innerText(), /项目清单/);
+  assert.match(await page.locator("#t1").innerText(), /当前 Goal/);
   serveUpdate = true;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await waitForText(page.locator("#t1"), /项目名单/, 4000);
+  await waitForText(page.locator("#t1"), /即时 Goal/, 4000);
   assert.match(await page.locator("#status-pill").innerText(), /已同步最新/);
   assert.deepEqual(errors, [], `同长度热更新产生脚本错误：${errors.join("\n")}`);
   await context.close();
