@@ -61,15 +61,44 @@ function parseCount(value, label) {
   return { pass: Number(match[1]), total: Number(match[2]) };
 }
 
+const PERSON_CODE_PATTERN = /^(?:USR|ROLE)-[A-Za-z0-9_-]+$/;
+const EVIDENCE_ID_PATTERN = /^EVD-[A-Za-z0-9_-]+$/;
+
+function splitControlledIds(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s*(?:\/|[，,;；])\s*/)
+    .filter(Boolean);
+}
+
+function isPersonCode(value) {
+  return PERSON_CODE_PATTERN.test(String(value || "").trim());
+}
+
+function isEvidenceIdList(value) {
+  const ids = splitControlledIds(value);
+  return ids.length > 0 && ids.every((id) => EVIDENCE_ID_PATTERN.test(id));
+}
+
+function parsePersonWithEvidence(value, label) {
+  const parts = splitControlledIds(value);
+  if (
+    parts.length < 2 ||
+    !isPersonCode(parts[0]) ||
+    !parts.slice(1).every((item) => EVIDENCE_ID_PATTERN.test(item))
+  ) {
+    throw new Error(`${label} 必须严格使用人员 / 角色代号加 EVD-* ID，不得夹带姓名或链接`);
+  }
+  return parts[0];
+}
+
 function hasTraceableEvidence(value, { allowRelativeDocument = true } = {}) {
   const text = String(value || "").trim();
-  const tracePattern = allowRelativeDocument
-    ? /EVD-[A-Za-z0-9_-]+|\.(?:md|pdf|json)\b/i
-    : /EVD-[A-Za-z0-9_-]+/i;
+  if (!text || /_{2,}|待补|待填|https?:\/\//i.test(text)) return false;
+  if (isEvidenceIdList(text)) return true;
   return (
-    text.length > 3 &&
-    !/_{2,}|待补|待填/.test(text) &&
-    tracePattern.test(text)
+    allowRelativeDocument &&
+    /(?:^|[\s(])(?:\.{0,2}\/)?[^\s()]+\.(?:md|pdf|json)(?:\)|$|[;；])/i.test(text)
   );
 }
 
@@ -84,7 +113,7 @@ function parseMoney(value, label) {
 }
 
 function requireEvidenceId(value, label) {
-  if (!hasTraceableEvidence(value, { allowRelativeDocument: false })) {
+  if (!isEvidenceIdList(value)) {
     throw new Error(`${label} 必须填写 EVD-* 证据 ID；原始链接只存受控系统`);
   }
 }
@@ -93,6 +122,12 @@ function parseSignedCount(value, label) {
   const match = String(value || "").match(/Pass\s*(\d+)\s*\/\s*(\d+)\s*[；;]\s*Fail\s*(\d+)\s*\/\s*(\d+)/i);
   if (!match) throw new Error(`G0 签发记录 ${label} 计数格式无效`);
   return { pass: Number(match[1]), passTotal: Number(match[2]), fail: Number(match[3]), failTotal: Number(match[4]) };
+}
+
+function sourceVersion(text, label, field = "版本") {
+  const value = String(text || "").match(new RegExp(`\\*\\*${field}：\\*\\*\\s*(v\\d+(?:\\.\\d+)*)`, "i"))?.[1];
+  if (!value) throw new Error(`无法从真源解析：${label}版本`);
+  return value;
 }
 
 function outcome(value, passValues) {
@@ -126,24 +161,32 @@ function deriveFeeStatus(cost) {
   };
   if (path === "A") {
     const budgetOwner = filled("预算 / 费用责任人（仅 1 人）");
-    if (!/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(budgetOwner)) throw new Error("A 路径预算 / 费用责任人必须使用可追溯人员或角色代号");
-    requireEvidenceId(budgetOwner, "A 路径预算 / 费用责任人");
+    parsePersonWithEvidence(budgetOwner, "A 路径预算 / 费用责任人");
     const monthlyCap = parseMoney(filled("客服项目月 cap"), "客服项目月 cap");
     const totalCap = parseMoney(filled("客服项目全期 cap"), "客服项目全期 cap");
     if (monthlyCap > totalCap) throw new Error("客服项目月 cap 不得高于全期 cap");
     filled("费用科目 / 采购路径");
-    filled("预警阈值与通知人");
+    const warning = filled("预警阈值与通知人");
+    const warningParts = String(warning).split(/\s*\/\s*/);
+    if (warningParts.length !== 2 || !/^\d+(?:\.\d+)?%$/.test(warningParts[0]) || !isPersonCode(warningParts[1])) {
+      throw new Error("A 路径预警阈值与通知人必须使用“百分比 / 人员或角色代号”");
+    }
     requireEvidenceId(filled("超线停扩授权"), "超线停扩授权");
     const approval = filled("批准人代号 / 日期 / 决定摘要 / 证据 ID");
-    if (!/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(approval)) throw new Error("A 路径批准记录必须含批准人代号");
-    const approvalDate = approval.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+    const approvalParts = String(approval).split(/\s*\/\s*/);
+    if (approvalParts.length !== 4 || !isPersonCode(approvalParts[0])) {
+      throw new Error("A 路径批准记录必须以唯一批准人代号开头，不得夹带姓名或链接");
+    }
+    const approvalDate = approvalParts[1];
     if (!approvalDate || !isValidIsoDate(approvalDate)) throw new Error("A 路径批准记录必须含有效批准日期");
-    if (!/(?:批准|同意|Pass)/i.test(approval)) throw new Error("A 路径批准记录必须含决定摘要");
-    requireEvidenceId(approval, "A 路径批准记录");
+    if (!/^(?:批准|同意|Pass)$/i.test(approvalParts[2])) {
+      throw new Error("A 路径批准记录必须含受控决定摘要");
+    }
+    requireEvidenceId(approvalParts[3], "A 路径批准记录");
   }
   if (path === "B") {
     if (/_+/.test(line)) throw new Error("B 路径必须选定具体预算科目或采购路径");
-    filled("预算 / 费用责任人（仅 1 人）");
+    parsePersonWithEvidence(filled("预算 / 费用责任人（仅 1 人）"), "B 路径预算 / 费用责任人");
     filled("费用科目 / 采购路径");
     const nextDate = filled("B 下次费用决策日");
     if (!isValidIsoDate(nextDate)) throw new Error("B 下次费用决策日必须是有效 YYYY-MM-DD");
@@ -171,7 +214,7 @@ export function isChecked(value) {
   return /\[[xX]\]/.test(String(value || ""));
 }
 
-export function deriveProjectStatus({ charter, ledger, scope, cost }) {
+export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) {
   const statusRows = parseTable(getSection(ledger, "## 1. 当前状态"), "当前状态");
   const statusMap = Object.fromEntries(statusRows.map((row) => [row["项目项"], row["状态"]]));
   const allowedSummary = {
@@ -237,15 +280,15 @@ export function deriveProjectStatus({ charter, ledger, scope, cost }) {
   for (const row of raciRows) {
     if (!allowedRaciStatuses.has(row["状态"])) throw new Error(`RACI ${row["角色"]} 状态不受控：${row["状态"]}`);
     for (const field of ["人员代号", "代理人代号"]) {
-      if (row[field] && !/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(row[field])) throw new Error(`RACI ${row["角色"]} ${field} 格式无效`);
+      if (row[field] && !isPersonCode(row[field])) throw new Error(`RACI ${row["角色"]} ${field} 格式无效`);
     }
-    if (row["接受职责证据 ID"] && !hasTraceableEvidence(row["接受职责证据 ID"], { allowRelativeDocument: false })) {
+    if (row["接受职责证据 ID"] && !isEvidenceIdList(row["接受职责证据 ID"])) {
       throw new Error(`RACI ${row["角色"]} 接受职责证据必须是 EVD-* ID`);
     }
   }
   const requireRaciRole = (role) => {
     const row = raciRows.find((item) => item["角色"] === role);
-    if (!/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(row?.["人员代号"] || "") || !/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(row?.["代理人代号"] || "")) {
+    if (!isPersonCode(row?.["人员代号"] || "") || !isPersonCode(row?.["代理人代号"] || "")) {
       throw new Error(`G0 角色 ${role} 必须填写人员与代理人代号`);
     }
     requireEvidenceId(row["接受职责证据 ID"], `G0 角色 ${role} 接受职责`);
@@ -339,7 +382,7 @@ export function deriveProjectStatus({ charter, ledger, scope, cost }) {
   if (g0Ready) {
     for (const role of requiredRoles) requireRaciRole(role);
     const independentRoles = ["项目负责人", "客服业务 Owner", "预算责任人", "IT / 安全责任人"];
-    const roleCodes = independentRoles.map((role) => raciRows.find((row) => row["角色"] === role)["人员代号"].match(/(?:USR|ROLE)-[A-Za-z0-9_-]+/)[0]);
+    const roleCodes = independentRoles.map((role) => raciRows.find((row) => row["角色"] === role)["人员代号"]);
     if (new Set(roleCodes).size !== roleCodes.length) throw new Error("G0 签发时项目、业务、预算与 IT / 安全责任人必须职责分离");
   }
   const g0Failed = statusMap["G0 签发"] === "Fail";
@@ -351,6 +394,23 @@ export function deriveProjectStatus({ charter, ledger, scope, cost }) {
     const inputVersions = String(signMap["评审输入版本"] || "");
     if (/_+/.test(inputVersions) || !/章程\s*v\d/i.test(inputVersions) || !/台账\s*v\d/i.test(inputVersions) || !/Scope\s*v\d/i.test(inputVersions) || !/排期\s*v\d/i.test(inputVersions)) {
       throw new Error("G0 已签发时必须冻结章程、台账、Scope 与排期版本");
+    }
+    const signedVersions = Object.fromEntries(
+      ["章程", "台账", "Scope", "排期"].map((label) => [
+        label,
+        inputVersions.match(new RegExp(`${label}\\s*(v\\d+(?:\\.\\d+)*)`, "i"))?.[1] || "",
+      ])
+    );
+    const currentVersions = {
+      章程: sourceVersion(charter, "章程"),
+      台账: sourceVersion(ledger, "台账"),
+      Scope: sourceVersion(scope, "Scope", "状态"),
+      排期: sourceVersion(schedule, "排期", "排期版本"),
+    };
+    for (const [label, current] of Object.entries(currentVersions)) {
+      if (signedVersions[label] !== current) {
+        throw new Error(`G0 签发输入 ${label} 版本 ${signedVersions[label] || "缺失"} 与当前真源 ${current} 不一致`);
+      }
     }
     const externalSigned = parseSignedCount(signMap["G0-02～15"], "G0-02～15");
     const externalFail = externalRows.filter((row) => row["状态"] === "Fail").length;
@@ -364,9 +424,7 @@ export function deriveProjectStatus({ charter, ledger, scope, cost }) {
     const reviewerCodes = [];
     for (const field of ["业务审核人", "IT / 安全审核人", "预算审核人", "项目审核人"]) {
       const reviewer = String(signMap[field] || "");
-      if (!/(?:USR|ROLE)-[A-Za-z0-9_-]+/.test(reviewer)) throw new Error(`G0 已签发时 ${field} 必须填写人员或角色代号`);
-      requireEvidenceId(reviewer, `G0 ${field}`);
-      reviewerCodes.push(reviewer.match(/(?:USR|ROLE)-[A-Za-z0-9_-]+/)[0]);
+      reviewerCodes.push(parsePersonWithEvidence(reviewer, `G0 已签发时 ${field}`));
     }
     if (new Set(reviewerCodes).size !== reviewerCodes.length) throw new Error("G0 四类审核人必须职责分离");
     const conclusion = String(signMap["结论"] || "");
@@ -415,6 +473,7 @@ export function deriveProjectStatus({ charter, ledger, scope, cost }) {
       "problem-fit": `问题适配 · ${status.problemFit}`,
       external: `外部责任包 · ${status.externalPass} / ${status.externalTotal}`,
       scope: `Scope · ${status.scopePass} / ${status.scopeTotal}`,
+      resource: `资源基线 · ${status.resourceBaseline}`,
       ddev: `Ddev · ${status.ddev}`,
     },
   };

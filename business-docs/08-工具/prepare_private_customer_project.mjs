@@ -25,7 +25,10 @@ const targetDir = path.normalize(target);
 const parent = await realpath(path.dirname(targetDir));
 const canonicalRepo = await realpath(repoRoot);
 const relativeToRepo = path.relative(canonicalRepo, path.join(parent, path.basename(targetDir)));
-if (relativeToRepo === "" || (!relativeToRepo.startsWith(`..${path.sep}`) && relativeToRepo !== "..")) {
+if (
+  relativeToRepo === "" ||
+  (!path.isAbsolute(relativeToRepo) && !relativeToRepo.startsWith(`..${path.sep}`) && relativeToRepo !== "..")
+) {
   throw new Error("私有工作区必须位于公开仓库之外");
 }
 try {
@@ -34,10 +37,20 @@ try {
 } catch (error) {
   if (error?.code !== "ENOENT") throw error;
 }
+const templateReadme = await readFile(path.join(sourceDir, "README.md"), "utf8");
+const publicBoundaryPattern = /^> \*\*公共仓安全边界：\*\*[^\n]*(?:\n|$)/m;
+const migrationInstructionPattern = /^进入真实状态或选择 A 前，[^\n]*(?:\n|$)/m;
+if (!publicBoundaryPattern.test(templateReadme) || !migrationInstructionPattern.test(templateReadme)) {
+  throw new Error("公开模板 README 的边界提示已变更，拒绝生成规则冲突的私有 README");
+}
+const privateReadmeBody = templateReadme
+  .replace(publicBoundaryPattern, "")
+  .replace(migrationInstructionPattern, "")
+  .replace(/\n{3,}/g, "\n\n")
+  .trimStart();
+const privateReadme = `> **私有现行工作区：** 本目录由公开模板迁入，允许按内部权限填写受控状态；不得回推公开仓。\n> **规则覆盖：** 当前目录已经完成迁移，不要再次运行 \`prepare_private_customer_project.mjs\`。本说明覆盖本副本内“必须先迁移才能填写受控状态”的公开模板提示；原始 PII、客户原文、审批原文和密钥仍只能留在受控系统。\n\n${privateReadmeBody}`;
 await mkdir(targetDir);
 for (const file of files) await copyFile(path.join(sourceDir, file), path.join(targetDir, file));
-const templateReadme = await readFile(path.join(targetDir, "README.md"), "utf8");
-const privateReadme = `> **私有现行工作区：** 本目录由公开模板迁入，允许按内部权限填写受控状态；不得回推公开仓。\n\n${templateReadme}`;
 await writeFile(path.join(targetDir, "README.md"), privateReadme, "utf8");
 await writeFile(
   path.join(targetDir, PRIVATE_MARKER),
@@ -46,7 +59,7 @@ await writeFile(
 );
 await writeFile(
   path.join(targetDir, "PRIVATE-WORKSPACE.md"),
-  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${JSON.stringify(targetDir)}\nnode ${JSON.stringify(path.join(scriptDir, "check_customer_agent_prd_sources.mjs"))} --update\nnode ${JSON.stringify(path.join(scriptDir, "generate_customer_agent_hub.mjs"))}\n\`\`\`\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
+  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n当前目录已完成迁移；不要再次运行 \`prepare_private_customer_project.mjs\`，也不得将本目录回推公开仓。两套浏览器 QA 证据默认写入本目录的 \`.qa-output/\`。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${JSON.stringify(targetDir)}\nnode ${JSON.stringify(path.join(scriptDir, "check_customer_agent_prd_sources.mjs"))} --update\nnode ${JSON.stringify(path.join(scriptDir, "generate_customer_agent_hub.mjs"))}\n\`\`\`\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
   { flag: "wx" }
 );
 console.log(`私有客服工作区已创建：${targetDir}`);

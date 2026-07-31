@@ -134,6 +134,7 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
     ddevEarliest: "2026-08-17",
     ddevState: "未成立",
   });
+  assert.equal(manifest.contracts.resourceBaseline, "未选择");
   assert.deepEqual(manifest.contracts.acceptance, {
     top3OverallMinPercent: 70,
     top3StratumMinPercent: 50,
@@ -153,6 +154,20 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
     selected: false,
     paidAuthorization: "0",
   });
+
+  const fixtureLedgerPath = path.join(fixtureProject, "02-G0责任与证据台账.md");
+  const ledger = await readFile(fixtureLedgerPath, "utf8");
+  const resourceDrift = ledger.replace(
+    "| 资源基线 | **未选择** |",
+    "| 资源基线 | **最小跨职能小队** |"
+  );
+  assert.notEqual(resourceDrift, ledger, "fixture 必须实际修改资源基线");
+  await writeFile(fixtureLedgerPath, resourceDrift, "utf8");
+  const rejectedResource = runUpdate();
+  assert.notEqual(rejectedResource.status, 0, "资源基线变化但 PRD 未更新时不得重签");
+  assert.match(`${rejectedResource.stderr}\n${rejectedResource.stdout}`, /资源基线.*最小跨职能小队|resource-baseline/);
+  assert.equal(await readFile(manifestPath, "utf8"), manifestBeforeDrift, "资源漂移失败时不得重写清单");
+  await writeFile(fixtureLedgerPath, ledger, "utf8");
 
   const fixtureScopePath = path.join(fixtureProject, "03-Scope与验收.md");
   const scope = await readFile(fixtureScopePath, "utf8");

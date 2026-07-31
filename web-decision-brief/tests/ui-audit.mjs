@@ -138,6 +138,42 @@ async function assertNoClippedChildren(page, selector, label) {
   assert.deepEqual(clipped, [], `${label} 存在裁切：${JSON.stringify(clipped)}`);
 }
 
+async function assertNoBlockOverlap(page, panelId, label) {
+  const overlaps = await page.locator(`#${panelId} .panel-body`).evaluate((body) => {
+    const blocks = [...body.querySelectorAll(":scope > [data-block-id]")]
+      .filter((element) => element.checkVisibility())
+      .map((element) => {
+        const visibleRects = [element, ...element.querySelectorAll("*")]
+          .filter((item) => item.checkVisibility())
+          .map((item) => item.getBoundingClientRect())
+          .filter((rect) => rect.width > 0 && rect.height > 0);
+        return {
+          id: element.dataset.blockId,
+          rect: {
+            left: Math.min(...visibleRects.map((rect) => rect.left)),
+            right: Math.max(...visibleRects.map((rect) => rect.right)),
+            top: Math.min(...visibleRects.map((rect) => rect.top)),
+            bottom: Math.max(...visibleRects.map((rect) => rect.bottom)),
+          },
+        };
+      });
+    const collisions = [];
+    for (let left = 0; left < blocks.length; left += 1) {
+      for (let right = left + 1; right < blocks.length; right += 1) {
+        const a = blocks[left];
+        const b = blocks[right];
+        const overlapX = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left);
+        const overlapY = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top);
+        if (overlapX > 1 && overlapY > 1) {
+          collisions.push(`${a.id} × ${b.id}: ${Math.round(overlapX)}×${Math.round(overlapY)}`);
+        }
+      }
+    }
+    return collisions;
+  });
+  assert.deepEqual(overlaps, [], `${label} 内容块重叠：${overlaps.join("、")}`);
+}
+
 async function assertVisibleMermaidText(page, id) {
   const expected = {
     t2: ["客服话术库 MVP-A", "供应链备案识别", "组合 P0"],
@@ -277,6 +313,7 @@ async function runCanonicalAudit(browser, viewport) {
     }
     if (viewport.width <= 640) {
       await assertSingleVerticalScroller(page, id, `${viewport.width}px ${id}`);
+      if (id === "t7") await assertNoBlockOverlap(page, id, `${viewport.width}px ${id}`);
     } else if (["t2", "t4", "t5", "t7"].includes(id)) {
       const body = await page.locator(`#${id} .panel-body`).evaluate((element) => ({
         client: element.clientHeight,

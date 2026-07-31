@@ -7,12 +7,16 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createSafeResultsDir } from "../../web-decision-brief/tests/support/safe-results-dir.mjs";
-import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
+import {
+  resolveCustomerProjectQaPaths,
+  resolveCustomerProjectWorkspace,
+} from "./project_workspace.mjs";
 
 const execFileAsync = promisify(execFile);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
-const { projectDir } = await resolveCustomerProjectWorkspace(import.meta.url);
+const workspace = await resolveCustomerProjectWorkspace(import.meta.url);
+const { mode, projectDir } = workspace;
 const webRoot = path.join(repoRoot, "web-decision-brief");
 const requireFromWeb = createRequire(path.join(webRoot, "package.json"));
 const { chromium } = requireFromWeb("playwright");
@@ -24,10 +28,10 @@ const targetPath = path.resolve(
 );
 const roundArg = process.argv.find((value) => value.startsWith("--round="));
 const round = roundArg ? roundArg.slice("--round=".length) : "manual";
-const resultsRoot = path.join(repoRoot, "output/customer-agent-prd-qa");
+const qaPaths = resolveCustomerProjectQaPaths(workspace, "prd");
 const resultsDir = await createSafeResultsDir({
-  trustedRootPath: repoRoot,
-  rootPath: resultsRoot,
+  trustedRootPath: qaPaths.trustedRootPath,
+  rootPath: qaPaths.rootPath,
   prefix: "round",
   label: round,
   requestedPath: process.env.PRD_QA_RESULTS_DIR,
@@ -97,13 +101,17 @@ await check("关键业务口径完整", async () => {
     "客服 Agent",
     "话术库 MVP-A",
     "2026-08-04",
-    "G0 未签发",
-    "0 / 14",
-    "0 / 15",
     "自动代发 = 0",
     "供应链能力不进入本项目",
-    "8 月 4 日启动立项，不启动开发",
   ];
+  if (mode === "public-template") {
+    requiredFacts.push(
+      "G0 未签发",
+      "0 / 14",
+      "0 / 15",
+      "8 月 4 日启动立项，不启动开发"
+    );
+  }
   const missing = requiredFacts.filter((fact) => !html.includes(fact));
   assert.deepEqual(missing, [], `缺少关键口径：${missing.join("、")}`);
   return `${requiredFacts.length} 项`;

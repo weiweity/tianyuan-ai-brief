@@ -13,12 +13,12 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const projectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
 
 async function currentSources() {
-  const [charter, ledger, scope, cost] = await Promise.all(
-    ["00-项目章程.md", "02-G0责任与证据台账.md", "03-Scope与验收.md", "04-费用与成本控制.md"].map(
+  const [charter, schedule, ledger, scope, cost] = await Promise.all(
+    ["00-项目章程.md", "01-总排期与阶段门禁.md", "02-G0责任与证据台账.md", "03-Scope与验收.md", "04-费用与成本控制.md"].map(
       (file) => readFile(path.join(projectRoot, file), "utf8")
     )
   );
-  return { charter, ledger, scope, cost };
+  return { charter, schedule, ledger, scope, cost };
 }
 
 function replaceStatus(ledger, label, value) {
@@ -134,7 +134,7 @@ function fullyAdvance(sources, ddev = "2026-08-17") {
   return sources;
 }
 
-test("当前 0/29 真源动态导出六条状态轴与临时 B", async () => {
+test("当前 0/29 真源动态导出七条状态轴与临时 B", async () => {
   const status = deriveProjectStatus(await currentSources());
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -142,6 +142,7 @@ test("当前 0/29 真源动态导出六条状态轴与临时 B", async () => {
     "problem-fit": "问题适配 · 待核验",
     external: "外部责任包 · 0 / 14",
     scope: "Scope · 0 / 15",
+    resource: "资源基线 · 未选择",
     ddev: "Ddev · 未成立",
   });
   assert.equal(status.feePath, "B · 临时管控，未签");
@@ -256,6 +257,34 @@ test("门禁 ID、状态和已勾 Scope 的证据必须可追溯", async () => {
   const duplicateScope = await currentSources();
   duplicateScope.scope = duplicateScope.scope.replace(/^\| 15 \|/m, "| 14 |");
   assert.throws(() => deriveProjectStatus(duplicateScope), /Scope #1～#15/);
+
+  const smuggledEvidence = await currentSources();
+  smuggledEvidence.scope = smuggledEvidence.scope.replace(
+    /^(\| 1 \|[^\n]+\|) \[ \] \|[^\n]+$/m,
+    "$1 [x] | 原始链接 https://example.invalid EVD-SCOPE-01 |"
+  );
+  smuggledEvidence.ledger = replaceStatus(smuggledEvidence.ledger, "Scope 检查", "1/15 Pass");
+  assert.throws(() => deriveProjectStatus(smuggledEvidence), /Scope #1.*可追溯/);
+});
+
+test("RACI 人员代号与签发证据不得夹带姓名或原始链接", async () => {
+  const namedRaci = fullyAdvance(await currentSources());
+  namedRaci.ledger = namedRaci.ledger.replace(
+    /^\| 项目负责人 \| ROLE-R01 /m,
+    "| 项目负责人 | 张三 ROLE-R01 "
+  );
+  assert.throws(() => deriveProjectStatus(namedRaci), /RACI 项目负责人 人员代号\s*格式无效/);
+
+  const linkedReviewer = fullyAdvance(await currentSources());
+  linkedReviewer.ledger = replaceSignRow(
+    linkedReviewer.ledger,
+    "业务审核人",
+    "ROLE-BUSINESS-APPROVER / https://example.invalid / EVD-SIGN-BUSINESS"
+  );
+  assert.throws(
+    () => deriveProjectStatus(linkedReviewer),
+    /业务审核人.*不得夹带姓名或链接/
+  );
 });
 
 test("A 费用路径未填写责任人、cap 与批准证据时不得显示费用可用", async () => {
@@ -317,6 +346,20 @@ test("A 费用路径拒绝伪金额与伪批准，合法 cap 必须月不高于�
   const fakeApproval = await prepareA();
   fakeApproval.cost = fakeApproval.cost.replace("ROLE-CAP-APPROVER / 2026-08-05 / 同意 / EVD-CAP-APPROVAL", "banana");
   assert.throws(() => deriveProjectStatus(fakeApproval), /批准人代号/);
+
+  const namedOwner = await prepareA();
+  namedOwner.cost = namedOwner.cost.replace(
+    "ROLE-BUDGET-OWNER / EVD-BUDGET",
+    "张三 ROLE-BUDGET-OWNER / EVD-BUDGET"
+  );
+  assert.throws(() => deriveProjectStatus(namedOwner), /预算 \/ 费用责任人.*不得夹带姓名或链接/);
+
+  const linkedStopAuthority = await prepareA();
+  linkedStopAuthority.cost = linkedStopAuthority.cost.replace(
+    "EVD-STOP-AUTH",
+    "https://example.invalid EVD-STOP-AUTH"
+  );
+  assert.throws(() => deriveProjectStatus(linkedStopAuthority), /超线停扩授权.*EVD/);
 });
 
 test("G0 必须由全部 15 项门禁和完整签发记录共同授权", async () => {
@@ -345,6 +388,14 @@ test("G0 必须由全部 15 项门禁和完整签发记录共同授权", async (
   const selfApproved = fullyAdvance(await currentSources());
   selfApproved.ledger = selfApproved.ledger.replace(/^\| 预算责任人 \| ROLE-R04 /m, "| 预算责任人 | ROLE-R01 ");
   assert.throws(() => deriveProjectStatus(selfApproved), /职责分离/);
+
+  const staleVersions = fullyAdvance(await currentSources());
+  staleVersions.ledger = replaceSignRow(
+    staleVersions.ledger,
+    "评审输入版本",
+    "章程 v1.0 / 台账 v1.0 / Scope v1.0 / 排期 v1.0"
+  );
+  assert.throws(() => deriveProjectStatus(staleVersions), /签发输入.*版本.*与当前真源/);
 });
 
 test("阶段与 G0 状态必须双向一致，Fail 也必须由明细驱动", async () => {

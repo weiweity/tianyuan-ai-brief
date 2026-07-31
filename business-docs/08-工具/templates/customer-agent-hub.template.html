@@ -1566,7 +1566,6 @@ __PRETEXT_VENDOR__
       `${data.status.feePath} · ${data.status.paidSpend}`;
 
     const statusItems = [
-      { value: data.status.direction, label: "工作方向" },
       { value: data.status.approval, label: "公司正式批准" },
       { value: data.status.problemFit, label: "问题适配" },
       {
@@ -1577,6 +1576,7 @@ __PRETEXT_VENDOR__
         value: `${data.status.scopePass} / ${data.status.scopeTotal}`,
         label: "Scope 检查",
       },
+      { value: data.status.resourceBaseline, label: "资源基线" },
       { value: data.status.ddev, label: "Ddev" },
     ];
     document.querySelector("#status-strip").replaceChildren(

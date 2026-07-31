@@ -194,6 +194,7 @@ assertIncludes(sourceById.cost, "保持 0 支出", "cost");
 
 const projectStatus = deriveProjectStatus({
   charter: sourceById.charter,
+  schedule: sourceById.schedule,
   ledger: sourceById.ledger,
   scope: sourceById.scope,
   cost: sourceById.cost,

@@ -193,6 +193,7 @@ function derivePrdFacts(sourceById, projectStatus) {
     pilotTasksPerPersonWeek,
     scopePass: projectStatus.scopePass,
     scopeTotal: projectStatus.scopeTotal,
+    resourceBaseline: projectStatus.resourceBaseline,
     feePathCode: projectStatus.feePathCode,
     feePath: projectStatus.feePath,
     feeSelected: projectStatus.feeSelected,
@@ -309,6 +310,12 @@ function validatePrdContract(html, projectStatus, forceRankDate, facts) {
   );
   requireDataContract(
     contracts,
+    "resource-baseline",
+    { "data-value": facts.resourceBaseline },
+    [`资源基线 · ${facts.resourceBaseline}`]
+  );
+  requireDataContract(
+    contracts,
     "fee",
     {
       "data-path-code": facts.feePathCode,
@@ -332,6 +339,7 @@ async function buildManifest() {
   const sourceById = Object.fromEntries(sources.map((source) => [source.id, source.text]));
   const projectStatus = deriveProjectStatus({
     charter: sourceById.charter,
+    schedule: sourceById.schedule,
     ledger: sourceById.ledger,
     scope: sourceById.scope,
     cost: sourceById.cost,
@@ -360,6 +368,7 @@ async function buildManifest() {
         ddevEarliest: facts.ddevEarliest,
         ddevState: facts.ddevState,
       },
+      resourceBaseline: facts.resourceBaseline,
       acceptance: {
         top3OverallMinPercent: facts.overallTop3,
         top3StratumMinPercent: facts.stratumTop3,

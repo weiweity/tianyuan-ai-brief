@@ -8,12 +8,16 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createSafeResultsDir } from "../../web-decision-brief/tests/support/safe-results-dir.mjs";
-import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
+import {
+  resolveCustomerProjectQaPaths,
+  resolveCustomerProjectWorkspace,
+} from "./project_workspace.mjs";
 
 const execFileAsync = promisify(execFile);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
-const { projectDir } = await resolveCustomerProjectWorkspace(import.meta.url);
+const workspace = await resolveCustomerProjectWorkspace(import.meta.url);
+const { mode, projectDir } = workspace;
 const webRoot = path.join(repoRoot, "web-decision-brief");
 const requireFromWeb = createRequire(path.join(webRoot, "package.json"));
 const { chromium } = requireFromWeb("playwright");
@@ -23,10 +27,10 @@ const targetPath = path.join(projectDir, "08-客服Agent立项执行中心.html"
 const targetUrl = pathToFileURL(targetPath).href;
 const roundArg = process.argv.find((value) => value.startsWith("--round="));
 const round = roundArg ? roundArg.slice("--round=".length) : "manual";
-const resultsRoot = path.join(repoRoot, "output/customer-agent-hub-qa");
+const qaPaths = resolveCustomerProjectQaPaths(workspace, "hub");
 const resultsDir = await createSafeResultsDir({
-  trustedRootPath: repoRoot,
-  rootPath: resultsRoot,
+  trustedRootPath: qaPaths.trustedRootPath,
+  rootPath: qaPaths.rootPath,
   prefix: "round",
   label: round,
   requestedPath: process.env.HUB_QA_RESULTS_DIR,
@@ -95,18 +99,20 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   const payload = JSON.parse(payloadMatch[1]);
   assert.match(html, /GENERATED FILE — source: 00-06 Markdown; DO NOT EDIT/);
   assert.doesNotMatch(html, /__HUB_DATA__|__PRETEXT_VENDOR__|__RELEASE_ID__/);
-  assert.match(html, /现在不是开工，是把 G0 证据补齐/);
-  assert.equal(payload.status.externalPass, 0);
-  assert.equal(payload.status.externalTotal, 14);
-  assert.equal(payload.status.scopePass, 0);
-  assert.equal(payload.status.scopeTotal, 15);
-  assert.equal(payload.status.direction, "已记录");
-  assert.equal(payload.status.approval, "未完成");
-  assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
-  assert.match(payload.headline.summary, /工作方向已登记，不等于公司批准/);
-  assert.match(payload.headline.nextOutput, /5 份原始评分 · 每候选 ≥3 样本 · 异常分清单/);
   assert.equal(payload.governance.fee.filter((item) => item.current).length, 1);
-  assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
+  if (mode === "public-template") {
+    assert.match(html, /现在不是开工，是把 G0 证据补齐/);
+    assert.equal(payload.status.externalPass, 0);
+    assert.equal(payload.status.externalTotal, 14);
+    assert.equal(payload.status.scopePass, 0);
+    assert.equal(payload.status.scopeTotal, 15);
+    assert.equal(payload.status.direction, "已记录");
+    assert.equal(payload.status.approval, "未完成");
+    assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
+    assert.match(payload.headline.summary, /工作方向已登记，不等于公司批准/);
+    assert.match(payload.headline.nextOutput, /5 份原始评分 · 每候选 ≥3 样本 · 异常分清单/);
+    assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
+  }
   assert.doesNotMatch(payload.meeting.director.join("\n"), /外包推进节奏/);
   assert.match(html, /Ddev/);
   const fileStat = await stat(targetPath);
@@ -198,6 +204,28 @@ try {
         `横向溢出 ${structure.scrollWidth - structure.clientWidth}px`
       );
       return `${structure.scrollWidth}/${structure.clientWidth}`;
+    });
+
+    await check(`${viewport.name} · 资源基线与动态真源一致`, async () => {
+      const statusStrip = await page.evaluate(() => {
+        const payload = JSON.parse(document.querySelector("#hub-data").textContent);
+        const items = [...document.querySelectorAll("#status-strip .status-item")].map((item) => ({
+          value: item.querySelector(".status-value")?.textContent?.trim() || "",
+          label: item.querySelector(".status-label")?.textContent?.trim() || "",
+        }));
+        return { expected: payload.status.resourceBaseline, items };
+      });
+      assert.equal(statusStrip.items.length, 6, "状态条应保持 6 格");
+      assert.deepEqual(
+        statusStrip.items.filter((item) => item.label === "资源基线"),
+        [{ value: statusStrip.expected, label: "资源基线" }]
+      );
+      assert.equal(
+        statusStrip.items.some((item) => item.label === "工作方向"),
+        false,
+        "状态条不应重复 hero 中的工作方向"
+      );
+      return `资源基线 · ${statusStrip.expected}`;
     });
 
     await check(`${viewport.name} · 控制台、请求与性能`, async () => {

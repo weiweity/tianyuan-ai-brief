@@ -3511,16 +3511,25 @@ body.ix-haptic-flash::after {
   #t7 .panel-body {
     display: grid;
     grid-template:
-      "timeline" auto
-      "path" auto
-      "pm" auto
+      "timeline" max-content
+      "path" max-content
+      "pm" max-content
       / minmax(0, 1fr);
-    align-content: center;
+    align-content: start;
     gap: 10px;
-    overflow: hidden;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   #t7 [data-type="gate-table"] {
+    height: auto;
+    min-height: max-content;
     overflow: visible;
+  }
+  #t7 [data-type="gate-table"] table {
+    display: block;
+    height: auto;
   }
   #t7 [data-type="gate-table"] thead {
     display: none;
@@ -3531,11 +3540,11 @@ body.ix-haptic-flash::after {
   }
   #t7 [data-block-id="t7.timeline"] tbody {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
   }
   #t7 [data-block-id="t7.path"] tbody {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(3, auto);
   }
   #t7 [data-type="gate-table"] tr {
     display: block;
