@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
+import { createServer } from "node:http";
 import { createRequire } from "node:module";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -24,6 +25,7 @@ const { chromium } = requireFromWeb("playwright");
 const axeSource = requireFromWeb("axe-core").source;
 
 const targetPath = path.join(projectDir, "08-客服Agent立项执行中心.html");
+const manifestPath = path.join(projectDir, "07-客服Agent立项PRD.sources.json");
 const targetUrl = pathToFileURL(targetPath).href;
 const roundArg = process.argv.find((value) => value.startsWith("--round="));
 const round = roundArg ? roundArg.slice("--round=".length) : "manual";
@@ -92,6 +94,7 @@ await check("生成物新鲜度 --check", async () => {
 
 await check("HTML 文件存在且为只读生成视图", async () => {
   const html = await readFile(targetPath, "utf8");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const payloadMatch = html.match(
     /<script id="hub-data" type="application\/json">([\s\S]*?)<\/script>/
   );
@@ -99,7 +102,79 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   const payload = JSON.parse(payloadMatch[1]);
   assert.match(html, /GENERATED FILE — source: 00-06 Markdown; DO NOT EDIT/);
   assert.doesNotMatch(html, /__HUB_DATA__|__PRETEXT_VENDOR__|__RELEASE_ID__/);
+  assert.match(html, /function renderMarkdownDocument\(/, "缺少真源结构化阅读器");
+  assert.match(
+    html,
+    /id="source-dialog-content"\s+role="document"\s+aria-label="原始真源结构化内容"/,
+    "真源阅读器缺少文档语义"
+  );
+  assert.doesNotMatch(html, /<pre\b[^>]*\bid="source-dialog-content"/i);
+  assert.doesNotMatch(html, /\.innerHTML\s*=/, "结构化阅读器不得写入 raw innerHTML");
+  assert.doesNotMatch(html, /sourceDialogContent\.textContent\s*=\s*source\.content/);
   assert.equal(payload.governance.fee.filter((item) => item.current).length, 1);
+  assert.equal(
+    payload.governance.fee.filter((item) => item.selected).length,
+    payload.status.feeSelected ? 1 : 0,
+    "正式费用选择与当前临时管控必须分开"
+  );
+  assert.equal(payload.governance.roles.length, 13);
+  assert.equal(payload.sources.length, 7);
+  assert.equal(payload.sources.every((source) => source.content.length > 0), true);
+  assert.equal(payload.sources.some((source) => "href" in source), false);
+  assert.deepEqual(
+    payload.sources.map(({ id, label, file, sha256: sourceSha }) => ({ id, label, file, sha256: sourceSha })),
+    manifest.sources,
+    "Hub 真源身份与 manifest 不一致"
+  );
+  assert.match(payload.metrics.find((item) => item.label === "Top3 命中")?.note || "", /分层 ≥50% 且至少命中 1 条/);
+  assert.equal(payload.metrics.find((item) => item.label === "内部真实试点")?.value, "3–5 人 × 2 周");
+  assert.ok(payload.portablePrd?.htmlBase64, "缺少便携 PRD");
+  const portablePrdHtml = Buffer.from(payload.portablePrd.htmlBase64, "base64").toString("utf8");
+  assert.equal(payload.portablePrd.sha256, sha256(portablePrdHtml));
+  const portableDataMatch = portablePrdHtml.match(
+    /<script\b[^>]*\bid=["']portable-project-data["'][^>]*>([\s\S]*?)<\/script>/i
+  );
+  assert.ok(portableDataMatch, "便携 PRD 缺少 portable-project-data");
+  assert.equal(JSON.parse(portableDataMatch[1]).hub, null, "Hub 内嵌 PRD 不得递归包含 Hub");
+  const contracts = manifest.contracts;
+  assert.equal(
+    payload.status.direction === "已记录"
+      ? `${payload.project.priority} · 工作方向已登记`
+      : `${payload.project.priority} · 工作方向${payload.status.direction}`,
+    contracts.statusAxes.direction
+  );
+  assert.equal(`公司批准 · ${payload.status.approval}`, contracts.statusAxes.approval);
+  assert.equal(`问题适配 · ${payload.status.problemFit}`, contracts.statusAxes["problem-fit"]);
+  assert.equal(`外部责任包 · ${payload.status.externalPass} / ${payload.status.externalTotal}`, contracts.statusAxes.external);
+  assert.equal(`Scope · ${payload.status.scopePass} / ${payload.status.scopeTotal}`, contracts.statusAxes.scope);
+  assert.equal(`资源基线 · ${payload.status.resourceBaseline}`, contracts.statusAxes.resource);
+  assert.equal(`Ddev · ${payload.status.ddev}`, contracts.statusAxes.ddev);
+  assert.equal(payload.project.d0, contracts.milestones.d0);
+  assert.equal(payload.project.g0Target, contracts.milestones.g0Date);
+  assert.equal(payload.status.g0, contracts.milestones.g0State);
+  assert.equal(payload.status.ddev, contracts.milestones.ddevState);
+  assert.equal(payload.status.resourceBaseline, contracts.resourceBaseline);
+  assert.equal(payload.status.scopePass, contracts.acceptance.scopePass);
+  assert.equal(payload.status.scopeTotal, contracts.acceptance.scopeTotal);
+  const metricByLabel = Object.fromEntries(payload.metrics.map((metric) => [metric.label, metric]));
+  assert.equal(Number(metricByLabel["Top3 命中"].value.match(/\d+/)[0]), contracts.acceptance.top3OverallMinPercent);
+  assert.match(metricByLabel["Top3 命中"].note, new RegExp(`分层 ≥${contracts.acceptance.top3StratumMinPercent}%`));
+  assert.match(metricByLabel["Top3 命中"].note, new RegExp(`至少命中 ${contracts.acceptance.top3StratumMinHits} 条`));
+  assert.equal(Number(metricByLabel["引用 / 版本正确"].value.match(/\d+/)[0]), contracts.acceptance.citationCorrectPercent);
+  assert.equal(Number(metricByLabel["错误直答"].value), contracts.acceptance.negativeMaxWrongAnswers);
+  assert.match(metricByLabel["错误直答"].note, new RegExp(`不少于 ${contracts.acceptance.negativeMinCases} 条`));
+  assert.equal(
+    metricByLabel["内部真实试点"].value,
+    `${contracts.acceptance.pilotMinPeople}–${contracts.acceptance.pilotMaxPeople} 人 × ${contracts.acceptance.pilotWeeks} 周`
+  );
+  assert.match(metricByLabel["内部真实试点"].note, new RegExp(`每人每周 ≥${contracts.acceptance.pilotTasksPerPersonWeek} 个`));
+  assert.equal(payload.governance.fee.find((item) => item.current)?.id, contracts.fee.pathCode);
+  assert.equal(payload.status.feeSelected, contracts.fee.selected);
+  if (contracts.fee.paidAuthorization === "0") {
+    assert.match(payload.status.paidSpend, /= 0/);
+  } else {
+    assert.equal(payload.status.paidSpend, "按已批准 cap 执行");
+  }
   if (mode === "public-template") {
     assert.match(html, /现在不是开工，是把 G0 证据补齐/);
     assert.equal(payload.status.externalPass, 0);
@@ -112,11 +187,15 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.match(payload.headline.summary, /工作方向已登记，不等于公司批准/);
     assert.match(payload.headline.nextOutput, /5 份原始评分 · 每候选 ≥3 样本 · 异常分清单/);
     assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
+    assert.equal(payload.governance.fee.find((item) => item.current)?.selected, false);
+    assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /临时管控（未签）/);
+    assert.equal(payload.governance.roles.filter((item) => item.needsNaming).length, 13);
+    assert.equal(payload.prelaunchChecklist.length, 8);
   }
   assert.doesNotMatch(payload.meeting.director.join("\n"), /外包推进节奏/);
   assert.match(html, /Ddev/);
   const fileStat = await stat(targetPath);
-  assert.ok(fileStat.size < 160_000, `HTML 体积 ${fileStat.size} bytes`);
+  assert.ok(fileStat.size < 1_000_000, `HTML 体积 ${fileStat.size} bytes`);
   return `${fileStat.size} bytes`;
 });
 
@@ -127,6 +206,35 @@ if (process.env.CHROME_PATH) {
   delete browserLaunchOptions.channel;
   browserLaunchOptions.executablePath = process.env.CHROME_PATH;
 }
+const servedFiles = new Set([
+  "07-客服Agent立项PRD.html",
+  "08-客服Agent立项执行中心.html",
+]);
+const staticServer = createServer(async (request, response) => {
+  try {
+    const file = decodeURIComponent(new URL(request.url, "http://127.0.0.1").pathname.slice(1));
+    if (!servedFiles.has(file)) {
+      response.writeHead(404).end("Not found");
+      return;
+    }
+    const body = await readFile(path.join(projectDir, file));
+    response.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    });
+    response.end(body);
+  } catch (error) {
+    response.writeHead(500).end(error instanceof Error ? error.message : String(error));
+  }
+});
+await new Promise((resolve, reject) => {
+  staticServer.once("error", reject);
+  staticServer.listen(0, "127.0.0.1", resolve);
+});
+const serverAddress = staticServer.address();
+assert.ok(serverAddress && typeof serverAddress !== "string");
+const httpBase = `http://127.0.0.1:${serverAddress.port}/`;
+const httpHubUrl = new URL(encodeURIComponent("08-客服Agent立项执行中心.html"), httpBase).href;
 const browser = await chromium.launch(browserLaunchOptions);
 
 try {
@@ -258,8 +366,32 @@ try {
       return `0 violations，${axeResult.passes.length} passes`;
     });
 
+    await check(`${viewport.name} · 7 个顶部导航逐项可达`, async () => {
+      const hrefs = await page.locator(".top-nav a").evaluateAll((items) =>
+        items.map((item) => item.getAttribute("href"))
+      );
+      assert.deepEqual(hrefs, [
+        "#overview",
+        "#now",
+        "#gates",
+        "#schedule",
+        "#acceptance",
+        "#meeting",
+        "#governance",
+      ]);
+      for (const href of hrefs) {
+        await page.locator(`.top-nav a[href="${href}"]`).click();
+        await page.waitForFunction((expected) => location.hash === expected, href);
+        assert.equal(await page.locator(href).count(), 1, `${href} 目标缺失`);
+        assert.equal(await page.locator(href).isVisible(), true, `${href} 目标不可见`);
+      }
+      await page.goto(targetUrl, { waitUntil: "load" });
+      return "7/7 hash 与目标";
+    });
+
     if (viewport.width <= 560) {
       await check(`${viewport.name} · 触控目标不小于 44px`, async () => {
+        await page.locator("#source-drawer").evaluate((item) => (item.open = true));
         const undersized = await page.locator("a, button, summary").evaluateAll((items) =>
           items
             .filter((item) => {
@@ -281,17 +413,87 @@ try {
             })
         );
         assert.deepEqual(undersized, [], `过小目标：${undersized.join("、")}`);
+        assert.equal(
+          await page.locator("#source-list code").first().evaluate((item) => parseFloat(getComputedStyle(item).fontSize)),
+          12,
+          "真源摘要最小字号应为 12px"
+        );
+        await page.locator("#source-drawer").evaluate((item) => (item.open = false));
         return "全部通过";
       });
 
+      await check(`${viewport.name} · 真源长表仅在弹窗内横向滚动`, async () => {
+        await page.locator("#source-drawer").evaluate((item) => (item.open = true));
+        await page.locator('button[data-source-id="cadence"]').click();
+        const closeButtonMetrics = await page.locator("#source-dialog-close").evaluate((item) => {
+          const range = document.createRange();
+          range.selectNodeContents(item);
+          const box = item.getBoundingClientRect();
+          return {
+            textLines: range.getClientRects().length,
+            width: box.width,
+            height: box.height,
+            whiteSpace: getComputedStyle(item).whiteSpace,
+          };
+        });
+        assert.equal(closeButtonMetrics.textLines, 1, `关闭按钮文案换行：${JSON.stringify(closeButtonMetrics)}`);
+        assert.ok(
+          closeButtonMetrics.width >= 56 && closeButtonMetrics.height >= 44,
+          `关闭按钮热区不足：${JSON.stringify(closeButtonMetrics)}`
+        );
+        assert.equal(closeButtonMetrics.whiteSpace, "nowrap");
+        const tableMetrics = await page.locator("#source-dialog .source-table-scroll").evaluateAll((items) =>
+          items.map((item) => ({
+            clientWidth: item.clientWidth,
+            scrollWidth: item.scrollWidth,
+            overflowX: getComputedStyle(item).overflowX,
+          }))
+        );
+        assert.ok(tableMetrics.length > 0, "启动会真源缺少结构化表格");
+        assert.equal(
+          tableMetrics.every((item) => item.overflowX === "auto"),
+          true,
+          `表格横向滚动样式异常：${JSON.stringify(tableMetrics)}`
+        );
+        const widestTableIndex = tableMetrics.reduce(
+          (bestIndex, item, itemIndex, items) =>
+            item.scrollWidth - item.clientWidth > items[bestIndex].scrollWidth - items[bestIndex].clientWidth
+              ? itemIndex
+              : bestIndex,
+          0
+        );
+        assert.ok(
+          tableMetrics[widestTableIndex].scrollWidth > tableMetrics[widestTableIndex].clientWidth,
+          `长表未形成独立横向滚动：${JSON.stringify(tableMetrics)}`
+        );
+        const scrolled = await page
+          .locator("#source-dialog .source-table-scroll")
+          .nth(widestTableIndex)
+          .evaluate((item) => {
+            item.scrollLeft = 40;
+            return item.scrollLeft;
+          });
+        assert.ok(scrolled > 0, "长表无法横向滚动");
+        const pageWidth = await page.evaluate(() => ({
+          scrollWidth: document.documentElement.scrollWidth,
+          clientWidth: document.documentElement.clientWidth,
+        }));
+        assert.ok(pageWidth.scrollWidth <= pageWidth.clientWidth + 1, `页面溢出：${JSON.stringify(pageWidth)}`);
+        await page.locator("#source-dialog-close").click();
+        await page.locator("#source-drawer").evaluate((item) => (item.open = false));
+        return `${tableMetrics.length} 张表，最大滚动 ${Math.round(
+          tableMetrics[widestTableIndex].scrollWidth - tableMetrics[widestTableIndex].clientWidth
+        )}px`;
+      });
+
       await check(`${viewport.name} · 返回 PRD 始终可见可点`, async () => {
-        const link = page.getByRole("link", { name: "返回 PRD" });
-        assert.equal(await link.isVisible(), true);
-        const box = await link.boundingBox();
+        const control = page.getByRole("button", { name: "返回 PRD" });
+        assert.equal(await control.isVisible(), true);
+        const box = await control.boundingBox();
         assert.ok(box && box.width >= 44 && box.height >= 44, `返回 PRD 热区：${JSON.stringify(box)}`);
-        const href = await link.getAttribute("href");
-        assert.ok(href);
-        await stat(fileURLToPath(new URL(href, targetUrl)));
+        const canonicalHref = await control.getAttribute("data-canonical-href");
+        assert.ok(canonicalHref);
+        await stat(fileURLToPath(new URL(canonicalHref, targetUrl)));
         return `${Math.round(box.width)}×${Math.round(box.height)}`;
       });
     }
@@ -325,35 +527,261 @@ try {
           const sourcePath = path.join(path.dirname(targetPath), source.file);
           const text = await readFile(sourcePath, "utf8");
           assert.equal(source.sha256, sha256(text), `${source.file} 哈希不一致`);
+          assert.equal(source.content, text, `${source.file} 内嵌内容不一致`);
         }
         return "7/7";
       });
 
-      await check("原始 Markdown 只在维护抽屉", async () => {
+      await check("7 份真源使用安全只读弹窗，不导航 Markdown", async () => {
         const markdownLinks = page.locator('a[href$=".md"]');
-        assert.equal(await markdownLinks.count(), 7);
-        assert.equal(
-          await markdownLinks.evaluateAll((items) =>
-            items.every((item) => item.closest("#source-drawer"))
-          ),
-          true
-        );
-        assert.equal(await markdownLinks.first().isVisible(), false);
+        const sourceButtons = page.locator("#source-list button[data-source-id]");
+        const payload = await page.locator("#hub-data").evaluate((item) => JSON.parse(item.textContent));
+        const structuredTotals = {
+          heading: 0,
+          paragraph: 0,
+          blockquote: 0,
+          unorderedList: 0,
+          orderedList: 0,
+          checkbox: 0,
+          table: 0,
+          codeBlock: 0,
+          horizontalRule: 0,
+          bold: 0,
+          inlineCode: 0,
+          linkLabel: 0,
+        };
+        assert.equal(await markdownLinks.count(), 0);
+        assert.equal(await sourceButtons.count(), 7);
+        assert.equal(await sourceButtons.first().isVisible(), false);
         await page.locator("#source-drawer summary").click();
-        assert.equal(await markdownLinks.first().isVisible(), true);
-        for (const href of await markdownLinks.evaluateAll((items) =>
-          items.map((item) => item.getAttribute("href"))
-        )) {
-          await stat(fileURLToPath(new URL(href, targetUrl)));
+        await page.addScriptTag({ content: axeSource });
+        assert.equal(await sourceButtons.first().isVisible(), true);
+        const sourceButtonSizes = await sourceButtons.evaluateAll((items) =>
+          items.map((item) => {
+            const rect = item.getBoundingClientRect();
+            return { width: rect.width, height: rect.height };
+          })
+        );
+        assert.equal(
+          sourceButtonSizes.every((size) => size.width >= 44 && size.height >= 44),
+          true,
+          `真源按钮热区不足：${JSON.stringify(sourceButtonSizes)}`
+        );
+        assert.equal(
+          await page.locator("#source-list code").first().evaluate((item) => parseFloat(getComputedStyle(item).fontSize)),
+          12
+        );
+        for (const [index, source] of payload.sources.entries()) {
+          const trigger = sourceButtons.nth(index);
+          await trigger.click();
+          const sourceContent = page.locator("#source-dialog-content");
+          assert.equal(await page.locator("#source-dialog").isVisible(), true);
+          assert.equal(await page.locator("#source-dialog-title").innerText(), source.label);
+          assert.match(await page.locator("#source-dialog-meta").innerText(), new RegExp(source.sha256));
+          assert.equal(await page.locator("#source-dialog").getAttribute("aria-modal"), "true");
+          assert.equal(await page.locator("#source-dialog").getAttribute("aria-describedby"), "source-dialog-meta");
+          assert.equal(await sourceContent.getAttribute("role"), "document");
+          assert.notEqual(await sourceContent.textContent(), source.content, `${source.id} 仍显示原始 Markdown`);
+          const sourceTitle = source.content.match(/^#\s+(.+)$/m)?.[1];
+          assert.ok(sourceTitle, `${source.id} 缺少一级标题测试样本`);
+          assert.equal(
+            await sourceContent.locator('[data-source-level="1"]').first().innerText(),
+            sourceTitle,
+            `${source.id} 标题未结构化渲染`
+          );
+          const structure = await sourceContent.evaluate((root) => ({
+            heading: root.querySelectorAll("h3, h4, h5, h6").length,
+            paragraph: root.querySelectorAll("p").length,
+            blockquote: root.querySelectorAll("blockquote").length,
+            unorderedList: root.querySelectorAll("ul:not(.source-task-list)").length,
+            orderedList: root.querySelectorAll("ol").length,
+            checkbox: root.querySelectorAll('input[type="checkbox"]').length,
+            table: root.querySelectorAll("table.source-table").length,
+            codeBlock: root.querySelectorAll("pre.source-code-block > code").length,
+            horizontalRule: root.querySelectorAll("hr").length,
+            bold: root.querySelectorAll("strong").length,
+            inlineCode: root.querySelectorAll("code.source-inline-code").length,
+            linkLabel: root.querySelectorAll(".source-inline-link-label").length,
+          }));
+          Object.entries(structure).forEach(([name, count]) => {
+            structuredTotals[name] += count;
+          });
+          assert.ok(structure.heading > 0, `${source.id} 未渲染标题`);
+          assert.ok(structure.paragraph > 0, `${source.id} 未渲染段落`);
+          assert.ok(structure.table > 0, `${source.id} 未渲染表格`);
+          assert.equal(await sourceContent.locator("a[href], script").count(), 0);
+          const tableLabels = await sourceContent
+            .locator('.source-table-scroll[role="region"]')
+            .evaluateAll((items) => items.map((item) => item.getAttribute("aria-label")));
+          assert.deepEqual(
+            tableLabels,
+            tableLabels.map(
+              (_, tableIndex) =>
+                `原始文档数据表 ${tableIndex + 1}/${tableLabels.length}，可横向滚动查看`
+            ),
+            `${source.id} 表格地标名称不唯一`
+          );
+          const codeLabels = await sourceContent
+            .locator('.source-code-block[role="region"]')
+            .evaluateAll((items) => items.map((item) => item.getAttribute("aria-label")));
+          assert.deepEqual(
+            codeLabels,
+            codeLabels.map(
+              (_, codeIndex) => `原始文档代码块 ${codeIndex + 1}/${codeLabels.length}`
+            ),
+            `${source.id} 代码块地标名称不唯一`
+          );
+          const rawMarkdownMarkers = await sourceContent.evaluate((root) => {
+            const hits = [];
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            const blockPatterns = [
+              /^\s{0,3}(?:#{1,6}|>)\s/,
+              /^\s{0,3}(?:[-+*]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)/,
+              /^\s*(?:\|?\s*:?-{3,}:?\s*)+\|?\s*$/,
+            ];
+            const inlinePatterns = [
+              /\*\*[^*]+\*\*/,
+              /^\*[^*]+\*$/,
+              /!?\[[^\]]+\]\([^)]+\)/,
+              /\[(?: |x|X)\]/,
+            ];
+            while (walker.nextNode()) {
+              const node = walker.currentNode;
+              if (node.parentElement?.closest(".source-code-block, .source-inline-code")) continue;
+              const value = node.textContent || "";
+              const isRawBlockMarker =
+                Boolean(node.parentElement?.closest("p")) &&
+                blockPatterns.some((pattern) => pattern.test(value));
+              if (isRawBlockMarker || inlinePatterns.some((pattern) => pattern.test(value))) {
+                hits.push(value.trim().slice(0, 120));
+              }
+            }
+            return hits;
+          });
+          assert.deepEqual(rawMarkdownMarkers, [], `${source.id} 暴露 Markdown 标记`);
+          assert.equal(await page.locator("body").evaluate((item) => getComputedStyle(item).overflow), "hidden");
+          const axeResult = await page.evaluate(async () =>
+            window.axe.run(document, {
+              runOnly: {
+                type: "tag",
+                values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+              },
+            })
+          );
+          assert.deepEqual(
+            axeResult.violations.map((violation) => ({
+              id: violation.id,
+              impact: violation.impact,
+              nodes: violation.nodes.length,
+            })),
+            [],
+            `${source.id} 弹窗可访问性违规`
+          );
+          const landmarkAudit = await page.evaluate(async () =>
+            window.axe.run(document, {
+              runOnly: { type: "rule", values: ["landmark-unique"] },
+            })
+          );
+          assert.deepEqual(
+            landmarkAudit.violations.map((violation) => violation.id),
+            [],
+            `${source.id} 表格地标名称不唯一`
+          );
+          await page.keyboard.press("Tab");
+          assert.equal(
+            await page.evaluate(() => Boolean(document.activeElement?.closest("#source-dialog"))),
+            true,
+            `${source.id} Tab 焦点逃出弹窗`
+          );
+          await page.keyboard.press("Shift+Tab");
+          assert.equal(
+            await page.evaluate(() => Boolean(document.activeElement?.closest("#source-dialog"))),
+            true,
+            `${source.id} Shift+Tab 焦点逃出弹窗`
+          );
+          if (index === 0) await page.keyboard.press("Escape");
+          else await page.locator("#source-dialog-close").click();
+          assert.equal(await page.locator("#source-dialog").isVisible(), false);
+          assert.notEqual(await page.locator("body").evaluate((item) => getComputedStyle(item).overflow), "hidden");
+          assert.equal(
+            await page.evaluate(() => document.activeElement?.dataset?.sourceId || ""),
+            source.id,
+            `${source.id} 关闭后焦点未恢复`
+          );
         }
-        return "7 个链接，默认折叠";
+        Object.entries(structuredTotals).forEach(([name, count]) => {
+          assert.ok(count > 0, `7 份真源未覆盖结构化元素：${name}`);
+        });
+        return `7/7 结构化内容、无 Markdown/链接/脚本、axe、Esc、关闭与焦点恢复 · ${JSON.stringify(structuredTotals)}`;
       });
 
-      await check("返回 PRD 链路有效", async () => {
-        const href = await page.getByRole("link", { name: "返回 PRD" }).getAttribute("href");
-        assert.ok(href);
-        await stat(fileURLToPath(new URL(href, targetUrl)));
-        return href;
+      await check("孤立 file 返回 PRD 使用持久 query 路由", async () => {
+        try {
+          const isolatedHubPath = path.join(resultsDir, "isolated-customer-agent-hub.html");
+          await writeFile(isolatedHubPath, await readFile(targetPath, "utf8"), "utf8");
+          await page.goto(pathToFileURL(isolatedHubPath).href, { waitUntil: "load" });
+          const originalPathname = new URL(page.url()).pathname;
+          const control = page.locator("#return-to-prd");
+          assert.equal(await control.getAttribute("data-portable"), "true");
+          assert.equal(await control.getAttribute("data-canonical-href"), "./07-客服Agent立项PRD.html");
+          await control.click();
+          await page.waitForFunction(() => document.title.includes("PRD"));
+          assert.match(await page.title(), /客服 Agent.*PRD/);
+          assert.equal(new URL(page.url()).protocol, "file:");
+          assert.equal(new URL(page.url()).pathname, originalPathname);
+          assert.equal(new URL(page.url()).searchParams.get("portable"), "prd");
+          assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+          const portableData = await page.locator("#portable-project-data").evaluate((item) =>
+            JSON.parse(item.textContent)
+          );
+          assert.equal(portableData.hub, null);
+          assert.equal(portableData.sources.length, 7);
+          await page.reload({ waitUntil: "load" });
+          await page.waitForFunction(() => document.title.includes("PRD"));
+          assert.equal(new URL(page.url()).searchParams.get("portable"), "prd");
+          await page.goBack();
+          await page.waitForFunction(() =>
+            document.title.includes("执行中心") && !new URL(location.href).searchParams.has("portable")
+          );
+          assert.equal(new URL(page.url()).pathname, originalPathname);
+          await page.goForward();
+          await page.waitForFunction(() =>
+            document.title.includes("PRD") && new URL(location.href).searchParams.get("portable") === "prd"
+          );
+          await page.goBack();
+          await page.waitForFunction(() => document.title.includes("执行中心"));
+          await page.locator("#return-to-prd").click();
+          await page.waitForFunction(() => document.title.includes("PRD"));
+          assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+          await page.locator("#open-execution-center").click();
+          await page.waitForFunction(() =>
+            document.title.includes("执行中心") && !new URL(location.href).searchParams.has("portable")
+          );
+          assert.equal(new URL(page.url()).pathname, originalPathname);
+          assert.equal(new URL(page.url()).searchParams.has("portable"), false);
+          assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+          await page.reload({ waitUntil: "load" });
+          await page.waitForFunction(() => document.title.includes("执行中心"));
+          assert.equal(new URL(page.url()).pathname, originalPathname);
+          assert.equal(new URL(page.url()).searchParams.has("portable"), false);
+          return "click / reload / back / forward / reclick / PRD 回宿主 Hub / reload";
+        } finally {
+          await page.goto(targetUrl, { waitUntil: "load" });
+        }
+      });
+
+      await check("口径卡、费用语义、角色与现在做均对齐 PRD", async () => {
+        const payload = await page.locator("#hub-data").evaluate((item) => JSON.parse(item.textContent));
+        assert.equal(await page.locator("#prelaunch-list > li").count(), payload.prelaunchChecklist.length);
+        assert.match(await page.locator("#metric-grid").innerText(), /分层 ≥50% 且至少命中 1 条/);
+        assert.match(await page.locator("#metric-grid").innerText(), /3–5 人 × 2 周/);
+        const unnamedCount = payload.governance.roles.filter((item) => item.needsNaming).length;
+        assert.equal(await page.locator("#role-summary").innerText(), `${unnamedCount} 个角色待具名`);
+        const currentFee = page.locator(`[data-fee-id="${payload.governance.fee.find((item) => item.current).id}"]`);
+        assert.equal(await currentFee.getAttribute("data-current"), "true");
+        assert.equal(await currentFee.getAttribute("data-selected"), String(payload.status.feeSelected));
+        if (mode === "public-template") assert.match(await currentFee.innerText(), /临时管控（未签）/);
+        return `${payload.prelaunchChecklist.length} 项 · ${unnamedCount} 角色待具名 · 指标分层`;
       });
 
       await check("业务决策 / 一线运营候选角色筛选与深链", async () => {
@@ -365,14 +793,30 @@ try {
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
         assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), false);
         assert.match(page.url(), /role=director/);
+        await page.reload({ waitUntil: "load" });
+        assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
+        assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), false);
+        assert.equal(
+          await page.getByRole("button", { name: "业务决策候选" }).getAttribute("aria-pressed"),
+          "true"
+        );
         await page.getByRole("button", { name: "一线运营候选" }).click();
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), false);
         assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), true);
         assert.match(page.url(), /role=manager/);
+        await page.goBack();
+        await page.waitForFunction(() => new URL(location.href).searchParams.get("role") === "director");
+        assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
+        assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), false);
+        await page.goForward();
+        await page.waitForFunction(() => new URL(location.href).searchParams.get("role") === "manager");
+        assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), false);
+        assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), true);
         await page.getByRole("button", { name: "全部" }).click();
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
         assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), true);
-        return "all / director / manager";
+        assert.equal(new URL(page.url()).searchParams.has("role"), false);
+        return "reload / back / forward · all / director / manager";
       });
 
       await check("复制会前清单", async () => {
@@ -407,9 +851,15 @@ try {
         assert.equal(await page.evaluate(() => window.__hubPrintCalls), 1);
         await page.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
         assert.equal(await details.evaluateAll((items) => items.every((item) => item.open)), true);
+        await page.locator("[data-source-id]").first().click();
+        assert.equal(await page.locator("#source-dialog").isVisible(), true);
         await page.emulateMedia({ media: "print" });
         assert.equal(
           await page.locator(".site-header").evaluate((item) => getComputedStyle(item).display),
+          "none"
+        );
+        assert.equal(
+          await page.locator("#source-dialog").evaluate((item) => getComputedStyle(item).display),
           "none"
         );
         const pdfPath = path.join(resultsDir, "客服Agent立项执行中心-A4.pdf");
@@ -424,6 +874,7 @@ try {
         assert.ok(pdf.byteLength > 50_000);
         assert.ok(pageCount >= 3 && pageCount <= 20, `PDF 页数 ${pageCount}`);
         await page.emulateMedia({ media: "screen" });
+        await page.locator("#source-dialog").evaluate((item) => item.close());
         await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
         assert.equal(await details.evaluateAll((items) => items.every((item) => !item.open)), true);
         return `${pageCount} 页，${pdf.byteLength} bytes`;
@@ -437,6 +888,15 @@ try {
         return "焦点进入 main";
       });
     }
+
+    await check(`${viewport.name} · 全交互后仍无控制台与请求异常`, async () => {
+      assert.deepEqual(consoleErrors, []);
+      assert.deepEqual(pageErrors, []);
+      assert.deepEqual(failedRequests, []);
+      assert.deepEqual(externalRequests, []);
+      assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+      return "console 0 · pageerror 0 · requestfailed 0 · external 0";
+    });
 
     await context.close();
   }
@@ -486,8 +946,66 @@ try {
     await context.close();
     return "0 violations";
   });
+
+  await check("HTTP 返回 PRD 保持 canonical pathname 与浏览器历史", async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      locale: "zh-CN",
+    });
+    const page = await context.newPage();
+    const consoleErrors = [];
+    const pageErrors = [];
+    const failedRequests = [];
+    const externalRequests = [];
+    const expectedOrigin = new URL(httpHubUrl).origin;
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("requestfailed", (request) =>
+      failedRequests.push(`${request.url()} · ${request.failure()?.errorText || "unknown"}`)
+    );
+    page.on("request", (request) => {
+      const requestUrl = new URL(request.url());
+      if (
+        !["data:", "blob:", "file:"].includes(requestUrl.protocol) &&
+        requestUrl.origin !== expectedOrigin
+      ) {
+        externalRequests.push(request.url());
+      }
+    });
+    try {
+      await page.goto(httpHubUrl, { waitUntil: "load" });
+      const hubPathname = decodeURIComponent(new URL(page.url()).pathname);
+      assert.match(hubPathname, /08-客服Agent立项执行中心\.html$/);
+      await page.locator("#return-to-prd").click();
+      await page.waitForURL((url) => decodeURIComponent(url.pathname).endsWith("07-客服Agent立项PRD.html"));
+      assert.equal(new URL(page.url()).searchParams.has("portable"), false);
+      assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+      await page.reload({ waitUntil: "load" });
+      assert.match(decodeURIComponent(new URL(page.url()).pathname), /07-客服Agent立项PRD\.html$/);
+      await page.goBack({ waitUntil: "load" });
+      assert.match(decodeURIComponent(new URL(page.url()).pathname), /08-客服Agent立项执行中心\.html$/);
+      await page.locator("#return-to-prd").click();
+      await page.waitForURL((url) => decodeURIComponent(url.pathname).endsWith("07-客服Agent立项PRD.html"));
+      await page.goBack({ waitUntil: "load" });
+      await page.goForward({ waitUntil: "load" });
+      assert.match(decodeURIComponent(new URL(page.url()).pathname), /07-客服Agent立项PRD\.html$/);
+      assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
+      assert.deepEqual(consoleErrors, []);
+      assert.deepEqual(pageErrors, []);
+      assert.deepEqual(failedRequests, []);
+      assert.deepEqual(externalRequests, []);
+      return "08 → 07 · reload / back / forward / reclick · errors 0";
+    } finally {
+      await context.close();
+    }
+  });
 } finally {
   await browser.close();
+  await new Promise((resolve, reject) =>
+    staticServer.close((error) => (error ? reject(error) : resolve()))
+  );
 }
 
 results.finishedAt = new Date().toISOString();

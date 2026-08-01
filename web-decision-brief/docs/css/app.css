@@ -198,7 +198,11 @@ body.is-editing .logo-edit-hint {
   display: grid;
 }
 .top-mid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
+  min-height: 64px;
 }
 .top-mid h1 {
   overflow: hidden;
@@ -352,7 +356,7 @@ html:not(.author-mode) .toolbar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
+  min-height: var(--touch);
   padding: 0 11px;
   border: 1px solid var(--brand-300);
   border-radius: 999px;
@@ -431,6 +435,7 @@ body.is-editing .edit-banner {
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  min-height: 60px;
   padding: 7px 10px 9px;
 }
 .tabs {
@@ -528,9 +533,9 @@ body.is-editing .edit-banner {
 }
 .pager-dots button {
   position: relative;
-  width: 28px;
+  width: var(--touch);
   height: var(--touch);
-  min-width: 28px;
+  min-width: var(--touch);
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -705,29 +710,47 @@ body.is-editing .edit-banner {
   box-shadow: var(--shadow-1);
   font-size: 35px;
   cursor: pointer;
-  opacity: 0;
+  opacity: 0.46;
   transform: translateY(-50%);
-  transition: opacity var(--fast) ease, transform var(--fast) ease;
+  transition:
+    opacity var(--fast) ease,
+    transform var(--fast) ease,
+    border-color var(--fast) ease,
+    box-shadow var(--fast) ease;
 }
 .stage-wrap:hover .edge-nav,
 .edge-nav:focus-visible {
   opacity: 1;
 }
-.edge-nav:hover {
+.edge-nav:hover,
+.edge-nav:focus-visible {
+  border-color: var(--brand-500);
+  box-shadow: var(--shadow-2);
   transform: translateY(-50%) scale(1.04);
 }
 .edge-nav:disabled {
   display: none;
 }
 .edge-nav.prev {
-  left: 8px;
+  left: 0;
 }
 .edge-nav.next {
-  right: 8px;
+  right: 0;
 }
 body.is-check-page .edge-nav,
 .stage-wrap:has(#t2 .panel-body.is-detail-open) .edge-nav {
   display: none;
+}
+
+/* 桌面端为常显翻页按钮保留独立边槽，热区不覆盖汇报内容。 */
+@media (min-width: 1025px) {
+  .stage {
+    margin-inline: var(--touch);
+  }
+  body.is-check-page .stage,
+  .stage-wrap:has(#t2 .panel-body.is-detail-open) .stage {
+    margin-inline: 0;
+  }
 }
 
 /* Base components */
@@ -1968,7 +1991,7 @@ body.is-editing .mermaid-src {
   grid-template-rows: repeat(3, minmax(0, 1fr));
 }
 #t5 [data-type="kv-table"] tbody {
-  grid-template-rows: repeat(5, minmax(0, 1fr));
+  grid-template-rows: 1.08fr 1.08fr 0.68fr 1.08fr 1.08fr;
 }
 #t4 [data-type="gate-table"] tr,
 #t5 [data-type="kv-table"] tr {
@@ -2023,6 +2046,11 @@ body.is-editing .mermaid-src {
   #t5 [data-type="kv-table"] td {
     padding: 6px 8px;
     line-height: 1.32;
+  }
+  #t5 [data-type="kv-table"] td {
+    padding-block: 4px;
+    font-size: var(--fs-sm);
+    line-height: 1.22;
   }
 }
 #t5 [data-type="kv-table"] .kv-cell {
@@ -2571,6 +2599,9 @@ body.ix-haptic-flash::after {
     font-size: var(--fs-lg);
     letter-spacing: 0;
   }
+  .top-mid {
+    min-height: 40px;
+  }
   .top-mid .sub,
   .top-right {
     display: none !important;
@@ -2622,6 +2653,7 @@ body.ix-haptic-flash::after {
     font-size: 15px;
   }
   .tabs-row {
+    min-height: 54px;
     padding: 3px 4px 5px;
   }
   .stage-meta .footer-left,
@@ -3934,7 +3966,7 @@ body.ix-haptic-flash::after {
     padding-block: 3px;
   }
   .tab {
-    min-height: 38px;
+    min-height: var(--touch);
   }
   .panel {
     padding: 7px;
@@ -3989,6 +4021,7 @@ body.ix-haptic-flash::after {
   .toolbar,
   .skip-link,
   .edge-nav,
+  .archive-guard-links,
   .stage-meta,
   .tabs-row,
   .progress-bar,
@@ -4012,7 +4045,11 @@ body.ix-haptic-flash::after {
   .top {
     min-height: 48px;
   }
+  .top-mid {
+    min-height: 0;
+  }
   .stage {
+    margin-inline: 0;
     overflow: visible;
   }
   .panel {

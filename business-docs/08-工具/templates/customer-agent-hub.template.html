@@ -85,6 +85,10 @@
       cursor: progress;
     }
 
+    body.source-dialog-open {
+      overflow: hidden;
+    }
+
     button,
     a,
     summary {
@@ -854,6 +858,10 @@
       box-shadow: inset 3px 0 0 var(--brand-500);
     }
 
+    .governance-card.is-selected {
+      background: var(--brand-50);
+    }
+
     .governance-card strong {
       display: block;
       margin-bottom: 5px;
@@ -910,9 +918,281 @@
       border-bottom: 1px solid var(--line);
     }
 
+    .source-button {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-width: var(--touch);
+      min-height: var(--touch);
+      padding: 8px 0;
+      color: var(--brand-600);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 720;
+      text-align: left;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: .18em;
+    }
+
+    .source-button:hover {
+      color: var(--brand-900);
+    }
+
     .source-list code {
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
+    }
+
+    .source-dialog {
+      width: min(calc(100% - 32px), 920px);
+      max-height: min(82vh, 860px);
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-lg);
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 24px 80px rgb(34 26 40 / 26%);
+    }
+
+    .source-dialog::backdrop {
+      background: rgb(34 26 40 / 58%);
+      backdrop-filter: blur(3px);
+    }
+
+    .source-dialog-layout {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      max-height: min(82vh, 860px);
+    }
+
+    .source-dialog-head {
+      display: flex;
+      gap: var(--space-4);
+      align-items: start;
+      justify-content: space-between;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .source-dialog-head h2 {
+      margin-bottom: 4px;
+      font-size: clamp(22px, 3vw, 30px);
+    }
+
+    #source-dialog-close {
+      flex: 0 0 auto;
+      min-width: 56px;
+      white-space: nowrap;
+    }
+
+    .source-dialog-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .source-dialog-content {
+      min-height: 180px;
+      margin: 0;
+      padding: 22px;
+      overflow: auto;
+      color: var(--ink);
+      background: var(--surface-soft);
+      font-size: 14px;
+      line-height: 1.72;
+      overflow-wrap: break-word;
+    }
+
+    .source-dialog-content > :first-child,
+    .source-dialog-content > :first-child > :first-child {
+      margin-top: 0;
+    }
+
+    .source-dialog-content > :last-child,
+    .source-dialog-content > :last-child > :last-child {
+      margin-bottom: 0;
+    }
+
+    .source-dialog-content h3,
+    .source-dialog-content h4,
+    .source-dialog-content h5,
+    .source-dialog-content h6 {
+      margin: 1.75em 0 .65em;
+      color: var(--ink);
+      line-height: 1.28;
+      text-wrap: balance;
+    }
+
+    .source-dialog-content h3 {
+      font-size: clamp(20px, 2.8vw, 26px);
+    }
+
+    .source-dialog-content h4 {
+      font-size: 18px;
+    }
+
+    .source-dialog-content h5,
+    .source-dialog-content h6 {
+      font-size: 15px;
+    }
+
+    .source-dialog-content p,
+    .source-dialog-content ul,
+    .source-dialog-content ol,
+    .source-dialog-content blockquote,
+    .source-table-scroll,
+    .source-code-block {
+      margin: 0 0 1em;
+    }
+
+    .source-dialog-content ul,
+    .source-dialog-content ol {
+      padding-left: 1.45em;
+    }
+
+    .source-dialog-content li + li {
+      margin-top: .35em;
+    }
+
+    .source-dialog-content blockquote {
+      padding: 12px 16px;
+      border-left: 3px solid var(--brand-300);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: var(--muted);
+      background: var(--brand-50);
+      background: color-mix(in srgb, var(--brand-50) 68%, var(--surface));
+    }
+
+    .source-dialog-content blockquote p {
+      margin: 0;
+    }
+
+    .source-dialog-content blockquote p + p {
+      margin-top: .35em;
+    }
+
+    .source-dialog-content hr {
+      margin: 1.7em 0;
+      border: 0;
+      border-top: 1px solid var(--line-strong);
+    }
+
+    .source-inline-code,
+    .source-code-block {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .source-inline-code {
+      padding: .12em .38em;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--brand-700);
+      background: var(--surface);
+      font-size: .9em;
+      overflow-wrap: anywhere;
+    }
+
+    .source-inline-link-label {
+      color: var(--brand-700);
+      font-weight: 650;
+      text-decoration: underline dotted;
+      text-decoration-thickness: 1px;
+      text-underline-offset: .18em;
+    }
+
+    .source-task-list {
+      padding-left: 0 !important;
+      list-style: none;
+    }
+
+    .source-task-list label {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .source-task-checkbox,
+    .source-inline-checkbox {
+      width: 16px;
+      height: 16px;
+      margin: .25em 0 0;
+      accent-color: var(--brand-600);
+    }
+
+    .source-inline-checkbox {
+      display: inline-block;
+      margin: 0 .3em;
+      vertical-align: -.15em;
+    }
+
+    .source-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      overscroll-behavior-inline: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .source-table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .source-table th,
+    .source-table td {
+      min-width: 112px;
+      max-width: 420px;
+      padding: 10px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: break-word;
+    }
+
+    .source-table th:last-child,
+    .source-table td:last-child {
+      border-right: 0;
+    }
+
+    .source-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .source-table th {
+      color: var(--ink);
+      background: var(--brand-50);
+      font-weight: 750;
+    }
+
+    .source-table .is-center {
+      text-align: center;
+    }
+
+    .source-table .is-right {
+      text-align: right;
+    }
+
+    .source-code-block {
+      max-width: 100%;
+      padding: 15px 16px;
+      overflow: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 12px;
+      line-height: 1.65;
+      tab-size: 2;
+      white-space: pre;
     }
 
     .site-footer {
@@ -1158,6 +1438,20 @@
         grid-template-columns: 1fr;
         gap: 0;
       }
+
+      .source-dialog {
+        width: calc(100% - 20px);
+        max-height: 90vh;
+      }
+
+      .source-dialog-layout {
+        max-height: 90vh;
+      }
+
+      .source-dialog-head,
+      .source-dialog-content {
+        padding: 16px;
+      }
     }
 
     @media (prefers-color-scheme: dark) {
@@ -1239,7 +1533,8 @@
       .skip-link,
       .site-header,
       .copy-row,
-      .role-controls {
+      .role-controls,
+      .source-dialog {
         display: none !important;
       }
 
@@ -1273,10 +1568,9 @@
         display: block !important;
       }
 
-      .source-drawer a::after {
-        color: var(--muted);
-        font-size: 8pt;
-        content: " (" attr(href) ")";
+      .source-button {
+        color: var(--ink);
+        text-decoration: none;
       }
     }
   </style>
@@ -1302,7 +1596,7 @@
       </nav>
 
       <div class="header-actions">
-        <a class="quiet-link" href="./07-客服Agent立项PRD.html">返回 PRD</a>
+        <button class="quiet-link" id="return-to-prd" type="button" data-canonical-href="./07-客服Agent立项PRD.html">返回 PRD</button>
         <button class="button" id="print-button" type="button">打印会议包</button>
       </div>
     </div>
@@ -1510,12 +1804,25 @@
     </section>
   </main>
 
+  <dialog class="source-dialog" id="source-dialog" aria-labelledby="source-dialog-title" aria-describedby="source-dialog-meta" aria-modal="true">
+    <div class="source-dialog-layout">
+      <header class="source-dialog-head">
+        <div>
+          <h2 id="source-dialog-title">原始真源</h2>
+          <p class="source-dialog-meta" id="source-dialog-meta"></p>
+        </div>
+        <button class="button" id="source-dialog-close" type="button">关闭</button>
+      </header>
+      <div class="source-dialog-content" id="source-dialog-content" role="document" aria-label="原始真源结构化内容" tabindex="0"></div>
+    </div>
+  </dialog>
+
   <footer class="site-footer">
     <p><strong>生命周期：</strong><span id="lifecycle"></span></p>
     <p>Release <code>__RELEASE_ID__</code> · 来源日期 <span id="source-date"></span> · 页面只读</p>
   </footer>
 
-  <noscript>此执行中心需要浏览器启用 JavaScript；原始真源仍保存在同目录 00–06 Markdown。</noscript>
+  <noscript>此执行中心需要浏览器启用 JavaScript，才能查看内嵌的只读真源与便携 PRD。</noscript>
 
   <script id="hub-data" type="application/json">__HUB_DATA__</script>
 
@@ -1525,6 +1832,59 @@ __PRETEXT_VENDOR__
 
   <script type="module">
     const data = JSON.parse(document.querySelector("#hub-data").textContent);
+
+    const returnToPrd = document.querySelector("#return-to-prd");
+    const initialPortableSurface = new URL(location.href).searchParams.get("portable");
+    const canRenderPortablePrd = location.protocol === "file:" && Boolean(data.portablePrd?.htmlBase64);
+
+    function decodePortableHtml(encoded) {
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      return new TextDecoder().decode(bytes);
+    }
+
+    function renderPortablePrd({ push = false } = {}) {
+      if (!canRenderPortablePrd) return false;
+      if (push) {
+        const route = new URL(location.href);
+        route.searchParams.set("portable", "prd");
+        route.searchParams.delete("role");
+        route.hash = "";
+        history.pushState({ portable: "prd" }, "", route);
+      }
+      const html = decodePortableHtml(data.portablePrd.htmlBase64);
+      document.open();
+      document.write(html);
+      document.close();
+      return true;
+    }
+
+    addEventListener("popstate", () => {
+      const nextSurface = new URL(location.href).searchParams.get("portable");
+      if (nextSurface !== initialPortableSurface) location.reload();
+    });
+
+    const restoringPortablePrd = canRenderPortablePrd && initialPortableSurface === "prd";
+    if (restoringPortablePrd) renderPortablePrd();
+
+    if (!restoringPortablePrd) {
+      if (canRenderPortablePrd) {
+        returnToPrd.dataset.portable = "true";
+        returnToPrd.setAttribute("title", "在当前文件打开内嵌便携 PRD");
+      }
+      returnToPrd.addEventListener("click", () => {
+        if (location.protocol === "file:" && initialPortableSurface === "hub") {
+          const hostPrd = new URL(location.href);
+          hostPrd.searchParams.delete("portable");
+          hostPrd.searchParams.delete("role");
+          hostPrd.hash = "";
+          location.assign(hostPrd.href);
+          return;
+        }
+        if (renderPortablePrd({ push: true })) return;
+        location.assign(new URL(returnToPrd.dataset.canonicalHref, location.href).href);
+      });
 
     function element(tag, options = {}, children = []) {
       const node = document.createElement(tag);
@@ -1542,6 +1902,329 @@ __PRETEXT_VENDOR__
       target.replaceChildren(
         ...values.map((value) => element("li", { className, text: value }))
       );
+    }
+
+    function readonlyCheckbox(checked, className, accessibleLabel = "") {
+      const attrs = {
+        type: "checkbox",
+        disabled: "",
+        tabindex: "-1",
+      };
+      if (accessibleLabel) attrs["aria-label"] = accessibleLabel;
+      const checkbox = element("input", {
+        className,
+        attrs,
+      });
+      checkbox.checked = checked;
+      return checkbox;
+    }
+
+    function appendInlineMarkdown(target, value, depth = 0) {
+      const text = String(value ?? "");
+      const tokenPattern = /(`+)([^`\n]+?)\1|\*\*([^*\n]+?)\*\*|!?\[([^\]\n]+?)\]\((?:\\.|[^)\n])+\)|\[( |x|X)\]|\*([^*\n]+?)\*/g;
+      let cursor = 0;
+      let match;
+
+      function appendPlain(plainText) {
+        if (plainText) target.append(element("span", { text: plainText }));
+      }
+
+      function appendNested(node, nestedText) {
+        if (depth >= 3) node.textContent = nestedText;
+        else appendInlineMarkdown(node, nestedText, depth + 1);
+        target.append(node);
+      }
+
+      while ((match = tokenPattern.exec(text)) !== null) {
+        appendPlain(text.slice(cursor, match.index));
+        if (match[2] !== undefined) {
+          target.append(element("code", { className: "source-inline-code", text: match[2] }));
+        } else if (match[3] !== undefined) {
+          appendNested(element("strong"), match[3]);
+        } else if (match[4] !== undefined) {
+          const label = match[4];
+          appendNested(
+            element("span", {
+              className: "source-inline-link-label",
+            }),
+            label
+          );
+        } else if (match[5] !== undefined) {
+          const checked = match[5].toLowerCase() === "x";
+          target.append(
+            readonlyCheckbox(checked, "source-inline-checkbox", checked ? "已勾选" : "未勾选")
+          );
+        } else if (match[6] !== undefined) {
+          appendNested(element("em"), match[6]);
+        }
+        cursor = tokenPattern.lastIndex;
+      }
+      appendPlain(text.slice(cursor));
+    }
+
+    function parseTableCells(line) {
+      let input = String(line).trim();
+      if (input.startsWith("|")) input = input.slice(1);
+      if (input.endsWith("|") && !input.endsWith("\\|")) input = input.slice(0, -1);
+      const cells = [];
+      let cell = "";
+      let inCode = false;
+      for (let index = 0; index < input.length; index += 1) {
+        const character = input[index];
+        if (character === "\\" && input[index + 1] === "|") {
+          cell += "|";
+          index += 1;
+        } else if (character === "`") {
+          inCode = !inCode;
+          cell += character;
+        } else if (character === "|" && !inCode) {
+          cells.push(cell.trim());
+          cell = "";
+        } else {
+          cell += character;
+        }
+      }
+      cells.push(cell.trim());
+      return cells;
+    }
+
+    function isTableDelimiter(line) {
+      const cells = parseTableCells(line);
+      return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+    }
+
+    function tableAlignment(delimiter) {
+      if (delimiter.startsWith(":") && delimiter.endsWith(":")) return "is-center";
+      if (delimiter.endsWith(":")) return "is-right";
+      return "";
+    }
+
+    function parseListItem(line) {
+      let match = line.match(/^ {0,3}[-*+]\s+\[([ xX])\]\s+(.*)$/);
+      if (match) {
+        return { kind: "task", checked: match[1].toLowerCase() === "x", text: match[2] };
+      }
+      match = line.match(/^ {0,3}[-*+]\s+(.*)$/);
+      if (match) return { kind: "unordered", text: match[1] };
+      match = line.match(/^ {0,3}(\d+)[.)]\s+(.*)$/);
+      if (match) return { kind: "ordered", start: Number(match[1]), text: match[2] };
+      return null;
+    }
+
+    function isHorizontalRule(line) {
+      return /^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/.test(line);
+    }
+
+    function isMarkdownBlockStart(lines, index) {
+      const line = lines[index] || "";
+      return (
+        /^ {0,3}(?:#{1,6})\s+/.test(line) ||
+        /^ {0,3}(?:`{3,}|~{3,})/.test(line) ||
+        /^ {0,3}>/.test(line) ||
+        Boolean(parseListItem(line)) ||
+        isHorizontalRule(line) ||
+        (line.includes("|") && isTableDelimiter(lines[index + 1] || ""))
+      );
+    }
+
+    function renderMarkdownDocument(target, markdown) {
+      const lines = String(markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
+      const output = document.createDocumentFragment();
+      let index = 0;
+
+      while (index < lines.length) {
+        const line = lines[index];
+        if (!line.trim()) {
+          index += 1;
+          continue;
+        }
+
+        const fence = line.match(/^ {0,3}(`{3,}|~{3,}).*$/);
+        if (fence) {
+          const fenceCharacter = fence[1][0];
+          const fenceLength = fence[1].length;
+          const codeLines = [];
+          index += 1;
+          while (index < lines.length) {
+            const closeFence = lines[index].match(/^ {0,3}(`{3,}|~{3,})\s*$/);
+            if (
+              closeFence &&
+              closeFence[1][0] === fenceCharacter &&
+              closeFence[1].length >= fenceLength
+            ) {
+              index += 1;
+              break;
+            }
+            codeLines.push(lines[index]);
+            index += 1;
+          }
+          output.append(
+            element(
+              "pre",
+              {
+                className: "source-code-block",
+                attrs: { role: "region", tabindex: "0", "aria-label": "代码块" },
+              },
+              element("code", { text: codeLines.join("\n") })
+            )
+          );
+          continue;
+        }
+
+        const heading = line.match(/^ {0,3}(#{1,6})\s+(.+?)\s*$/);
+        if (heading) {
+          const sourceLevel = heading[1].length;
+          const headingLevel = Math.min(6, sourceLevel + 2);
+          const node = element(`h${headingLevel}`, {
+            attrs: { "data-source-level": sourceLevel },
+          });
+          appendInlineMarkdown(node, heading[2].replace(/\s+#+\s*$/, ""));
+          output.append(node);
+          index += 1;
+          continue;
+        }
+
+        const setext = lines[index + 1]?.match(/^ {0,3}(=+|-+)\s*$/);
+        if (setext && !isMarkdownBlockStart(lines, index)) {
+          const sourceLevel = setext[1][0] === "=" ? 1 : 2;
+          const node = element(sourceLevel === 1 ? "h3" : "h4", {
+            attrs: { "data-source-level": sourceLevel },
+          });
+          appendInlineMarkdown(node, line.trim());
+          output.append(node);
+          index += 2;
+          continue;
+        }
+
+        if (isHorizontalRule(line)) {
+          output.append(element("hr", { attrs: { "aria-hidden": "true" } }));
+          index += 1;
+          continue;
+        }
+
+        if (/^ {0,3}>/.test(line)) {
+          const quote = element("blockquote");
+          while (index < lines.length && /^ {0,3}>/.test(lines[index])) {
+            const quoteText = lines[index].replace(/^ {0,3}>+\s?/, "").trim();
+            if (quoteText) {
+              const paragraph = element("p");
+              appendInlineMarkdown(paragraph, quoteText);
+              quote.append(paragraph);
+            }
+            index += 1;
+          }
+          output.append(quote);
+          continue;
+        }
+
+        if (line.includes("|") && isTableDelimiter(lines[index + 1] || "")) {
+          const headers = parseTableCells(line);
+          const delimiters = parseTableCells(lines[index + 1]);
+          const table = element("table", { className: "source-table" });
+          const headRow = element("tr");
+          headers.forEach((header, cellIndex) => {
+            const cell = element("th", {
+              className: tableAlignment(delimiters[cellIndex] || ""),
+              attrs: { scope: "col" },
+            });
+            appendInlineMarkdown(cell, header);
+            headRow.append(cell);
+          });
+          table.append(element("thead", {}, headRow));
+          const body = element("tbody");
+          index += 2;
+          while (index < lines.length && lines[index].trim() && lines[index].includes("|")) {
+            const row = element("tr");
+            const cells = parseTableCells(lines[index]);
+            headers.forEach((_, cellIndex) => {
+              const cell = element("td", {
+                className: tableAlignment(delimiters[cellIndex] || ""),
+              });
+              appendInlineMarkdown(cell, cells[cellIndex] || "");
+              row.append(cell);
+            });
+            body.append(row);
+            index += 1;
+          }
+          table.append(body);
+          output.append(
+            element(
+              "div",
+              {
+                className: "source-table-scroll",
+                attrs: {
+                  role: "region",
+                  tabindex: "0",
+                },
+              },
+              table
+            )
+          );
+          continue;
+        }
+
+        const firstListItem = parseListItem(line);
+        if (firstListItem) {
+          const listTag = firstListItem.kind === "ordered" ? "ol" : "ul";
+          const list = element(listTag, {
+            className: firstListItem.kind === "task" ? "source-task-list" : "",
+            attrs:
+              firstListItem.kind === "ordered" && firstListItem.start !== 1
+                ? { start: firstListItem.start }
+                : {},
+          });
+          while (index < lines.length) {
+            const item = parseListItem(lines[index]);
+            if (!item || item.kind !== firstListItem.kind) break;
+            const listItem = element("li");
+            if (item.kind === "task") {
+              const label = element("label");
+              label.append(readonlyCheckbox(item.checked, "source-task-checkbox"));
+              const labelText = element("span");
+              appendInlineMarkdown(labelText, item.text);
+              label.append(labelText);
+              listItem.append(label);
+            } else {
+              appendInlineMarkdown(listItem, item.text);
+            }
+            list.append(listItem);
+            index += 1;
+          }
+          output.append(list);
+          continue;
+        }
+
+        const paragraphLines = [];
+        while (
+          index < lines.length &&
+          lines[index].trim() &&
+          (paragraphLines.length === 0 || !isMarkdownBlockStart(lines, index)) &&
+          !(lines[index].includes("|") && isTableDelimiter(lines[index + 1] || ""))
+        ) {
+          paragraphLines.push(lines[index].trim());
+          index += 1;
+        }
+        const paragraph = element("p");
+        appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+        output.append(paragraph);
+      }
+
+      const tableRegions = [...output.querySelectorAll('.source-table-scroll[role="region"]')];
+      tableRegions.forEach((region, tableIndex) => {
+        region.setAttribute(
+          "aria-label",
+          `原始文档数据表 ${tableIndex + 1}/${tableRegions.length}，可横向滚动查看`
+        );
+      });
+      const codeRegions = [...output.querySelectorAll('.source-code-block[role="region"]')];
+      codeRegions.forEach((region, codeIndex) => {
+        region.setAttribute(
+          "aria-label",
+          `原始文档代码块 ${codeIndex + 1}/${codeRegions.length}`
+        );
+      });
+      target.replaceChildren(output);
+      target.scrollTop = 0;
     }
 
     document.querySelector("#project-meta").textContent =
@@ -1590,7 +2273,7 @@ __PRETEXT_VENDOR__
 
     appendTextList(
       document.querySelector("#prelaunch-list"),
-      data.prelaunchChecklist.slice(0, 6)
+      data.prelaunchChecklist
     );
     document.querySelector("#boundary-title").textContent = data.governance.boundaryTitle;
     document.querySelector("#allowed-title").textContent = data.governance.allowedTitle;
@@ -1758,14 +2441,26 @@ __PRETEXT_VENDOR__
         const url = new URL(location.href);
         if (role === "all") url.searchParams.delete("role");
         else url.searchParams.set("role", role);
-        history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        if (url.href !== location.href) {
+          const previousState =
+            history.state && typeof history.state === "object" ? history.state : {};
+          history.pushState(
+            { ...previousState, roleFilter: role },
+            "",
+            `${url.pathname}${url.search}${url.hash}`
+          );
+        }
       }
     }
     roleButtons.forEach((button) =>
       button.addEventListener("click", () => setRoleFilter(button.dataset.roleFilter))
     );
-    const requestedRole = new URL(location.href).searchParams.get("role");
-    setRoleFilter(["director", "manager"].includes(requestedRole) ? requestedRole : "all", false);
+    function roleFromUrl() {
+      const requestedRole = new URL(location.href).searchParams.get("role");
+      return ["director", "manager"].includes(requestedRole) ? requestedRole : "all";
+    }
+    setRoleFilter(roleFromUrl(), false);
+    addEventListener("popstate", () => setRoleFilter(roleFromUrl(), false));
 
     const copyText = [
       data.meeting.copyTitle,
@@ -1808,7 +2503,14 @@ __PRETEXT_VENDOR__
 
     document.querySelector("#fee-paths").replaceChildren(
       ...data.governance.fee.map((item) =>
-        element("article", { className: `governance-card${item.current ? " is-current" : ""}` }, [
+        element("article", {
+          className: `governance-card${item.current ? " is-current" : ""}${item.selected ? " is-selected" : ""}`,
+          attrs: {
+            "data-fee-id": item.id,
+            "data-current": String(item.current),
+            "data-selected": String(item.selected),
+          },
+        }, [
           element("strong", { text: `${item.id} · ${item.title}` }),
           element("p", { text: item.detail }),
         ])
@@ -1816,7 +2518,7 @@ __PRETEXT_VENDOR__
     );
 
     document.querySelector("#role-summary").textContent =
-      `${data.governance.roles.filter((item) => item.name === "待具名").length} 个角色待具名`;
+      `${data.governance.roles.filter((item) => item.needsNaming).length} 个角色待具名`;
     document.querySelector("#roles").replaceChildren(
       ...data.governance.roles.map((item) =>
         element("div", { className: "compact-row" }, [
@@ -1849,17 +2551,61 @@ __PRETEXT_VENDOR__
       )
     );
 
+    const sourceDialog = document.querySelector("#source-dialog");
+    const sourceDialogTitle = document.querySelector("#source-dialog-title");
+    const sourceDialogMeta = document.querySelector("#source-dialog-meta");
+    const sourceDialogContent = document.querySelector("#source-dialog-content");
+    const sourceDialogClose = document.querySelector("#source-dialog-close");
+    const sourceMap = new Map(data.sources.map((source) => [source.id, source]));
+    let sourceDialogTrigger = null;
+
+    function openSourceDialog(sourceId, trigger) {
+      const source = sourceMap.get(sourceId);
+      if (!source) return;
+      sourceDialogTrigger = trigger;
+      sourceDialogTitle.textContent = source.label;
+      sourceDialogMeta.textContent = `${source.file} · sha256 ${source.sha256}`;
+      renderMarkdownDocument(sourceDialogContent, source.content);
+      document.body.classList.add("source-dialog-open");
+      sourceDialog.showModal();
+      sourceDialogClose.focus();
+    }
+
+    function unlockSourceDialog() {
+      document.body.classList.remove("source-dialog-open");
+    }
+
+    sourceDialogClose.addEventListener("click", () => {
+      unlockSourceDialog();
+      sourceDialog.close("close-button");
+    });
+    sourceDialog.addEventListener("cancel", unlockSourceDialog);
+    sourceDialog.addEventListener("close", () => {
+      unlockSourceDialog();
+      const trigger = sourceDialogTrigger;
+      sourceDialogTrigger = null;
+      if (trigger?.isConnected) trigger.focus();
+    });
+
     document.querySelector("#source-list").replaceChildren(
       ...data.sources.map((source) =>
         element("li", {}, [
           element(
-            "a",
-            { text: source.label, attrs: { href: source.href } }
+            "button",
+            {
+              className: "source-button",
+              text: source.label,
+              attrs: { type: "button", "data-source-id": source.id },
+            }
           ),
           element("code", { text: `sha256 ${source.sha256.slice(0, 12)}` }),
         ])
       )
     );
+    document.querySelector("#source-list").addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-source-id]");
+      if (trigger) openSourceDialog(trigger.dataset.sourceId, trigger);
+    });
 
     const topNav = document.querySelector(".top-nav");
     const navLinks = [...topNav.querySelectorAll("a")];
@@ -1981,6 +2727,7 @@ __PRETEXT_VENDOR__
     }
 
     wirePretext();
+    }
   </script>
 </body>
 </html>

@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdtemp,
+  readFile,
+  rmdir,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -77,6 +87,10 @@ function assertNoHeadingSkip(levels) {
   }
 }
 
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 await check("PRD 真源清单与内容契约 --check", async () => {
   const { stdout, stderr } = await execFileAsync(
     process.execPath,
@@ -91,7 +105,10 @@ await check("PRD 真源清单与内容契约 --check", async () => {
 await check("HTML 文件存在且体积受控", async () => {
   const fileStat = await stat(targetPath);
   assert.ok(fileStat.isFile(), "PRD HTML 不存在");
-  assert.ok(fileStat.size < 150_000, `HTML 体积 ${fileStat.size} bytes 超过 150 KB`);
+  assert.ok(
+    fileStat.size < 2_000_000,
+    `HTML 体积 ${fileStat.size} bytes 超过 2 MB 单文件交付上限`
+  );
   return `${fileStat.size} bytes`;
 });
 
@@ -265,6 +282,28 @@ try {
         assert.equal(await page.evaluate(() => document.activeElement?.id), "map-open");
         return "入口可见 · Esc 关闭 · 焦点回到入口";
       });
+
+      if (viewport.name === "mobile-wide") {
+        await check(`${viewport.name} · 真源 HTML 表格限定在弹窗内滚动`, async () => {
+          await page.locator(".source-maintenance").evaluate((element) => (element.open = true));
+          const trigger = page.locator('button[data-source-id="charter"]');
+          await trigger.click();
+          const wrapper = page.locator("#source-dialog-content .source-table-wrap").first();
+          assert.equal(await wrapper.isVisible(), true);
+          const dimensions = await wrapper.evaluate((element) => ({
+            clientWidth: element.clientWidth,
+            scrollWidth: element.scrollWidth,
+            documentOverflow:
+              document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          }));
+          assert.ok(dimensions.scrollWidth > dimensions.clientWidth, JSON.stringify(dimensions));
+          assert.ok(dimensions.documentOverflow <= 1, JSON.stringify(dimensions));
+          await page.keyboard.press("Escape");
+          assert.equal(await page.evaluate(() => document.activeElement?.dataset.sourceId), "charter");
+          await page.locator(".source-maintenance").evaluate((element) => (element.open = false));
+          return `${dimensions.clientWidth}/${dimensions.scrollWidth}px`;
+        });
+      }
     }
 
     await check(`${viewport.name} · axe WCAG 2.1 A/AA`, async () => {
@@ -319,7 +358,7 @@ try {
     });
 
     if (viewport.name === "desktop") {
-      await check("业务真源与页内锚点全部有效", async () => {
+      await check("页内导航与交付目标全部有效", async () => {
         const links = await page.locator("a[href]").evaluateAll((anchors) =>
           anchors.map((anchor) => anchor.getAttribute("href"))
         );
@@ -339,20 +378,168 @@ try {
         return `${links.length} 个链接`;
       });
 
+      await check("顶部章节与 Hero 入口逐一真实点击", async () => {
+        const localLinks = page.locator('.top-nav a[href^="#"], .hero-actions a[href^="#"]');
+        const count = await localLinks.count();
+        assert.ok(count >= 9, `页内业务入口数量异常：${count}`);
+        for (let index = 0; index < count; index += 1) {
+          const link = localLinks.nth(index);
+          const href = await link.getAttribute("href");
+          await link.click();
+          await page.waitForFunction(
+            (expected) => location.hash === expected,
+            href
+          );
+          assert.equal(await page.locator(href).count(), 1, `目标不唯一：${href}`);
+          assert.equal(await page.locator(href).isVisible(), true, `目标不可见：${href}`);
+        }
+        return `${count}/${count}`;
+      });
+
+      await check("7 份真源均使用安全只读弹窗", async () => {
+        const payload = await page.locator("#portable-project-data").evaluate((element) =>
+          JSON.parse(element.textContent)
+        );
+        const sourceButtons = page.locator('button[data-source-id]');
+        assert.equal(await page.locator('a[href$=".md"]').count(), 0, "PRD 不得保留可绕过的 Markdown 跳转");
+        assert.equal(payload.sources.length, 7);
+        assert.equal(await sourceButtons.count(), 7);
+        await page.locator(".source-maintenance").evaluate((element) => (element.open = true));
+        try {
+          for (const [index, source] of payload.sources.entries()) {
+            const sourceText = await readFile(path.join(path.dirname(targetPath), source.file), "utf8");
+            assert.equal(source.content, sourceText, `${source.file} 内置内容不一致`);
+            assert.equal(source.sha256, sha256(sourceText), `${source.file} 哈希不一致`);
+            const trigger = sourceButtons.nth(index);
+            await trigger.click();
+            assert.equal(await page.locator("#source-dialog").isVisible(), true);
+            assert.equal(await page.locator("#source-dialog-title").innerText(), source.label);
+            assert.match(
+              await page.locator("#source-dialog-meta").innerText(),
+              new RegExp(source.sha256.slice(0, 12))
+            );
+            const renderedSource = page.locator("#source-dialog-content");
+            const sourceHeading = sourceText.match(/^#\s+(.+)$/m)?.[1];
+            assert.equal(await renderedSource.getAttribute("data-rendered-format"), "html");
+            assert.ok(sourceHeading, `${source.file} 缺少文档标题`);
+            assert.match(await renderedSource.innerText(), new RegExp(sourceHeading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+            assert.ok(await renderedSource.locator("h3").count(), `${source.file} 未渲染 HTML 标题`);
+            assert.ok(await renderedSource.locator("table").count(), `${source.file} 未渲染 HTML 表格`);
+            assert.equal(await renderedSource.locator("a[href], script, style").count(), 0);
+            const tableLabels = await renderedSource
+              .locator('.source-table-wrap[role="region"]')
+              .evaluateAll((items) => items.map((item) => item.getAttribute("aria-label")));
+            assert.deepEqual(
+              tableLabels,
+              tableLabels.map(
+                (_, tableIndex) => `真源数据表 ${tableIndex + 1}/${tableLabels.length}，可横向滚动`
+              ),
+              `${source.file} 表格地标名称不唯一`
+            );
+            const leakedMarkdown = await renderedSource.evaluate((element) => {
+              const leaks = [];
+              const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+              let current = walker.nextNode();
+              while (current) {
+                if (!current.parentElement?.closest("pre, code")) {
+                  for (const line of current.nodeValue.split(/\r?\n/)) {
+                    if (
+                      /^[ \t]*#{1,6}[ \t]+/.test(line) ||
+                      /^[ \t]*-{3,}[ \t]*$/.test(line) ||
+                      /^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)+\|?[ \t]*$/.test(line)
+                    ) {
+                      leaks.push(line);
+                    }
+                  }
+                }
+                current = walker.nextNode();
+              }
+              return leaks;
+            });
+            assert.deepEqual(leakedMarkdown, [], `${source.file} 泄露原始 Markdown 标记`);
+            if (index === 0) {
+              const dialogAxe = await page.evaluate(async () =>
+                window.axe.run(document, {
+                  runOnly: {
+                    type: "tag",
+                    values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+                  },
+                })
+              );
+              assert.deepEqual(
+                dialogAxe.violations.map((violation) => ({
+                  id: violation.id,
+                  impact: violation.impact,
+                  nodes: violation.nodes.length,
+                })),
+                [],
+                "真源弹窗打开态存在 WCAG A/AA 违规"
+              );
+              const landmarkAudit = await page.evaluate(async () =>
+                window.axe.run(document, {
+                  runOnly: { type: "rule", values: ["landmark-unique"] },
+                })
+              );
+              assert.deepEqual(
+                landmarkAudit.violations.map((violation) => violation.id),
+                [],
+                "真源表格地标名称不唯一"
+              );
+              await page.keyboard.press("Shift+Tab");
+              assert.equal(
+                await page.evaluate(() => document.querySelector("#source-dialog").contains(document.activeElement)),
+                true,
+                "Shift+Tab 后焦点逃出真源弹窗"
+              );
+              await page.keyboard.press("Tab");
+              assert.equal(await page.evaluate(() => document.activeElement?.id), "source-dialog-close");
+              await page.keyboard.press("Escape");
+            } else if (index === 1) {
+              await page.mouse.click(5, 5);
+            } else {
+              await page.locator("#source-dialog-close").click();
+            }
+            assert.equal(await page.locator("#source-dialog").isVisible(), false);
+            assert.equal(
+              await page.evaluate(() => document.activeElement?.dataset.sourceId),
+              source.id,
+              `${source.id} 关闭后焦点未恢复`
+            );
+          }
+        } finally {
+          await page.locator("#source-dialog").evaluate((element) => {
+            if (element.open) element.close();
+          });
+          await page.locator(".source-maintenance").evaluate((element) => (element.open = false));
+        }
+        return "7/7 安全 HTML 结构化阅读、哈希、axe、焦点与 Esc / 背景 / 按钮关闭";
+      });
+
       await check("资源情景切换与 URL 深链", async () => {
-        await page.getByRole("button", { name: "单人全栈 · 保守基线" }).click();
+        const soloButton = page.getByRole("button", { name: "单人全栈 · 保守基线" });
+        const teamButton = page.getByRole("button", { name: "跨职能小队 · 资源满足" });
+        await soloButton.click();
         assert.equal(
-          await page.getByRole("button", { name: "单人全栈 · 保守基线" }).getAttribute(
-            "aria-pressed"
-          ),
+          await soloButton.getAttribute("aria-pressed"),
           "true"
         );
         assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
         assert.match(page.url(), /resource=solo/);
-        await page.getByRole("button", { name: "跨职能小队 · 资源满足" }).click();
+        await page.reload({ waitUntil: "load" });
+        assert.equal(await soloButton.getAttribute("aria-pressed"), "true");
+        assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
+        await teamButton.click();
         assert.match(await page.locator("#scenario-output").innerText(), /09-11/);
         assert.match(page.url(), /resource=team/);
-        return "team / solo";
+        await page.goBack();
+        await page.waitForFunction(() => new URL(location.href).searchParams.get("resource") === "solo");
+        assert.equal(await soloButton.getAttribute("aria-pressed"), "true");
+        assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
+        await page.goForward();
+        await page.waitForFunction(() => new URL(location.href).searchParams.get("resource") === "team");
+        assert.equal(await teamButton.getAttribute("aria-pressed"), "true");
+        assert.match(await page.locator("#scenario-output").innerText(), /09-11/);
+        return "solo → reload → team → Back solo → Forward team";
       });
 
       await check("脑图弹窗、缩放、复位、焦点与 Esc", async () => {
@@ -459,8 +646,133 @@ try {
       });
     }
 
+    await check(`${viewport.name} · 全部交互结束后仍无运行时错误`, async () => {
+      assert.deepEqual(consoleErrors, [], `console error：${consoleErrors.join(" | ")}`);
+      assert.deepEqual(pageErrors, [], `page error：${pageErrors.join(" | ")}`);
+      assert.deepEqual(failedRequests, [], `失败请求：${failedRequests.join(" | ")}`);
+      assert.deepEqual(externalRequests, [], `外部请求：${externalRequests.join(" | ")}`);
+      return "0 console / page / request error，0 外部请求";
+    });
+
     await context.close();
   }
+
+  await check("单文件隔离交付·真源阅读与 PRD ↔ 执行中心闭环", async () => {
+    const portableDir = await mkdtemp(path.join(tmpdir(), "customer-agent-prd-portable-"));
+    const portablePath = path.join(portableDir, "客服Agent立项PRD-单文件.html");
+    const portableUrl = pathToFileURL(portablePath).href;
+    let context;
+    try {
+      await copyFile(targetPath, portablePath);
+      context = await browser.newContext({
+        viewport: { width: 1440, height: 900 },
+        colorScheme: "light",
+        reducedMotion: "no-preference",
+        locale: "zh-CN",
+      });
+      const page = await context.newPage();
+      const consoleErrors = [];
+      const pageErrors = [];
+      const failedRequests = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("requestfailed", (request) => {
+        failedRequests.push(`${request.url()} · ${request.failure()?.errorText || "unknown"}`);
+      });
+
+      await page.goto(portableUrl, { waitUntil: "load" });
+      assert.equal(await page.title(), "客服 Agent · 立项 PRD");
+      assert.equal(page.url(), portableUrl, "应先从仅有 PRD 的隔离目录打开");
+
+      await page.locator(".source-maintenance > summary").click();
+      const charterLink = page.locator('[data-source-id="charter"]');
+      await charterLink.focus();
+      await charterLink.click();
+      assert.equal(
+        await page.locator("#source-dialog").evaluate((element) => element.open),
+        true,
+        "PRD 内置真源未打开"
+      );
+      assert.match(
+        await page.locator("#source-dialog-content").innerText(),
+        /CS-AI-C11/,
+        "PRD 内置真源内容不完整"
+      );
+      await page.keyboard.press("Escape");
+      assert.equal(
+        await page.evaluate(() => document.activeElement?.dataset.sourceId),
+        "charter",
+        "PRD 真源弹窗关闭后焦点未恢复"
+      );
+
+      const executionCenterButton = page.locator("#open-execution-center");
+      assert.equal(await executionCenterButton.evaluate((element) => element.tagName), "BUTTON");
+      assert.equal(await executionCenterButton.getAttribute("href"), null);
+      await executionCenterButton.click();
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      assert.equal(new URL(page.url()).protocol, "file:");
+      assert.equal(fileURLToPath(new URL(page.url())), portablePath);
+      assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
+      assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
+      assert.doesNotMatch(
+        await page.locator("body").innerText(),
+        /ERR_FILE_NOT_FOUND|无法访问您的文件/,
+        "执行中心进入了浏览器错误页"
+      );
+
+      await page.reload({ waitUntil: "load" });
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
+      assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
+
+      await page.goBack({ waitUntil: "load" });
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项 PRD");
+      assert.equal(new URL(page.url()).searchParams.get("portable"), null);
+      await page.goForward({ waitUntil: "load" });
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
+
+      await page.locator("#source-drawer > summary").click();
+      await page.locator('button[data-source-id="charter"]').click();
+      assert.equal(
+        await page.locator("#source-dialog").evaluate((element) => element.open),
+        true,
+        "执行中心内置真源未打开"
+      );
+      assert.match(await page.locator("#source-dialog-content").innerText(), /CS-AI-C11/);
+      await page.locator("#source-dialog-close").click();
+
+      const returnToPrdButton = page.locator("#return-to-prd");
+      assert.equal(await returnToPrdButton.evaluate((element) => element.tagName), "BUTTON");
+      assert.equal(await returnToPrdButton.getAttribute("href"), null);
+      await returnToPrdButton.click();
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项 PRD");
+      assert.equal(new URL(page.url()).protocol, "file:");
+      assert.equal(fileURLToPath(new URL(page.url())), portablePath);
+      assert.equal(new URL(page.url()).searchParams.get("portable"), null);
+      assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
+
+      await page.locator("#open-execution-center").click();
+      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
+      assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
+
+      assert.deepEqual(consoleErrors, [], `console error：${consoleErrors.join(" | ")}`);
+      assert.deepEqual(pageErrors, [], `page error：${pageErrors.join(" | ")}`);
+      assert.deepEqual(failedRequests, [], `失败请求：${failedRequests.join(" | ")}`);
+      return "隔离 PRD → Hub → reload → Back / Forward → 真源 → PRD → Hub，0 错误页";
+    } finally {
+      if (context) await context.close();
+      try {
+        await unlink(portablePath);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+      await rmdir(portableDir);
+    }
+  });
 
   await check("暗色模式与减弱动画组合", async () => {
     const context = await browser.newContext({

@@ -22,7 +22,7 @@ import { createContentLoader } from "./modules/content-loader.js";
 import { createMermaidRuntime } from "./modules/mermaid-runtime.js";
 import { clearMeetingBlockState, createMeetingBlockPersister, mergeMeetingState } from "./modules/meeting-state.js";
 import { createTabHistory } from "./modules/tab-history.js";
-
+import { handleTablistKeydown } from "./modules/tab-keyboard.js";
 (function () {
   "use strict";
 
@@ -2058,7 +2058,6 @@ import { createTabHistory } from "./modules/tab-history.js";
       if (editing) $("#logo-file").click();
     });
   }
-
   // keyboard
   function wireKeys() {
     document.addEventListener("keydown", (e) => {
@@ -2070,6 +2069,7 @@ import { createTabHistory } from "./modules/tab-history.js";
         return;
       }
       const ids = content.tabs.map((t) => t.id);
+      if (handleTablistKeydown(e, ids, activate, document)) return;
       const cur = ids.indexOf(activeTab);
       if (e.key >= "1" && e.key <= "7") {
         const t = ids[Number(e.key) - 1];

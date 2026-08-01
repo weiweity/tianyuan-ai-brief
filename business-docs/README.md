@@ -121,8 +121,7 @@ README、周报、汇报 Web、PDF 和历史稿都不得自行维护当前项目
 从仓库根执行：
 
 ```bash
-node business-docs/08-工具/check_customer_agent_prd_sources.mjs --check
-node business-docs/08-工具/generate_customer_agent_hub.mjs --check
+node business-docs/08-工具/sync_customer_agent_surfaces.mjs --check
 cd web-decision-brief
 npm run test:business
 npm run test:all

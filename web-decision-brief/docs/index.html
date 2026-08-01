@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-release="shell-v3-173d3a0710dd">
+<html lang="zh-CN" data-release="shell-v3-3f5653da23f4">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -14,8 +14,8 @@
   <link rel="icon" href="./assets/favicon-32.png" type="image/png" sizes="32x32"/>
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" sizes="180x180"/>
   <!-- 壳：无业务文案。内容 data/content.json · 架构 ARCHITECTURE.md -->
-  <link rel="stylesheet" href="./css/app.css?v=shell-v3-173d3a0710dd"/>
-  <script defer src="./js/bootstrap.js?v=shell-v3-173d3a0710dd"></script>
+  <link rel="stylesheet" href="./css/app.css?v=shell-v3-3f5653da23f4"/>
+  <script defer src="./js/bootstrap.js?v=shell-v3-3f5653da23f4"></script>
 </head>
 <body>
   <a class="skip-link" href="#stage">跳到正文</a>
@@ -52,7 +52,7 @@
           </div>
         </div>
       </header>
-      <aside class="archive-guard" role="note" aria-label="历史快照，不是当前项目入口">
+      <aside class="archive-guard" aria-label="历史快照，不是当前项目入口">
         <div class="archive-guard-copy">
           <strong>历史快照 · 非当前 SSOT</strong>
           <span>2026-07-31 已收尾，仅供设计与交互参考</span>
@@ -67,16 +67,18 @@
         本地离线快照 · 可正常演示；要获取远端最新内容，请运行 npm run serve
       </div>
       <div class="edit-banner" id="edit-banner">编辑模式 · 改完点「保存并更新」→ 自动写回并刷新本页（客户打开的链接约 30 秒内同步）</div>
-      <div class="tabs-row">
+      <section class="tabs-row" aria-label="章节与页码导航">
         <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
-        <div class="pager-dots" id="pager-dots" aria-label="页码"></div>
-      </div>
+        <nav class="pager-dots" id="pager-dots" aria-label="页码"></nav>
+      </section>
     </div>
 
     <!-- 下框：内容舞台，flex 吃满剩余高度 -->
     <div class="stage-wrap">
-      <button type="button" class="edge-nav prev" id="nav-prev" aria-label="上一页">‹</button>
-      <button type="button" class="edge-nav next" id="nav-next" aria-label="下一页">›</button>
+      <nav class="edge-nav-group" aria-label="章节翻页">
+        <button type="button" class="edge-nav prev" id="nav-prev" aria-label="上一页">‹</button>
+        <button type="button" class="edge-nav next" id="nav-next" aria-label="下一页">›</button>
+      </nav>
       <main class="stage" id="stage" tabindex="0" aria-live="polite">
         <div class="loading-panel" id="boot-loading" aria-label="加载中">
           <div class="skel skel-line w40"></div>
@@ -86,13 +88,13 @@
           <div class="skel skel-line" style="flex:1;min-height:120px"></div>
         </div>
       </main>
-      <div class="stage-meta">
+      <section class="stage-meta" aria-label="翻页提示与页脚">
         <span class="swipe-hint" id="swipe-hint"><span class="nav-hint-desktop">点击页签或 ← → 翻页</span><span class="nav-hint-touch">左右滑翻页</span> · <strong id="page-label">1 / 7</strong></span>
         <footer class="footer">
           <div class="footer-left" id="footer-left"></div>
           <div class="hint footer-right" id="footer-right"></div>
         </footer>
-      </div>
+      </section>
     </div>
   </div>
 

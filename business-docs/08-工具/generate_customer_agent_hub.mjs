@@ -1,5 +1,6 @@
-import { createHash } from "node:crypto";
-import { lstat, mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
+import { lstat, mkdir, open, readFile, realpath, rename, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveProjectStatus, isChecked, latestSourceDate } from "./customer_project_status.mjs";
@@ -8,6 +9,7 @@ import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(scriptPath);
 const { projectDir } = await resolveCustomerProjectWorkspace(import.meta.url);
+const canonicalProjectDir = await realpath(projectDir);
 const prdPath = path.join(projectDir, "07-客服Agent立项PRD.html");
 const canonicalOutputPath = path.join(projectDir, "08-客服Agent立项执行中心.html");
 const templatePath = path.join(
@@ -20,6 +22,110 @@ const requestedOutput = outputArg
   : process.env.HUB_OUTPUT || canonicalOutputPath;
 const checkOnly = process.argv.includes("--check");
 
+function isWithin(parent, candidate) {
+  const relative = path.relative(parent, candidate);
+  return (
+    relative === "" ||
+    (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`))
+  );
+}
+
+async function readProjectInput(filePath, label) {
+  const fileStat = await lstat(filePath);
+  if (fileStat.isSymbolicLink()) throw new Error(`${label}文件不能是符号链接：${filePath}`);
+  if (!fileStat.isFile()) throw new Error(`${label}必须是普通文件：${filePath}`);
+  const canonicalFile = await realpath(filePath);
+  if (!isWithin(canonicalProjectDir, canonicalFile)) {
+    throw new Error(`${label}真实路径越出客服项目根目录：${canonicalFile}`);
+  }
+
+  const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+  let handle;
+  try {
+    handle = await open(filePath, flags);
+    const openedStat = await handle.stat();
+    if (!openedStat.isFile()) throw new Error(`${label}必须是普通文件：${filePath}`);
+    return await handle.readFile("utf8");
+  } catch (error) {
+    if (error?.code === "ELOOP") throw new Error(`${label}文件不能是符号链接：${filePath}`);
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function readCanonicalOutput(outputPath, { optional = false } = {}) {
+  let outputStat;
+  try {
+    outputStat = await lstat(outputPath);
+  } catch (error) {
+    if (optional && error?.code === "ENOENT") return { text: null, mode: 0o644 };
+    throw error;
+  }
+  if (outputStat.isSymbolicLink()) throw new Error("Hub 输出文件不能是符号链接");
+  if (!outputStat.isFile()) throw new Error(`Hub 输出必须是普通文件：${outputPath}`);
+  const canonicalOutput = await realpath(outputPath);
+  if (!isWithin(canonicalProjectDir, canonicalOutput)) {
+    throw new Error(`Hub 输出真实路径越出客服项目根目录：${canonicalOutput}`);
+  }
+
+  const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+  let handle;
+  try {
+    handle = await open(outputPath, flags);
+    const openedStat = await handle.stat();
+    if (!openedStat.isFile()) throw new Error(`Hub 输出必须是普通文件：${outputPath}`);
+    return {
+      text: await handle.readFile("utf8"),
+      mode: Number(openedStat.mode & 0o777),
+    };
+  } catch (error) {
+    if (error?.code === "ELOOP") throw new Error("Hub 输出文件不能是符号链接");
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function removeExactTemporary(filePath) {
+  if (!filePath) return;
+  try {
+    await unlink(filePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
+async function writeCanonicalOutputIfChanged(outputPath, generated) {
+  const before = await readCanonicalOutput(outputPath, { optional: true });
+  if (before.text === generated) return false;
+
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  const temporaryPath = path.join(
+    path.dirname(outputPath),
+    `.${path.basename(outputPath)}.update-${process.pid}-${randomUUID()}.tmp`
+  );
+  let handle;
+  try {
+    handle = await open(temporaryPath, "wx", before.mode || 0o644);
+    await handle.chmod(before.mode || 0o644);
+    await handle.writeFile(generated, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+
+    const current = await readCanonicalOutput(outputPath, { optional: true });
+    if (current.text !== before.text) {
+      throw new Error("Hub 输出在生成期间发生变化，已拒绝覆盖");
+    }
+    await rename(temporaryPath, outputPath);
+    return true;
+  } finally {
+    await handle?.close().catch(() => {});
+    await removeExactTemporary(temporaryPath).catch(() => {});
+  }
+}
+
 function resolveProjectHtmlOutput(value) {
   const candidate = path.resolve(value);
   if (candidate !== canonicalOutputPath) {
@@ -28,11 +134,47 @@ function resolveProjectHtmlOutput(value) {
   return candidate;
 }
 
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+async function loadPortablePrd() {
+  const prdHtml = await readProjectInput(prdPath, "PRD ");
+  const match = prdHtml.match(
+    /(<script\b[^>]*\bid=["']portable-project-data["'][^>]*>)([\s\S]*?)(<\/script>)/i
+  );
+  if (!match) {
+    throw new Error(`PRD 缺少 portable-project-data 单文件交付容器：${prdPath}`);
+  }
+
+  let portableData;
+  try {
+    portableData = JSON.parse(match[2].trim());
+  } catch (error) {
+    throw new Error(`PRD portable-project-data 不是有效 JSON：${error.message}`);
+  }
+  if (portableData?.schemaVersion !== 1 || !Array.isArray(portableData.sources)) {
+    throw new Error("PRD portable-project-data 契约无效");
+  }
+
+  const nonRecursiveData = { ...portableData, hub: null };
+  const portablePrdHtml = prdHtml.replace(
+    match[0],
+    `${match[1]}\n${safeJson(nonRecursiveData)}\n${match[3]}`
+  );
+  return {
+    file: path.basename(prdPath),
+    sha256: sha256(portablePrdHtml),
+    htmlBase64: Buffer.from(portablePrdHtml, "utf8").toString("base64"),
+    html: portablePrdHtml,
+  };
+}
+
 async function loadPretextVendor() {
   if (process.env.PRETEXT_VENDOR) {
     return (await readFile(path.resolve(process.env.PRETEXT_VENDOR), "utf8")).trim();
   }
-  const prdHtml = await readFile(prdPath, "utf8");
+  const prdHtml = await readProjectInput(prdPath, "PRD ");
   const match = [...prdHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].find(
     ([, attributes]) =>
       /\bid=["']pretext-source["']/i.test(attributes) &&
@@ -49,12 +191,6 @@ async function loadPretextVendor() {
 }
 
 const outputPath = resolveProjectHtmlOutput(requestedOutput);
-try {
-  const outputStat = await lstat(outputPath);
-  if (outputStat.isSymbolicLink()) throw new Error("Hub 输出文件不能是符号链接");
-} catch (error) {
-  if (error?.code !== "ENOENT") throw error;
-}
 
 const sourceDefinitions = [
   { id: "charter", file: "00-项目章程.md", label: "项目章程" },
@@ -162,7 +298,7 @@ function shortDate(value) {
 const sourceEntries = await Promise.all(
   sourceDefinitions.map(async (source) => {
     const sourcePath = path.join(projectDir, source.file);
-    const text = await readFile(sourcePath, "utf8");
+    const text = await readProjectInput(sourcePath, `真源 ${source.file} `);
     return {
       ...source,
       sourcePath,
@@ -174,9 +310,10 @@ const sourceEntries = await Promise.all(
 const sourceById = Object.fromEntries(
   sourceEntries.map((source) => [source.id, source.text])
 );
-const [template, pretextVendor, generatorSource, statusModuleSource] = await Promise.all([
+const [template, pretextVendor, portablePrd, generatorSource, statusModuleSource] = await Promise.all([
   readFile(templatePath, "utf8"),
   loadPretextVendor(),
+  loadPortablePrd(),
   readFile(scriptPath, "utf8"),
   readFile(path.join(scriptDir, "customer_project_status.mjs"), "utf8"),
 ]);
@@ -279,6 +416,9 @@ const roleRows = parseTable(
   getSection(sourceById.ledger, "## 5. RACI 具名区"),
   "RACI 具名区"
 );
+if (roleRows.length !== 13) {
+  throw new Error(`RACI 具名区应为 13 个角色，当前解析到 ${roleRows.length} 个`);
+}
 const functionRows = parseTable(
   getSection(sourceById.delivery, "## 3. 各职能交付物"),
   "各职能交付物"
@@ -318,11 +458,48 @@ const negativeTarget = requiredMatch(
   /负例错误直答 =\s*\*\*([^*]+)\*\*/,
   "负例门槛"
 );
-const pilotTarget = requiredMatch(
-  sourceById.scope,
-  /\*\*暂定门槛：\*\*\s*(≥\d+ 人 × 连续 \d+ 周)/,
-  "内部试点门槛"
+const scopePilotMatch = sourceById.scope.match(
+  /\*\*暂定门槛：\*\*\s*≥(\d+) 人 × 连续 (\d+) 周 × 每人每周 ≥(\d+) 个去重真实任务/
 );
+const charterPilotMatch = sourceById.charter.match(
+  /\|\s*真实采用\s*\|\s*(\d+)[～–-](\d+) 名内部坐席连续([一二两三四五六七八九十\d]+)周，每人每周 ≥(\d+) 个去重真实任务\s*\|/
+);
+const schedulePilotMatch = sourceById.schedule.match(
+  /正式内部试点\s*\|\s*(\d+)[～–-](\d+) 名坐席连续([一二两三四五六七八九十\d]+)周，每人每周 ≥(\d+) 个去重真实任务/
+);
+if (!scopePilotMatch || !charterPilotMatch || !schedulePilotMatch) {
+  throw new Error("无法从 Scope、章程与排期同时解析内部试点门槛");
+}
+const chineseNumber = { 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+const parseNaturalNumber = (value) => Number(value) || chineseNumber[value] || 0;
+const pilotThreshold = {
+  minimumSeats: Number(scopePilotMatch[1]),
+  weeks: Number(scopePilotMatch[2]),
+  weeklyTasks: Number(scopePilotMatch[3]),
+  lowerSeats: Number(charterPilotMatch[1]),
+  upperSeats: Number(charterPilotMatch[2]),
+};
+const charterWeeks = parseNaturalNumber(charterPilotMatch[3]);
+const charterWeeklyTasks = Number(charterPilotMatch[4]);
+const scheduleThreshold = {
+  lowerSeats: Number(schedulePilotMatch[1]),
+  upperSeats: Number(schedulePilotMatch[2]),
+  weeks: parseNaturalNumber(schedulePilotMatch[3]),
+  weeklyTasks: Number(schedulePilotMatch[4]),
+};
+if (
+  pilotThreshold.minimumSeats !== pilotThreshold.lowerSeats ||
+  pilotThreshold.weeks !== charterWeeks ||
+  pilotThreshold.weeklyTasks !== charterWeeklyTasks ||
+  scheduleThreshold.lowerSeats !== pilotThreshold.lowerSeats ||
+  scheduleThreshold.upperSeats !== pilotThreshold.upperSeats ||
+  scheduleThreshold.weeks !== pilotThreshold.weeks ||
+  scheduleThreshold.weeklyTasks !== pilotThreshold.weeklyTasks
+) {
+  throw new Error("内部试点门槛在 Scope、章程与排期之间发生漂移");
+}
+const pilotDisplay = `${pilotThreshold.lowerSeats}–${pilotThreshold.upperSeats} 人 × ${pilotThreshold.weeks} 周`;
+const pilotTarget = `≥${pilotThreshold.minimumSeats} 人 × 连续 ${pilotThreshold.weeks} 周`;
 const allEvidenceReady =
   projectStatus.externalPass === projectStatus.externalTotal &&
   projectStatus.scopePass === projectStatus.scopeTotal;
@@ -495,6 +672,7 @@ const payload = {
     resourceBaseline: projectStatus.resourceBaseline,
     health: projectStatus.health,
     feePath: projectStatus.feePath,
+    feeSelected: projectStatus.feeSelected,
     paidSpend: projectStatus.paidSpend,
   },
   headline: {
@@ -556,10 +734,10 @@ const payload = {
     out: outOfScope,
   },
   metrics: [
-    { value: `≥${top3Target}`, label: "Top3 命中", note: "20 条正例全量盲测" },
+    { value: `≥${top3Target}`, label: "Top3 命中", note: "20 条正例；分层 ≥50% 且至少命中 1 条" },
     { value: citationTarget, label: "引用 / 版本正确", note: "每条建议可追溯" },
     { value: negativeTarget, label: "错误直答", note: "不少于 5 条负例" },
-    { value: pilotTarget.replace("连续 ", ""), label: "内部真实试点", note: "每人每周 ≥5 个去重任务" },
+    { value: pilotDisplay, label: "内部真实试点", note: `${pilotTarget}；每人每周 ≥${pilotThreshold.weeklyTasks} 个去重任务` },
     { value: "0", label: "自动代发", note: "人在环硬门槛" },
   ],
   meeting: {
@@ -614,25 +792,35 @@ const payload = {
         title: `费用可用${currentFeePath === "A" ? " · 当前路径" : ""}`,
         detail: "月 cap、全期 cap、科目与预算责任人正式批准后执行。",
         current: currentFeePath === "A",
+        selected: currentFeePath === "A" && projectStatus.feeSelected,
       },
       {
         id: "B",
-        title: `钱后置${currentFeePath === "B" ? " · 当前路径" : ""}`,
+        title: `钱后置${
+          currentFeePath === "B"
+            ? projectStatus.feeSelected
+              ? " · 当前路径"
+              : " · 临时管控（未签）"
+            : ""
+        }`,
         detail: "保持 0 新增付费，并写明下次费用决策日。",
         current: currentFeePath === "B",
+        selected: currentFeePath === "B" && projectStatus.feeSelected,
       },
       {
         id: "C",
         title: `暂停${currentFeePath === "C" ? " · 当前路径" : ""}`,
         detail: "记录原因、复审条件与日期；本项 Fail。",
         current: currentFeePath === "C",
+        selected: currentFeePath === "C" && projectStatus.feeSelected,
       },
     ],
     roles: roleRows.map((row) => ({
       role: row["角色"],
-      name: row["人员代号"] || "待分配",
+      name: row["人员代号"] || "待具名",
       proxy: row["代理人代号"] || "待分配",
       status: row["状态"],
+      needsNaming: !row["人员代号"],
     })),
     functions: functionRows.map((row) => ({
       name: row["职能"],
@@ -654,9 +842,14 @@ const payload = {
     id: source.id,
     label: source.label,
     file: source.file,
-    href: `./${source.file}`,
     sha256: source.hash,
+    content: source.text,
   })),
+  portablePrd: {
+    file: portablePrd.file,
+    sha256: portablePrd.sha256,
+    htmlBase64: portablePrd.htmlBase64,
+  },
 };
 
 for (const metric of ["Top3 ≥ **70%**", "引用 / 版本正确率 = **100%**", "错误直答 = **0**"]) {
@@ -668,6 +861,7 @@ const releaseHash = sha256(
     ...sourceEntries.map((source) => source.text),
     template,
     pretextVendor,
+    portablePrd.html,
     generatorSource,
     statusModuleSource,
   ].join("\n/* source-boundary */\n")
@@ -680,7 +874,7 @@ payload.release = {
   lifecycle: "00–06 Markdown 的只读生成视图，不替代真源或正式审批记录",
 };
 
-const safePayload = JSON.stringify(payload).replace(/</g, "\\u003c");
+const safePayload = safeJson(payload);
 const generated = template
   .replaceAll("__RELEASE_ID__", releaseId)
   .replace("__HUB_DATA__", () => safePayload)
@@ -691,11 +885,8 @@ if (generated.includes("__HUB_DATA__") || generated.includes("__PRETEXT_VENDOR__
 }
 
 if (checkOnly) {
-  let current = "";
-  try {
-    current = await readFile(outputPath, "utf8");
-  } catch {}
-  if (current !== generated) {
+  const current = await readCanonicalOutput(outputPath, { optional: true });
+  if (current.text !== generated) {
     console.error(
       `客服 Agent 立项执行中心已过期：请运行 node business-docs/08-工具/generate_customer_agent_hub.mjs`
     );
@@ -704,9 +895,10 @@ if (checkOnly) {
     console.log(`执行中心已同步 · ${releaseId} · 7/7 真源`);
   }
 } else {
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, generated, "utf8");
+  const written = await writeCanonicalOutputIfChanged(outputPath, generated);
   console.log(
-    `已生成执行中心 · ${releaseId} · ${generated.length} bytes · ${outputPath}`
+    written
+      ? `已原子生成执行中心 · ${releaseId} · ${generated.length} bytes · ${outputPath}`
+      : `执行中心已稳定，未重写 · ${releaseId} · ${outputPath}`
   );
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, readdir, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, realpath, rm, stat, symlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -48,6 +48,16 @@ async function collectFiles(root) {
     })
   );
   return nested.flat();
+}
+
+async function artifactState(paths) {
+  return Promise.all(
+    paths.map(async (filePath) => ({
+      filePath,
+      bytes: await readFile(filePath),
+      mtimeNs: (await stat(filePath, { bigint: true })).mtimeNs,
+    }))
+  );
 }
 
 async function advancePrivateFixture(target) {
@@ -285,13 +295,89 @@ test("客服工作区模式与路径必须成对，未知模式失败关闭", as
   );
 });
 
+test("PRIVATE-WORKSPACE 按 POSIX 字面量导出特殊路径，zsh/bash 均不执行路径内容", async (t) => {
+  const parent = await mkdtemp(path.join(tmpdir(), "customer-private-shell-quote-"));
+  t.after(() => rm(parent, { recursive: true, force: true }));
+  const substitutionMarker = "COMMAND_SUBSTITUTION_SIDE_EFFECT";
+  const backtickMarker = "BACKTICK_SIDE_EFFECT";
+  const target = path.join(
+    parent,
+    `customer agent's $(touch ${substitutionMarker}) \`touch ${backtickMarker}\` $HOME`
+  );
+  const prepare = path.join(repoRoot, "business-docs/08-工具/prepare_private_customer_project.mjs");
+  const prepared = spawnSync(process.execPath, [prepare, `--target=${target}`], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  assert.equal(prepared.status, 0, `${prepared.stderr}\n${prepared.stdout}`);
+
+  const privateGuide = await readFile(path.join(target, "PRIVATE-WORKSPACE.md"), "utf8");
+  const rootExport = privateGuide
+    .split(/\r?\n/)
+    .find((line) => line.startsWith("export CUSTOMER_PROJECT_ROOT="));
+  assert.ok(rootExport, "私有指南缺少 CUSTOMER_PROJECT_ROOT 导出命令");
+  assert.match(rootExport, /^export CUSTOMER_PROJECT_ROOT='.*'$/);
+  assert.ok(rootExport.includes("'\"'\"'"), "单引号未使用 POSIX 字面量转义");
+  assert.ok(rootExport.includes(`$(touch ${substitutionMarker})`));
+  assert.ok(rootExport.includes(`\`touch ${backtickMarker}\``));
+  assert.ok(rootExport.includes("$HOME"));
+  assert.doesNotMatch(rootExport, /^export CUSTOMER_PROJECT_ROOT="/);
+
+  const shellEnv = {
+    ...process.env,
+    HOME: path.join(parent, "fake-home-must-not-expand"),
+    CUSTOMER_PROJECT_ROOT: "preexisting-value",
+  };
+  delete shellEnv.BASH_ENV;
+  delete shellEnv.ENV;
+  const shellScript = `${rootExport}\nprintf '%s' "$CUSTOMER_PROJECT_ROOT"`;
+  const runs = [];
+  for (const shell of [
+    { name: "zsh", command: "/bin/zsh", args: ["-f", "-c", shellScript] },
+    {
+      name: "bash",
+      command: "/bin/bash",
+      args: ["--noprofile", "--norc", "-c", shellScript],
+    },
+  ]) {
+    const probeDir = await mkdtemp(path.join(parent, `${shell.name}-probe-`));
+    const run = spawnSync(shell.command, shell.args, {
+      cwd: probeDir,
+      env: shellEnv,
+      encoding: "utf8",
+    });
+    const sideEffects = [];
+    for (const marker of [substitutionMarker, backtickMarker]) {
+      try {
+        await stat(path.join(probeDir, marker));
+        sideEffects.push(marker);
+      } catch (error) {
+        assert.equal(error?.code, "ENOENT", `${shell.name} 副作检查失败：${error}`);
+      }
+    }
+    runs.push({ ...shell, run, sideEffects });
+  }
+
+  assert.deepEqual(
+    runs.map(({ name, sideEffects }) => ({ name, sideEffects })),
+    [
+      { name: "zsh", sideEffects: [] },
+      { name: "bash", sideEffects: [] },
+    ]
+  );
+  for (const { name, run } of runs) {
+    assert.equal(run.status, 0, `${name} 解析失败：${run.stderr}`);
+    assert.equal(run.stderr, "");
+    assert.equal(run.stdout, target, `${name} 未按字面量保留目标路径`);
+  }
+});
+
 test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完整切换", async (t) => {
   const parent = await mkdtemp(path.join(tmpdir(), "customer-private-workspace-"));
   t.after(() => rm(parent, { recursive: true, force: true }));
   const target = path.join(parent, "customer-agent");
   const prepare = path.join(repoRoot, "business-docs/08-工具/prepare_private_customer_project.mjs");
-  const checker = path.join(repoRoot, "business-docs/08-工具/check_customer_agent_prd_sources.mjs");
-  const generator = path.join(repoRoot, "business-docs/08-工具/generate_customer_agent_hub.mjs");
+  const surfaceSync = path.join(repoRoot, "business-docs/08-工具/sync_customer_agent_surfaces.mjs");
   const first = spawnSync(process.execPath, [prepare, `--target=${target}`], { cwd: repoRoot, encoding: "utf8" });
   assert.equal(first.status, 0, `${first.stderr}\n${first.stdout}`);
   const marker = JSON.parse(await readFile(path.join(target, ".customer-project-private.json"), "utf8"));
@@ -304,6 +390,8 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   assert.doesNotMatch(privateReadme, /公共仓安全边界|进入真实状态或选择 A 前/);
   assert.match(privateGuide, /当前目录已完成迁移/);
   assert.match(privateGuide, /QA 证据默认写入本目录的 `\.qa-output\/`/);
+  assert.match(privateGuide, /sync_customer_agent_surfaces\.mjs/);
+  await stat(path.join(target, "08-客服Agent立项执行中心.html"));
 
   const env = { ...process.env, CUSTOMER_PROJECT_MODE: "private", CUSTOMER_PROJECT_ROOT: target };
   const workspace = await resolveCustomerProjectWorkspace(workspaceModuleUrl, env);
@@ -331,13 +419,75 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     assert.equal(isOutsideRepo(qaPaths.rootPath), true);
   }
   await advancePrivateFixture(target);
-  const update = spawnSync(process.execPath, [checker, "--update"], { cwd: repoRoot, env, encoding: "utf8" });
-  assert.equal(update.status, 0, `${update.stderr}\n${update.stdout}`);
-  const generate = spawnSync(process.execPath, [generator], { cwd: repoRoot, env, encoding: "utf8" });
-  assert.equal(generate.status, 0, `${generate.stderr}\n${generate.stdout}`);
+  const sync = spawnSync(process.execPath, [surfaceSync], {
+    cwd: repoRoot,
+    env,
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  assert.equal(sync.status, 0, `${sync.stderr}\n${sync.stdout}`);
+  assert.match(sync.stdout, /客服双页已同步并收敛 · private/);
+  const stable = spawnSync(process.execPath, [surfaceSync, "--check"], {
+    cwd: repoRoot,
+    env,
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  assert.equal(stable.status, 0, `${stable.stderr}\n${stable.stdout}`);
+  assert.match(stable.stdout, /客服双页已在稳定点 · private/);
+  const prdPath = path.join(target, "07-客服Agent立项PRD.html");
+  const manifestPath = path.join(target, "07-客服Agent立项PRD.sources.json");
+  const hubPath = path.join(target, "08-客服Agent立项执行中心.html");
+  const managedSurfaces = [prdPath, manifestPath, hubPath];
+  const fixedTime = new Date("2001-01-01T00:00:00.000Z");
+  await Promise.all(managedSurfaces.map((filePath) => utimes(filePath, fixedTime, fixedTime)));
+
+  const generator = path.join(repoRoot, "business-docs/08-工具/generate_customer_agent_hub.mjs");
+  const hubStableBefore = await artifactState([hubPath]);
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    const directGenerator = spawnSync(process.execPath, [generator], {
+      cwd: repoRoot,
+      env,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    assert.equal(
+      directGenerator.status,
+      0,
+      `第 ${iteration + 1} 次直接 Hub 生成失败\n${directGenerator.stderr}\n${directGenerator.stdout}`
+    );
+    assert.match(directGenerator.stdout, /执行中心已稳定，未重写/);
+  }
+  assert.deepEqual(
+    await artifactState([hubPath]),
+    hubStableBefore,
+    "generator 连续运行时 Hub bytes + mtime 必须幂等"
+  );
+
+  const syncStableBefore = await artifactState(managedSurfaces);
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    const stableSync = spawnSync(process.execPath, [surfaceSync], {
+      cwd: repoRoot,
+      env,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    assert.equal(
+      stableSync.status,
+      0,
+      `第 ${iteration + 1} 次稳定点同步失败\n${stableSync.stderr}\n${stableSync.stdout}`
+    );
+    assert.match(stableSync.stdout, /PRD 真源清单已稳定，未重写/);
+    assert.match(stableSync.stdout, /执行中心已稳定，未重写/);
+  }
+  assert.deepEqual(
+    await artifactState(managedSurfaces),
+    syncStableBefore,
+    "连续 sync 在稳定点必须保持 PRD / manifest / Hub bytes + mtime 全部不变"
+  );
   await stat(path.join(target, "07-客服Agent立项PRD.sources.json"));
-  const prd = await readFile(path.join(target, "07-客服Agent立项PRD.html"), "utf8");
-  const hub = await readFile(path.join(target, "08-客服Agent立项执行中心.html"), "utf8");
+  const prd = await readFile(prdPath, "utf8");
+  const hub = await readFile(hubPath, "utf8");
   assert.match(prd, /data-status-axis="external">\s*外部责任包 · 1 \/ 14/);
   assert.doesNotMatch(prd, /data-status-axis="external">\s*外部责任包 · 0 \/ 14/);
   const payloadMatch = hub.match(/<script id="hub-data" type="application\/json">([\s\S]*?)<\/script>/);

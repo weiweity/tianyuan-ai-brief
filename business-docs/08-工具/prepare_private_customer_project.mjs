@@ -18,7 +18,12 @@ const files = [
   "05-全栈交付计划.md",
   "06-启动会与周推进.md",
   "07-客服Agent立项PRD.html",
+  "08-客服Agent立项执行中心.html",
 ];
+
+function quotePosixShellLiteral(value) {
+  return `'${value.replaceAll("'", "'\"'\"'")}'`;
+}
 
 if (!target || !path.isAbsolute(target)) throw new Error("用法：--target=/公开仓外/客服Agent项目（必须是绝对路径）");
 const targetDir = path.normalize(target);
@@ -59,7 +64,7 @@ await writeFile(
 );
 await writeFile(
   path.join(targetDir, "PRIVATE-WORKSPACE.md"),
-  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n当前目录已完成迁移；不要再次运行 \`prepare_private_customer_project.mjs\`，也不得将本目录回推公开仓。两套浏览器 QA 证据默认写入本目录的 \`.qa-output/\`。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${JSON.stringify(targetDir)}\nnode ${JSON.stringify(path.join(scriptDir, "check_customer_agent_prd_sources.mjs"))} --update\nnode ${JSON.stringify(path.join(scriptDir, "generate_customer_agent_hub.mjs"))}\n\`\`\`\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
+  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n当前目录已完成迁移；不要再次运行 \`prepare_private_customer_project.mjs\`，也不得将本目录回推公开仓。两套浏览器 QA 证据默认写入本目录的 \`.qa-output/\`。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${quotePosixShellLiteral(targetDir)}\nnode ${quotePosixShellLiteral(path.join(scriptDir, "sync_customer_agent_surfaces.mjs"))}\n\`\`\`\n\n这一个同步命令会让 PRD 与执行中心互相内嵌后收敛到同一稳定点；只校验时追加 \`--check\`。\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
   { flag: "wx" }
 );
 console.log(`私有客服工作区已创建：${targetDir}`);

@@ -1,5 +1,6 @@
-import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
+import { lstat, open, realpath, rename, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveProjectStatus } from "./customer_project_status.mjs";
@@ -10,6 +11,9 @@ const { projectDir } = await resolveCustomerProjectWorkspace(import.meta.url);
 const prdFile = "07-客服Agent立项PRD.html";
 const prdPath = path.join(projectDir, prdFile);
 const manifestPath = path.join(projectDir, "07-客服Agent立项PRD.sources.json");
+const hubFile = "08-客服Agent立项执行中心.html";
+const hubPath = path.join(projectDir, hubFile);
+const canonicalProjectDir = await realpath(projectDir);
 
 const sourceDefinitions = [
   { id: "charter", file: "00-项目章程.md", label: "项目章程" },
@@ -44,6 +48,208 @@ const forceRankRules = Object.freeze([
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+function portableDataMatch(html) {
+  return html.match(
+    /(<script\b[^>]*\bid=["']portable-project-data["'][^>]*>)([\s\S]*?)(<\/script>)/i
+  );
+}
+
+function isWithin(parent, candidate) {
+  const relative = path.relative(parent, candidate);
+  return (
+    relative === "" ||
+    (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`))
+  );
+}
+
+async function readWorkspaceFile(filePath, label, { optional = false } = {}) {
+  let fileStat;
+  try {
+    fileStat = await lstat(filePath);
+  } catch (error) {
+    if (optional && error?.code === "ENOENT") {
+      return { text: null, mode: 0o644 };
+    }
+    throw error;
+  }
+  if (fileStat.isSymbolicLink()) {
+    throw new Error(`${label}文件不能是符号链接：${filePath}`);
+  }
+  if (!fileStat.isFile()) throw new Error(`${label}必须是普通文件：${filePath}`);
+
+  const canonicalFile = await realpath(filePath);
+  if (!isWithin(canonicalProjectDir, canonicalFile)) {
+    throw new Error(`${label}真实路径越出客服项目根目录：${canonicalFile}`);
+  }
+
+  // O_NOFOLLOW 关闭 lstat/realpath 与 open 之间的最终路径分量竞态窗口。
+  const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+  let handle;
+  try {
+    handle = await open(filePath, flags);
+    const openedStat = await handle.stat();
+    if (!openedStat.isFile()) throw new Error(`${label}必须是普通文件：${filePath}`);
+    return {
+      text: await handle.readFile("utf8"),
+      mode: Number(openedStat.mode & 0o777),
+    };
+  } catch (error) {
+    if (error?.code === "ELOOP") {
+      throw new Error(`${label}文件不能是符号链接：${filePath}`);
+    }
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function removeExactTemporary(filePath) {
+  if (!filePath) return;
+  try {
+    await unlink(filePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
+async function stageAtomicFile(targetPath, content, mode, purpose) {
+  const temporaryPath = path.join(
+    path.dirname(targetPath),
+    `.${path.basename(targetPath)}.${purpose}-${process.pid}-${randomUUID()}.tmp`
+  );
+  let handle;
+  try {
+    handle = await open(temporaryPath, "wx", mode || 0o644);
+    await handle.chmod(mode || 0o644);
+    await handle.writeFile(content, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = undefined;
+    return temporaryPath;
+  } catch (error) {
+    await handle?.close().catch(() => {});
+    await removeExactTemporary(temporaryPath).catch(() => {});
+    throw error;
+  }
+}
+
+async function writeTransaction(changes, guards) {
+  const pending = changes.filter(({ before, after }) => before !== after);
+  if (pending.length === 0) return 0;
+
+  const staged = [];
+  try {
+    for (const change of pending) {
+      let updatePath;
+      let rollbackPath;
+      try {
+        updatePath = await stageAtomicFile(
+          change.targetPath,
+          change.after,
+          change.mode,
+          "update"
+        );
+        rollbackPath =
+          change.before === null
+            ? null
+            : await stageAtomicFile(
+                change.targetPath,
+                change.before,
+                change.mode,
+                "rollback"
+              );
+        staged.push({ ...change, updatePath, rollbackPath });
+      } catch (error) {
+        await removeExactTemporary(updatePath).catch(() => {});
+        await removeExactTemporary(rollbackPath).catch(() => {});
+        throw error;
+      }
+    }
+
+    // 真正 rename 前再比对全部输入，避免并发修改被静默覆盖。
+    for (const guard of guards) {
+      const current = await readWorkspaceFile(guard.filePath, guard.label, {
+        optional: guard.before === null,
+      });
+      if (current.text !== guard.before) {
+        throw new Error(`${guard.label}在同步期间发生变化，已拒绝覆盖`);
+      }
+    }
+
+    const committed = [];
+    try {
+      for (const item of staged) {
+        await rename(item.updatePath, item.targetPath);
+        item.updatePath = null;
+        committed.push(item);
+      }
+    } catch (commitError) {
+      const rollbackErrors = [];
+      for (const item of committed.reverse()) {
+        try {
+          if (item.before === null) {
+            await removeExactTemporary(item.targetPath);
+          } else {
+            await rename(item.rollbackPath, item.targetPath);
+            item.rollbackPath = null;
+          }
+        } catch (rollbackError) {
+          rollbackErrors.push(`${item.targetPath}: ${rollbackError.message}`);
+        }
+      }
+      if (rollbackErrors.length > 0) {
+        throw new AggregateError(
+          [commitError],
+          `原子写入失败，且回滚未完成：${rollbackErrors.join("; ")}`
+        );
+      }
+      throw commitError;
+    }
+  } finally {
+    for (const item of staged) {
+      await removeExactTemporary(item.updatePath).catch(() => {});
+      await removeExactTemporary(item.rollbackPath).catch(() => {});
+    }
+  }
+  return pending.length;
+}
+
+function buildPortableData(sources, hubHtml) {
+  return {
+    schemaVersion: 1,
+    sources: sources.map((source) => ({
+      id: source.id,
+      label: source.label,
+      file: source.file,
+      sha256: source.sha256,
+      content: source.text,
+    })),
+    hub: {
+      file: hubFile,
+      sha256: sha256(hubHtml),
+      htmlBase64: Buffer.from(hubHtml, "utf8").toString("base64"),
+    },
+  };
+}
+
+function computePortableHtml(html, hubHtml, sources) {
+  const match = portableDataMatch(html);
+  if (!match) throw new Error("PRD 缺少 portable-project-data 单文件交付容器");
+  const expected = safeJson(buildPortableData(sources, hubHtml));
+  return {
+    current: match[2].trim(),
+    expected,
+    html: html.replace(
+      match[0],
+      `${match[1]}\n${expected}\n${match[3]}`
+    ),
+  };
 }
 
 function escapeRegExp(value) {
@@ -326,16 +532,7 @@ function validatePrdContract(html, projectStatus, forceRankDate, facts) {
   );
 }
 
-async function buildManifest() {
-  const [html, sources] = await Promise.all([
-    readFile(prdPath, "utf8"),
-    Promise.all(
-      sourceDefinitions.map(async (source) => {
-        const text = await readFile(path.join(projectDir, source.file), "utf8");
-        return { ...source, text, sha256: sha256(text) };
-      })
-    ),
-  ]);
+function buildManifest(html, sources) {
   const sourceById = Object.fromEntries(sources.map((source) => [source.id, source.text]));
   const projectStatus = deriveProjectStatus({
     charter: sourceById.charter,
@@ -347,7 +544,9 @@ async function buildManifest() {
   const facts = derivePrdFacts(sourceById, projectStatus);
   const forceRankDate = facts.d0;
   validatePrdContract(html, projectStatus, forceRankDate, facts);
-  const manifestSources = sources.map(({ text: _text, ...source }) => source);
+  const manifestSources = sources.map(
+    ({ text: _text, sourcePath: _sourcePath, mode: _mode, ...source }) => source
+  );
   return {
     schemaVersion: 2,
     prd: { file: prdFile, sha256: sha256(html) },
@@ -398,13 +597,40 @@ if (checkOnly === update) {
   console.error("用法：node check_customer_agent_prd_sources.mjs --check | --update");
   process.exitCode = 2;
 } else {
-  const expected = `${JSON.stringify(await buildManifest(), null, 2)}\n`;
+  const prdSnapshot = await readWorkspaceFile(prdPath, "PRD ");
+  const hubSnapshot = await readWorkspaceFile(hubPath, "Hub ");
+  const manifestSnapshot = await readWorkspaceFile(manifestPath, "PRD 真源清单 ", {
+    optional: true,
+  });
+  const sourceSnapshots = await Promise.all(
+    sourceDefinitions.map(async (source) => {
+      const sourcePath = path.join(projectDir, source.file);
+      const snapshot = await readWorkspaceFile(sourcePath, `真源 ${source.file} `);
+      return {
+        ...source,
+        sourcePath,
+        text: snapshot.text,
+        mode: snapshot.mode,
+        sha256: sha256(snapshot.text),
+      };
+    })
+  );
+  const portable = computePortableHtml(
+    prdSnapshot.text,
+    hubSnapshot.text,
+    sourceSnapshots
+  );
+  const manifestHtml = checkOnly ? prdSnapshot.text : portable.html;
+
+  // buildManifest 包含所有真源推导和 PRD 内容契约验证；它完成前不会写文件。
+  const expected = `${JSON.stringify(buildManifest(manifestHtml, sourceSnapshots), null, 2)}\n`;
   if (checkOnly) {
-    let current = "";
-    try {
-      current = await readFile(manifestPath, "utf8");
-    } catch {}
-    if (current !== expected) {
+    if (portable.current !== portable.expected) {
+      throw new Error(
+        "PRD 单文件交付包已过期：请先生成执行中心，再运行 check_customer_agent_prd_sources.mjs --update"
+      );
+    }
+    if (manifestSnapshot.text !== expected) {
       console.error(
         "客服 Agent PRD 真源清单已过期：请核对口径后运行 node business-docs/08-工具/check_customer_agent_prd_sources.mjs --update"
       );
@@ -413,7 +639,37 @@ if (checkOnly === update) {
       console.log("PRD 真源与内容契约已同步 · 7/7 真源");
     }
   } else {
-    await writeFile(manifestPath, expected, "utf8");
-    console.log(`已更新 PRD 真源清单 · ${manifestPath}`);
+    const guards = [
+      { filePath: prdPath, label: "PRD ", before: prdSnapshot.text },
+      { filePath: hubPath, label: "Hub ", before: hubSnapshot.text },
+      ...sourceSnapshots.map((source) => ({
+        filePath: source.sourcePath,
+        label: `真源 ${source.file} `,
+        before: source.text,
+      })),
+      { filePath: manifestPath, label: "PRD 真源清单 ", before: manifestSnapshot.text },
+    ];
+    const written = await writeTransaction(
+      [
+        {
+          targetPath: prdPath,
+          before: prdSnapshot.text,
+          after: portable.html,
+          mode: prdSnapshot.mode,
+        },
+        {
+          targetPath: manifestPath,
+          before: manifestSnapshot.text,
+          after: expected,
+          mode: manifestSnapshot.mode,
+        },
+      ],
+      guards
+    );
+    console.log(
+      written === 0
+        ? `PRD 真源清单已稳定，未重写 · ${manifestPath}`
+        : `已原子更新 PRD 真源清单 · ${manifestPath}`
+    );
   }
 }

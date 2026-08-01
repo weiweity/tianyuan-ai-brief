@@ -13,7 +13,7 @@
 
 > **公共仓安全边界：** 当前 Git 远端是公开仓。本目录只能保存模板、受控状态、`ROLE-*` / `USR-*` 人员代号和 `EVD-*` 证据 ID；真实姓名、客户原文、批准原话、原始协作链接、精确 cap、PII 与安全细节只能存受控系统。任何真实状态准备推送前，必须先迁移到私有仓或完成安全复核；本地分支不得直接推送到公开远端。
 
-进入真实状态或选择 A 前，运行 `node business-docs/08-工具/prepare_private_customer_project.mjs --target=/公开仓外/客服Agent项目`，再设置 `CUSTOMER_PROJECT_MODE=private` 与绝对路径 `CUSTOMER_PROJECT_ROOT`。校验器、生成器和双页浏览器 QA 会共同切换到该私有工作区；缺标记、仓内路径或相对路径都会被拒绝。
+进入真实状态或选择 A 前，运行 `node business-docs/08-工具/prepare_private_customer_project.mjs --target=/公开仓外/客服Agent项目`，再设置 `CUSTOMER_PROJECT_MODE=private` 与绝对路径 `CUSTOMER_PROJECT_ROOT`，最后运行一次 `node business-docs/08-工具/sync_customer_agent_surfaces.mjs`。同步器会让 PRD 与执行中心收敛到同一稳定点；校验器、生成器和双页浏览器 QA 会共同切换到该私有工作区。缺标记、仓内路径或相对路径都会被拒绝。
 
 ---
 
@@ -31,6 +31,7 @@
 | 看前端、后端、AI、数据、QA、运维怎么协作 | [`05-全栈交付计划.md`](05-全栈交付计划.md) |
 | 准备启动会、日报和周报 | [`06-启动会与周推进.md`](06-启动会与周推进.md) |
 | 查一页沟通稿 | [`80-参考/`](80-参考/) |
+| 看最新全链路验收 | [`90-评审/2026-08-01_10.0全链路交叉验收.md`](90-评审/2026-08-01_10.0全链路交叉验收.md) |
 | 查冻结评审 | [`90-评审/`](90-评审/) |
 | 查旧入口与历史上会稿 | [`../01-立项主线/`](../01-立项主线/) |
 
