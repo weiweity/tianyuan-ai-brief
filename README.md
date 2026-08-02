@@ -16,7 +16,8 @@
 |------------|------|
 | 看项目组合状态、卡点与下一门禁 | [项目驾驶舱](business-docs/00-项目驾驶舱.md) |
 | 进入客服 Agent 当前项目 | **[客服 Agent 项目导航](business-docs/01-客服Agent项目/README.md)** |
-| 开立项会、快速过 PRD | [客服 Agent 立项 PRD（HTML）](business-docs/01-客服Agent项目/07-客服Agent立项PRD.html) |
+| 开 08-04 启动会（唯一主屏） | [客服 Agent 一期启动会](business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html) |
+| 被追问背景时快速过 PRD（备用） | [客服 Agent 立项 PRD](business-docs/01-客服Agent项目/07-客服Agent立项PRD.html) |
 | 看 8 月 4 日起排期 | [总排期与阶段门禁](business-docs/01-客服Agent项目/01-总排期与阶段门禁.md) |
 | 填 Owner、证据、风险与决定 | [G0 责任与证据台账](business-docs/01-客服Agent项目/02-G0责任与证据台账.md) |
 | 准备启动会和周推进 | [启动会与周推进](business-docs/01-客服Agent项目/06-启动会与周推进.md) |
