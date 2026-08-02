@@ -7,12 +7,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import axe from "axe-core";
 import { chromium } from "playwright";
-import { sha256, verifyDecisionReceipt } from "../docs/js/modules/decision-model.js";
+import { sha256, verifyDecisionReceipt } from "../../archive/2026-07-31-ai-project-brief/js/modules/decision-model.js";
 import { createSafeResultsDir } from "./support/safe-results-dir.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // web-decision-brief
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // sites
 const monorepoRoot = path.resolve(root, "..");
-const siteBase = "/web-decision-brief/docs";
+const siteBase = "/archive/2026-07-31-ai-project-brief";
 const resultsRoot = path.join(root, "test-results");
 const resultsDir = await createSafeResultsDir({
   trustedRootPath: root,
@@ -50,7 +50,7 @@ await new Promise((resolve, reject) => {
 });
 
 const origin = `http://127.0.0.1:${port}`;
-// 从 monorepo 根托管，才能同时访问软件 docs 与业务 print 兼容入口
+// 从 monorepo 根托管，才能同时访问冻结归档与业务 print 兼容入口
 const server = spawn("python3", ["-m", "http.server", String(port)], {
   cwd: monorepoRoot,
   stdio: "ignore",
@@ -358,9 +358,9 @@ async function runCanonicalAudit(browser, viewport) {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
   page.on("request", (request) => {
-    if (/\/docs\/data\/content\.json\?/.test(request.url())) contentRequests += 1;
-    if (/\/docs\/data\/release\.json(?:\?|$)/.test(request.url())) manifestRequests += 1;
-    if (/\/docs\/js\/modules\//.test(request.url())) moduleRequests += 1;
+    if (/\/archive\/2026-07-31-ai-project-brief\/data\/content\.json\?/.test(request.url())) contentRequests += 1;
+    if (/\/archive\/2026-07-31-ai-project-brief\/data\/release\.json(?:\?|$)/.test(request.url())) manifestRequests += 1;
+    if (/\/archive\/2026-07-31-ai-project-brief\/js\/modules\//.test(request.url())) moduleRequests += 1;
   });
   await page.addInitScript(() => {
     localStorage.removeItem("tianyuan-brief-draft-v1");
@@ -742,7 +742,7 @@ async function runLegacyAudit(browser, viewport) {
     `${origin}/business-docs/01-%E7%AB%8B%E9%A1%B9%E4%B8%BB%E7%BA%BF/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
     { waitUntil: "networkidle" }
   );
-  await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
+  await page.waitForURL(/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
   assert.equal(await page.title(), "天元 · AI 赋能汇报（历史快照）");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
@@ -973,7 +973,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
 async function runPublicArtifactNavigationAudit(browser) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const failures = [];
-  const publicUrl = `${origin}/web-decision-brief/dist/pages/index.html`;
+  const publicUrl = `${origin}/sites/dist/pages/index.html`;
   for (const linkName of ["现行 PRD", "执行中心"]) {
     const page = await context.newPage();
     page.on("pageerror", (error) => failures.push(`${linkName} pageerror: ${error.message}`));
@@ -989,7 +989,7 @@ async function runPublicArtifactNavigationAudit(browser) {
 
     await page.goto(publicUrl, { waitUntil: "networkidle" });
     await Promise.all([
-      page.waitForURL((url) => url.pathname.endsWith("/web-decision-brief/dist/pages/internal-only.html")),
+      page.waitForURL((url) => url.pathname.endsWith("/sites/dist/pages/internal-only.html")),
       page.getByRole("link", { name: linkName, exact: true }).click(),
     ]);
     await page.waitForLoadState("networkidle");
@@ -1015,7 +1015,7 @@ async function runPublicArtifactNavigationAudit(browser) {
   await meetingPage.goto(publicUrl, { waitUntil: "networkidle" });
   await Promise.all([
     meetingPage.waitForURL((url) =>
-      url.pathname.endsWith("/web-decision-brief/dist/pages/customer-agent/")
+      url.pathname.endsWith("/sites/dist/pages/customer-agent/")
     ),
     meetingPage.getByRole("link", { name: "启动会主屏", exact: true }).click(),
   ]);
@@ -1054,13 +1054,13 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
 
   const entryPath = useLegacyEntry
     ? path.join(root, "../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html")
-    : path.join(root, "docs/index.html");
+    : path.join(root, "../archive/2026-07-31-ai-project-brief/index.html");
   const entryUrl = `${pathToFileURL(entryPath).href}${
     useLegacyEntry ? "" : "?audit=file-direct"
   }`;
   await page.goto(entryUrl, { waitUntil: "load" });
   if (useLegacyEntry) {
-    await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
+    await page.waitForURL(/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
@@ -1154,7 +1154,7 @@ async function runFileFailureAudit(browser) {
   });
   const page = await context.newPage();
   await page.route(/app\.offline\.bundle\.js/, (route) => route.abort("failed"));
-  await page.goto(pathToFileURL(path.join(root, "docs/index.html")).href, {
+  await page.goto(pathToFileURL(path.join(root, "../archive/2026-07-31-ai-project-brief/index.html")).href, {
     waitUntil: "load",
   });
   await waitForText(page.locator("#doc-title"), /加载失败/, 3000);
@@ -1243,7 +1243,7 @@ async function runLastKnownGoodAudit(browser) {
   const fallback = await context.newPage();
   const errors = [];
   fallback.on("pageerror", (error) => errors.push(error.message));
-  await fallback.route(/\/docs\/data\/release\.json/, (route) =>
+  await fallback.route(/\/archive\/2026-07-31-ai-project-brief\/data\/release\.json/, (route) =>
     route.fulfill({ status: 503, body: "unavailable" })
   );
   await fallback.goto(`${origin}${siteBase}/?audit=lkg-fallback`, { waitUntil: "domcontentloaded" });
@@ -1261,7 +1261,7 @@ async function runColdStartRecoveryAudit(browser) {
   let failManifest = true;
   page.on("pageerror", (error) => errors.push(error.message));
   await page.addInitScript(() => localStorage.clear());
-  await page.route(/\/docs\/data\/release\.json/, (route) =>
+  await page.route(/\/archive\/2026-07-31-ai-project-brief\/data\/release\.json/, (route) =>
     failManifest
       ? route.fulfill({ status: 503, contentType: "text/plain", body: "unavailable" })
       : route.continue()
@@ -1293,8 +1293,8 @@ async function runColdStartRecoveryAudit(browser) {
 
 async function runSameReleaseHotUpdateAudit(browser) {
   const [contentText, releaseText] = await Promise.all([
-    readFile(path.join(root, "docs/data/content.json"), "utf8"),
-    readFile(path.join(root, "docs/data/release.json"), "utf8"),
+    readFile(path.join(root, "../archive/2026-07-31-ai-project-brief/data/content.json"), "utf8"),
+    readFile(path.join(root, "../archive/2026-07-31-ai-project-brief/data/release.json"), "utf8"),
   ]);
   const updatedText = contentText.replace("收尾时 Goal", "校验时 Goal");
   assert.equal(updatedText.length, contentText.length, "故障注入必须保持正文长度不变");
@@ -1307,7 +1307,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
   let serveUpdate = false;
   page.on("pageerror", (error) => errors.push(error.message));
   await page.addInitScript(() => localStorage.clear());
-  await page.route(/\/docs\/data\/release\.json/, (route) =>
+  await page.route(/\/archive\/2026-07-31-ai-project-brief\/data\/release\.json/, (route) =>
     serveUpdate
       ? route.fulfill({
           contentType: "application/json",
@@ -1315,7 +1315,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
         })
       : route.continue()
   );
-  await page.route(/\/docs\/data\/content\.json/, (route) => {
+  await page.route(/\/archive\/2026-07-31-ai-project-brief\/data\/content\.json/, (route) => {
     const requestedSha = new URL(route.request().url()).searchParams.get("sha");
     return serveUpdate && requestedSha === updatedManifest.contentSha256
       ? route.fulfill({ contentType: "application/json", body: updatedText })
@@ -1337,7 +1337,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
 
 async function runCrossReleaseRefreshAudit(browser) {
   const release = JSON.parse(
-    await readFile(path.join(root, "docs/data/release.json"), "utf8")
+    await readFile(path.join(root, "../archive/2026-07-31-ai-project-brief/data/release.json"), "utf8")
   );
   const nextReleaseId = `${release.releaseId}-next`;
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -1358,7 +1358,7 @@ async function runCrossReleaseRefreshAudit(browser) {
     localStorage.clear();
     sessionStorage.clear();
   });
-  await page.route(/\/docs\/data\/release\.json/, (route) => {
+  await page.route(/\/archive\/2026-07-31-ai-project-brief\/data\/release\.json/, (route) => {
     const targeted =
       new URL(page.url()).searchParams.get("_release") === nextReleaseId;
     return serveNextRelease && !targeted

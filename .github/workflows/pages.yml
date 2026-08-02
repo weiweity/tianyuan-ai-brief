@@ -1,11 +1,13 @@
 name: pages
 
-# 站点源码在 web-decision-brief/docs；额外发布经脱敏门禁的客服启动会单页。
+# 历史站点冻结在 archive/；sites/ 只负责将历史站点与客服启动会编排成两个发布入口。
 on:
   push:
     branches: [main]
     paths:
-      - "web-decision-brief/**"
+      - "archive/2026-07-31-ai-project-brief/**"
+      - "archive/archive-manifest.json"
+      - "sites/**"
       - "business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -24,14 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web-decision-brief
+        working-directory: sites
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: web-decision-brief/package-lock.json
+          cache-dependency-path: sites/package-lock.json
       - run: npm ci --ignore-scripts
       - name: Install deterministic browser
         run: npx playwright install --with-deps chromium
@@ -43,7 +45,7 @@ jobs:
         run: npm run build:pages
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
-          path: web-decision-brief/dist/pages
+          path: sites/dist/pages
 
   deploy:
     needs: build

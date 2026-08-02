@@ -15,7 +15,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: web-decision-brief
+    working-directory: sites
 
 jobs:
   test:
@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: web-decision-brief/package-lock.json
+          cache-dependency-path: sites/package-lock.json
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -51,6 +51,6 @@ jobs:
         with:
           name: historical-web-quality-evidence
           # 公共仓库只上传历史 Web 的视觉证据；客服立项证据留在受控本地环境。
-          path: web-decision-brief/test-results/
+          path: sites/test-results/
           if-no-files-found: ignore
           retention-days: 14

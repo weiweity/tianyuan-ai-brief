@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { mergeMeetingState } from "../docs/js/modules/meeting-state.js";
+import { mergeMeetingState } from "../../archive/2026-07-31-ai-project-brief/js/modules/meeting-state.js";
 
 function contentFixture(schema = 3) {
   return {

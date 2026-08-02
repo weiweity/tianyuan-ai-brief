@@ -26,18 +26,16 @@ if (
 const checkOnly = args.includes("--check");
 const scriptPath = fileURLToPath(import.meta.url);
 const scriptDir = path.dirname(scriptPath);
-const repoRoot = path.resolve(scriptDir, "../..");
-const canonicalRepoRoot = await realpath(repoRoot);
 const canonicalToolDir = await realpath(scriptDir);
 const { projectDir } = await resolveCustomerProjectWorkspace(import.meta.url);
 const canonicalProjectDir = await realpath(projectDir);
 const prdPath = path.join(projectDir, "07-客服Agent立项PRD.html");
 const templatePath = path.join(scriptDir, "templates/customer-agent-meeting.template.html");
-const brandLogoPath = path.join(repoRoot, "web-decision-brief/docs/assets/logo.png");
-const faviconPath = path.join(repoRoot, "web-decision-brief/docs/assets/favicon.png");
+const brandLogoPath = path.join(projectDir, "assets/brand/logo.png");
+const faviconPath = path.join(projectDir, "assets/brand/favicon.png");
 const appleTouchIconPath = path.join(
-  repoRoot,
-  "web-decision-brief/docs/assets/apple-touch-icon.png"
+  projectDir,
+  "assets/brand/apple-touch-icon.png"
 );
 const canonicalOutputPath = path.join(projectDir, "09-客服Agent需求会汇报.html");
 
@@ -46,8 +44,8 @@ async function readBrandAsset(assetPath, label) {
   if (fileStat.isSymbolicLink()) throw new Error(`${label}不能是符号链接：${assetPath}`);
   if (!fileStat.isFile()) throw new Error(`${label}必须是普通文件：${assetPath}`);
   const canonicalAssetPath = await realpath(assetPath);
-  if (!isWithin(canonicalRepoRoot, canonicalAssetPath)) {
-    throw new Error(`${label}真实路径越出仓库：${canonicalAssetPath}`);
+  if (!isWithin(canonicalProjectDir, canonicalAssetPath)) {
+    throw new Error(`${label}真实路径越出客服项目工作区：${canonicalAssetPath}`);
   }
 
   const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);

@@ -5,7 +5,9 @@
 > **当前项目：** [客服 Agent](../business-docs/01-客服Agent项目/README.md)
 > **边界：** 本 Web 不再承担项目推进、审批补录或当前状态 SSOT。
 
-在线地址保留用于历史回看；它可能仍是旧发布，不能作为当前业务口径：[历史在线地址](https://weiweity.github.io/tianyuan-ai-brief/)。
+历史在线地址固定为 <https://weiweity.github.io/tianyuan-ai-brief/>。当前客服启动会使用独立地址 <https://weiweity.github.io/tianyuan-ai-brief/customer-agent/>。
+
+本归档的 29 个公开文件已按 [`archive-manifest.json`](archive-manifest.json) 冻结。2026-08-03 的目录整理只移动路径，没有改变入口文件或站点目录字节。
 
 ---
 
@@ -40,59 +42,49 @@
 
 ---
 
-## 工程结构
+## 归档与发布结构
 
 ```text
-web-decision-brief/
-├── package.json          # npm 脚本与依赖
-├── docs/                 # 站点与运行时
-├── scripts/build-web.mjs # Bundle / release 生成
-└── tests/                # 单测与 UI 审计
+archive/
+├── README.md
+├── archive-manifest.json
+└── 2026-07-31-ai-project-brief/ # 冻结站点，禁止原地修改
+sites/
+├── package.json                 # 两个网址的质量与发布工具
+├── scripts/                     # Bundle / Pages 编排
+└── tests/                       # 单测与 UI 审计
+business-docs/01-客服Agent项目/   # 当前客服项目及独立品牌素材
 ```
 
 | 层级 | 文件 | 历史职责 |
 |------|------|----------|
-| 壳 | `docs/index.html` | 挂载点与资源声明 |
-| 启动 | `docs/js/bootstrap.js` | HTTP 版本化 Bundle 与 file 离线 Bundle |
-| 样式 | `docs/css/app.css` | 满屏自适应与移动 / 桌面分层 |
-| UI 编排 | `docs/js/app.js` | 渲染、导航、编辑与写回 |
-| 决策域 | `docs/js/modules/decision-model.js` | 汇报期客服执行路径、门禁与凭证 |
-| 状态兼容 | `docs/js/modules/meeting-state.js` | 版本隔离、字段白名单与草稿合并 |
-| 内容安全 | `docs/js/modules/html-policy.js` | 富文本、资源 URL 与 SVG 清洗 |
-| 内容加载 | `docs/js/modules/content-loader.js` | release、SHA、超时与可信缓存 |
-| 图表 | `docs/js/modules/mermaid-runtime.js` | Mermaid、字号与灯箱 |
-| 冻结内容源 | `docs/data/content.json` | 收尾版本的页面文字、表格与 Mermaid |
-| 发布产物 | `docs/data/release.json` 与 Bundle | 由构建脚本生成 |
-| 质量门禁 | `tests/` 与 `.github/workflows/quality.yml` | 单测、Schema、UI 与 a11y |
+| 壳 | `2026-07-31-ai-project-brief/index.html` | 挂载点与资源声明 |
+| 启动 | `2026-07-31-ai-project-brief/js/bootstrap.js` | HTTP 版本化 Bundle 与 file 离线 Bundle |
+| 样式 | `2026-07-31-ai-project-brief/css/app.css` | 满屏自适应与移动 / 桌面分层 |
+| 冻结内容源 | `2026-07-31-ai-project-brief/data/content.json` | 收尾版本的页面文字、表格与 Mermaid |
+| 发布产物 | `2026-07-31-ai-project-brief/data/release.json` 与 Bundle | 冻结生成物 |
+| 质量门禁 | `../sites/tests/` 与 `.github/workflows/quality.yml` | 哈希、单测、Schema、UI 与 a11y |
 
-技术细节见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+技术细节见冻结文件 [ARCHITECTURE.md](2026-07-31-ai-project-brief/ARCHITECTURE.md)。其中出现的旧目录名属于 7 月 31 日历史记录，不再代表当前仓库结构。
 
 ---
 
 ## 需要历史预览时
 
 ```bash
-npm install
+cd sites
+npm ci
 npm run serve
 # 打开 http://localhost:8765
 ```
 
-双击 `docs/index.html` 可查看离线快照。预览只是回看历史资产，不会改变项目状态。
+也可双击 `archive/2026-07-31-ai-project-brief/index.html` 查看离线快照。预览只是回看历史资产，不会改变项目状态。
 
 ---
 
-## 若未来重新修改
+## 冻结规则
 
-重新启用前先明确：修改目的、Owner、是否重新发布、哪些内容仍属历史。完成修改后至少执行：
-
-```bash
-npm run build:check
-npm test
-npm run test:ui
-npm run audit:deps
-```
-
-发布仍须走独立评审和发布流程；本次文档重排没有发布、部署或覆盖线上站点。
+不要在 `2026-07-31-ai-project-brief/` 原地修改内容。若未来确需修复，必须建立新的日期版本、更新归档清单并单独评审；当前客服项目不得向本目录写状态。
 
 历史 HTML [`../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html`](../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html) 只作兼容跳转，不是第二份业务正文。
 
@@ -102,4 +94,4 @@ npm run audit:deps
 
 **v5.25.1 · 2026-07-31 · 已收尾**
 
-项目状态已迁移到 `business-docs/01-客服Agent项目/`；本目录从执行链退出，转为历史汇报与设计工程参考。
+项目状态已迁移到 `business-docs/01-客服Agent项目/`；本目录从执行链退出，只保留历史汇报与设计工程参考。

@@ -21,6 +21,11 @@ const files = [
   "08-客服Agent立项执行中心.html",
   "09-客服Agent需求会汇报.html",
 ];
+const brandFiles = [
+  "assets/brand/logo.png",
+  "assets/brand/favicon.png",
+  "assets/brand/apple-touch-icon.png",
+];
 
 function quotePosixShellLiteral(value) {
   return `'${value.replaceAll("'", "'\"'\"'")}'`;
@@ -57,6 +62,8 @@ const privateReadmeBody = templateReadme
 const privateReadme = `> **私有现行工作区：** 本目录由公开模板迁入，允许按内部权限填写受控状态；不得回推公开仓。\n> **规则覆盖：** 当前目录已经完成迁移，不要再次运行 \`prepare_private_customer_project.mjs\`。本说明覆盖本副本内“必须先迁移才能填写受控状态”的公开模板提示；原始 PII、客户原文、审批原文和密钥仍只能留在受控系统。\n\n${privateReadmeBody}`;
 await mkdir(targetDir);
 for (const file of files) await copyFile(path.join(sourceDir, file), path.join(targetDir, file));
+await mkdir(path.join(targetDir, "assets/brand"), { recursive: true });
+for (const file of brandFiles) await copyFile(path.join(sourceDir, file), path.join(targetDir, file));
 await writeFile(path.join(targetDir, "README.md"), privateReadme, "utf8");
 await writeFile(
   path.join(targetDir, PRIVATE_MARKER),

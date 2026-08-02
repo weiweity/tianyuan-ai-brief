@@ -19,7 +19,8 @@
 | 客服 Agent 当前项目 | [`../01-客服Agent项目/README.md`](../01-客服Agent项目/README.md) |
 | 客服章程 / 台账 / 验收 | [`项目章程`](../01-客服Agent项目/00-项目章程.md) · [`G0 台账`](../01-客服Agent项目/02-G0责任与证据台账.md) · [`Scope 与验收`](../01-客服Agent项目/03-Scope与验收.md) |
 | 评审快照 | [`2026-07-31 双视角评审`](../01-客服Agent项目/90-评审/2026-07-31_双视角对抗评审.md) |
-| 已收尾汇报 Web | [`../../web-decision-brief/`](../../web-decision-brief/)；仅作历史汇报与设计参考 |
-| Web 架构参考 | [`../../web-decision-brief/docs/ARCHITECTURE.md`](../../web-decision-brief/docs/ARCHITECTURE.md) |
+| 7 月 31 日已收尾汇报 | [`../../archive/2026-07-31-ai-project-brief/`](../../archive/2026-07-31-ai-project-brief/)；冻结快照，仅作历史汇报与设计参考 |
+| Web 架构参考 | [`../../archive/2026-07-31-ai-project-brief/ARCHITECTURE.md`](../../archive/2026-07-31-ai-project-brief/ARCHITECTURE.md) |
+| 当前客服启动会 | [`../01-客服Agent项目/09-客服Agent需求会汇报.html`](../01-客服Agent项目/09-客服Agent需求会汇报.html)；现行生成视图 |
 
 现行客服正文只在 `business-docs/01-客服Agent项目/`；旧 `01-立项主线/` 是兼容与历史入口。

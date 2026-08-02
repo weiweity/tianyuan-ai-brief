@@ -1,5 +1,5 @@
 {
-  "name": "tianyuan-ai-decision-brief",
+  "name": "tianyuan-ai-sites",
   "version": "5.25.1",
   "private": true,
   "type": "module",
@@ -8,12 +8,11 @@
     "npm": ">=11 <12"
   },
   "scripts": {
-    "build:web": "node scripts/build-web.mjs",
-    "build:check": "node scripts/build-web.mjs --check",
+    "verify:archive": "node scripts/build-web.mjs --check",
+    "build:check": "npm run verify:archive",
     "sync:business-surfaces": "node ../business-docs/08-工具/sync_customer_agent_surfaces.mjs",
     "check:business-sources": "node ../business-docs/08-工具/sync_customer_agent_surfaces.mjs --check",
     "build:pages": "npm run build:check && node scripts/build-pages-artifact.mjs",
-    "preserve": "npm run build:web",
     "serve": "npm run build:pages && python3 -m http.server 8765 -d dist/pages",
     "pretest": "npm run build:check",
     "test": "node --test tests/*.test.mjs",

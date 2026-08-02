@@ -21,7 +21,8 @@
 | 填 Owner、证据、风险与决定 | [G0 责任与证据台账](business-docs/01-客服Agent项目/02-G0责任与证据台账.md) |
 | 准备启动会和周推进 | [启动会与周推进](business-docs/01-客服Agent项目/06-启动会与周推进.md) |
 | 查全仓业务文档 | [业务文档地图](business-docs/README.md) |
-| 查已收尾汇报 Web | [Web 收尾与参考说明](web-decision-brief/README.md) |
+| 打开客服 Agent 一期启动会 | [当前网址](https://weiweity.github.io/tianyuan-ai-brief/customer-agent/) |
+| 回看 7 月 31 日已立项汇报 | [归档网址](https://weiweity.github.io/tianyuan-ai-brief/) · [归档说明](archive/README.md) |
 
 ## 工作区结构
 
@@ -34,7 +35,9 @@ ai-赋能立项/
 │   ├── 01-立项主线/            # 旧路径兼容与历史上会稿
 │   ├── 05-供应链布局/          # 独立 P1，当前暂停
 │   └── 99-归档/
-├── web-decision-brief/         # 已收尾汇报 Web，参考资产
+├── archive/
+│   └── 2026-07-31-ai-project-brief/ # 7 月 31 日冻结站点
+├── sites/                      # 两个网址共用的发布与质量工具
 ├── output/                     # 生成物，不是业务真源
 └── .github/                    # Web 质量与 Pages 工作流
 ```

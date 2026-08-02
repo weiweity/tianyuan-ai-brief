@@ -2,20 +2,20 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "b72d1ce326cf290361f178ea2821ea069082b45b1134069bbcd05912a3dfd9e2"
+    "sha256": "0897656bfc79b896250edd1a311d0db79027e7aa8c0d007abbd7cfc0c7074c41"
   },
   "sources": [
     {
       "id": "charter",
       "file": "00-项目章程.md",
       "label": "项目章程",
-      "sha256": "0ed7e1e8f4dfba529342b478a2378ff9dab07e5d9eb8467e8fb49fc606011e7e"
+      "sha256": "6f5c3fd7630bf073f761176f713ce7ea77c7386c1ba539238864e06fb41b2a41"
     },
     {
       "id": "schedule",
       "file": "01-总排期与阶段门禁.md",
       "label": "总排期与阶段门禁",
-      "sha256": "030a2371957f5c7db7b52f130d1ebb66c8f2d3a6e01c86990996a60303ca8a5e"
+      "sha256": "ac5d62f9f475bfe10e8909b5e200099cb73714ed9b4e70f18fe1c0e557e3f0e0"
     },
     {
       "id": "ledger",
@@ -48,7 +48,7 @@
       "sha256": "470ecf6413bd19f730c8406af8cf42ef7bd285898f5fac652827e9a959a22759"
     }
   ],
-  "sourceHash": "39a6fe9f4b00155e8787186389b2d9ad419a450a4d1424716ff7d4e8e8068e1f",
+  "sourceHash": "20e96034b29b5012af877ffeb434c59253bb1b31637662892ef74ac4a3e8b5fc",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",
