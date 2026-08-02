@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -8,12 +8,19 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import axe from "axe-core";
 import { chromium } from "playwright";
 import { sha256, verifyDecisionReceipt } from "../docs/js/modules/decision-model.js";
+import { createSafeResultsDir } from "./support/safe-results-dir.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // web-decision-brief
 const monorepoRoot = path.resolve(root, "..");
 const siteBase = "/web-decision-brief/docs";
-const resultsDir =
-  process.env.UI_AUDIT_RESULTS_DIR || path.join(root, "test-results", `ui-${process.pid}`);
+const resultsRoot = path.join(root, "test-results");
+const resultsDir = await createSafeResultsDir({
+  trustedRootPath: root,
+  rootPath: resultsRoot,
+  prefix: "ui",
+  label: String(process.pid),
+  requestedPath: process.env.UI_AUDIT_RESULTS_DIR,
+});
 const port =
   Number(process.env.UI_AUDIT_PORT) ||
   (await new Promise((resolve, reject) => {
@@ -25,6 +32,23 @@ const port =
       probe.close((error) => (error ? reject(error) : resolve(address.port)));
     });
   }));
+
+await new Promise((resolve, reject) => {
+  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  const build = spawn(npmCommand, ["run", "build:pages"], {
+    cwd: root,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let output = "";
+  build.stdout.on("data", (chunk) => { output += chunk; });
+  build.stderr.on("data", (chunk) => { output += chunk; });
+  build.once("error", reject);
+  build.once("exit", (code) => {
+    if (code === 0) resolve();
+    else reject(new Error(`公开 Pages 产物构建失败（${code}）\n${output}`));
+  });
+});
+
 const origin = `http://127.0.0.1:${port}`;
 // 从 monorepo 根托管，才能同时访问软件 docs 与业务 print 兼容入口
 const server = spawn("python3", ["-m", "http.server", String(port)], {
@@ -101,6 +125,66 @@ async function assertTouchTargets(page, label, minimum = 44) {
   assert.deepEqual(failures, [], `${label} 点击热区不足：${JSON.stringify(failures)}`);
 }
 
+async function assertMinimumTargetSize(page, selector, label, minimum = 44) {
+  const failures = await page.locator(selector).evaluateAll((elements, min) =>
+    elements
+      .filter((element) => element.checkVisibility())
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          label: element.getAttribute("aria-label") || element.textContent.trim(),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        };
+      })
+      .filter((target) => target.width < min || target.height < min), minimum);
+  assert.deepEqual(failures, [], `${label} 热区不足：${JSON.stringify(failures)}`);
+}
+
+async function swipeStage(page, direction) {
+  const point = await page.locator("#stage").evaluate((stage, dir) => {
+    const rect = stage.getBoundingClientRect();
+    const skip =
+      "a,button,input,textarea,select,label,[contenteditable=true],.mermaid-host,#diagram-lightbox,.diagram-lightbox-close,.diagram-zoom-viewport,.diagram-zoom-hint";
+    const startFractions = dir === "left" ? [0.78, 0.66, 0.5] : [0.22, 0.34, 0.5];
+    for (const yFraction of [0.42, 0.58, 0.7]) {
+      for (const xFraction of startFractions) {
+        const startX = rect.left + rect.width * xFraction;
+        const y = rect.top + rect.height * yFraction;
+        const target = document.elementFromPoint(startX, y);
+        if (target && stage.contains(target) && !target.closest(skip)) {
+          const delta = rect.width * 0.46 * (dir === "left" ? -1 : 1);
+          return {
+            startX: Math.round(startX),
+            endX: Math.round(Math.min(rect.right - 8, Math.max(rect.left + 8, startX + delta))),
+            y: Math.round(y),
+          };
+        }
+      }
+    }
+    throw new Error("未找到可用的滑页起点");
+  }, direction);
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const touch = (x) => [{ x, y: point.y, radiusX: 2, radiusY: 2, force: 1, id: 0 }];
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: touch(point.startX),
+    });
+    for (let step = 1; step <= 5; step += 1) {
+      const x = Math.round(point.startX + ((point.endX - point.startX) * step) / 5);
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: touch(x),
+      });
+      await page.waitForTimeout(18);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } finally {
+    await cdp.detach();
+  }
+}
+
 async function assertNoClippedChildren(page, selector, label) {
   const clipped = await page.locator(selector).evaluate((root) => {
     const bounds = root.getBoundingClientRect();
@@ -131,11 +215,47 @@ async function assertNoClippedChildren(page, selector, label) {
   assert.deepEqual(clipped, [], `${label} 存在裁切：${JSON.stringify(clipped)}`);
 }
 
+async function assertNoBlockOverlap(page, panelId, label) {
+  const overlaps = await page.locator(`#${panelId} .panel-body`).evaluate((body) => {
+    const blocks = [...body.querySelectorAll(":scope > [data-block-id]")]
+      .filter((element) => element.checkVisibility())
+      .map((element) => {
+        const visibleRects = [element, ...element.querySelectorAll("*")]
+          .filter((item) => item.checkVisibility())
+          .map((item) => item.getBoundingClientRect())
+          .filter((rect) => rect.width > 0 && rect.height > 0);
+        return {
+          id: element.dataset.blockId,
+          rect: {
+            left: Math.min(...visibleRects.map((rect) => rect.left)),
+            right: Math.max(...visibleRects.map((rect) => rect.right)),
+            top: Math.min(...visibleRects.map((rect) => rect.top)),
+            bottom: Math.max(...visibleRects.map((rect) => rect.bottom)),
+          },
+        };
+      });
+    const collisions = [];
+    for (let left = 0; left < blocks.length; left += 1) {
+      for (let right = left + 1; right < blocks.length; right += 1) {
+        const a = blocks[left];
+        const b = blocks[right];
+        const overlapX = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left);
+        const overlapY = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top);
+        if (overlapX > 1 && overlapY > 1) {
+          collisions.push(`${a.id} × ${b.id}: ${Math.round(overlapX)}×${Math.round(overlapY)}`);
+        }
+      }
+    }
+    return collisions;
+  });
+  assert.deepEqual(overlaps, [], `${label} 内容块重叠：${overlaps.join("、")}`);
+}
+
 async function assertVisibleMermaidText(page, id) {
   const expected = {
-    t2: ["客服 Agent", "供应链 备案识别", "本期主开"],
-    t4: ["先齐前置", "内部演示", "停扩"],
-    t5: ["您怎么批", "同意启动", "超线即停"],
+    t2: ["客服话术库 MVP-A", "供应链备案识别", "组合 P0"],
+    t4: ["G0", "Ddev", "停止扩面"],
+    t5: ["客服执行路径", "费用已批", "立即停扩"],
   }[id];
   await page.locator(`#${id} .mermaid-host[data-render-state="ready"] svg`).waitFor({
     timeout: 10000,
@@ -206,6 +326,13 @@ async function axeViolations(page, label) {
       targets: violation.nodes.map((node) => node.target),
     }));
   assert.deepEqual(blocking, [], `${label} 可访问性阻断：${JSON.stringify(blocking)}`);
+  const region = result.violations
+    .filter((violation) => violation.id === "region" || violation.id.startsWith("landmark-"))
+    .map((violation) => ({
+      nodes: violation.nodes.length,
+      targets: violation.nodes.map((node) => node.target),
+    }));
+  assert.deepEqual(region, [], `${label} landmark 区域遗漏：${JSON.stringify(region)}`);
   return result.violations.map((violation) => ({
     id: violation.id,
     impact: violation.impact,
@@ -237,6 +364,12 @@ async function runCanonicalAudit(browser, viewport) {
   });
   await page.addInitScript(() => {
     localStorage.removeItem("tianyuan-brief-draft-v1");
+    globalThis.__AI_BRIEF_CLS__ = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (!entry.hadRecentInput) globalThis.__AI_BRIEF_CLS__ += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
   });
   await page.goto(`${origin}${siteBase}/?audit=${viewport.width}`, { waitUntil: "networkidle" });
   await page.locator(".panel.active").waitFor();
@@ -247,10 +380,43 @@ async function runCanonicalAudit(browser, viewport) {
   assert.ok(contentRequests > 0, "HTTP 正式入口必须读取 content.json SSOT");
   assert.ok(manifestRequests > 0, "HTTP 正式入口必须先读取 release.json");
   assert.equal(moduleRequests, 0, "HTTP 必须使用版本化原子 Bundle，不能请求可混版的 ESM 子模块");
+  await page.waitForTimeout(250);
+  const initialCls = await page.evaluate(() => globalThis.__AI_BRIEF_CLS__ || 0);
+  if (viewport.width > 1024) {
+    assert.ok(initialCls <= 0.1, `桌面首屏 CLS 超标：${initialCls.toFixed(4)}`);
+  }
   await assertNoHorizontalOverflow(page, `正式入口 ${viewport.width}px 首页`);
+  await assertMinimumTargetSize(
+    page,
+    ".archive-guard-links a",
+    `正式入口 ${viewport.width}px 现行项目入口`
+  );
+  if (viewport.width > 1024) {
+    await assertMinimumTargetSize(
+      page,
+      ".pager-dots button",
+      `正式入口 ${viewport.width}px 页码点`
+    );
+    const edgeAffordance = await page.evaluate(() => {
+      const stage = document.querySelector("#stage").getBoundingClientRect();
+      const next = document.querySelector("#nav-next");
+      const rect = next.getBoundingClientRect();
+      return {
+        opacity: Number.parseFloat(getComputedStyle(next).opacity),
+        left: rect.left,
+        stageRight: stage.right,
+      };
+    });
+    assert.ok(edgeAffordance.opacity >= 0.4, `桌面翻页按钮默认不可见：${JSON.stringify(edgeAffordance)}`);
+    assert.ok(
+      edgeAffordance.left >= edgeAffordance.stageRight - 1,
+      `桌面翻页按钮覆盖正文：${JSON.stringify(edgeAffordance)}`
+    );
+  }
 
   const tabIds = ["t1", "t2", "t3", "t4", "t5", "t6", "t7"];
   const accessibilityByTab = {};
+  accessibilityByTab.performance = { initialCls };
   for (const id of tabIds) {
     await page.locator(`#tab-${id}`).click();
     await page.locator(`#${id}.panel.active`).waitFor();
@@ -270,6 +436,7 @@ async function runCanonicalAudit(browser, viewport) {
     }
     if (viewport.width <= 640) {
       await assertSingleVerticalScroller(page, id, `${viewport.width}px ${id}`);
+      if (id === "t7") await assertNoBlockOverlap(page, id, `${viewport.width}px ${id}`);
     } else if (["t2", "t4", "t5", "t7"].includes(id)) {
       const body = await page.locator(`#${id} .panel-body`).evaluate((element) => ({
         client: element.clientHeight,
@@ -380,7 +547,7 @@ async function runCanonicalAudit(browser, viewport) {
     });
     assert.equal(compact.display, "grid");
     assert.equal(compact.count, 4);
-    assert.match(compact.text, /主开.*客服 Agent.*产出.*可周报.*后置.*仓储.*不开.*设计/s);
+    assert.match(compact.text, /现在.*客服话术库.*下一项.*供应链.*后置.*仓储.*不开.*设计/s);
     assert.ok(compact.minFont >= 10, `t2 可读缩略字号过小：${compact.minFont}px`);
     assert.equal(compact.clipped, false, "t2 可读缩略不得裁切");
   } else {
@@ -400,7 +567,7 @@ async function runCanonicalAudit(browser, viewport) {
     }));
     assert.equal(compact.display, "grid");
     assert.equal(compact.count, 4);
-    assert.match(compact.text, /主开.*产出.*后置.*不开/s);
+    assert.match(compact.text, /现在.*下一项.*后置.*不开/s);
     assert.ok(compact.minFont >= 10, `t2 桌面缩略字号过小：${compact.minFont}px`);
   }
   await page.screenshot({
@@ -415,35 +582,77 @@ async function runCanonicalAudit(browser, viewport) {
   await page.locator("#tab-t1").click();
   await page.keyboard.press("ArrowRight");
   assert.equal(await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"), "t2");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.tab), "t2");
+  await page.keyboard.press("ArrowLeft");
+  assert.equal(await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"), "t1");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.tab), "t1");
+  await page.keyboard.press("End");
+  assert.equal(await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"), "t7");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.tab), "t7");
+  await page.keyboard.press("Home");
+  assert.equal(await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"), "t1");
+  assert.equal(await page.evaluate(() => document.activeElement?.dataset.tab), "t1");
+
+  if (viewport.width <= 640) {
+    await page.locator("#tab-t3").click();
+    await swipeStage(page, "right");
+    await page.locator("#t2.panel.active").waitFor({ timeout: 2000 });
+    assert.equal(
+      await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"),
+      "t2"
+    );
+    await page.locator("#tab-t3").click();
+    await swipeStage(page, "left");
+    await page.locator("#t4.panel.active").waitFor({ timeout: 2000 });
+    await page.locator('#t4 .mermaid-host[data-render-state="ready"]').waitFor({ timeout: 10000 });
+    await page.locator("#t4 .panel-body").evaluate((body) => {
+      body.scrollTop = body.scrollHeight;
+    });
+    await page.waitForTimeout(100);
+    await swipeStage(page, "left");
+    await page.locator("#t5.panel.active").waitFor({ timeout: 2000 });
+    assert.equal(
+      await page.locator('[role="tab"][aria-selected="true"]').getAttribute("data-tab"),
+      "t5",
+      "连续滑页不得被冷却态卡住"
+    );
+  }
 
   await page.locator("#tab-t6").click();
   assert.equal(
     await page.locator("#nav-next").evaluate((element) => getComputedStyle(element).display),
     "none",
-    "当场确认页翻页按钮不得覆盖交互表格"
+    "执行补录页翻页按钮不得覆盖交互表格"
   );
-  const agentGroup = page.getByRole("group", { name: "客服 Agent路径选择" });
-  const filingGroup = page.getByRole("group", { name: "供应链备案识别路径选择" });
-  await agentGroup.getByRole("button", { name: "C 不立" }).click();
-  await filingGroup.getByRole("button", { name: "C 不立" }).click();
+  const agentGroup = page.getByRole("group", { name: "客服话术库 MVP-A路径选择" });
+  await agentGroup.getByRole("button", { name: "C 暂停执行" }).click();
+  await page.locator('[data-check-view-button="record"]').click();
+  await page
+    .getByRole("row", { name: /公司正式批准凭证已归档/ })
+    .getByRole("button")
+    .click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
-  await agentGroup.getByRole("button", { name: "A 同意启动" }).click();
-  await waitForText(page.locator("[data-check-status]"), /客服 Agent Owner/);
+  await page.locator('[data-check-view-button="paths"]').click();
+  await agentGroup.getByRole("button", { name: "A 费用已批，可执行" }).click();
+  await waitForText(page.locator("[data-check-status]"), /客服话术库 MVP-A Owner/);
   await page.locator('[data-check-view-button="owners"]').click();
-  const agentOwner = page.getByRole("row", { name: /3A 客服 Agent Owner/ });
+  const agentOwner = page.getByRole("row", { name: /3 客服话术库 MVP-A Owner/ });
   await agentOwner.getByRole("textbox", { name: "姓名" }).fill("李负责人");
   await agentOwner.getByRole("textbox", { name: "部门" }).fill("客服部");
-  await agentOwner.getByRole("textbox", { name: "负责" }).fill("客服 Agent");
+  await agentOwner.getByRole("textbox", { name: "负责" }).fill("客服话术库 MVP-A");
   await page.locator('[data-check-view-button="budget"]').click();
-  await page.getByRole("row", { name: /共享工具费用与止损/ }).getByRole("button").click();
-  await page.getByRole("row", { name: /授权超止损/ }).getByRole("button").click();
+  const feeRow = page.getByRole("row", { name: /客服单项目目标预算/ });
+  await feeRow.getByRole("textbox", { name: "目标预算" }).fill("3000");
+  await feeRow.getByRole("textbox", { name: "月度 cap" }).fill("1000");
+  await feeRow.getByRole("textbox", { name: "全期 cap" }).fill("3000");
+  await page.getByRole("row", { name: /授权超客服单项目 cap/ }).getByRole("button").click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
   await page.getByRole("button", { name: "复制本场结论" }).click();
   const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-  assert.match(clipboard, /客服 Agent · 路径：A 同意启动/);
-  assert.match(clipboard, /供应链备案识别 · 路径：C 不立/);
+  assert.match(clipboard, /客服话术库 MVP-A · 路径：A 费用已批，可执行/);
+  assert.doesNotMatch(clipboard, /供应链备案识别 · 路径/);
   assert.match(clipboard, /凭证哈希（SHA-256）：[a-f0-9]{64}/);
 
   const downloadPromise = page.waitForEvent("download");
@@ -455,10 +664,7 @@ async function runCanonicalAudit(browser, viewport) {
   assert.equal(receipt.minimumReady, true);
   assert.deepEqual(
     receipt.projects.map((project) => [project.projectId, project.path]),
-    [
-      ["agent", "A"],
-      ["filing", "C"],
-    ]
+    [["agent", "A"]]
   );
 
   accessibilityByTab["t6-decision"] = await axeViolations(
@@ -486,8 +692,8 @@ async function runCanonicalAudit(browser, viewport) {
     if (view === "owners") {
       assert.equal(
         await page.locator('#t6 tr[data-check-section="owners"]:visible').count(),
-        2,
-        `${viewport.width}px Owner 步骤必须同时看见两个项目`
+        1,
+        `${viewport.width}px Owner 步骤只显示客服项目`
       );
     }
     await page.screenshot({
@@ -538,7 +744,7 @@ async function runLegacyAudit(browser, viewport) {
   );
   await page.waitForURL(/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
   await page.locator(".panel.active").waitFor();
-  assert.equal(await page.title(), "天元 · AI 立项决策台");
+  assert.equal(await page.title(), "天元 · AI 赋能汇报（历史快照）");
   await assertNoHorizontalOverflow(page, `历史兼容入口 ${viewport.width}px`);
   if (viewport.width <= 640) {
     await assertTouchTargets(page, `历史兼容入口 ${viewport.width}px`);
@@ -549,6 +755,284 @@ async function runLegacyAudit(browser, viewport) {
   });
   assert.deepEqual(errors, [], `历史兼容入口 ${viewport.width}px 控制台错误：${errors.join("\n")}`);
   await context.close();
+}
+
+async function runHistoricalCurrentNavigationAudit(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const failures = [];
+  const attachFailureAudit = (page, label) => {
+    page.on("pageerror", (error) => failures.push(`${label} pageerror: ${error.message}`));
+    page.on("console", (message) => {
+      if (message.type() === "error") failures.push(`${label} console: ${message.text()}`);
+    });
+    page.on("requestfailed", (request) => {
+      failures.push(`${label} requestfailed: ${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) failures.push(`${label} HTTP ${response.status()}: ${response.url()}`);
+    });
+  };
+  const assertHealthyPage = async (page, expectedTitle, bodyPattern, label) => {
+    await page.waitForFunction((title) => document.title === title, expectedTitle);
+    const body = await page.locator("body").innerText();
+    assert.equal(await page.title(), expectedTitle, `${label} 标题错误`);
+    assert.match(body, bodyPattern, `${label} 正文未加载`);
+    assert.doesNotMatch(page.url(), /^chrome-error:/, `${label} 落入 Chrome 错误页`);
+    assert.doesNotMatch(body, /ERR_FILE_NOT_FOUND|无法访问您的文件/, `${label} 出现文件丢失`);
+  };
+  const assertCanonicalHttp = (page, suffix, label) => {
+    const url = new URL(page.url());
+    assert.equal(url.protocol, "http:", `${label} 必须保持 HTTP canonical URL`);
+    assert.equal(decodeURIComponent(url.pathname).endsWith(suffix), true, `${label} 路径错误：${url.pathname}`);
+    assert.equal(url.searchParams.has("portable"), false, `${label} HTTP 不得落入便携降级`);
+  };
+
+  const chainPage = await context.newPage();
+  attachFailureAudit(chainPage, "PRD 主链路");
+  await chainPage.goto(`${origin}${siteBase}/?audit=current-links-prd`, { waitUntil: "networkidle" });
+  await Promise.all([
+    chainPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html")
+    ),
+    chainPage.getByRole("link", { name: "现行 PRD", exact: true }).click(),
+  ]);
+  await chainPage.waitForLoadState("networkidle");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP PRD");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html", "HTTP PRD");
+
+  await chainPage.waitForFunction(() => document.querySelector("#open-execution-center"));
+  await Promise.all([
+    chainPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html")
+    ),
+    chainPage.locator("#open-execution-center").click(),
+  ]);
+  await chainPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    chainPage,
+    "客服 Agent 一期 · 需求会执行中心",
+    /项目已批准.*不宣布开发开工/s,
+    "PRD → HTTP Hub"
+  );
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "PRD → HTTP Hub");
+  await chainPage.reload({ waitUntil: "networkidle" });
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Hub reload");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Hub reload");
+
+  await chainPage.waitForFunction(() => document.querySelector("#return-to-prd"));
+  await Promise.all([
+    chainPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html")
+    ),
+    chainPage.locator("#return-to-prd").click(),
+  ]);
+  await chainPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    chainPage,
+    "客服 Agent 一期 · 需求会项目说明",
+    /项目已批准.*软件未开发/s,
+    "Hub → HTTP PRD"
+  );
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html", "Hub → HTTP PRD");
+  await chainPage.reload({ waitUntil: "networkidle" });
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP PRD reload");
+  await chainPage.goBack({ waitUntil: "networkidle" });
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Back 回 Hub");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Back 回 Hub");
+  await chainPage.goForward({ waitUntil: "networkidle" });
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP Forward 回 PRD");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html", "HTTP Forward 回 PRD");
+  await Promise.all([
+    chainPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html")
+    ),
+    chainPage.locator("#open-execution-center").click(),
+  ]);
+  await chainPage.waitForLoadState("networkidle");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "Forward 后重点 Hub");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "Forward 后重点 Hub");
+  await Promise.all([
+    chainPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html")
+    ),
+    chainPage.locator("#return-to-prd").click(),
+  ]);
+  await chainPage.waitForLoadState("networkidle");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "重点 Hub 后返回 PRD");
+  assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html", "重点 Hub 后返回 PRD");
+
+  const hubPage = await context.newPage();
+  attachFailureAudit(hubPage, "Hub 直达链路");
+  await hubPage.goto(`${origin}${siteBase}/?audit=current-links-hub`, { waitUntil: "networkidle" });
+  await Promise.all([
+    hubPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html")
+    ),
+    hubPage.getByRole("link", { name: "执行中心", exact: true }).click(),
+  ]);
+  await hubPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    hubPage,
+    "客服 Agent 一期 · 需求会执行中心",
+    /项目已批准.*不宣布开发开工/s,
+    "HTTP Hub"
+  );
+  assertCanonicalHttp(hubPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Hub 直达");
+  await hubPage.reload({ waitUntil: "networkidle" });
+  await assertHealthyPage(hubPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Hub 直达 reload");
+
+  await hubPage.waitForFunction(() => document.querySelector("a[data-meeting-link]"));
+  await Promise.all([
+    hubPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html")
+    ),
+    hubPage.locator("a[data-meeting-link]").click(),
+  ]);
+  await hubPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    hubPage,
+    "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
+    /项目已批准.*一期方向待确认.*尚未开发/s,
+    "Hub → HTTP Meeting"
+  );
+  assertCanonicalHttp(hubPage, "/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html", "Hub → HTTP Meeting");
+  await hubPage.goBack({ waitUntil: "networkidle" });
+  await assertHealthyPage(hubPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "Meeting Back 回 Hub");
+
+  const meetingPage = await context.newPage();
+  attachFailureAudit(meetingPage, "Meeting 直达链路");
+  await meetingPage.goto(`${origin}${siteBase}/?audit=current-links-meeting`, { waitUntil: "networkidle" });
+  await Promise.all([
+    meetingPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html")
+    ),
+    meetingPage.getByRole("link", { name: "启动会主屏", exact: true }).click(),
+  ]);
+  await meetingPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    meetingPage,
+    "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
+    /项目已批准.*一期方向待确认.*尚未开发/s,
+    "HTTP Meeting"
+  );
+  assertCanonicalHttp(meetingPage, "/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html", "HTTP Meeting 直达");
+
+  const poisonedPage = await context.newPage();
+  attachFailureAudit(poisonedPage, "HTTP portable 污染查询");
+  const poisonedPrdUrl = `${origin}/business-docs/01-%E5%AE%A2%E6%9C%8DAgent%E9%A1%B9%E7%9B%AE/07-%E5%AE%A2%E6%9C%8DAgent%E7%AB%8B%E9%A1%B9PRD.html?portable=prd`;
+  await poisonedPage.goto(poisonedPrdUrl, { waitUntil: "networkidle" });
+  await assertHealthyPage(
+    poisonedPage,
+    "客服 Agent 一期 · 需求会项目说明",
+    /项目已批准.*软件未开发/s,
+    "HTTP 污染查询 PRD"
+  );
+  assert.equal(new URL(poisonedPage.url()).searchParams.get("portable"), "prd");
+  await Promise.all([
+    poisonedPage.waitForURL((url) =>
+      decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html")
+    ),
+    poisonedPage.locator("#open-execution-center").click(),
+  ]);
+  await poisonedPage.waitForLoadState("networkidle");
+  await assertHealthyPage(
+    poisonedPage,
+    "客服 Agent 一期 · 需求会执行中心",
+    /项目已批准.*不宣布开发开工/s,
+    "HTTP 污染查询仍进入 Hub"
+  );
+  assertCanonicalHttp(
+    poisonedPage,
+    "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html",
+    "HTTP 污染查询后 Hub"
+  );
+  await poisonedPage.reload({ waitUntil: "networkidle" });
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP 污染链路 reload");
+  await poisonedPage.goBack({ waitUntil: "networkidle" });
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP 污染链路 Back");
+  assert.equal(new URL(poisonedPage.url()).searchParams.get("portable"), "prd");
+  await poisonedPage.goForward({ waitUntil: "networkidle" });
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 需求会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP 污染链路 Forward");
+  await poisonedPage.goBack({ waitUntil: "networkidle" });
+  await poisonedPage.locator("#open-execution-center").click();
+  await poisonedPage.waitForURL((url) =>
+    decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html")
+  );
+  await poisonedPage.locator("#return-to-prd").click();
+  await poisonedPage.waitForURL((url) =>
+    decodeURIComponent(url.pathname).endsWith("/business-docs/01-客服Agent项目/07-客服Agent立项PRD.html") &&
+    !url.searchParams.has("portable")
+  );
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP 污染链路重点击与返回");
+
+  assert.deepEqual(failures, [], `历史 Web 现行入口链路失败：${failures.join("\n")}`);
+  await context.close();
+  return "历史 Web → HTTP PRD ⇄ HTTP Hub → HTTP Meeting；reload / Back / Forward / reclick；portable 污染查询不劫持 HTTP；历史 Web → HTTP Hub / Meeting";
+}
+
+async function runPublicArtifactNavigationAudit(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const failures = [];
+  const publicUrl = `${origin}/web-decision-brief/dist/pages/index.html`;
+  for (const linkName of ["现行 PRD", "执行中心"]) {
+    const page = await context.newPage();
+    page.on("pageerror", (error) => failures.push(`${linkName} pageerror: ${error.message}`));
+    page.on("console", (message) => {
+      if (message.type() === "error") failures.push(`${linkName} console: ${message.text()}`);
+    });
+    page.on("requestfailed", (request) => {
+      failures.push(`${linkName} requestfailed: ${request.url()} ${request.failure()?.errorText || ""}`);
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) failures.push(`${linkName} HTTP ${response.status()}: ${response.url()}`);
+    });
+
+    await page.goto(publicUrl, { waitUntil: "networkidle" });
+    await Promise.all([
+      page.waitForURL((url) => url.pathname.endsWith("/web-decision-brief/dist/pages/internal-only.html")),
+      page.getByRole("link", { name: linkName, exact: true }).click(),
+    ]);
+    await page.waitForLoadState("networkidle");
+    assert.equal(await page.title(), "内部材料访问说明", `${linkName} 公开降级页标题错误`);
+    const body = await page.locator("body").innerText();
+    assert.match(body, /现行材料仅授权内部访问/);
+    assert.doesNotMatch(page.url(), /^chrome-error:/, `${linkName} 公开入口落入错误页`);
+    assert.doesNotMatch(body, /ERR_FILE_NOT_FOUND|无法访问您的文件/);
+    await page.close();
+  }
+
+  const meetingPage = await context.newPage();
+  meetingPage.on("pageerror", (error) => failures.push(`启动会主屏 pageerror: ${error.message}`));
+  meetingPage.on("console", (message) => {
+    if (message.type() === "error") failures.push(`启动会主屏 console: ${message.text()}`);
+  });
+  meetingPage.on("requestfailed", (request) => {
+    failures.push(`启动会主屏 requestfailed: ${request.url()} ${request.failure()?.errorText || ""}`);
+  });
+  meetingPage.on("response", (response) => {
+    if (response.status() >= 400) failures.push(`启动会主屏 HTTP ${response.status()}: ${response.url()}`);
+  });
+  await meetingPage.goto(publicUrl, { waitUntil: "networkidle" });
+  await Promise.all([
+    meetingPage.waitForURL((url) =>
+      url.pathname.endsWith("/web-decision-brief/dist/pages/customer-agent/")
+    ),
+    meetingPage.getByRole("link", { name: "启动会主屏", exact: true }).click(),
+  ]);
+  await meetingPage.waitForLoadState("networkidle");
+  assert.match(await meetingPage.title(), /天元 · 客服 Agent 启动会$/);
+  assert.match(await meetingPage.locator("html").getAttribute("data-release"), /^meeting-v1-[a-f0-9]{12}$/);
+  assert.equal(await meetingPage.locator(".brand-logo").getAttribute("alt"), "SHINE MAGE");
+  assert.match(
+    await meetingPage.locator('link[rel="icon"]').getAttribute("href"),
+    /^data:image\/png;base64,/
+  );
+  await assertNoHorizontalOverflow(meetingPage, "Pages 启动会主屏");
+  await meetingPage.close();
+
+  assert.deepEqual(failures, [], `公开 Pages 现行入口失败：${failures.join("\n")}`);
+  await context.close();
+  return "Pages 启动会主屏 → /customer-agent/；现行 PRD / 执行中心 → internal-only.html";
 }
 
 async function runFileAudit(browser, viewport, useLegacyEntry) {
@@ -564,6 +1048,9 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
+  page.on("requestfailed", (request) => {
+    errors.push(`requestfailed: ${request.url()} ${request.failure()?.errorText || ""}`);
+  });
 
   const entryPath = useLegacyEntry
     ? path.join(root, "../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html")
@@ -577,7 +1064,10 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   }
   await page.locator(".panel.active").waitFor({ timeout: 10000 });
 
-  assert.equal(await page.locator("#doc-title").innerText(), "天元 · AI 立项决策台");
+  assert.equal(
+    await page.locator("#doc-title").innerText(),
+    "天元 · AI 赋能汇报（历史快照）"
+  );
   assert.equal(await page.locator("#offline-notice").isVisible(), true);
   assert.equal(await page.locator("[role=tab]").count(), 7);
   assert.equal(
@@ -601,12 +1091,13 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
 
   await page.locator("#tab-t6").click();
   await page
-    .getByRole("group", { name: "客服 Agent路径选择" })
-    .getByRole("button", { name: "C 不立" })
+    .getByRole("group", { name: "客服话术库 MVP-A路径选择" })
+    .getByRole("button", { name: "C 暂停执行" })
     .click();
+  await page.locator('[data-check-view-button="record"]').click();
   await page
-    .getByRole("group", { name: "供应链备案识别路径选择" })
-    .getByRole("button", { name: "C 不立" })
+    .getByRole("row", { name: /公司正式批准凭证已归档/ })
+    .getByRole("button")
     .click();
   await waitForText(page.locator("[data-check-status]"), /最低要求已齐/);
 
@@ -617,6 +1108,40 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
     path: path.join(resultsDir, `${label}.png`),
     fullPage: true,
   });
+
+  if (!useLegacyEntry && viewport.width === 1440) {
+    const projectPrdPath = path.join(
+      monorepoRoot,
+      "business-docs/01-客服Agent项目/07-客服Agent立项PRD.html"
+    );
+    await Promise.all([
+      page.waitForURL((url) => fileURLToPath(url) === projectPrdPath),
+      page.getByRole("link", { name: "现行 PRD", exact: true }).click(),
+    ]);
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
+    assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND|无法访问您的文件/);
+    await page.locator("#open-execution-center").click();
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+    assert.equal(await page.locator("a[data-meeting-link]").count(), 0, "便携 Hub 不得导航到相邻 09 文件");
+    assert.match(await page.locator("body").innerText(), /请回到项目目录，打开 09-客服Agent需求会汇报\.html/);
+    assert.equal(fileURLToPath(new URL(page.url())), projectPrdPath);
+    assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
+    await page.reload({ waitUntil: "load" });
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+    await page.goBack({ waitUntil: "load" });
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
+    await page.goForward({ waitUntil: "load" });
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+    await page.locator("#return-to-prd").click();
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
+    assert.equal(new URL(page.url()).searchParams.has("portable"), false);
+    await page.reload({ waitUntil: "load" });
+    await page.locator("#open-execution-center").click();
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+    assert.equal(fileURLToPath(new URL(page.url())), projectPrdPath);
+    assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
+    assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND|无法访问您的文件/);
+  }
   assert.deepEqual(errors, [], `${label} 控制台错误：${errors.join("\n")}`);
   await context.close();
 }
@@ -688,7 +1213,7 @@ async function runMermaidResilienceAudit(browser, mode) {
     await page.locator('#t2 .mermaid-host[data-render-state="fallback"]').waitFor({
       timeout: 3000,
     });
-    assert.match(await page.locator("#t2 .mermaid-host").innerText(), /客服 Agent/);
+    assert.match(await page.locator("#t2 .mermaid-host").innerText(), /客服话术库/);
     for (const id of ["t4", "t5"]) {
       await page.locator(`#tab-${id}`).click();
       await page.locator(`#${id} .mermaid-host[data-render-state="fallback"]`).waitFor({
@@ -771,7 +1296,7 @@ async function runSameReleaseHotUpdateAudit(browser) {
     readFile(path.join(root, "docs/data/content.json"), "utf8"),
     readFile(path.join(root, "docs/data/release.json"), "utf8"),
   ]);
-  const updatedText = contentText.replace("项目清单", "项目名单");
+  const updatedText = contentText.replace("收尾时 Goal", "校验时 Goal");
   assert.equal(updatedText.length, contentText.length, "故障注入必须保持正文长度不变");
   assert.notEqual(updatedText, contentText, "故障注入文案必须真实变化");
   const release = JSON.parse(releaseText);
@@ -801,10 +1326,10 @@ async function runSameReleaseHotUpdateAudit(browser) {
     waitUntil: "networkidle",
   });
   await page.waitForFunction(() => document.documentElement.dataset.appState === "ready");
-  assert.match(await page.locator("#t1").innerText(), /项目清单/);
+  assert.match(await page.locator("#t1").innerText(), /收尾时 Goal/);
   serveUpdate = true;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await waitForText(page.locator("#t1"), /项目名单/, 4000);
+  await waitForText(page.locator("#t1"), /校验时 Goal/, 4000);
   assert.match(await page.locator("#status-pill").innerText(), /已同步最新/);
   assert.deepEqual(errors, [], `同长度热更新产生脚本错误：${errors.join("\n")}`);
   await context.close();
@@ -971,8 +1496,115 @@ async function runPrintAudit(browser) {
   return pdfPath;
 }
 
-await rm(resultsDir, { recursive: true, force: true });
-await mkdir(resultsDir, { recursive: true });
+async function runNavigationAndResetAudit(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(`console: ${message.text()}`);
+  });
+  await page.goto(`${origin}${siteBase}/?audit=history-reset`, { waitUntil: "networkidle" });
+  await page.locator("#t1.panel.active").waitFor();
+
+  await page.locator("#tab-t3").click();
+  await page.locator("#t3.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t3$/);
+  await page.locator("#tab-t4").click();
+  await page.locator("#t4.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t4$/);
+  await page.goBack();
+  await page.locator("#t3.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t3$/);
+  await page.goForward();
+  await page.locator("#t4.panel.active").waitFor();
+  assert.match(page.url(), /#tab=t4$/);
+
+  await page.locator("#tab-t6").click();
+  await page.locator("#t6.panel.active").waitFor();
+
+  // 普通会议变更也必须在持久化失败时显式回滚，不能只保护“清空”。
+  await page.evaluate(() => {
+    window.__originalStorageSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new DOMException("quota", "QuotaExceededError"); };
+  });
+  await page.locator('[data-path-pick="A"]').first().click();
+  await waitForText(page.locator("#toast"), /保存失败：浏览器存储不可用/);
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false",
+    "普通会议变更保存失败后必须回滚"
+  );
+  await page.evaluate(() => { Storage.prototype.setItem = window.__originalStorageSetItem; });
+
+  await page.locator('[data-path-pick="A"]').first().click();
+  await page.locator('input[data-fee="total"]').first().fill("3000");
+  await page.locator('input[data-owner-multi="name"]').first().fill("回归负责人");
+  assert.equal(await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"), "true");
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "3000");
+  assert.equal(
+    await page.locator('input[data-owner-multi="name"]').first().inputValue(),
+    "回归负责人"
+  );
+
+  await page.evaluate(() => {
+    window.__originalStorageSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => { throw new DOMException("quota", "QuotaExceededError"); };
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("[data-reset-check]").click();
+  await waitForText(page.locator("#toast"), /清空失败：浏览器未能保存/);
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "3000");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "回归负责人");
+  await page.evaluate(() => { Storage.prototype.setItem = window.__originalStorageSetItem; });
+
+  const staleFee = await page.locator('input[data-fee="total"]').first().elementHandle();
+  const staleOwner = await page.locator('input[data-owner-multi="name"]').first().elementHandle();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("[data-reset-check]").click();
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("input[data-fee], input[data-owner-multi], input[data-owner]")]
+      .every((input) => input.value === "")
+  );
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "");
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false"
+  );
+  assert.equal(
+    await page.locator("[data-check-toggle]").evaluateAll((items) =>
+      items.every((item) => item.getAttribute("aria-pressed") === "false")
+    ),
+    true
+  );
+
+  await staleFee.evaluate((input) => input.dispatchEvent(new Event("change", { bubbles: true })));
+  await staleOwner.evaluate((input) => input.dispatchEvent(new Event("change", { bubbles: true })));
+  await page.waitForTimeout(100);
+  assert.doesNotMatch(
+    (await page.evaluate(() => localStorage.getItem("tianyuan-brief-draft-v1"))) || "",
+    /3000|回归负责人/,
+    "重置前失效输入的延迟事件不得复活会议状态"
+  );
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator("#t6.panel.active").waitFor();
+  assert.equal(await page.locator('input[data-fee="total"]').first().inputValue(), "");
+  assert.equal(await page.locator('input[data-owner-multi="name"]').first().inputValue(), "");
+  assert.equal(
+    await page.locator('[data-path-pick="A"]').first().getAttribute("aria-pressed"),
+    "false"
+  );
+  await page.screenshot({
+    path: path.join(resultsDir, "history-back-forward-reset.png"),
+    fullPage: true,
+  });
+  assert.deepEqual(errors, [], `历史 / 重置回归产生脚本错误：${errors.join("\n")}`);
+  await context.close();
+  return "t3 → t4 → Back → Forward；path / fee / owner / checked 清空并刷新后保持";
+}
+
 await waitForServer();
 const browser = await chromium.launch(
   process.env.CI ? { headless: true } : { channel: "chrome", headless: true }
@@ -992,6 +1624,8 @@ try {
       viewport
     );
   }
+  const historicalCurrentNavigation = await runHistoricalCurrentNavigationAudit(browser);
+  const publicArtifactNavigation = await runPublicArtifactNavigationAudit(browser);
   const mobileViewport = viewports.find((viewport) => viewport.width === 390);
   const desktopViewport = viewports.find((viewport) => viewport.width === 1440);
   await runLegacyAudit(browser, mobileViewport);
@@ -1009,6 +1643,7 @@ try {
   await runColdStartRecoveryAudit(browser);
   await runSameReleaseHotUpdateAudit(browser);
   await runCrossReleaseRefreshAudit(browser);
+  const navigationAndReset = await runNavigationAndResetAudit(browser);
   const immediatePrint = await runImmediatePrintFallbackAudit(browser);
   const printArtifact = await runPrintAudit(browser);
   console.log(
@@ -1017,6 +1652,8 @@ try {
         ok: true,
         viewports,
         accessibility,
+        historicalCurrentNavigation,
+        publicArtifactNavigation,
         offlineFile: ["390 direct", "390 legacy", "1440 direct", "1440 legacy"],
         offlineFailure: "explicit recovery UI",
         mermaidReady,
@@ -1024,6 +1661,7 @@ try {
         coldStart: "actionable retry recovered without local-only instructions",
         hotUpdate: "equal-length content applied by verified SHA",
         crossRelease: "versioned full-page refresh",
+        navigationAndReset,
         immediatePrint,
         printArtifact,
         artifacts: resultsDir,

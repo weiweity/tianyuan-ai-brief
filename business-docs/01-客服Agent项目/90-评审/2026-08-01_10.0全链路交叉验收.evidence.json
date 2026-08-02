@@ -1,0 +1,125 @@
+{
+  "evidenceVersion": "2.0",
+  "verifiedAt": "2026-08-01",
+  "scope": "repository-static-doc-code-and-automated-browser-evidence",
+  "result": "PASS",
+  "score": {
+    "dimensions": 9,
+    "minimum": 10.0,
+    "mean": 10.0,
+    "openP0": 0,
+    "openP1": 0
+  },
+  "businessState": {
+    "project": "customer-agent",
+    "priority": "P0",
+    "approvalEvidence": "EVD-CUSTOMER-APPROVAL-20260801",
+    "demandMeeting": "2026-08-04",
+    "externalResponsibilityPass": "1/14",
+    "scopePass": "1/15",
+    "totalGatePass": "2/29",
+    "g0Signed": false,
+    "ddevEstablished": false,
+    "developmentStarted": false,
+    "productCodeCreated": false,
+    "feePath": "B · 临时管控，未签",
+    "paidSpend": "新增付费授权 = 0"
+  },
+  "commands": [
+    {
+      "command": "node business-docs/08-工具/sync_customer_agent_surfaces.mjs --check",
+      "exitCode": 0,
+      "result": "PRD and Hub stable; 7/7 sources"
+    },
+    {
+      "command": "cd web-decision-brief && npm run test:all",
+      "exitCode": 0,
+      "result": "91/91 Node; Web UI pass; PRD 47/47; Hub 53/53; dependency audit clean"
+    }
+  ],
+  "automatedEvidence": {
+    "node": {
+      "passed": 91,
+      "total": 91
+    },
+    "prdBrowserQa": {
+      "passed": 47,
+      "total": 47,
+      "viewports": ["1440x900", "1024x768", "390x844", "375x667", "320x720"],
+      "modes": ["light", "dark", "reduced-motion"]
+    },
+    "hubBrowserQa": {
+      "passed": 53,
+      "total": 53,
+      "viewports": ["1440x900", "1024x768", "390x844", "375x667", "320x720"],
+      "modes": ["light", "dark", "reduced-motion"]
+    },
+    "historicalWeb": {
+      "viewports": ["375x667", "390x844", "1366x768", "1440x900"],
+      "axeViolations": 0,
+      "cls": {
+        "375x667": 0,
+        "390x844": 0,
+        "1366x768": 0.008985035198333545,
+        "1440x900": 0.007308287820698302
+      }
+    },
+    "publicPrivateBoundary": {
+      "passed": 7,
+      "total": 7,
+      "includesPrivateMigration": true,
+      "includesPosixLiteralPathCheckInZshAndBash": true
+    },
+    "stableSyncIdempotence": {
+      "artifacts": 3,
+      "bytesPreserved": true,
+      "mtimeNsPreserved": true
+    },
+    "dependencyAudit": {
+      "vulnerabilities": 0
+    }
+  },
+  "navigation": {
+    "fileAdjacent": ["click", "reload", "back", "forward", "reclick"],
+    "fileIsolated": ["prd-to-embedded-hub", "hub-to-embedded-prd", "reload", "back", "forward"],
+    "httpCanonical": ["prd-to-hub", "hub-to-prd", "reload", "back", "forward", "reclick"],
+    "httpPortableQueryCannotOverrideCanonicalRouting": true,
+    "historicalWebEntry": ["file", "http"],
+    "publicPagesDestination": "internal-only.html",
+    "chromeErrorPageObserved": false,
+    "consoleErrors": 0,
+    "pageErrors": 0,
+    "failedRequests": 0,
+    "externalRequests": 0
+  },
+  "sourceIntegrity": {
+    "sourceFiles": 7,
+    "prdHashesVerified": 7,
+    "hubHashesVerified": 7,
+    "safeStructuredHtmlReaders": true,
+    "navigableMarkdownLinks": 0,
+    "landmarkUniqueViolations": 0,
+    "uniqueTableAndCodeRegionLabels": true,
+    "atomicity": {
+      "checkerPrdAndManifestTransaction": true,
+      "checkerRollbackOnCommitFailure": true,
+      "hubSingleFileAtomicReplace": true,
+      "syncCrossProcessTransaction": false,
+      "syncFailClosedUntilFinalDualCheck": true
+    },
+    "noFollowAndRealpathBoundary": true,
+    "unchangedContentPreservesBytesAndMtime": true
+  },
+  "notClaimedAsVerified": [
+    "original-approval-document-content",
+    "real-owner-signatures",
+    "real-business-samples-metric-baselines-and-budget-cap",
+    "onsite-demand-meeting-outcome",
+    "ios-safari-and-android-real-devices",
+    "physical-screen-reader-and-voiceover-talkback",
+    "xga-or-1080p-projector",
+    "physical-printing",
+    "real-windows-cross-drive-path",
+    "software-launch-pilot-and-business-outcome"
+  ]
+}

@@ -8,8 +8,12 @@ SESSION-MEMORY.md
 **/SESSION-MEMORY.md
 node_modules/
 **/node_modules/
+**/__pycache__/
+*.py[cod]
 test-results/
 **/test-results/
 playwright-report/
+/output/
+/web-decision-brief/dist/
 tmp/
 **/tmp/

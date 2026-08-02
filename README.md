@@ -1,25 +1,50 @@
-# 天元 · AI 赋能立项（工作区）
+# 天元 · AI 赋能项目工作区
 
-软件与业务资料分开放，各自集中命名。
+当前工作区已经从“汇报 Web 设计”切换到“客服 Agent 正式立项与交付”。
 
-| 目录 | 是什么 |
-|------|--------|
-| **[web-decision-brief/](web-decision-brief/)** | **软件**：AI 立项决策台（npm / 站点 / 测试） |
-| **[business-docs/](business-docs/)** | **业务文档**：立项材料、纪要、周报、归档 |
+## 当前结论
 
-## 软件
+| 项目 / 资产 | 状态 | 下一步 |
+|-------------|------|--------|
+| **客服 Agent** | **P0 · 已确认立项 · 2026-08-04 启动** | 完成 G0，目标 08-14 决策；Ddev 未成立 |
+| 供应链 | P1 · 方向已通过、当前暂停 | 客服恢复绿灯并书面解除后再独立立项 |
+| 汇报 Web | **已收尾** | 仅作历史汇报、设计和工程方法参考 |
 
-```bash
-cd web-decision-brief
-npm install
-npm run serve          # http://localhost:8765
+## 先打开
+
+| 你要做什么 | 入口 |
+|------------|------|
+| 看项目组合状态、卡点与下一门禁 | [项目驾驶舱](business-docs/00-项目驾驶舱.md) |
+| 进入客服 Agent 当前项目 | **[客服 Agent 项目导航](business-docs/01-客服Agent项目/README.md)** |
+| 开立项会、快速过 PRD | [客服 Agent 立项 PRD（HTML）](business-docs/01-客服Agent项目/07-客服Agent立项PRD.html) |
+| 看 8 月 4 日起排期 | [总排期与阶段门禁](business-docs/01-客服Agent项目/01-总排期与阶段门禁.md) |
+| 填 Owner、证据、风险与决定 | [G0 责任与证据台账](business-docs/01-客服Agent项目/02-G0责任与证据台账.md) |
+| 准备启动会和周推进 | [启动会与周推进](business-docs/01-客服Agent项目/06-启动会与周推进.md) |
+| 查全仓业务文档 | [业务文档地图](business-docs/README.md) |
+| 查已收尾汇报 Web | [Web 收尾与参考说明](web-decision-brief/README.md) |
+
+## 工作区结构
+
+```text
+ai-赋能立项/
+├── README.md
+├── business-docs/
+│   ├── 00-项目驾驶舱.md
+│   ├── 01-客服Agent项目/       # 唯一活跃项目
+│   ├── 01-立项主线/            # 旧路径兼容与历史上会稿
+│   ├── 05-供应链布局/          # 独立 P1，当前暂停
+│   └── 99-归档/
+├── web-decision-brief/         # 已收尾汇报 Web，参考资产
+├── output/                     # 生成物，不是业务真源
+└── .github/                    # Web 质量与 Pages 工作流
 ```
 
-- 在线：https://weiweity.github.io/tianyuan-ai-brief/
-- 说明：[web-decision-brief/README.md](web-decision-brief/README.md)
+未来客服 Agent 产品代码只在 G0 Pass、Ddev 成立后创建。推荐结构已写入[全栈交付计划](business-docs/01-客服Agent项目/05-全栈交付计划.md)，当前不要提前生成空工程或把汇报 Web 当作产品底座。
 
-## 业务文档
+## 三条规则
 
-- 导航：[business-docs/README.md](business-docs/README.md)
-- 分类清单：[business-docs/分类汇总.md](business-docs/分类汇总.md)
-- 主交付：`business-docs/01-立项主线/`
+1. 8 月 4 日是项目启动，不是开发授权；
+2. 当前状态只认章程、G0 台账、Scope 和项目驾驶舱；
+3. 原始纪要、内部人员信息和飞书资源标识继续按受限资料管理。
+
+> 交接或换电脑前检查 Git：核心项目文档应可追踪；受限资料不能因为“本机能打开”就视为已备份。

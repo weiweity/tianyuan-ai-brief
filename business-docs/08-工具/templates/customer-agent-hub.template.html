@@ -1,0 +1,2802 @@
+<!doctype html>
+<!-- GENERATED FILE — source: 00-06 Markdown; DO NOT EDIT -->
+<html lang="zh-CN" data-release="__RELEASE_ID__">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f0f6">
+  <link rel="icon" href="data:,">
+  <title>客服 Agent 一期 · 需求会执行中心</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand-50: #f7f4fa;
+      --brand-100: #efe8f5;
+      --brand-200: #ddd0e9;
+      --brand-300: #c4aed6;
+      --brand-500: #8b6ba4;
+      --brand-600: #6f5088;
+      --brand-700: #56406b;
+      --brand-900: #2f2139;
+      --action-bg: #56406b;
+      --action-hover: #2f2139;
+      --ink: #221a28;
+      --muted: #6d6476;
+      --line: #e2dbe8;
+      --line-strong: #cbbfd6;
+      --surface: #ffffff;
+      --surface-soft: #fbf9fc;
+      --canvas: #f3f0f6;
+      --info: #2f6ea8;
+      --info-bg: #edf5fc;
+      --ok: #1f6b38;
+      --ok-bg: #eaf7ef;
+      --warn: #7a5c00;
+      --warn-bg: #fff7e3;
+      --danger: #a83f3f;
+      --danger-bg: #fdf0f0;
+      --shadow: 0 1px 2px rgb(47 33 57 / 6%), 0 8px 24px rgb(47 33 57 / 8%);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --touch: 44px;
+      --content: 1180px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
+        "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 86px;
+      background: var(--canvas);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.62;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.copying {
+      cursor: progress;
+    }
+
+    body.source-dialog-open {
+      overflow: hidden;
+    }
+
+    button,
+    a,
+    summary {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button,
+    input {
+      color: inherit;
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    a {
+      color: var(--brand-600);
+      text-underline-offset: .18em;
+    }
+
+    a:visited {
+      color: var(--brand-700);
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgb(111 80 136 / 38%);
+      outline-offset: 3px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--brand-900);
+      letter-spacing: -.025em;
+      line-height: 1.15;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: var(--space-5);
+      font-size: clamp(42px, 6vw, 76px);
+      font-weight: 800;
+    }
+
+    h2 {
+      margin-bottom: var(--space-3);
+      font-size: clamp(29px, 4vw, 46px);
+      font-weight: 780;
+    }
+
+    h3 {
+      margin-bottom: var(--space-2);
+      font-size: 18px;
+      font-weight: 750;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 12px;
+      min-height: var(--touch);
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--action-bg);
+      transform: translateY(-160%);
+      transition: transform 160ms var(--ease);
+    }
+
+    .skip-link:focus {
+      color: #fff;
+      transform: translateY(0);
+    }
+
+    .site-header {
+      position: sticky;
+      z-index: 30;
+      top: 0;
+      border-bottom: 1px solid rgb(226 219 232 / 92%);
+      background: rgb(243 240 246 / 92%);
+      backdrop-filter: blur(16px);
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: var(--space-5);
+      align-items: center;
+      width: min(calc(100% - 32px), var(--content));
+      min-height: 70px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: inline-flex;
+      gap: 9px;
+      align-items: baseline;
+      min-height: var(--touch);
+      color: var(--brand-900);
+      font-weight: 820;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .brand small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: .04em;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 2px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .top-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .top-nav a {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 11px;
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .top-nav a:hover,
+    .top-nav a[aria-current="location"] {
+      color: var(--brand-700);
+      background: var(--brand-100);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .button,
+    .quiet-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--touch);
+      padding: 9px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 740;
+      text-decoration: none;
+    }
+
+    .button {
+      color: #fff;
+      background: var(--action-bg);
+    }
+
+    .button:hover {
+      color: #fff;
+      background: var(--action-hover);
+    }
+
+    .quiet-link {
+      color: var(--brand-700);
+      background: var(--surface);
+    }
+
+    main {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      gap: clamp(34px, 7vw, 96px);
+      align-items: end;
+      min-height: 650px;
+      padding: clamp(70px, 10vw, 126px) 0 60px;
+    }
+
+    .eyebrow,
+    .section-kicker {
+      margin-bottom: var(--space-4);
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .hero-summary {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+    }
+
+    .next-card {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--brand-600);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .next-label {
+      margin-bottom: var(--space-4);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .next-date {
+      display: block;
+      color: var(--brand-700);
+      font-size: 40px;
+      font-weight: 820;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .next-card h2 {
+      margin: 10px 0 8px;
+      font-size: 25px;
+    }
+
+    .next-card p:last-child {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      margin: 0 0 42px;
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .status-item {
+      min-height: 108px;
+      padding: 18px 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .status-item:last-child {
+      border-right: 0;
+    }
+
+    .status-value {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--brand-700);
+      font-size: 27px;
+      font-weight: 810;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .principle-band {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-bottom: 60px;
+      padding: 14px 16px;
+      border-left: 3px solid var(--danger);
+      color: var(--muted);
+      background: var(--surface);
+    }
+
+    .principle-band strong {
+      color: var(--danger);
+    }
+
+    .section-block {
+      padding: clamp(62px, 8vw, 100px) 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: clamp(22px, 5vw, 70px);
+      margin-bottom: clamp(30px, 5vw, 52px);
+    }
+
+    .section-intro p {
+      max-width: 780px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .action-layout,
+    .scope-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .action-column,
+    .scope-column {
+      padding: clamp(24px, 4vw, 42px);
+    }
+
+    .action-column + .action-column,
+    .scope-column + .scope-column {
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .number-list {
+      display: grid;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: item;
+    }
+
+    .number-list li {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: var(--space-3);
+      align-items: start;
+      min-height: 64px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      counter-increment: item;
+    }
+
+    .number-list li:last-child {
+      border-bottom: 0;
+    }
+
+    .number-list li::before {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--brand-200);
+      border-radius: 50%;
+      color: var(--brand-700);
+      background: var(--brand-50);
+      font-size: 12px;
+      font-weight: 800;
+      content: counter(item, decimal-leading-zero);
+    }
+
+    .boundary-list {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .boundary-list li {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--surface-soft);
+    }
+
+    .boundary-list.allowed li {
+      border-left: 3px solid var(--ok);
+    }
+
+    .boundary-list.forbidden li {
+      border-left: 3px solid var(--danger);
+    }
+
+    .gate-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+
+    .gate-summary > div {
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .gate-summary strong {
+      display: block;
+      color: var(--brand-700);
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .gate-summary span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    details {
+      border-top: 1px solid var(--line);
+    }
+
+    details:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+
+    summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: center;
+      min-height: 62px;
+      cursor: pointer;
+      font-weight: 760;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      color: var(--brand-600);
+      content: "展开";
+      font-size: 13px;
+    }
+
+    details[open] summary::after {
+      content: "收起";
+    }
+
+    .summary-meta {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .gate-list,
+    .compact-list {
+      display: grid;
+      gap: var(--space-3);
+      padding: 0 0 var(--space-6);
+    }
+
+    .gate-item {
+      scroll-margin-top: 94px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .gate-item-head {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .gate-id {
+      color: var(--brand-600);
+      font-size: 12px;
+      font-weight: 820;
+      letter-spacing: .06em;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .state-pill.ok {
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .gate-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .gate-evidence {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      border-top: 2px solid var(--brand-200);
+      list-style: none;
+    }
+
+    .timeline li {
+      position: relative;
+      min-height: 178px;
+      padding: 28px 22px 22px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline li:not(:nth-child(3n)) {
+      border-right: 1px solid var(--line);
+      padding-right: 22px;
+    }
+
+    .timeline li:not(:nth-child(3n + 1)) {
+      padding-left: 22px;
+    }
+
+    .timeline li::before {
+      position: absolute;
+      top: -8px;
+      left: 0;
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--canvas);
+      border-radius: 50%;
+      background: var(--brand-600);
+      content: "";
+    }
+
+    .timeline li:not(:nth-child(3n + 1))::before {
+      left: 22px;
+    }
+
+    .timeline-date {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .timeline strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .timeline p {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timeline small {
+      color: var(--brand-700);
+      font-weight: 680;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin: 0 0 var(--space-8);
+      padding: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      list-style: none;
+    }
+
+    .metric-grid li {
+      min-height: 148px;
+      padding: 22px 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric-grid li:last-child {
+      border-right: 0;
+    }
+
+    .metric-value {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--brand-700);
+      font-size: clamp(27px, 3vw, 38px);
+      font-weight: 820;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .metric-label {
+      display: block;
+      font-weight: 740;
+    }
+
+    .metric-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .plain-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .plain-list li {
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .plain-list li:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .plain-list strong {
+      display: block;
+      color: var(--brand-900);
+    }
+
+    .role-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .role-button {
+      min-height: var(--touch);
+      padding: 8px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .role-button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--action-bg);
+    }
+
+    .role-panel[hidden] {
+      display: none;
+    }
+
+    .meeting-launch {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-5);
+      align-items: center;
+      margin-bottom: var(--space-6);
+      padding: clamp(22px, 4vw, 36px);
+      border: 1px solid var(--brand-300);
+      border-left: 5px solid var(--brand-600);
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--brand-50), var(--surface));
+    }
+
+    .meeting-launch h3,
+    .meeting-launch p {
+      margin-bottom: 6px;
+    }
+
+    .meeting-launch p,
+    .meeting-launch-note {
+      color: var(--muted);
+    }
+
+    .meeting-launch-actions {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+    }
+
+    .meeting-launch-note {
+      max-width: 360px;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .meeting-unavailable {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 9px 14px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .meeting-prep {
+      padding: clamp(24px, 4vw, 42px);
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      background: var(--surface);
+    }
+
+    .role-separation-note {
+      margin: 0 0 var(--space-4);
+      padding: 12px 14px;
+      border-left: 3px solid var(--brand-300);
+      color: var(--muted);
+      background: var(--surface-soft);
+    }
+
+    .meeting-position {
+      margin-bottom: var(--space-6);
+      padding: 14px 16px;
+      border-left: 3px solid var(--warn);
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .copy-row {
+      display: flex;
+      gap: var(--space-3);
+      align-items: center;
+      margin-top: var(--space-5);
+    }
+
+    .copy-status {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .governance-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .governance-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .governance-card.is-current {
+      border-color: var(--brand-500);
+      box-shadow: inset 3px 0 0 var(--brand-500);
+    }
+
+    .governance-card.is-selected {
+      background: var(--brand-50);
+    }
+
+    .governance-card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--brand-700);
+    }
+
+    .governance-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) auto;
+      gap: var(--space-3);
+      align-items: start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .compact-row:last-child {
+      border-bottom: 0;
+    }
+
+    .compact-row strong,
+    .compact-row span {
+      font-size: 13px;
+    }
+
+    .compact-row span {
+      color: var(--muted);
+    }
+
+    .source-drawer {
+      margin-top: var(--space-8);
+    }
+
+    .source-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0 0 var(--space-6);
+      list-style: none;
+    }
+
+    .source-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-4);
+      align-items: center;
+      min-height: var(--touch);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .source-button {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-width: var(--touch);
+      min-height: var(--touch);
+      padding: 8px 0;
+      color: var(--brand-600);
+      background: transparent;
+      cursor: pointer;
+      font-weight: 720;
+      text-align: left;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: .18em;
+    }
+
+    .source-button:hover {
+      color: var(--brand-900);
+    }
+
+    .source-list code {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .source-dialog {
+      width: min(calc(100% - 32px), 920px);
+      max-height: min(82vh, 860px);
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-lg);
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 24px 80px rgb(34 26 40 / 26%);
+    }
+
+    .source-dialog::backdrop {
+      background: rgb(34 26 40 / 58%);
+      backdrop-filter: blur(3px);
+    }
+
+    .source-dialog-layout {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      max-height: min(82vh, 860px);
+    }
+
+    .source-dialog-head {
+      display: flex;
+      gap: var(--space-4);
+      align-items: start;
+      justify-content: space-between;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .source-dialog-head h2 {
+      margin-bottom: 4px;
+      font-size: clamp(22px, 3vw, 30px);
+    }
+
+    #source-dialog-close {
+      flex: 0 0 auto;
+      min-width: 56px;
+      white-space: nowrap;
+    }
+
+    .source-dialog-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .source-dialog-content {
+      min-height: 180px;
+      margin: 0;
+      padding: 22px;
+      overflow: auto;
+      color: var(--ink);
+      background: var(--surface-soft);
+      font-size: 14px;
+      line-height: 1.72;
+      overflow-wrap: break-word;
+    }
+
+    .source-dialog-content > :first-child,
+    .source-dialog-content > :first-child > :first-child {
+      margin-top: 0;
+    }
+
+    .source-dialog-content > :last-child,
+    .source-dialog-content > :last-child > :last-child {
+      margin-bottom: 0;
+    }
+
+    .source-dialog-content h3,
+    .source-dialog-content h4,
+    .source-dialog-content h5,
+    .source-dialog-content h6 {
+      margin: 1.75em 0 .65em;
+      color: var(--ink);
+      line-height: 1.28;
+      text-wrap: balance;
+    }
+
+    .source-dialog-content h3 {
+      font-size: clamp(20px, 2.8vw, 26px);
+    }
+
+    .source-dialog-content h4 {
+      font-size: 18px;
+    }
+
+    .source-dialog-content h5,
+    .source-dialog-content h6 {
+      font-size: 15px;
+    }
+
+    .source-dialog-content p,
+    .source-dialog-content ul,
+    .source-dialog-content ol,
+    .source-dialog-content blockquote,
+    .source-table-scroll,
+    .source-code-block {
+      margin: 0 0 1em;
+    }
+
+    .source-dialog-content ul,
+    .source-dialog-content ol {
+      padding-left: 1.45em;
+    }
+
+    .source-dialog-content li + li {
+      margin-top: .35em;
+    }
+
+    .source-dialog-content blockquote {
+      padding: 12px 16px;
+      border-left: 3px solid var(--brand-300);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: var(--muted);
+      background: var(--brand-50);
+      background: color-mix(in srgb, var(--brand-50) 68%, var(--surface));
+    }
+
+    .source-dialog-content blockquote p {
+      margin: 0;
+    }
+
+    .source-dialog-content blockquote p + p {
+      margin-top: .35em;
+    }
+
+    .source-dialog-content hr {
+      margin: 1.7em 0;
+      border: 0;
+      border-top: 1px solid var(--line-strong);
+    }
+
+    .source-inline-code,
+    .source-code-block {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .source-inline-code {
+      padding: .12em .38em;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--brand-700);
+      background: var(--surface);
+      font-size: .9em;
+      overflow-wrap: anywhere;
+    }
+
+    .source-inline-link-label {
+      color: var(--brand-700);
+      font-weight: 650;
+      text-decoration: underline dotted;
+      text-decoration-thickness: 1px;
+      text-underline-offset: .18em;
+    }
+
+    .source-task-list {
+      padding-left: 0 !important;
+      list-style: none;
+    }
+
+    .source-task-list label {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .source-task-checkbox,
+    .source-inline-checkbox {
+      width: 16px;
+      height: 16px;
+      margin: .25em 0 0;
+      accent-color: var(--brand-600);
+    }
+
+    .source-inline-checkbox {
+      display: inline-block;
+      margin: 0 .3em;
+      vertical-align: -.15em;
+    }
+
+    .source-table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      overscroll-behavior-inline: contain;
+      scrollbar-gutter: stable;
+    }
+
+    .source-table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .source-table th,
+    .source-table td {
+      min-width: 112px;
+      max-width: 420px;
+      padding: 10px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: break-word;
+    }
+
+    .source-table th:last-child,
+    .source-table td:last-child {
+      border-right: 0;
+    }
+
+    .source-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .source-table th {
+      color: var(--ink);
+      background: var(--brand-50);
+      font-weight: 750;
+    }
+
+    .source-table .is-center {
+      text-align: center;
+    }
+
+    .source-table .is-right {
+      text-align: right;
+    }
+
+    .source-code-block {
+      max-width: 100%;
+      padding: 15px 16px;
+      overflow: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 12px;
+      line-height: 1.65;
+      tab-size: 2;
+      white-space: pre;
+    }
+
+    .site-footer {
+      width: min(calc(100% - 32px), var(--content));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .site-footer p {
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 1024px) {
+      .header-inner {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+      }
+
+      .header-actions .quiet-link {
+        padding-inline: 11px;
+      }
+
+      .hero {
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 42px;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .status-item:nth-child(3) {
+        border-right: 0;
+      }
+
+      .status-item:nth-child(-n + 3) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric-grid li:nth-child(3) {
+        border-right: 0;
+      }
+
+      .metric-grid li:nth-child(-n + 3) {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .governance-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 820px) {
+      html {
+        scroll-padding-top: 126px;
+      }
+
+      .header-inner {
+        grid-template-columns: 1fr auto;
+        width: min(calc(100% - 24px), var(--content));
+        min-height: 62px;
+      }
+
+      .top-nav {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin: -5px 0 5px;
+        padding-right: calc(50% - 24px);
+      }
+
+      .header-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        padding: 58px 0 52px;
+      }
+
+      .next-card {
+        max-width: 620px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+      }
+
+      .action-layout,
+      .scope-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .action-column + .action-column,
+      .scope-column + .scope-column {
+        border-top: 1px solid var(--line-strong);
+        border-left: 0;
+      }
+
+      .timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline li:not(:nth-child(3n)) {
+        border-right: 0;
+      }
+
+      .timeline li:not(:nth-child(3n + 1)) {
+        padding-left: 0;
+      }
+
+      .timeline li:not(:nth-child(2n)) {
+        padding-right: 18px;
+        border-right: 1px solid var(--line);
+      }
+
+      .timeline li:nth-child(2n) {
+        padding-left: 18px;
+      }
+
+      .timeline li:not(:nth-child(3n + 1))::before {
+        left: 0;
+      }
+
+      .timeline li:nth-child(2n)::before {
+        left: 18px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(calc(100% - 24px), var(--content));
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      .header-actions .button,
+      .header-actions .quiet-link {
+        padding-inline: 11px;
+        font-size: 13px;
+      }
+
+      .brand small {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 48px;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .status-item,
+      .status-item:nth-child(3) {
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .status-item:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .status-item:nth-last-child(-n + 2) {
+        border-bottom: 0;
+      }
+
+      .principle-band {
+        display: block;
+      }
+
+      .gate-summary {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .gate-summary > div + div {
+        border-top: 0;
+      }
+
+      .gate-item-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+        border-top: 0;
+      }
+
+      .timeline li,
+      .timeline li:not(:nth-child(2n)),
+      .timeline li:nth-child(2n) {
+        min-height: 0;
+        padding: 18px 0;
+        border-top: 1px solid var(--line);
+        border-right: 0;
+      }
+
+      .timeline li::before,
+      .timeline li:nth-child(2n)::before {
+        display: none;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid li,
+      .metric-grid li:nth-child(3) {
+        min-height: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric-grid li:last-child {
+        border-bottom: 0;
+      }
+
+      .meeting-launch {
+        grid-template-columns: 1fr;
+      }
+
+      .meeting-launch-actions {
+        justify-items: start;
+      }
+
+      .meeting-launch-note {
+        text-align: left;
+      }
+
+      .compact-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+      }
+
+      .source-list li {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .source-dialog {
+        width: calc(100% - 20px);
+        max-height: 90vh;
+      }
+
+      .source-dialog-layout {
+        max-height: 90vh;
+      }
+
+      .source-dialog-head,
+      .source-dialog-content {
+        padding: 16px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --ink: #eee8f2;
+        --muted: #bdb3c5;
+        --line: #4a3e52;
+        --line-strong: #63546e;
+        --surface: #2a2230;
+        --surface-soft: #33293a;
+        --canvas: #211b26;
+        --brand-50: #33293a;
+        --brand-100: #41334b;
+        --brand-200: #5b4669;
+        --brand-300: #82669a;
+        --brand-500: #b392c8;
+        --brand-600: #c3a8d4;
+        --brand-700: #dbc9e7;
+        --brand-900: #f1e8f5;
+        --action-bg: #6f5088;
+        --action-hover: #56406b;
+        --ok: #8ed0a2;
+        --ok-bg: #183523;
+        --warn: #e1c874;
+        --warn-bg: #3d3214;
+        --danger: #eda1a1;
+        --danger-bg: #432222;
+        --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 8px 24px rgb(0 0 0 / 20%);
+      }
+
+      .site-header {
+        border-bottom-color: rgb(74 62 82 / 92%);
+        background: rgb(33 27 38 / 92%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --ink: #1f1a22;
+        --muted: #5d5663;
+        --line: #d8d2dc;
+        --line-strong: #bdb4c5;
+        --surface: #fff;
+        --surface-soft: #fff;
+        --canvas: #fff;
+      }
+
+      @page {
+        size: A4;
+        margin: 11mm;
+      }
+
+      html,
+      body {
+        background: #fff !important;
+      }
+
+      body {
+        font-size: 10pt;
+      }
+
+      .skip-link,
+      .site-header,
+      .copy-row,
+      .role-controls,
+      .source-dialog {
+        display: none !important;
+      }
+
+      main,
+      .site-footer {
+        width: 100%;
+      }
+
+      .hero {
+        grid-template-columns: 1.2fr .8fr;
+        min-height: 0;
+        padding: 8mm 0 10mm;
+      }
+
+      h1 {
+        font-size: 36pt;
+      }
+
+      .section-block {
+        padding: 10mm 0;
+        break-before: auto;
+      }
+
+      .next-card,
+      .gate-item,
+      .governance-card {
+        box-shadow: none;
+      }
+
+      details > :not(summary) {
+        display: block !important;
+      }
+
+      .source-button {
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+
+  <header class="site-header" aria-label="页面导航">
+    <div class="header-inner">
+      <a class="brand" href="#overview" aria-label="客服 Agent 一期需求会执行中心首页">
+        天元
+        <small>客服 Agent 一期 · 需求会</small>
+      </a>
+
+      <nav class="top-nav" aria-label="执行中心章节">
+        <a href="#overview">总览</a>
+        <a href="#now">现在做</a>
+        <a href="#gates">开发前检查</a>
+        <a href="#schedule">排期</a>
+        <a href="#acceptance">做与不做</a>
+        <a href="#meeting">需求会</a>
+        <a href="#governance">人和费用</a>
+      </nav>
+
+      <div class="header-actions">
+        <button class="quiet-link" id="return-to-prd" type="button" data-canonical-href="./07-客服Agent立项PRD.html">返回项目说明</button>
+        <button class="button" id="print-button" type="button">打印会议包</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" id="overview" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow" id="project-meta"></p>
+        <h1 id="page-title" data-pretext></h1>
+        <p class="hero-summary" id="hero-summary" data-pretext></p>
+      </div>
+
+      <aside class="next-card" aria-labelledby="next-title">
+        <p class="next-label">下一件关键事</p>
+        <time class="next-date" id="next-date"></time>
+        <h2 id="next-title"></h2>
+        <p id="next-output"></p>
+      </aside>
+    </section>
+
+    <ul class="status-strip" id="status-strip" aria-label="项目当前状态"></ul>
+
+    <div class="principle-band" role="note">
+      <strong>不可破坏：</strong>
+      <span id="principle"></span>
+      <span>· 供应链能力不进入本项目</span>
+    </div>
+
+    <section class="section-block" id="now" aria-labelledby="now-title">
+      <header class="section-head">
+        <p class="section-kicker">01 / Now</p>
+        <div class="section-intro">
+          <h2 id="now-title" data-pretext></h2>
+          <p id="now-summary"></p>
+        </div>
+      </header>
+
+      <div class="action-layout">
+        <article class="action-column">
+          <h3 id="action-label"></h3>
+          <ol class="number-list" id="prelaunch-list"></ol>
+        </article>
+        <article class="action-column">
+          <h3 id="boundary-title">允许 / 禁止</h3>
+          <div class="scope-layout">
+            <div class="scope-column">
+              <h3 id="allowed-title">可以做</h3>
+              <ul class="boundary-list allowed" id="allowed-list"></ul>
+            </div>
+            <div class="scope-column">
+              <h3 id="forbidden-title">开发许可前禁止</h3>
+              <ul class="boundary-list forbidden" id="forbidden-list"></ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="gates" aria-labelledby="gates-title">
+      <header class="section-head">
+        <p class="section-kicker">02 / 开发前检查</p>
+        <div class="section-intro">
+          <h2 id="gates-title" data-pretext>每一项都有负责人和证据，才允许开发。</h2>
+          <p>14 项跨团队责任和 15 项范围检查必须全部完成；证据不齐，开发开工许可保持未成立。</p>
+        </div>
+      </header>
+
+      <div class="gate-summary" id="gate-summary"></div>
+      <div id="gate-groups"></div>
+
+      <details>
+        <summary>
+          <span>范围确认 · 15 项检查</span>
+          <span class="summary-meta" id="scope-summary"></span>
+        </summary>
+        <div class="compact-list" id="scope-checks"></div>
+      </details>
+    </section>
+
+    <section class="section-block" id="schedule" aria-labelledby="schedule-title">
+      <header class="section-head">
+        <p class="section-kicker">03 / 排期</p>
+        <div class="section-intro">
+          <h2 id="schedule-title" data-pretext></h2>
+          <p>每天都要有看得见的产出；任一关键检查未过，后续日期按实际情况顺延。</p>
+        </div>
+      </header>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <section class="section-block" id="acceptance" aria-labelledby="acceptance-title">
+      <header class="section-head">
+        <p class="section-kicker">04 / 做与不做</p>
+        <div class="section-intro">
+          <h2 id="acceptance-title" data-pretext>一期只解决一个真实客服问题。</h2>
+          <p>8 月 4 日确认业务指标与停止条件；知识辅助相关数字只在该方向被选中时使用。</p>
+        </div>
+      </header>
+
+      <ul class="metric-grid" id="metric-grid" aria-label="客服 Agent 一期暂定成功指标"></ul>
+
+      <div class="scope-layout">
+        <article class="scope-column">
+          <h3>In Scope · 一期要做</h3>
+          <ul class="plain-list" id="in-scope"></ul>
+        </article>
+        <article class="scope-column">
+          <h3>Out · 本期不做</h3>
+          <ul class="plain-list" id="out-scope"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block" id="meeting" aria-labelledby="meeting-title">
+      <header class="section-head">
+        <p class="section-kicker">05 / 需求会</p>
+        <div class="section-intro">
+          <h2 id="meeting-title" data-pretext></h2>
+          <p id="meeting-position"></p>
+        </div>
+      </header>
+
+      <aside class="meeting-launch" aria-labelledby="meeting-launch-title">
+        <div>
+          <h3 id="meeting-launch-title">会场使用独立汇报页</h3>
+          <p>这里继续用于会前准备和内部推进；正式启动会只打开独立主屏，避免内部提醒、门禁和台账进入投影。</p>
+        </div>
+        <div class="meeting-launch-actions">
+          <a class="button" data-meeting-link href="./09-客服Agent需求会汇报.html">打开启动会主屏</a>
+          <span class="meeting-launch-note" id="meeting-launch-note">从项目目录打开时，可直接进入相邻的 09 汇报页。</span>
+        </div>
+      </aside>
+
+      <article class="meeting-prep">
+          <div class="role-controls" aria-label="会前准备角色筛选">
+            <button class="role-button" type="button" data-role-filter="all" aria-pressed="true">全部</button>
+            <button class="role-button" type="button" data-role-filter="director" aria-pressed="false">客服总监（拍板）/ BP（协同）</button>
+            <button class="role-button" type="button" data-role-filter="manager" aria-pressed="false">客服经理 / 坐席</button>
+          </div>
+          <p class="role-separation-note"><strong>职责分开：</strong>客服总监负责最终业务拍板；客服 BP 负责跨团队协调与记录，不代替拍板。</p>
+          <section class="role-panel" data-role-panel="director">
+            <h3>客服总监（拍板）/ BP（协同）会前准备</h3>
+            <ul class="plain-list" id="director-list"></ul>
+          </section>
+          <section class="role-panel" data-role-panel="manager">
+            <h3>客服经理 / 坐席会前准备</h3>
+            <ul class="plain-list" id="manager-list"></ul>
+          </section>
+          <section>
+            <h3>当场回答</h3>
+            <ol class="number-list" id="core-questions"></ol>
+          </section>
+          <div class="copy-row">
+            <button class="button" id="copy-checklist" type="button">复制会前清单</button>
+            <span class="copy-status" id="copy-status" aria-live="polite"></span>
+          </div>
+      </article>
+    </section>
+
+    <section class="section-block" id="governance" aria-labelledby="governance-title">
+      <header class="section-head">
+        <p class="section-kicker">06 / 人和边界</p>
+        <div class="section-intro">
+          <h2 id="governance-title" data-pretext>钱、责任和风险都要有人负责。</h2>
+          <p>费用尚未批准，当前新增付费为 0；工程团队在业务要求明确后提出技术方案，并由 IT / 安全复核。</p>
+        </div>
+      </header>
+
+      <details open>
+        <summary>
+          <span>费用路径</span>
+          <span class="summary-meta" id="fee-summary"></span>
+        </summary>
+        <div class="governance-grid" id="fee-paths"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>待具名责任人</span>
+          <span class="summary-meta" id="role-summary"></span>
+        </summary>
+        <div class="compact-list" id="roles"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>开放风险</span>
+          <span class="summary-meta" id="risk-summary"></span>
+        </summary>
+        <div class="compact-list" id="risks"></div>
+      </details>
+
+      <details>
+        <summary>
+          <span>给工程同事的开发前交付</span>
+          <span class="summary-meta">普通参会人无需展开</span>
+        </summary>
+        <div class="compact-list" id="functions"></div>
+      </details>
+
+      <details class="source-drawer" id="source-drawer">
+        <summary>
+          <span>维护人员：核验 7 份原始真源</span>
+          <span class="summary-meta">普通参会人无需打开</span>
+        </summary>
+        <ul class="source-list" id="source-list"></ul>
+      </details>
+    </section>
+  </main>
+
+  <dialog class="source-dialog" id="source-dialog" aria-labelledby="source-dialog-title" aria-describedby="source-dialog-meta" aria-modal="true">
+    <div class="source-dialog-layout">
+      <header class="source-dialog-head">
+        <div>
+          <h2 id="source-dialog-title">原始真源</h2>
+          <p class="source-dialog-meta" id="source-dialog-meta"></p>
+        </div>
+        <button class="button" id="source-dialog-close" type="button">关闭</button>
+      </header>
+      <div class="source-dialog-content" id="source-dialog-content" role="document" aria-label="原始真源结构化内容" tabindex="0"></div>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <p><strong>生命周期：</strong><span id="lifecycle"></span></p>
+    <p>Release <code>__RELEASE_ID__</code> · 来源日期 <span id="source-date"></span> · 页面只读</p>
+  </footer>
+
+  <noscript>此执行中心需要浏览器启用 JavaScript，才能查看内嵌的只读真源与便携 PRD。</noscript>
+
+  <script id="hub-data" type="application/json">__HUB_DATA__</script>
+
+  <script id="pretext-source" type="text/plain">
+__PRETEXT_VENDOR__
+  </script>
+
+  <script type="module">
+    const data = JSON.parse(document.querySelector("#hub-data").textContent);
+
+    const returnToPrd = document.querySelector("#return-to-prd");
+    const meetingLink = document.querySelector("[data-meeting-link]");
+    const meetingLaunchNote = document.querySelector("#meeting-launch-note");
+    const initialPortableSurface = new URL(location.href).searchParams.get("portable");
+    const canRenderPortablePrd = location.protocol === "file:" && Boolean(data.portablePrd?.htmlBase64);
+    function locationFingerprint(value) {
+      const input = String(value);
+      let primary = 0x811c9dc5;
+      let secondary = 0x9e3779b9;
+      for (let index = 0; index < input.length; index += 1) {
+        const code = input.charCodeAt(index);
+        primary = Math.imul(primary ^ code, 0x01000193);
+        secondary = Math.imul(secondary ^ code, 0x85ebca6b);
+      }
+      return `${(primary >>> 0).toString(16).padStart(8, "0")}${(secondary >>> 0)
+        .toString(16)
+        .padStart(8, "0")}`;
+    }
+
+    function locationTail(value) {
+      return String(value)
+        .replaceAll("\\", "/")
+        .split("/")
+        .filter(Boolean)
+        .slice(-2)
+        .join("/");
+    }
+
+    const expectedCanonicalLocation = data.runtime?.canonicalLocationFingerprint;
+    const hasCanonicalSiblingContext =
+      location.protocol !== "file:" ||
+      (typeof expectedCanonicalLocation === "string" &&
+        locationFingerprint(locationTail(location.pathname)) === expectedCanonicalLocation);
+
+    if (!hasCanonicalSiblingContext) {
+      const unavailableMeeting = document.createElement("span");
+      unavailableMeeting.className = "meeting-unavailable";
+      unavailableMeeting.textContent = "启动会主屏不在此便携文件内";
+      meetingLink.replaceWith(unavailableMeeting);
+      meetingLaunchNote.textContent = "当前是孤立便携文件；请回到项目目录，打开 09-客服Agent需求会汇报.html。";
+    }
+
+    function decodePortableHtml(encoded) {
+      const binary = atob(encoded);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+      return new TextDecoder().decode(bytes);
+    }
+
+    function renderPortablePrd({ push = false } = {}) {
+      if (!canRenderPortablePrd) return false;
+      if (push) {
+        const route = new URL(location.href);
+        route.searchParams.set("portable", "prd");
+        route.searchParams.delete("role");
+        route.hash = "";
+        history.pushState({ portable: "prd" }, "", route);
+      }
+      const html = decodePortableHtml(data.portablePrd.htmlBase64);
+      document.open();
+      document.write(html);
+      document.close();
+      return true;
+    }
+
+    addEventListener("popstate", () => {
+      const nextSurface = new URL(location.href).searchParams.get("portable");
+      if (nextSurface !== initialPortableSurface) location.reload();
+    });
+
+    const restoringPortablePrd = canRenderPortablePrd && initialPortableSurface === "prd";
+    if (restoringPortablePrd) renderPortablePrd();
+
+    if (!restoringPortablePrd) {
+      if (canRenderPortablePrd) {
+        returnToPrd.dataset.portable = "true";
+        returnToPrd.setAttribute("title", "在当前文件打开内嵌便携 PRD");
+      }
+      returnToPrd.addEventListener("click", () => {
+        if (location.protocol === "file:" && initialPortableSurface === "hub") {
+          const hostPrd = new URL(location.href);
+          hostPrd.searchParams.delete("portable");
+          hostPrd.searchParams.delete("role");
+          hostPrd.hash = "";
+          location.assign(hostPrd.href);
+          return;
+        }
+        if (renderPortablePrd({ push: true })) return;
+        location.assign(new URL(returnToPrd.dataset.canonicalHref, location.href).href);
+      });
+
+    function element(tag, options = {}, children = []) {
+      const node = document.createElement(tag);
+      if (options.className) node.className = options.className;
+      if (options.text !== undefined) node.textContent = options.text;
+      Object.entries(options.attrs || {}).forEach(([name, value]) => {
+        if (value !== undefined && value !== null) node.setAttribute(name, String(value));
+      });
+      const normalized = Array.isArray(children) ? children : [children];
+      normalized.filter(Boolean).forEach((child) => node.append(child));
+      return node;
+    }
+
+    function appendTextList(target, values, className = "") {
+      target.replaceChildren(
+        ...values.map((value) => element("li", { className, text: value }))
+      );
+    }
+
+    function readonlyCheckbox(checked, className, accessibleLabel = "") {
+      const attrs = {
+        type: "checkbox",
+        disabled: "",
+        tabindex: "-1",
+      };
+      if (accessibleLabel) attrs["aria-label"] = accessibleLabel;
+      const checkbox = element("input", {
+        className,
+        attrs,
+      });
+      checkbox.checked = checked;
+      return checkbox;
+    }
+
+    function appendInlineMarkdown(target, value, depth = 0) {
+      const text = String(value ?? "");
+      const tokenPattern = /(`+)([^`\n]+?)\1|\*\*([^*\n]+?)\*\*|!?\[([^\]\n]+?)\]\((?:\\.|[^)\n])+\)|\[( |x|X)\]|\*([^*\n]+?)\*/g;
+      let cursor = 0;
+      let match;
+
+      function appendPlain(plainText) {
+        if (plainText) target.append(element("span", { text: plainText }));
+      }
+
+      function appendNested(node, nestedText) {
+        if (depth >= 3) node.textContent = nestedText;
+        else appendInlineMarkdown(node, nestedText, depth + 1);
+        target.append(node);
+      }
+
+      while ((match = tokenPattern.exec(text)) !== null) {
+        appendPlain(text.slice(cursor, match.index));
+        if (match[2] !== undefined) {
+          target.append(element("code", { className: "source-inline-code", text: match[2] }));
+        } else if (match[3] !== undefined) {
+          appendNested(element("strong"), match[3]);
+        } else if (match[4] !== undefined) {
+          const label = match[4];
+          appendNested(
+            element("span", {
+              className: "source-inline-link-label",
+            }),
+            label
+          );
+        } else if (match[5] !== undefined) {
+          const checked = match[5].toLowerCase() === "x";
+          target.append(
+            readonlyCheckbox(checked, "source-inline-checkbox", checked ? "已勾选" : "未勾选")
+          );
+        } else if (match[6] !== undefined) {
+          appendNested(element("em"), match[6]);
+        }
+        cursor = tokenPattern.lastIndex;
+      }
+      appendPlain(text.slice(cursor));
+    }
+
+    function parseTableCells(line) {
+      let input = String(line).trim();
+      if (input.startsWith("|")) input = input.slice(1);
+      if (input.endsWith("|") && !input.endsWith("\\|")) input = input.slice(0, -1);
+      const cells = [];
+      let cell = "";
+      let inCode = false;
+      for (let index = 0; index < input.length; index += 1) {
+        const character = input[index];
+        if (character === "\\" && input[index + 1] === "|") {
+          cell += "|";
+          index += 1;
+        } else if (character === "`") {
+          inCode = !inCode;
+          cell += character;
+        } else if (character === "|" && !inCode) {
+          cells.push(cell.trim());
+          cell = "";
+        } else {
+          cell += character;
+        }
+      }
+      cells.push(cell.trim());
+      return cells;
+    }
+
+    function isTableDelimiter(line) {
+      const cells = parseTableCells(line);
+      return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+    }
+
+    function tableAlignment(delimiter) {
+      if (delimiter.startsWith(":") && delimiter.endsWith(":")) return "is-center";
+      if (delimiter.endsWith(":")) return "is-right";
+      return "";
+    }
+
+    function parseListItem(line) {
+      let match = line.match(/^ {0,3}[-*+]\s+\[([ xX])\]\s+(.*)$/);
+      if (match) {
+        return { kind: "task", checked: match[1].toLowerCase() === "x", text: match[2] };
+      }
+      match = line.match(/^ {0,3}[-*+]\s+(.*)$/);
+      if (match) return { kind: "unordered", text: match[1] };
+      match = line.match(/^ {0,3}(\d+)[.)]\s+(.*)$/);
+      if (match) return { kind: "ordered", start: Number(match[1]), text: match[2] };
+      return null;
+    }
+
+    function isHorizontalRule(line) {
+      return /^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/.test(line);
+    }
+
+    function isMarkdownBlockStart(lines, index) {
+      const line = lines[index] || "";
+      return (
+        /^ {0,3}(?:#{1,6})\s+/.test(line) ||
+        /^ {0,3}(?:`{3,}|~{3,})/.test(line) ||
+        /^ {0,3}>/.test(line) ||
+        Boolean(parseListItem(line)) ||
+        isHorizontalRule(line) ||
+        (line.includes("|") && isTableDelimiter(lines[index + 1] || ""))
+      );
+    }
+
+    function renderMarkdownDocument(target, markdown) {
+      const lines = String(markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
+      const output = document.createDocumentFragment();
+      let index = 0;
+
+      while (index < lines.length) {
+        const line = lines[index];
+        if (!line.trim()) {
+          index += 1;
+          continue;
+        }
+
+        const fence = line.match(/^ {0,3}(`{3,}|~{3,}).*$/);
+        if (fence) {
+          const fenceCharacter = fence[1][0];
+          const fenceLength = fence[1].length;
+          const codeLines = [];
+          index += 1;
+          while (index < lines.length) {
+            const closeFence = lines[index].match(/^ {0,3}(`{3,}|~{3,})\s*$/);
+            if (
+              closeFence &&
+              closeFence[1][0] === fenceCharacter &&
+              closeFence[1].length >= fenceLength
+            ) {
+              index += 1;
+              break;
+            }
+            codeLines.push(lines[index]);
+            index += 1;
+          }
+          output.append(
+            element(
+              "pre",
+              {
+                className: "source-code-block",
+                attrs: { role: "region", tabindex: "0", "aria-label": "代码块" },
+              },
+              element("code", { text: codeLines.join("\n") })
+            )
+          );
+          continue;
+        }
+
+        const heading = line.match(/^ {0,3}(#{1,6})\s+(.+?)\s*$/);
+        if (heading) {
+          const sourceLevel = heading[1].length;
+          const headingLevel = Math.min(6, sourceLevel + 2);
+          const node = element(`h${headingLevel}`, {
+            attrs: { "data-source-level": sourceLevel },
+          });
+          appendInlineMarkdown(node, heading[2].replace(/\s+#+\s*$/, ""));
+          output.append(node);
+          index += 1;
+          continue;
+        }
+
+        const setext = lines[index + 1]?.match(/^ {0,3}(=+|-+)\s*$/);
+        if (setext && !isMarkdownBlockStart(lines, index)) {
+          const sourceLevel = setext[1][0] === "=" ? 1 : 2;
+          const node = element(sourceLevel === 1 ? "h3" : "h4", {
+            attrs: { "data-source-level": sourceLevel },
+          });
+          appendInlineMarkdown(node, line.trim());
+          output.append(node);
+          index += 2;
+          continue;
+        }
+
+        if (isHorizontalRule(line)) {
+          output.append(element("hr", { attrs: { "aria-hidden": "true" } }));
+          index += 1;
+          continue;
+        }
+
+        if (/^ {0,3}>/.test(line)) {
+          const quote = element("blockquote");
+          while (index < lines.length && /^ {0,3}>/.test(lines[index])) {
+            const quoteText = lines[index].replace(/^ {0,3}>+\s?/, "").trim();
+            if (quoteText) {
+              const paragraph = element("p");
+              appendInlineMarkdown(paragraph, quoteText);
+              quote.append(paragraph);
+            }
+            index += 1;
+          }
+          output.append(quote);
+          continue;
+        }
+
+        if (line.includes("|") && isTableDelimiter(lines[index + 1] || "")) {
+          const headers = parseTableCells(line);
+          const delimiters = parseTableCells(lines[index + 1]);
+          const table = element("table", { className: "source-table" });
+          const headRow = element("tr");
+          headers.forEach((header, cellIndex) => {
+            const cell = element("th", {
+              className: tableAlignment(delimiters[cellIndex] || ""),
+              attrs: { scope: "col" },
+            });
+            appendInlineMarkdown(cell, header);
+            headRow.append(cell);
+          });
+          table.append(element("thead", {}, headRow));
+          const body = element("tbody");
+          index += 2;
+          while (index < lines.length && lines[index].trim() && lines[index].includes("|")) {
+            const row = element("tr");
+            const cells = parseTableCells(lines[index]);
+            headers.forEach((_, cellIndex) => {
+              const cell = element("td", {
+                className: tableAlignment(delimiters[cellIndex] || ""),
+              });
+              appendInlineMarkdown(cell, cells[cellIndex] || "");
+              row.append(cell);
+            });
+            body.append(row);
+            index += 1;
+          }
+          table.append(body);
+          output.append(
+            element(
+              "div",
+              {
+                className: "source-table-scroll",
+                attrs: {
+                  role: "region",
+                  tabindex: "0",
+                },
+              },
+              table
+            )
+          );
+          continue;
+        }
+
+        const firstListItem = parseListItem(line);
+        if (firstListItem) {
+          const listTag = firstListItem.kind === "ordered" ? "ol" : "ul";
+          const list = element(listTag, {
+            className: firstListItem.kind === "task" ? "source-task-list" : "",
+            attrs:
+              firstListItem.kind === "ordered" && firstListItem.start !== 1
+                ? { start: firstListItem.start }
+                : {},
+          });
+          while (index < lines.length) {
+            const item = parseListItem(lines[index]);
+            if (!item || item.kind !== firstListItem.kind) break;
+            const listItem = element("li");
+            if (item.kind === "task") {
+              const label = element("label");
+              label.append(readonlyCheckbox(item.checked, "source-task-checkbox"));
+              const labelText = element("span");
+              appendInlineMarkdown(labelText, item.text);
+              label.append(labelText);
+              listItem.append(label);
+            } else {
+              appendInlineMarkdown(listItem, item.text);
+            }
+            list.append(listItem);
+            index += 1;
+          }
+          output.append(list);
+          continue;
+        }
+
+        const paragraphLines = [];
+        while (
+          index < lines.length &&
+          lines[index].trim() &&
+          (paragraphLines.length === 0 || !isMarkdownBlockStart(lines, index)) &&
+          !(lines[index].includes("|") && isTableDelimiter(lines[index + 1] || ""))
+        ) {
+          paragraphLines.push(lines[index].trim());
+          index += 1;
+        }
+        const paragraph = element("p");
+        appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+        output.append(paragraph);
+      }
+
+      const tableRegions = [...output.querySelectorAll('.source-table-scroll[role="region"]')];
+      tableRegions.forEach((region, tableIndex) => {
+        region.setAttribute(
+          "aria-label",
+          `原始文档数据表 ${tableIndex + 1}/${tableRegions.length}，可横向滚动查看`
+        );
+      });
+      const codeRegions = [...output.querySelectorAll('.source-code-block[role="region"]')];
+      codeRegions.forEach((region, codeIndex) => {
+        region.setAttribute(
+          "aria-label",
+          `原始文档代码块 ${codeIndex + 1}/${codeRegions.length}`
+        );
+      });
+      target.replaceChildren(output);
+      target.scrollTop = 0;
+    }
+
+    document.querySelector("#project-meta").textContent =
+      `${data.project.code} · ${data.project.name} · ${data.project.delivery} · ${data.project.priority}`;
+    document.querySelector("#page-title").textContent = data.headline.title;
+    document.querySelector("#hero-summary").textContent = data.headline.summary;
+    document.querySelector("#next-date").textContent = data.headline.nextDate;
+    document.querySelector("#next-title").textContent = data.headline.nextTitle;
+    document.querySelector("#next-output").textContent = data.headline.nextOutput;
+    document.querySelector("#principle").textContent = data.headline.principle;
+    document.querySelector("#now-title").textContent = data.headline.nowTitle;
+    document.querySelector("#now-summary").textContent = data.headline.nowSummary;
+    document.querySelector("#action-label").textContent = data.headline.actionLabel;
+    document.querySelector("#schedule-title").textContent = data.headline.scheduleTitle;
+    document.querySelector("#meeting-title").textContent = data.meeting.title;
+    document.querySelector("#meeting-position").textContent = data.meeting.positioning;
+    document.querySelector(".role-controls").setAttribute("aria-label", data.meeting.controlsLabel);
+    document.querySelector("#copy-checklist").textContent = data.meeting.copyButton;
+    document.querySelector("#lifecycle").textContent = data.release.lifecycle;
+    document.querySelector("#source-date").textContent = data.release.sourceDate;
+    document.querySelector("#fee-summary").textContent =
+      `${data.status.feePath} · ${data.status.paidSpend}`;
+
+    const statusItems = [
+      { value: data.status.approval, label: "项目批准" },
+      { value: data.status.problemFit, label: "一期问题" },
+      {
+        value: `${data.status.externalPass} / ${data.status.externalTotal}`,
+        label: "跨团队责任",
+      },
+      {
+        value: `${data.status.scopePass} / ${data.status.scopeTotal}`,
+        label: "范围检查",
+      },
+      { value: data.status.resourceBaseline, label: "开发资源" },
+      { value: data.status.ddev, label: "开发开工许可" },
+    ];
+    document.querySelector("#status-strip").replaceChildren(
+      ...statusItems.map((item) =>
+        element("li", { className: "status-item" }, [
+          element("strong", { className: "status-value", text: item.value }),
+          element("span", { className: "status-label", text: item.label }),
+        ])
+      )
+    );
+
+    appendTextList(
+      document.querySelector("#prelaunch-list"),
+      data.prelaunchChecklist
+    );
+    document.querySelector("#boundary-title").textContent = data.governance.boundaryTitle;
+    document.querySelector("#allowed-title").textContent = data.governance.allowedTitle;
+    document.querySelector("#forbidden-title").textContent = data.governance.forbiddenTitle;
+    appendTextList(
+      document.querySelector("#allowed-list"),
+      data.governance.allowed.map((item) => item.allowed)
+    );
+    appendTextList(
+      document.querySelector("#forbidden-list"),
+      data.governance.allowed.map((item) => item.forbidden)
+    );
+
+    document.querySelector("#gate-summary").replaceChildren(
+      element("div", {}, [
+        element("strong", {
+          text: `${data.status.externalPass} / ${data.status.externalTotal}`,
+        }),
+        element("span", { text: "跨团队责任已完成" }),
+      ]),
+      element("div", {}, [
+        element("strong", {
+          text: `${data.status.scopePass} / ${data.status.scopeTotal}`,
+        }),
+        element("span", { text: "范围检查已完成" }),
+      ]),
+      element("div", {}, [
+        element("strong", { text: data.status.ddev }),
+        element("span", { text: `开发前总检查 ${data.status.g0}` }),
+      ])
+    );
+
+    const groupOrder = ["approval", "business", "safety", "delivery"];
+    const groupMeta = {
+      approval: { label: "批准与责任", window: "08-05" },
+      business: { label: "业务与内容", window: "08-07～10" },
+      safety: { label: "安全与质量", window: "08-11～12" },
+      delivery: { label: "技术与交付", window: "08-06～13" },
+    };
+    const gateGroups = document.querySelector("#gate-groups");
+    gateGroups.replaceChildren(
+      ...groupOrder.map((group, index) => {
+        const gates = data.gates.filter((gate) => gate.group === group);
+        const passCount = gates.filter((gate) => gate.status === "Pass").length;
+        const failCount = gates.filter((gate) => gate.status === "Fail").length;
+        const pendingCount = gates.length - passCount - failCount;
+        const summary = element("summary", {}, [
+          element("span", { text: groupMeta[group].label }),
+          element("span", {
+            className: "summary-meta",
+            text: `${groupMeta[group].window} · ${passCount} Pass / ${pendingCount} 待办${failCount ? ` / ${failCount} Fail` : ""}`,
+          }),
+        ]);
+        const list = element(
+          "div",
+          { className: "gate-list" },
+          gates.map((gate) =>
+            element(
+              "article",
+              {
+                className: "gate-item",
+                attrs: { id: gate.id, "aria-labelledby": `${gate.id}-title` },
+              },
+              [
+                element("div", { className: "gate-item-head" }, [
+                  element("div", {}, [
+                    element("span", { className: "gate-id", text: gate.id }),
+                    element("h3", {
+                      text: gate.title,
+                      attrs: { id: `${gate.id}-title` },
+                    }),
+                  ]),
+                  element("span", {
+                    className: `state-pill${gate.status === "Pass" ? " ok" : ""}`,
+                    text: gate.status,
+                  }),
+                ]),
+                element("div", { className: "gate-meta" }, [
+                  element("span", { text: `A：${gate.accountable}` }),
+                  element("span", { text: `R：${gate.responsible}` }),
+                  element("span", { text: `截止：${gate.due}` }),
+                ]),
+                element("p", {
+                  className: "gate-evidence",
+                  text: `证据：${gate.evidence}`,
+                }),
+              ]
+            )
+          )
+        );
+        const details = element("details", {}, [summary, list]);
+        details.open = index === 0;
+        return details;
+      })
+    );
+
+    document.querySelector("#scope-summary").textContent =
+      `${data.status.scopePass} / ${data.status.scopeTotal} Pass`;
+    document.querySelector("#scope-checks").replaceChildren(
+      ...data.scopeChecks.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: `S-${String(item.id).padStart(2, "0")}` }),
+          element("span", { text: item.title }),
+          element("span", { className: "state-pill", text: item.status }),
+        ])
+      )
+    );
+
+    document.querySelector("#timeline").replaceChildren(
+      ...data.schedule.map((item) =>
+        element("li", {}, [
+          element("time", { className: "timeline-date", text: item.date }),
+          element("strong", { text: item.title }),
+          element("p", { text: item.action }),
+          element("small", { text: item.output }),
+        ])
+      )
+    );
+
+    document.querySelector("#metric-grid").replaceChildren(
+      ...data.metrics.map((metric) =>
+        element("li", {}, [
+          element("strong", { className: "metric-value", text: metric.value }),
+          element("span", { className: "metric-label", text: metric.label }),
+          element("span", { className: "metric-note", text: metric.note }),
+        ])
+      )
+    );
+
+    document.querySelector("#in-scope").replaceChildren(
+      ...data.scope.in.map((item) =>
+        element("li", {}, [
+          element("strong", { text: item.title }),
+          document.createTextNode(item.detail),
+        ])
+      )
+    );
+    appendTextList(document.querySelector("#out-scope"), data.scope.out);
+
+    appendTextList(document.querySelector("#director-list"), data.meeting.director);
+    appendTextList(document.querySelector("#manager-list"), data.meeting.manager);
+    appendTextList(document.querySelector("#core-questions"), data.meeting.coreQuestions);
+
+    const roleButtons = [...document.querySelectorAll("[data-role-filter]")];
+    const rolePanels = [...document.querySelectorAll("[data-role-panel]")];
+    function setRoleFilter(role, updateUrl = true) {
+      roleButtons.forEach((button) =>
+        button.setAttribute("aria-pressed", String(button.dataset.roleFilter === role))
+      );
+      rolePanels.forEach((panel) => {
+        panel.hidden = role !== "all" && panel.dataset.rolePanel !== role;
+      });
+      if (updateUrl) {
+        const url = new URL(location.href);
+        if (role === "all") url.searchParams.delete("role");
+        else url.searchParams.set("role", role);
+        if (url.href !== location.href) {
+          const previousState =
+            history.state && typeof history.state === "object" ? history.state : {};
+          history.pushState(
+            { ...previousState, roleFilter: role },
+            "",
+            `${url.pathname}${url.search}${url.hash}`
+          );
+        }
+      }
+    }
+    roleButtons.forEach((button) =>
+      button.addEventListener("click", () => setRoleFilter(button.dataset.roleFilter))
+    );
+    function roleFromUrl() {
+      const requestedRole = new URL(location.href).searchParams.get("role");
+      return ["director", "manager"].includes(requestedRole) ? requestedRole : "all";
+    }
+    setRoleFilter(roleFromUrl(), false);
+    addEventListener("popstate", () => setRoleFilter(roleFromUrl(), false));
+
+    const copyText = [
+      data.meeting.copyTitle,
+      "",
+      "客服总监（拍板）/ BP（协同）：",
+      ...data.meeting.director.map((item) => `- ${item}`),
+      "",
+      "客服经理 / 坐席：",
+      ...data.meeting.manager.map((item) => `- ${item}`),
+      "",
+      "核心问题：",
+      ...data.meeting.coreQuestions.map((item, index) => `${index + 1}. ${item}`),
+    ].join("\n");
+
+    async function copyChecklist() {
+      const status = document.querySelector("#copy-status");
+      document.body.classList.add("copying");
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(copyText);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = copyText;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.append(textarea);
+          textarea.select();
+          if (!document.execCommand("copy")) throw new Error("copy failed");
+          textarea.remove();
+        }
+        status.textContent = "已复制";
+      } catch {
+        status.textContent = "复制失败，请手动选择清单";
+      } finally {
+        document.body.classList.remove("copying");
+      }
+    }
+    document.querySelector("#copy-checklist").addEventListener("click", copyChecklist);
+
+    document.querySelector("#fee-paths").replaceChildren(
+      ...data.governance.fee.map((item) =>
+        element("article", {
+          className: `governance-card${item.current ? " is-current" : ""}${item.selected ? " is-selected" : ""}`,
+          attrs: {
+            "data-fee-id": item.id,
+            "data-current": String(item.current),
+            "data-selected": String(item.selected),
+          },
+        }, [
+          element("strong", { text: `${item.id} · ${item.title}` }),
+          element("p", { text: item.detail }),
+        ])
+      )
+    );
+
+    document.querySelector("#role-summary").textContent =
+      `${data.governance.roles.filter((item) => item.needsNaming).length} 个角色待具名`;
+    document.querySelector("#roles").replaceChildren(
+      ...data.governance.roles.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.role }),
+          element("span", { text: `${item.name} · 代理人 ${item.proxy}` }),
+          element("span", { className: "state-pill", text: item.status }),
+        ])
+      )
+    );
+
+    document.querySelector("#risk-summary").textContent =
+      `${data.governance.risks.length} 项开放`;
+    document.querySelector("#risks").replaceChildren(
+      ...data.governance.risks.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.id }),
+          element("span", { text: `${item.title}；影响：${item.impact}` }),
+          element("span", { text: `${item.accountable} · ${item.due}` }),
+        ])
+      )
+    );
+
+    document.querySelector("#functions").replaceChildren(
+      ...data.governance.functions.map((item) =>
+        element("div", { className: "compact-row" }, [
+          element("strong", { text: item.name }),
+          element("span", { text: item.g0 }),
+          element("span", { className: "state-pill", text: "G0" }),
+        ])
+      )
+    );
+
+    const sourceDialog = document.querySelector("#source-dialog");
+    const sourceDialogTitle = document.querySelector("#source-dialog-title");
+    const sourceDialogMeta = document.querySelector("#source-dialog-meta");
+    const sourceDialogContent = document.querySelector("#source-dialog-content");
+    const sourceDialogClose = document.querySelector("#source-dialog-close");
+    const sourceMap = new Map(data.sources.map((source) => [source.id, source]));
+    let sourceDialogTrigger = null;
+
+    function openSourceDialog(sourceId, trigger) {
+      const source = sourceMap.get(sourceId);
+      if (!source) return;
+      sourceDialogTrigger = trigger;
+      sourceDialogTitle.textContent = source.label;
+      sourceDialogMeta.textContent = `${source.file} · sha256 ${source.sha256}`;
+      renderMarkdownDocument(sourceDialogContent, source.content);
+      document.body.classList.add("source-dialog-open");
+      sourceDialog.showModal();
+      sourceDialogClose.focus();
+    }
+
+    function unlockSourceDialog() {
+      document.body.classList.remove("source-dialog-open");
+    }
+
+    sourceDialogClose.addEventListener("click", () => {
+      unlockSourceDialog();
+      sourceDialog.close("close-button");
+    });
+    sourceDialog.addEventListener("cancel", unlockSourceDialog);
+    sourceDialog.addEventListener("close", () => {
+      unlockSourceDialog();
+      const trigger = sourceDialogTrigger;
+      sourceDialogTrigger = null;
+      if (trigger?.isConnected) trigger.focus();
+    });
+
+    document.querySelector("#source-list").replaceChildren(
+      ...data.sources.map((source) =>
+        element("li", {}, [
+          element(
+            "button",
+            {
+              className: "source-button",
+              text: source.label,
+              attrs: { type: "button", "data-source-id": source.id },
+            }
+          ),
+          element("code", { text: `sha256 ${source.sha256.slice(0, 12)}` }),
+        ])
+      )
+    );
+    document.querySelector("#source-list").addEventListener("click", (event) => {
+      const trigger = event.target.closest("[data-source-id]");
+      if (trigger) openSourceDialog(trigger.dataset.sourceId, trigger);
+    });
+
+    const topNav = document.querySelector(".top-nav");
+    const navLinks = [...topNav.querySelectorAll("a")];
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    function setCurrentNav(hash) {
+      let active = null;
+      navLinks.forEach((link) => {
+        const matches = link.getAttribute("href") === hash;
+        if (matches) {
+          link.setAttribute("aria-current", "location");
+          active = link;
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+      if (active && topNav.scrollWidth > topNav.clientWidth) {
+        const left = active.offsetLeft - (topNav.clientWidth - active.offsetWidth) / 2;
+        topNav.scrollTo({
+          left: Math.max(0, left),
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
+      }
+    }
+
+    navLinks.forEach((link) =>
+      link.addEventListener("click", () => setCurrentNav(link.getAttribute("href")))
+    );
+    setCurrentNav(location.hash || "#overview");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setCurrentNav(`#${visible.target.id}`);
+      },
+      { rootMargin: "-20% 0px -68% 0px", threshold: [0, .2, .6] }
+    );
+    sections.forEach((section) => observer.observe(section));
+
+    function getHashTarget(hash) {
+      if (!hash || hash === "#") return null;
+      let id = hash.slice(1);
+      try {
+        id = decodeURIComponent(id);
+      } catch {
+        return null;
+      }
+      return id ? document.getElementById(id) : null;
+    }
+
+    function syncHashState() {
+      const target = getHashTarget(location.hash);
+      if (target) {
+        let parent = target.closest("details");
+        while (parent) {
+          parent.open = true;
+          parent = parent.parentElement?.closest("details");
+        }
+      }
+      setCurrentNav(location.hash || "#overview");
+    }
+
+    window.addEventListener("hashchange", syncHashState);
+    syncHashState();
+
+    const main = document.querySelector("#main");
+    document.querySelector(".skip-link").addEventListener("click", () => {
+      requestAnimationFrame(() => main.focus({ preventScroll: true }));
+    });
+
+    const printableDetails = [...document.querySelectorAll("details")];
+    const printOpenState = new Map();
+    addEventListener("beforeprint", () => {
+      printableDetails.forEach((details) => {
+        printOpenState.set(details, details.open);
+        details.open = true;
+      });
+    });
+    addEventListener("afterprint", () => {
+      printableDetails.forEach((details) => {
+        details.open = printOpenState.get(details) ?? false;
+      });
+      printOpenState.clear();
+    });
+    document.querySelector("#print-button").addEventListener("click", () => window.print());
+
+    async function wirePretext() {
+      const source = document.querySelector("#pretext-source").textContent;
+      if (!source || source.includes("PRETEXT_VENDOR_MISSING")) return;
+      const moduleUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      try {
+        const { prepare, layout, setLocale } = await import(moduleUrl);
+        setLocale("zh-CN");
+        await document.fonts.ready;
+        const prepared = new Map();
+        const elements = [...document.querySelectorAll("[data-pretext]")];
+        elements.forEach((item) => {
+          const style = getComputedStyle(item);
+          prepared.set(item, prepare(item.textContent.trim(), style.font));
+        });
+        function relayout() {
+          prepared.forEach((handle, item) => {
+            const lineHeight = parseFloat(getComputedStyle(item).lineHeight);
+            const result = layout(handle, item.clientWidth, lineHeight);
+            if (Number.isFinite(result.height)) item.style.minHeight = `${Math.ceil(result.height)}px`;
+          });
+        }
+        new ResizeObserver(relayout).observe(document.body);
+        relayout();
+      } catch (error) {
+        console.warn("Pretext layout fallback:", error);
+      } finally {
+        URL.revokeObjectURL(moduleUrl);
+      }
+    }
+
+    wirePretext();
+    }
+  </script>
+</body>
+</html>

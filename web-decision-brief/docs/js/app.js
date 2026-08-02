@@ -7,6 +7,7 @@ import {
   buildMeetingConclusionText,
   evaluateCheckGate,
   namedOwnersOf,
+  PATH_LABELS,
   sha256,
   verifyDecisionReceipt,
 } from "./modules/decision-model.js";
@@ -19,8 +20,9 @@ import {
 } from "./modules/html-policy.js";
 import { createContentLoader } from "./modules/content-loader.js";
 import { createMermaidRuntime } from "./modules/mermaid-runtime.js";
-import { mergeMeetingState } from "./modules/meeting-state.js";
-
+import { clearMeetingBlockState, createMeetingBlockPersister, mergeMeetingState } from "./modules/meeting-state.js";
+import { createTabHistory } from "./modules/tab-history.js";
+import { handleTablistKeydown } from "./modules/tab-keyboard.js";
 (function () {
   "use strict";
 
@@ -28,7 +30,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   const LKG_KEY = "tianyuan-brief-content-lkg-v1";
   const HANDLE_DB = "tianyuan-brief-fs";
   const HANDLE_STORE = "handles";
-  const DECISION_SCHEMA_VERSION = 2;
+  const DECISION_SCHEMA_VERSION = 3;
 
   let content = null;
   let activeTab = "t1";
@@ -37,6 +39,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   let swipeDir = "left"; // panel animation direction
   let currentReleaseManifest = null;
   let hotPollTimer = null;
+  let checkWiringAbort = null;
   const POLL_MS = 30000; // C端静默检查远端内容
   const isEditQuery = /(?:\?|&)edit=1(?:&|$)/.test(location.search);
   const isFileProtocol = location.protocol === "file:";
@@ -57,6 +60,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const tabHistory = createTabHistory({
+    windowLike: window,
+    getTabIds: () => (content && content.tabs ? content.tabs.map((tab) => tab.id) : []),
+    onNavigate: (id, options) => activate(id, undefined, options),
+  });
 
   function toast(msg, ms = 2200) {
     const t = $("#toast");
@@ -108,7 +116,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     stage.replaceChildren(panel);
   }
 
-  // ---------- File handle (IndexedDB) ----------
   function withTimeout(promise, ms, fallback) {
     return new Promise((resolve) => {
       let done = false;
@@ -185,7 +192,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     }
   }
 
-  // ---------- Load content ----------
   async function fetchRemoteContent(manifestHint) {
     return contentLoader.fetchContent(manifestHint);
   }
@@ -263,6 +269,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     } else {
       activeTab = keep;
     }
+    if (activeTab !== keep) tabHistory.replace(activeTab);
     mermaidRuntime.clear();
     renderAll();
     document.body.classList.toggle("is-check-page", activeTab === "t6");
@@ -376,7 +383,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     });
   }
 
-  // ---------- Render ----------
   function esc(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
@@ -462,6 +468,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
 
   /** 手机顶栏宽度有限：完整标题 + 短标题双写，CSS 切换 */
   const TAB_TITLE_SHORT = Object.freeze({
+    立项结果: "结果",
+    组合优先级: "优先级",
+    客服费用: "费用",
+    执行补录: "补录",
+    "G0 责任": "责任",
     今日拍板: "拍板",
     项目取舍: "取舍",
     交付边界: "边界",
@@ -628,9 +639,21 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           .map((h) => `<th>${esc(h)}</th>`)
           .join("");
         const pathMeta = {
-          A: { label: "A 同意启动", short: "A 启动", hint: "前置齐了再开发 · 按止损线花钱" },
-          B: { label: "B 先认方向", short: "B 方向", hint: "费用批完再动手 · 不烧工具费" },
-          C: { label: "C 不立", short: "C 不立", hint: "写进周报说明 · 不排期" },
+          A: {
+            label: PATH_LABELS.A,
+            short: "A 可执行",
+            hint: "客服费用已批 · 仍须 G0 全齐才成立 Ddev",
+          },
+          B: {
+            label: PATH_LABELS.B,
+            short: "B 钱后置",
+            hint: "只做 G0 前置 · 费用未批不开发",
+          },
+          C: {
+            label: PATH_LABELS.C,
+            short: "C 暂停",
+            hint: "记录暂停原因 · 不排期不支出",
+          },
         };
         const rows = (b.rows || [])
           .map((r, i) => {
@@ -677,7 +700,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
                   </button>`;
                 })
                 .join("");
-              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "点选一项路径 · 两项目可不同";
+              const hint = pathVal && pathMeta[pathVal] ? pathMeta[pathVal].hint : "补录客服执行路径 · 不重开项目方向";
               const blurb = r.projectBlurb
                 ? `<div class="path-blurb">${esc(r.projectBlurb)}</div>`
                 : "";
@@ -692,11 +715,11 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
             if (r.feeFields) {
               const f = r.feeFields;
               extras.push(`<div class="fee-fields" data-fee-row="${i}">
-                <label class="fee-num"><span class="fee-lab">目标预算</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "7000")}" placeholder="7000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">首月止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "5000")}" placeholder="5000"/><i>元</i></span></label>
-                <label class="fee-num"><span class="fee-lab">全期硬止损</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "10000")}" placeholder="10000"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">目标预算</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="total" data-block="${id}" data-row="${i}" value="${esc(f.total ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">月度 cap</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="next" data-fee="monthCap" data-block="${id}" data-row="${i}" value="${esc(f.monthCap ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
+                <label class="fee-num"><span class="fee-lab">全期 cap</span><span class="fee-inp"><input type="text" inputmode="decimal" enterkeyhint="done" data-fee="allCap" data-block="${id}" data-row="${i}" value="${esc(f.allCap ?? "")}" placeholder="待正式填写"/><i>元</i></span></label>
                 <label class="fee-other">其他费用说明 <input type="text" enterkeyhint="done" data-fee="otherNote" data-block="${id}" data-row="${i}" value="${esc(f.otherNote || "")}" placeholder="如：加测账号 / 额外 OCR"/></label>
-                <div class="fee-note">两项合计工具费 · 不含 IT 人力 · 10000 是停扩上限不是默认预算</div>
+                <div class="fee-note">A 路径须填客服正式金额与 cap · B 路径金额可留空并保持 0 支出 · 旧组合提案不继承</div>
               </div>`);
             }
 
@@ -756,8 +779,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           })
           .join("");
         const steps = [
-          ["paths", "路径", "两项目 A/B/C"],
-          ["budget", "预算·止损", "钱 + 停扩"],
+          ["paths", "路径", "客服 A/B/C"],
+          ["budget", "费用·止损", "单项目 cap"],
           ["owners", "Owner", "负责人具名"],
           ["record", "留痕", "会后约定"],
         ]
@@ -770,15 +793,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           )
           .join("");
         const legend = `<div class="check-legend" aria-label="路径含义">
-          <span class="check-legend-item tone-a"><b>A 启动</b>前置齐再开发 · 按止损线花钱</span>
-          <span class="check-legend-item tone-b"><b>B 方向</b>费用批完再动手 · 不烧工具费</span>
-          <span class="check-legend-item tone-c"><b>C 不立</b>写进周报说明 · 不排期</span>
+          <span class="check-legend-item tone-a"><b>A 可执行</b>费用已批 · G0 全齐才成立 Ddev</span>
+          <span class="check-legend-item tone-b"><b>B 钱后置</b>只做 G0 前置 · 不烧工具费</span>
+          <span class="check-legend-item tone-c"><b>C 暂停</b>记录原因 · 不排期不支出</span>
         </div>`;
         const board = checkBoardHtml(b);
         const status = checkStatusHtml(b);
         return `<div class="block" data-block-id="${id}" data-type="check-table" data-check-view="paths">
           <div class="check-header">
-            <div class="check-steps" role="group" aria-label="当场确认步骤">${steps}</div>
+            <div class="check-steps" role="group" aria-label="执行补录步骤">${steps}</div>
             ${legend}
             ${board}
           </div>
@@ -922,6 +945,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   }
 
   function renderAll() {
+    checkWiringAbort?.abort();
     renderHeader();
     renderTabs();
     $("#stage").innerHTML = content.tabs.map(renderPanel).join("");
@@ -934,24 +958,19 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     if (activeTab) queueMermaid(activeTab);
   }
 
-  /** 顶部决策看板：两项目路径 + 费用口径一眼可见，不挤在底部 */
+  /** 顶部执行看板：客服路径 + 单项目费用口径一眼可见，不挤在底部 */
   function checkBoardHtml(block) {
     const g = evaluateCheckGate(block);
-    const pathLabels = {
-      A: "A 同意启动",
-      B: "B 先认方向",
-      C: "C 不立",
-    };
     const cards = (g.decisions || [])
       .map((decision) => {
         const path = decision.path || "";
-        const pathLab = path ? pathLabels[path] || path : "未选路径";
+        const pathLab = path ? PATH_LABELS[path] || path : "未选路径";
         const tone = path === "A" ? "tone-a" : path === "B" ? "tone-b" : path === "C" ? "tone-c" : "tone-idle";
         const ownerRow = (g.ownerRows || []).find((row) => row && row.projectId === decision.projectId);
         const owners = namedOwnersOf(ownerRow || {});
         const ownerTxt =
           path === "C"
-            ? "C 不立 · 无需 Owner"
+            ? "C 暂停 · 无需执行 Owner"
             : owners.length
               ? owners.map((o) => o.name).join("、")
               : path === "A" || path === "B"
@@ -970,34 +989,34 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       : "费用口径待确认";
     const feeOn = g.feeRow && g.feeRow.checked;
     const stopOn = g.stopRow && g.stopRow.checked;
-    return `<div class="check-board" data-check-board aria-label="本场决策总览">
+    return `<div class="check-board" data-check-board aria-label="客服执行补录总览">
       <div class="check-board-projects">${cards || '<div class="check-board-card tone-idle"><div class="check-board-title">暂无项目</div></div>'}</div>
       <div class="check-board-meta">
         <div class="check-board-meta-row"><b>费用</b><span class="${feeOn ? "is-on" : ""}">${esc(feeTxt)}${feeOn ? " · 已确认" : " · 未勾选"}</span></div>
         <div class="check-board-meta-row"><b>停扩</b><span class="${stopOn ? "is-on" : ""}">${stopOn ? "超线立即停扩 · 已授权" : "A/B 时需授权超线停扩"}</span></div>
-        <div class="check-board-meta-row"><b>边界</b><span>未批不开发 · 不代回 · 不编假收益 · 本机草稿</span></div>
+        <div class="check-board-meta-row"><b>边界</b><span>G0 未齐不开发 · 不代回 · 不继承旧组合预算 · 本机草稿</span></div>
       </div>
     </div>`;
   }
 
-  /** 勾选进度：散会最低要求提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
+  /** 勾选进度：本机最低记录提示（白话）+ 复制结论按钮；文案全在 DOM，不用 CSS ::after */
   function checkStatusHtml(block) {
     const g = evaluateCheckGate(block);
     let cls = "check-status";
     let msg = "";
-    const bound = "边界：不立刻上线 · 不代回 · 不编假收益";
+    const bound = "边界：不构成 G0 通过 · 不代回 · 不继承旧组合预算";
     if (g.done === 0) {
       cls += " is-idle";
-      msg = `先为两个项目分别选 A / B / C · ${bound}`;
+      msg = `先补录客服 A / B / C 与公司正式批准凭证 · ${bound}`;
     } else if (g.allC && g.isMinOk) {
       cls += " is-ok";
-      msg = "会后分别记录不立原因；全部 C 无需补费用与 Owner。";
+      msg = "暂停执行记录已齐；C 不要求费用与执行 Owner，但不推翻已确认的项目方向。";
     } else if (g.missing.length) {
       cls += " is-warn";
-      msg = `散会前还缺：<b>${esc(g.missing.join(" · "))}</b> · ${bound}`;
+      msg = `本机记录还缺：<b>${esc(g.missing.join(" · "))}</b> · ${bound}`;
     } else {
       cls += " is-ok";
-      msg = "结论可复制或下载；贴入飞书/邮件确认后生效。边界：不立刻上线、不代回、不编收益。";
+      msg = "本机记录可复制或下载；贴入飞书/邮件并由相关 A 确认后才生效，Ddev 仍以 21 的全部 G0 门禁为准。";
     }
     const copyLab = g.isMinOk ? "复制本场结论" : "复制当前状态";
     const copyLabShort = g.isMinOk ? "复制结论" : "复制";
@@ -1099,25 +1118,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         e.stopPropagation();
         const block = findBlock(resetBtn.getAttribute("data-reset-check"));
         if (!block || !Array.isArray(block.rows)) return;
-        if (!window.confirm("清空这台设备上的本次勾选、路径和负责人？")) return;
-        block.rows.forEach((r) => {
-          r.checked = false;
-          if (Array.isArray(r.pathOptions)) r.pathValue = "";
-          if (Array.isArray(r.multiOptions)) {
-            r.multiValues = [];
-            r.otherText = "";
-          }
-          if (Array.isArray(r.owners)) {
-            r.owners = r.owners.map(() => ({ name: "", dept: "", scope: "" }));
-          }
-          if (r.ownerFields) {
-            r.ownerFields = { name: "", dept: "", scope: "", backup: "" };
-          }
-        });
-        saveDraft();
+        if (!window.confirm("清空这台设备上的本次勾选、路径、费用 / cap、说明和负责人？此操作不可撤销。")) return;
+        const previousBlock = JSON.stringify(block);
+        Object.assign(block, clearMeetingBlockState(block));
+        if (!saveDraft()) { Object.assign(block, JSON.parse(previousBlock)); renderAll(); tapHaptic("warn"); toast("清空失败：浏览器未能保存，本次数据已保留"); return; }
         renderAll();
         tapHaptic("light");
-        toast("已清空本机的本次会议勾选");
+        toast("已清空本机的勾选、路径、费用和负责人");
         return;
       }
       const receiptBtn = e.target.closest("[data-download-receipt]");
@@ -1215,14 +1222,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     setTimeout(() => el.classList.remove("is-pulse"), 600);
   }
 
-  function bindNoSwipe(inp) {
-    inp.addEventListener("pointerdown", (e) => e.stopPropagation());
-    inp.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+  function bindNoSwipe(inp, onCheck) {
+    onCheck(inp, "pointerdown", (e) => e.stopPropagation());
+    onCheck(inp, "touchstart", (e) => e.stopPropagation(), { passive: true });
     // 手机软键盘弹起时把输入框滚进可视区 + 行高亮
-    inp.addEventListener("focus", () => {
+    onCheck(inp, "focus", () => {
       const tr = inp.closest("tr");
       if (tr) tr.classList.add("is-focus-row");
       setTimeout(() => {
+        if (document.activeElement !== inp || !document.body.classList.contains("is-mobile")) return;
         try {
           const r = inp.getBoundingClientRect();
           if (r.bottom > window.innerHeight * 0.52 || r.top < 72) {
@@ -1231,14 +1239,15 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         } catch (_) {}
       }, 300);
     });
-    inp.addEventListener("blur", () => {
+    onCheck(inp, "blur", () => {
       const tr = inp.closest("tr");
       if (tr) tr.classList.remove("is-focus-row");
     });
   }
 
   function wireCheckTables() {
-    // 勾选框：任何模式可点（会议现场用）
+    checkWiringAbort = new AbortController();
+    const onCheck = (target, type, listener, options = {}) => target.addEventListener(type, listener, { ...options, signal: checkWiringAbort.signal });
     const toggleCheckRow = (btn) => {
       const blockId = btn.dataset.block;
       const row = +btn.dataset.row;
@@ -1273,6 +1282,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           return;
         }
       }
+      const previousBlock = JSON.stringify(block);
       r.checked = !r.checked;
       setRowCheckedUI(tr, r.checked);
       if (tr) {
@@ -1282,30 +1292,28 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         setTimeout(() => tr.classList.remove("is-just-toggled"), 320);
       }
       tapHaptic(r.checked ? "ok" : "light");
-      saveDraft();
+      if (!persistMeetingBlock(block, previousBlock)) return;
       refreshCheckStatus(blockId);
     };
 
     $$("[data-check-toggle]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         toggleCheckRow(btn);
       });
     });
 
-    // 简勾行：整卡可点（手机 2 列热区）
     $$(".block[data-type='check-table'] tr:not(.has-path)").forEach((tr) => {
-      tr.addEventListener("click", (e) => {
+      onCheck(tr, "click", (e) => {
         if (e.target.closest("button,input,textarea,label,a,[contenteditable=true]")) return;
         const btn = tr.querySelector("[data-check-toggle]");
         if (btn) toggleCheckRow(btn);
       });
     });
 
-    // #1 主开多选
     $$("[data-multi-pick]").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
+      onCheck(chip, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const blockId = chip.dataset.block;
@@ -1313,6 +1321,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const val = chip.getAttribute("data-multi-pick");
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (!Array.isArray(r.multiValues)) r.multiValues = [];
         const idx = r.multiValues.indexOf(val);
@@ -1349,14 +1358,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           setRowCheckedUI(tr, r.checked);
         }
         tapHaptic("light");
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       });
     });
 
-    // 路径 A/B/C
     $$("[data-path-pick]").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
+      onCheck(chip, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const blockId = chip.dataset.block;
@@ -1364,6 +1372,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const val = chip.getAttribute("data-path-pick");
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (r.pathValue === val) {
           r.pathValue = "";
@@ -1387,7 +1396,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           });
           const hints = {
             A: "前置齐了再开发 · 按止损线花钱",
-            B: "费用批完再动手 · 不烧工具费",
+            B: "只做 G0 前置 · 费用未批不开发",
             C: "写进周报说明 · 不排期",
           };
           const hintEl = tr.querySelector("[data-path-hint]");
@@ -1395,12 +1404,10 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
           setRowCheckedUI(tr, r.checked);
         }
         tapHaptic(r.pathValue ? "ok" : "light");
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       });
     });
-
-    // #1 其他说明
     $$("input[data-other-text]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1408,20 +1415,20 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
         const r = block.rows[row];
+        if ((r.otherText || "") === inp.value) return;
+        const previousBlock = JSON.stringify(block);
         r.otherText = inp.value;
         if ((r.multiValues || []).includes("other") && inp.value.trim()) {
           r.checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
-
-    // #3 费用字段
     $$("input[data-fee]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1429,22 +1436,23 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.fee;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         if (!block.rows[row].feeFields) block.rows[row].feeFields = {};
+        if ((block.rows[row].feeFields[field] || "") === inp.value) return;
         block.rows[row].feeFields[field] = inp.value;
         // 改过金额或点过字段 → 视为同意该口径
         if (inp.value.trim()) {
           block.rows[row].checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // #4 多负责人
     $$("input[data-owner-multi]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1453,23 +1461,24 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.ownerMulti;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         const r = block.rows[row];
         if (!Array.isArray(r.owners)) r.owners = [];
         if (!r.owners[oi]) r.owners[oi] = { name: "", dept: "", scope: "" };
+        if ((r.owners[oi][field] || "") === inp.value) return;
         r.owners[oi][field] = inp.value;
         if (namedOwnersOf(r).length) {
           r.checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // 兼容旧单人 ownerFields
     $$("input[data-owner]").forEach((inp) => {
       const commit = () => {
         const blockId = inp.dataset.block;
@@ -1477,23 +1486,24 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         const field = inp.dataset.owner;
         const block = findBlock(blockId);
         if (!block || !block.rows || !block.rows[row]) return;
+        const previousBlock = JSON.stringify(block);
         if (!block.rows[row].ownerFields) block.rows[row].ownerFields = {};
+        if ((block.rows[row].ownerFields[field] || "") === inp.value) return;
         block.rows[row].ownerFields[field] = inp.value;
         if (field === "name" && inp.value.trim()) {
           block.rows[row].checked = true;
           setRowCheckedUI(inp.closest("tr"), true);
         }
-        saveDraft();
+        if (!persistMeetingBlock(block, previousBlock)) return;
         refreshCheckStatus(blockId);
       };
-      inp.addEventListener("input", commit);
-      inp.addEventListener("change", commit);
-      bindNoSwipe(inp);
+      onCheck(inp, "input", commit);
+      onCheck(inp, "change", commit);
+      bindNoSwipe(inp, onCheck);
     });
 
-    // 手机：展开「会后约定」次要勾选项（带动画 class）
     $$("[data-later-toggle]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const wrap = btn.closest(".block[data-type='check-table']");
@@ -1510,9 +1520,8 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       });
     });
 
-    // 再加负责人（高度过渡）
     $$("[data-owners-more]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      onCheck(btn, "click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const grid = btn.closest(".owners-grid");
@@ -1702,6 +1711,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     else if (prevIdx >= 0 && nextIdx >= 0) swipeDir = nextIdx >= prevIdx ? "left" : "right";
 
     activeTab = id;
+    if (!(opts && opts.fromHistory)) tabHistory.push(id);
     if (document.body.classList.contains("is-mobile")) tapHaptic("light");
     // 切页前强制清残留，防止上一页 transform/opacity 挂着
     resetAllSwipeStyles();
@@ -1748,7 +1758,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   /** 供 wireSwipe 暴露：点 Tab 时硬取消进位（在 wireSwipe 内赋值） */
   let cancelPendingGoSwipe = null;
 
-  // ---------- Edit mode ----------
   function applyEditMode() {
     document.body.classList.toggle("is-editing", editing);
     $$("[data-editable='true']").forEach((el) => {
@@ -1896,10 +1905,13 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
   }
 
   function saveDraft() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-    } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(content)); return true; }
+    catch (_) { return false; }
   }
+
+  const persistMeetingBlock = createMeetingBlockPersister(saveDraft, renderAll, () => {
+    tapHaptic("warn"); toast("保存失败：浏览器存储不可用，刚才更改未生效", 3200);
+  });
 
   function downloadJson() {
     const blob = new Blob([JSON.stringify(content, null, 2)], {
@@ -2046,7 +2058,6 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
       if (editing) $("#logo-file").click();
     });
   }
-
   // keyboard
   function wireKeys() {
     document.addEventListener("keydown", (e) => {
@@ -2058,6 +2069,7 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
         return;
       }
       const ids = content.tabs.map((t) => t.id);
+      if (handleTablistKeydown(e, ids, activate, document)) return;
       const cur = ids.indexOf(activeTab);
       if (e.key >= "1" && e.key <= "7") {
         const t = ids[Number(e.key) - 1];
@@ -2636,10 +2648,12 @@ import { mergeMeetingState } from "./modules/meeting-state.js";
     try {
       // C端默认拉最新；仅 ?edit=1 优先草稿
       await loadContent({ preferDraft: isEditQuery });
+      activeTab = tabHistory.initialize(activeTab) || activeTab;
       renderAll();
       wireToolbar();
       wireLogo();
       wireKeys();
+      tabHistory.start();
       wireSwipe();
       wireMermaidLightbox();
       window.addEventListener("ai-brief:mermaid-ready", () => {

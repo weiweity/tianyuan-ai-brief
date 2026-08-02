@@ -233,20 +233,20 @@ export function createContentLoader({
       .blocks.find((block) => block.type === "check-table");
     const decisionRows = decisionBlock && decisionBlock.rows;
     if (!Array.isArray(decisionRows) || !decisionRows.length) {
-      throw new Error("当场确认结构无效");
+      throw new Error("执行补录结构无效");
     }
     const rowIds = decisionRows.map((row) =>
       row && typeof row.rowId === "string" ? row.rowId : ""
     );
     if (rowIds.some((id) => !id) || new Set(rowIds).size !== rowIds.length) {
-      throw new Error("当场确认行标识无效");
+      throw new Error("执行补录行标识无效");
     }
     const pathRows = decisionRows.filter(
       (row) => row && row.projectId && Array.isArray(row.pathOptions)
     );
     const projectIds = pathRows.map((row) => row.projectId);
     const pathsValid =
-      pathRows.length === 2 &&
+      pathRows.length === 1 &&
       new Set(projectIds).size === projectIds.length &&
       pathRows.every(
         (row) =>
@@ -270,7 +270,7 @@ export function createContentLoader({
       !hasFee ||
       !hasStopAuthority
     ) {
-      throw new Error("当场确认决策门禁结构无效");
+      throw new Error("执行补录门禁结构无效");
     }
     return content;
   }
