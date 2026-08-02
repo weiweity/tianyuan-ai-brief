@@ -671,9 +671,15 @@ try {
       assert.equal(structure.visibleFactFields, 0);
       assert.equal(structure.renderedFactChecklists, 2);
       assert.deepEqual(
-        structure.factChecklistLabels.slice(0, 6),
-        ["主用户", "平台", "频次 / 样本", "当前步骤", "主要卡点", "业务影响"]
+        structure.factChecklistLabels,
+        Array(2)
+          .fill(["真实任务名称", "主用户", "平台", "频次 / 样本", "主要卡点", "业务影响"])
+          .flat()
       );
+      const meetingCallouts = await page.locator(".callout").allTextContents();
+      assert.match(meetingCallouts[1], /两个真实任务名称/);
+      assert.match(meetingCallouts[4], /谁上报、谁拍板、先停用并回到原流程/);
+      assert.match(meetingCallouts[4], /纪要与台账/);
       assert.deepEqual(
         await page.locator(".callout").evaluateAll((items) =>
           items.map((item) => getComputedStyle(item, "::before").content.replaceAll('"', ""))
