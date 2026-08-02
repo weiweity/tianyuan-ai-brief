@@ -485,6 +485,17 @@ try {
             borderWidth: parseFloat(style.borderTopWidth),
           };
         })(),
+        surfaceEdges: (() => {
+          const edge = (selector) => {
+            const box = document.querySelector(selector).getBoundingClientRect();
+            return { left: box.left, right: box.right, width: box.width };
+          };
+          return {
+            header: edge(".header-inner"),
+            body: edge(".slide.is-active .slide-inner"),
+            footer: edge(".controls-inner"),
+          };
+        })(),
         bodyStage: (() => {
           const stage = document.querySelector(".slide.is-active .slide-inner");
           const style = getComputedStyle(stage);
@@ -589,6 +600,16 @@ try {
       assert.ok(structure.headerChrome.borderRadius >= 16, JSON.stringify(structure.headerChrome));
       assert.ok(structure.headerChrome.borderWidth >= 1, JSON.stringify(structure.headerChrome));
       assert.notEqual(structure.headerChrome.background, "rgba(0, 0, 0, 0)");
+      for (const edge of ["left", "right", "width"]) {
+        assert.ok(
+          Math.abs(structure.surfaceEdges.header[edge] - structure.surfaceEdges.body[edge]) <= 1,
+          JSON.stringify(structure.surfaceEdges)
+        );
+        assert.ok(
+          Math.abs(structure.surfaceEdges.footer[edge] - structure.surfaceEdges.body[edge]) <= 1,
+          JSON.stringify(structure.surfaceEdges)
+        );
+      }
       assert.equal(structure.bodyStage.background, "rgb(255, 255, 255)");
       assert.ok(structure.bodyStage.borderRadius >= 16, JSON.stringify(structure.bodyStage));
       assert.ok(structure.bodyStage.borderWidth >= 1, JSON.stringify(structure.bodyStage));
