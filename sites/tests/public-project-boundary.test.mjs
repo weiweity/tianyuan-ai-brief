@@ -11,8 +11,8 @@ import {
   resolveCustomerProjectWorkspace,
 } from "../../business-docs/08-工具/project_workspace.mjs";
 
-const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = path.resolve(webRoot, "..");
+const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(siteRoot, "..");
 const projectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
 const workspaceModuleUrl = pathToFileURL(
   path.join(repoRoot, "business-docs/08-工具/project_workspace.mjs")

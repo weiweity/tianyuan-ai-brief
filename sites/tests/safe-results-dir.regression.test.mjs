@@ -105,7 +105,7 @@ test("客服三视图与历史 Web QA 不得恢复递归结果目录清理", asy
   const files = [
     path.join(repoRoot, "business-docs/08-工具/test_customer_agent_prd.mjs"),
     path.join(repoRoot, "business-docs/08-工具/test_customer_agent_hub.mjs"),
-    path.join(repoRoot, "web-decision-brief/tests/ui-audit.mjs"),
+    path.join(repoRoot, "sites/tests/ui-audit.mjs"),
   ];
   for (const file of files) {
     const source = await readFile(file, "utf8");

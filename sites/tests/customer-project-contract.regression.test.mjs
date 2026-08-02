@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 import { assertMeetingAgendaConsistency } from "../../business-docs/08-工具/customer_project_meeting.mjs";
 import { deriveProjectStatus } from "../../business-docs/08-工具/customer_project_status.mjs";
 
-const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = path.resolve(webRoot, "..");
+const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(siteRoot, "..");
 const projectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
 
 const readProject = (file) => readFile(path.join(projectRoot, file), "utf8");
@@ -228,8 +228,8 @@ test("三视图导航只把 09 定义为会场主屏", async () => {
     readProject("README.md"),
     readRepo("business-docs/分类汇总.md"),
     readRepo("business-docs/08-工具/README.md"),
-    readRepo("web-decision-brief/package.json"),
-    readRepo("web-decision-brief/docs/index.html"),
+    readRepo("sites/package.json"),
+    readRepo("archive/2026-07-31-ai-project-brief/index.html"),
   ]);
   for (const document of [map, projectReadme, inventory]) {
     assert.match(document, /09-客服Agent需求会汇报\.html/);

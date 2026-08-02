@@ -12,7 +12,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const cssPath = path.join(root, "docs/css/app.css");
+const archiveRoot = path.resolve(root, "../archive/2026-07-31-ai-project-brief");
+const cssPath = path.join(archiveRoot, "css/app.css");
 
 async function readCss() {
   return readFile(cssPath, "utf8");
@@ -102,7 +103,7 @@ test("live page: label does not overlap body text; badges centered; dept type tr
   }
 
   const port = await freePort();
-  const server = spawn("python3", ["-m", "http.server", String(port), "-d", "docs"], {
+  const server = spawn("python3", ["-m", "http.server", String(port), "-d", archiveRoot], {
     cwd: root,
     stdio: "ignore",
   });

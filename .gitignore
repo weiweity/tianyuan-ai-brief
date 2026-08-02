@@ -14,6 +14,6 @@ test-results/
 **/test-results/
 playwright-report/
 /output/
-/web-decision-brief/dist/
+/sites/dist/
 tmp/
 **/tmp/

@@ -7,13 +7,15 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  assertArchivedSiteFrozen,
   assertSafeReplaceTarget,
   stagePagesArtifact,
   validateArtifactLinks,
 } from "../scripts/build-pages-artifact.mjs";
 
-const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = path.resolve(webRoot, "..");
+const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(siteRoot, "..");
+const archiveRoot = path.join(repoRoot, "archive/2026-07-31-ai-project-brief");
 const privateProjectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
 const privateProjectFiles = [
   "README.md",
@@ -28,6 +30,9 @@ const privateProjectFiles = [
   "07-客服Agent立项PRD.sources.json",
   "08-客服Agent立项执行中心.html",
   "09-客服Agent需求会汇报.html",
+  "assets/brand/logo.png",
+  "assets/brand/favicon.png",
+  "assets/brand/apple-touch-icon.png",
 ];
 
 async function walkFiles(root) {
@@ -103,6 +108,13 @@ test("Pages artifact 发布历史 Web 与脱敏启动会，PRD / Hub 仍降级",
   assert.doesNotMatch(JSON.stringify(manifest), /sha256|sourceSha|[a-f\d]{64}/i);
 });
 
+test("7 月 31 日历史站点与归档清单完全一致", async () => {
+  const result = await assertArchivedSiteFrozen();
+  assert.equal(result.files.length, 29);
+  assert.equal(result.entrySha256, "2cabb4ffdf323d4668d4dc9932080b0662c2d7137aed16e3aaa4779c7831f720");
+  assert.equal(result.treeSha256, "b6a18b2ef16b335f0f9224e776b6a36299be5fb73fbbe7330ddb188282cef418");
+});
+
 test("发布副本降级指向仓库外的 Markdown 链接，保留公开 Web 内部链接", async () => {
   const parent = await mkdtemp(path.join(tmpdir(), "pages-artifact-markdown-"));
   const docs = path.join(parent, "docs");
@@ -113,7 +125,7 @@ test("发布副本降级指向仓库外的 Markdown 链接，保留公开 Web �
     '<a href="../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html">A</a><a href="../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html">B</a><a href="../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html">C</a>'
   );
   await writeFile(path.join(docs, "public.md"), "[公开入口](./index.html)\n[内部材料](../../business-docs/private.md)\n");
-  await stagePagesArtifact({ outputPath, webDocsPath: docs });
+  await stagePagesArtifact({ outputPath, archiveSitePath: docs });
 
   const markdown = await readFile(path.join(outputPath, "public.md"), "utf8");
   assert.match(markdown, /\[公开入口\]\(\.\/index\.html\)/);
@@ -135,7 +147,7 @@ test("链接校验剥离 query 与 fragment，并递归检查 HTML / Markdown", 
 });
 
 test("源码历史页保留本地 PRD / Hub / Meeting 入口，仅发布副本改写", async () => {
-  const sourceIndex = await readFile(path.join(webRoot, "docs/index.html"), "utf8");
+  const sourceIndex = await readFile(path.join(archiveRoot, "index.html"), "utf8");
   assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/07-客服Agent立项PRD\.html/);
   assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/08-客服Agent立项执行中心\.html/);
   assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
@@ -173,12 +185,14 @@ test("canonical replace 遇到 dist symlink 时拒绝，仓库外目录不删除
   await assert.rejects(stat(path.join(external, "pages")), { code: "ENOENT" });
 });
 
-test("Pages 由公开 Web 或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
+test("Pages 由归档站点、发布工具或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
   const workflow = await readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8");
-  assert.match(workflow, /web-decision-brief\/\*\*/);
+  assert.match(workflow, /archive\/2026-07-31-ai-project-brief\/\*\*/);
+  assert.match(workflow, /archive\/archive-manifest\.json/);
+  assert.match(workflow, /sites\/\*\*/);
   assert.match(workflow, /business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
   assert.doesNotMatch(workflow, /customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);
   assert.match(workflow, /actions\/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa/);
   assert.match(workflow, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
-  assert.match(workflow, /path:\s*web-decision-brief\/dist\/pages/);
+  assert.match(workflow, /path:\s*sites\/dist\/pages/);
 });

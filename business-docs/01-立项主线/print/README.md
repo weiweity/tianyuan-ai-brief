@@ -8,4 +8,4 @@
 | `AI赋能立项_金主一页汇报.html` | 历史兼容跳转 | 跳转已收尾汇报 Web，无第二份业务正文 |
 | `logo-ty.png` / `logo-ty@2x.png` | 素材 | 历史打印 Logo |
 
-可编辑历史源见 [`../19-今日HR总经理_打印提纲.md`](../19-今日HR总经理_打印提纲.md)；当前客服项目见 [`../../01-客服Agent项目/README.md`](../../01-客服Agent项目/README.md)；已收尾 Web 见 [`../../../web-decision-brief/`](../../../web-decision-brief/)。
+可编辑历史源见 [`../19-今日HR总经理_打印提纲.md`](../19-今日HR总经理_打印提纲.md)；当前客服项目见 [`../../01-客服Agent项目/README.md`](../../01-客服Agent项目/README.md)；已收尾 Web 见 [`../../../archive/README.md`](../../../archive/README.md)。

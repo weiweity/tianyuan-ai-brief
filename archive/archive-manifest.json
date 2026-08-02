@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "status": "archived",
+  "snapshotDate": "2026-07-31",
+  "releaseId": "shell-v3-5a44ca89a800",
+  "contentVersion": "5.25.1",
+  "sourceCommit": "1ef5df878ee3f3b4b9a4639b831e114a0734ab0c",
+  "publicUrl": "https://weiweity.github.io/tianyuan-ai-brief/",
+  "fileCount": 29,
+  "entrySha256": "2cabb4ffdf323d4668d4dc9932080b0662c2d7137aed16e3aaa4779c7831f720",
+  "treeSha256": "b6a18b2ef16b335f0f9224e776b6a36299be5fb73fbbe7330ddb188282cef418"
+}

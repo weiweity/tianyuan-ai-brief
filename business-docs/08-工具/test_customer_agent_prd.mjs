@@ -16,7 +16,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { createSafeResultsDir } from "../../web-decision-brief/tests/support/safe-results-dir.mjs";
+import { createSafeResultsDir } from "../../sites/tests/support/safe-results-dir.mjs";
 import {
   resolveCustomerProjectQaPaths,
   resolveCustomerProjectWorkspace,
@@ -27,10 +27,10 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
 const workspace = await resolveCustomerProjectWorkspace(import.meta.url);
 const { mode, projectDir } = workspace;
-const webRoot = path.join(repoRoot, "web-decision-brief");
-const requireFromWeb = createRequire(path.join(webRoot, "package.json"));
-const { chromium } = requireFromWeb("playwright");
-const axeSource = requireFromWeb("axe-core").source;
+const siteRoot = path.join(repoRoot, "sites");
+const requireFromSites = createRequire(path.join(siteRoot, "package.json"));
+const { chromium } = requireFromSites("playwright");
+const axeSource = requireFromSites("axe-core").source;
 
 const targetPath = path.resolve(
   process.env.PRD_HTML ||

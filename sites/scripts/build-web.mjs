@@ -1,34 +1,40 @@
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const contentPath = path.join(root, "docs/data/content.json");
-const httpOutputPath = path.join(root, "docs/js/app.bundle.js");
-const offlineOutputPath = path.join(root, "docs/js/app.offline.bundle.js");
-const releasePath = path.join(root, "docs/data/release.json");
-const indexPath = path.join(root, "docs/index.html");
-const checkOnly = process.argv.includes("--check");
+const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const archiveRoot = path.resolve(siteRoot, "../archive/2026-07-31-ai-project-brief");
+const contentPath = path.join(archiveRoot, "data/content.json");
+const httpOutputPath = path.join(archiveRoot, "js/app.bundle.js");
+const offlineOutputPath = path.join(archiveRoot, "js/app.offline.bundle.js");
+const releasePath = path.join(archiveRoot, "data/release.json");
+const indexPath = path.join(archiveRoot, "index.html");
+const args = process.argv.slice(2);
+if (args.length !== 1 || args[0] !== "--check") {
+  throw new Error(
+    "7 月 31 日站点已冻结；本脚本只允许 --check，不得原地重新生成。需要修改时请建立新的日期归档。"
+  );
+}
 
 const [contentText, currentIndex, cssText, bootstrapText, mermaidVendor, logoBytes] =
   await Promise.all([
     readFile(contentPath, "utf8"),
     readFile(indexPath, "utf8"),
-    readFile(path.join(root, "docs/css/app.css"), "utf8"),
-    readFile(path.join(root, "docs/js/bootstrap.js"), "utf8"),
-    readFile(path.join(root, "docs/vendor/mermaid-10.9.6.min.js"), "utf8"),
-    readFile(path.join(root, "docs/assets/logo.png")),
+    readFile(path.join(archiveRoot, "css/app.css"), "utf8"),
+    readFile(path.join(archiveRoot, "js/bootstrap.js"), "utf8"),
+    readFile(path.join(archiveRoot, "vendor/mermaid-10.9.6.min.js"), "utf8"),
+    readFile(path.join(archiveRoot, "assets/logo.png")),
   ]);
 const content = JSON.parse(contentText);
 const contentSha256 = createHash("sha256").update(contentText).digest("hex");
 
 const result = await build({
-  absWorkingDir: root,
-  entryPoints: ["docs/js/app.js"],
-  outfile: "docs/js/app.bundle.js",
+  absWorkingDir: archiveRoot,
+  entryPoints: ["js/app.js"],
+  outfile: "js/app.bundle.js",
   bundle: true,
   write: false,
   format: "iife",
@@ -81,40 +87,30 @@ const banner = [
   `globalThis.__AI_BRIEF_OFFLINE_META__=Object.freeze(${JSON.stringify(release)});`,
 ].join("\n");
 const offlineGenerated = `${banner}\n${httpGenerated}`;
-if (checkOnly) {
-  let currentHttpBundle = "";
-  let currentOfflineBundle = "";
-  let currentRelease = "";
-  try {
-    currentHttpBundle = await readFile(httpOutputPath, "utf8");
-  } catch {}
-  try {
-    currentOfflineBundle = await readFile(offlineOutputPath, "utf8");
-  } catch {}
-  try {
-    currentRelease = await readFile(releasePath, "utf8");
-  } catch {}
-  const stale = [];
-  if (currentHttpBundle !== httpGenerated) stale.push("HTTP Bundle");
-  if (currentOfflineBundle !== offlineGenerated) stale.push("离线 Bundle");
-  if (currentRelease !== releaseText) stale.push("release.json");
-  if (currentIndex !== expectedIndex) stale.push("index.html 资源版本");
-  if (stale.length) {
-    console.error(`${stale.join("、")} 已过期：请执行 npm run build:web 并提交生成物`);
-    process.exitCode = 1;
-  } else {
-    console.log(
-      `Web 产物已同步 · release ${releaseId} · content sha256 ${contentSha256.slice(0, 12)}`
-    );
-  }
+let currentHttpBundle = "";
+let currentOfflineBundle = "";
+let currentRelease = "";
+try {
+  currentHttpBundle = await readFile(httpOutputPath, "utf8");
+} catch {}
+try {
+  currentOfflineBundle = await readFile(offlineOutputPath, "utf8");
+} catch {}
+try {
+  currentRelease = await readFile(releasePath, "utf8");
+} catch {}
+const stale = [];
+if (currentHttpBundle !== httpGenerated) stale.push("HTTP Bundle");
+if (currentOfflineBundle !== offlineGenerated) stale.push("离线 Bundle");
+if (currentRelease !== releaseText) stale.push("release.json");
+if (currentIndex !== expectedIndex) stale.push("index.html 资源版本");
+if (stale.length) {
+  console.error(
+    `${stale.join("、")} 与冻结基线不一致：请从归档清单记录的源提交恢复，或建立新的日期归档；禁止原地重建。`
+  );
+  process.exitCode = 1;
 } else {
-  await Promise.all([
-    writeFile(httpOutputPath, httpGenerated, "utf8"),
-    writeFile(offlineOutputPath, offlineGenerated, "utf8"),
-    writeFile(releasePath, releaseText, "utf8"),
-    writeFile(indexPath, expectedIndex, "utf8"),
-  ]);
   console.log(
-    `已生成 Web 产物 · release ${releaseId} · HTTP Bundle ${httpGenerated.length} bytes · 离线 Bundle ${offlineGenerated.length} bytes · content sha256 ${contentSha256.slice(0, 12)}`
+    `归档 Web 已验证 · release ${releaseId} · content sha256 ${contentSha256.slice(0, 12)}`
   );
 }

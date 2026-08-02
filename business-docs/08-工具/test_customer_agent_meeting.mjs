@@ -19,7 +19,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { createSafeResultsDir } from "../../web-decision-brief/tests/support/safe-results-dir.mjs";
+import { createSafeResultsDir } from "../../sites/tests/support/safe-results-dir.mjs";
 import {
   resolveCustomerProjectQaPaths,
   resolveCustomerProjectWorkspace,
@@ -31,10 +31,10 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
 const workspace = await resolveCustomerProjectWorkspace(import.meta.url);
 const { projectDir } = workspace;
-const webRoot = path.join(repoRoot, "web-decision-brief");
-const requireFromWeb = createRequire(path.join(webRoot, "package.json"));
-const { chromium } = requireFromWeb("playwright");
-const axeSource = requireFromWeb("axe-core").source;
+const siteRoot = path.join(repoRoot, "sites");
+const requireFromSites = createRequire(path.join(siteRoot, "package.json"));
+const { chromium } = requireFromSites("playwright");
+const axeSource = requireFromSites("axe-core").source;
 
 const targetPath = path.join(projectDir, "09-客服Agent需求会汇报.html");
 const targetUrl = pathToFileURL(targetPath).href;
@@ -285,6 +285,11 @@ await check("隔离工作区生成安全、幂等与并发保护", async () => {
       "07-客服Agent立项PRD.html",
     ]) {
       await copyFile(path.join(projectDir, file), path.join(isolatedProject, file));
+    }
+    const isolatedBrandDir = path.join(isolatedProject, "assets/brand");
+    await mkdir(isolatedBrandDir, { recursive: true });
+    for (const file of ["logo.png", "favicon.png", "apple-touch-icon.png"]) {
+      await copyFile(path.join(projectDir, "assets/brand", file), path.join(isolatedBrandDir, file));
     }
 
     const isolatedLedger = path.join(isolatedProject, "02-G0责任与证据台账.md");

@@ -1,4 +1,5 @@
 import { constants as fsConstants } from "node:fs";
+import { createHash } from "node:crypto";
 import {
   cp,
   lstat,
@@ -17,8 +18,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
-const webRoot = path.resolve(path.dirname(scriptPath), "..");
-const repoRoot = path.resolve(webRoot, "..");
+const siteRoot = path.resolve(path.dirname(scriptPath), "..");
+const repoRoot = path.resolve(siteRoot, "..");
+const ARCHIVED_SITE_ROOT = path.join(repoRoot, "archive/2026-07-31-ai-project-brief");
+const ARCHIVE_MANIFEST_PATH = path.join(repoRoot, "archive/archive-manifest.json");
 const LOCAL_PRD_HREF = "../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html";
 const LOCAL_HUB_HREF = "../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html";
 const LOCAL_MEETING_HREF = "../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html";
@@ -200,6 +203,40 @@ async function walkFiles(root) {
   return files;
 }
 
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+export async function assertArchivedSiteFrozen({
+  archiveSitePath = ARCHIVED_SITE_ROOT,
+  manifestPath = ARCHIVE_MANIFEST_PATH,
+} = {}) {
+  const archiveRoot = path.resolve(archiveSitePath);
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  const files = (await walkFiles(archiveRoot))
+    .map((file) => path.relative(archiveRoot, file).split(path.sep).join("/"))
+    .sort();
+  const treeReceipt = files
+    .map((relative) => {
+      const filePath = path.join(archiveRoot, relative);
+      return readFile(filePath).then((bytes) => `${sha256(bytes)}  ${relative}\n`);
+    });
+  const treeSha256 = sha256((await Promise.all(treeReceipt)).join(""));
+  const entrySha256 = sha256(await readFile(path.join(archiveRoot, "index.html")));
+  if (
+    manifest.schemaVersion !== 1 ||
+    manifest.status !== "archived" ||
+    manifest.fileCount !== files.length ||
+    manifest.treeSha256 !== treeSha256 ||
+    manifest.entrySha256 !== entrySha256
+  ) {
+    throw new Error(
+      `7 月 31 日归档站点发生未授权变化：files ${files.length}/${manifest.fileCount} · tree ${treeSha256}/${manifest.treeSha256} · entry ${entrySha256}/${manifest.entrySha256}`
+    );
+  }
+  return { files, treeSha256, entrySha256 };
+}
+
 function referencesIn(content, extension) {
   const references = [];
   const htmlPattern = /\bhref\s*=\s*(["'])(.*?)\1/gi;
@@ -247,8 +284,8 @@ export async function validateArtifactLinks(artifactRoot) {
   return true;
 }
 
-async function populateArtifact({ stagingOutput, webDocsPath, meetingSourcePath }) {
-  const sourceRoot = path.resolve(webDocsPath);
+async function populateArtifact({ stagingOutput, archiveSitePath, meetingSourcePath }) {
+  const sourceRoot = path.resolve(archiveSitePath);
   await cp(sourceRoot, stagingOutput, { recursive: true, force: false, errorOnExist: true });
 
   const stagedIndexPath = path.join(stagingOutput, "index.html");
@@ -302,34 +339,37 @@ async function populateArtifact({ stagingOutput, webDocsPath, meetingSourcePath 
 }
 
 export async function stagePagesArtifact({
-  outputPath = path.join(webRoot, "dist/pages"),
-  webDocsPath = path.join(webRoot, "docs"),
+  outputPath = path.join(siteRoot, "dist/pages"),
+  archiveSitePath = ARCHIVED_SITE_ROOT,
   meetingSourcePath = CANONICAL_MEETING_SOURCE,
   replaceExisting = false,
 } = {}) {
   const output = path.resolve(outputPath);
-  const canonicalBuildOutput = path.join(webRoot, "dist/pages");
+  const canonicalBuildOutput = path.join(siteRoot, "dist/pages");
   const outputExists = await pathExists(output);
   if (replaceExisting) {
     await assertSafeReplaceTarget({
       outputPath: output,
       canonicalOutputPath: canonicalBuildOutput,
-      trustedRoot: webRoot,
+      trustedRoot: siteRoot,
     });
   } else if (outputExists) {
     throw eexistError(output);
   }
 
   await mkdir(path.dirname(output), { recursive: true });
+  if (path.resolve(archiveSitePath) === path.resolve(ARCHIVED_SITE_ROOT)) {
+    await assertArchivedSiteFrozen({ archiveSitePath });
+  }
   const stagingParent = await mkdtemp(path.join(path.dirname(output), `.${path.basename(output)}.stage-`));
   const stagingOutput = path.join(stagingParent, "artifact");
   try {
-    const files = await populateArtifact({ stagingOutput, webDocsPath, meetingSourcePath });
+    const files = await populateArtifact({ stagingOutput, archiveSitePath, meetingSourcePath });
     if (replaceExisting) {
       await assertSafeReplaceTarget({
         outputPath: output,
         canonicalOutputPath: canonicalBuildOutput,
-        trustedRoot: webRoot,
+        trustedRoot: siteRoot,
       });
       if (await pathExists(output)) await rm(output, { recursive: true, force: false });
     } else if (await pathExists(output)) {

@@ -1,6 +1,6 @@
 # 业务文档地图
 
-> **更新：** 2026-08-01
+> **更新：** 2026-08-03
 > **职责：** 只回答“去哪看、去哪改”；组合状态看[项目驾驶舱](00-项目驾驶舱.md)，客服项目从[项目导航](01-客服Agent项目/README.md)进入。
 
 ---
@@ -21,7 +21,8 @@
 | 查供应链独立资料 | [05 · 供应链导航](05-供应链布局/README.md) |
 | 写周期周报 | [06 · 周会与周报](06-周会与周报/README.md) |
 | 查全部文档与生命周期 | [分类汇总](分类汇总.md) |
-| 查已收尾汇报 Web | [Web 收尾说明](../web-decision-brief/README.md) |
+| 查 7 月 31 日已收尾汇报 | [归档说明](../archive/README.md) · [归档网址](https://weiweity.github.io/tianyuan-ai-brief/) |
+| 打开客服 Agent 启动会网址 | [当前网址](https://weiweity.github.io/tianyuan-ai-brief/customer-agent/) |
 | 查历史与废止稿 | [99 · 归档](99-归档/README.md) |
 
 **会场顺序：** 只开 `09` 作主屏；`07` 仅作背景备用；`08` 是内部推进页；`02` 只记录、不投影。
@@ -59,7 +60,7 @@ business-docs/
 └── 99-归档/
 ```
 
-`web-decision-brief/` 不在业务文档目录内。它是已收尾的汇报 Web，只保留设计、交互和工程参考价值。
+`archive/2026-07-31-ai-project-brief/` 是已收尾汇报的冻结快照；`sites/` 只维护两个网址的发布与质量工具。两者都不拥有客服 Agent 当前业务状态。
 
 ---
 
@@ -136,9 +137,9 @@ README、周报、汇报 Web、PDF 和历史稿都不得自行维护当前项目
 
 ```bash
 node business-docs/08-工具/sync_customer_agent_surfaces.mjs --check
-cd web-decision-brief
+cd sites
 npm run test:business
 npm run test:all
 ```
 
-*业务文档地图 v3.2 · 2026-08-01*
+*业务文档地图 v3.3 · 2026-08-03*

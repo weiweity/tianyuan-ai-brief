@@ -12,8 +12,8 @@ const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
 test("content.json 通过结构 Schema", async () => {
   const [schemaText, contentText] = await Promise.all([
-    read("docs/data/content.schema.json"),
-    read("docs/data/content.json"),
+    read("../archive/2026-07-31-ai-project-brief/data/content.schema.json"),
+    read("../archive/2026-07-31-ai-project-brief/data/content.json"),
   ]);
   const schema = JSON.parse(schemaText);
   const content = JSON.parse(contentText);
@@ -23,7 +23,7 @@ test("content.json 通过结构 Schema", async () => {
 });
 
 test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
-  const content = JSON.parse(await read("docs/data/content.json"));
+  const content = JSON.parse(await read("../archive/2026-07-31-ai-project-brief/data/content.json"));
   assert.equal(content.version, "5.25.1");
   assert.equal(content.decisionSchemaVersion, 3);
   assert.equal(content.tabs.length, 7);
@@ -60,7 +60,7 @@ test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
 });
 
 test("核心隐性知识与反误导边界存在且无旧版统一路径", async () => {
-  const text = await read("docs/data/content.json");
+  const text = await read("../archive/2026-07-31-ai-project-brief/data/content.json");
   for (const term of [
     "未批不开发",
     "人在环",
@@ -94,18 +94,18 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
     logoBytes,
   ] =
     await Promise.all([
-      read("docs/index.html"),
-      read("docs/js/app.js"),
-      read("docs/js/modules/html-policy.js"),
-      read("docs/js/bootstrap.js"),
-      read("docs/vendor/mermaid-10.9.6.min.js"),
-      read("docs/js/app.bundle.js"),
-      read("docs/js/app.offline.bundle.js"),
+      read("../archive/2026-07-31-ai-project-brief/index.html"),
+      read("../archive/2026-07-31-ai-project-brief/js/app.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/html-policy.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/bootstrap.js"),
+      read("../archive/2026-07-31-ai-project-brief/vendor/mermaid-10.9.6.min.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/app.bundle.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/app.offline.bundle.js"),
       read("scripts/build-web.mjs"),
-      read("docs/data/content.json"),
-      read("docs/data/release.json"),
-      read("docs/css/app.css"),
-      readFile(path.join(root, "docs/assets/logo.png")),
+      read("../archive/2026-07-31-ai-project-brief/data/content.json"),
+      read("../archive/2026-07-31-ai-project-brief/data/release.json"),
+      read("../archive/2026-07-31-ai-project-brief/css/app.css"),
+      readFile(path.join(root, "../archive/2026-07-31-ai-project-brief/assets/logo.png")),
     ]);
   const release = JSON.parse(releaseText);
   assert.match(index, /Content-Security-Policy/);
@@ -182,7 +182,7 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
 });
 
 test("CSS 是单一分层契约，不再加载尾部版本补丁", async () => {
-  const [index, css] = await Promise.all([read("docs/index.html"), read("docs/css/app.css")]);
+  const [index, css] = await Promise.all([read("../archive/2026-07-31-ai-project-brief/index.html"), read("../archive/2026-07-31-ai-project-brief/css/app.css")]);
   const lines = css.split("\n").length;
   assert.ok(lines < 4750, `app.css 行数过高：${lines}`);
   assert.match(css, /UI contract v2/);
@@ -204,13 +204,13 @@ test("高风险前端能力保持独立模块且主控制器受体积门禁约�
     domPurifyVendor,
   ] =
     await Promise.all([
-      read("docs/js/app.js"),
-      read("docs/js/modules/decision-model.js"),
-      read("docs/js/modules/meeting-state.js"),
-      read("docs/js/modules/html-policy.js"),
-      read("docs/js/modules/mermaid-runtime.js"),
-      read("docs/js/modules/content-loader.js"),
-      read("docs/vendor/dompurify-3.4.12.es.mjs"),
+      read("../archive/2026-07-31-ai-project-brief/js/app.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/decision-model.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/meeting-state.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/html-policy.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/mermaid-runtime.js"),
+      read("../archive/2026-07-31-ai-project-brief/js/modules/content-loader.js"),
+      read("../archive/2026-07-31-ai-project-brief/vendor/dompurify-3.4.12.es.mjs"),
     ]);
 
   assert.ok(app.split("\n").length < 2700, "app.js 应只负责 UI 编排");
@@ -238,9 +238,9 @@ test("历史打印入口是无业务副本的单一入口跳转", async () => {
   const legacy = await read("../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html");
   assert.match(legacy, /旧版打印入口已合并/);
   assert.match(legacy, /http-equiv="refresh"/);
-  assert.match(legacy, /\.\.\/\.\.\/\.\.\/web-decision-brief\/docs\/index\.html\?from=legacy-print/);
+  assert.match(legacy, /\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
   assert.match(legacy, /rel="canonical"/);
-  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/\.\.\/web-decision-brief\/docs\/assets\/favicon\.png"/);
+  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/assets\/favicon\.png"/);
   assert.match(legacy, /robots" content="noindex"/);
   assert.doesNotMatch(legacy, /mermaid/);
   assert.doesNotMatch(legacy, /<script/);
