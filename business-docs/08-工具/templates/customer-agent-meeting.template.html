@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#f3f0f6">
+  <meta name="theme-color" content="#efebf2">
   <meta name="description" content="客服 Agent 一期项目启动会：共同确认一期主问题、范围、责任与下一步。">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="__FAVICON_DATA_URI__" type="image/png" sizes="64x64">
@@ -22,9 +22,9 @@
       --brand-600: #674b7b;
       --brand-700: #513a63;
       --brand-900: #2e2335;
-      --canvas: #f3f0f6;
+      --canvas: #efebf2;
       --surface: #fff;
-      --surface-soft: #faf8fb;
+      --surface-soft: #f6f2f8;
       --ink: #231c28;
       --muted: #686070;
       --line: #ded7e4;
@@ -38,11 +38,13 @@
       --info: #285d88;
       --info-bg: #eaf3fa;
       --shadow: 0 16px 42px rgb(46 35 53 / 10%);
+      --stage-shadow: 0 10px 30px rgb(46 35 53 / 8%);
       --radius-sm: 10px;
       --radius-md: 16px;
       --radius-lg: 24px;
       --touch: 44px;
       --content: 1320px;
+      --stage: 1432px;
       --header-height: 76px;
       --control-height: 76px;
       --ease: cubic-bezier(.2, .8, .2, 1);
@@ -303,12 +305,12 @@
       position: absolute;
       inset: 0;
       display: grid;
-      align-content: center;
+      align-content: stretch;
       width: 100%;
       height: 100%;
-      padding: clamp(24px, 4.4vh, 56px) clamp(34px, 5.5vw, 86px);
+      padding: 10px 16px 12px;
       overflow: hidden;
-      background: var(--canvas);
+      background: transparent;
     }
 
     .js .slide:not(.is-active) {
@@ -316,9 +318,21 @@
     }
 
     .slide-inner {
-      width: min(100%, var(--content));
+      width: min(100%, var(--stage));
+      height: 100%;
       max-height: 100%;
+      padding: clamp(20px, 2.6vh, 28px) clamp(28px, 4vw, 56px);
       margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid rgb(222 215 228 / 92%);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--stage-shadow);
+    }
+
+    .slide:not(.cover) .slide-inner {
+      display: flex;
+      flex-direction: column;
     }
 
     .slide-kicker {
@@ -360,10 +374,10 @@
       min-height: 38px;
       padding: 7px 13px;
       margin-bottom: 24px;
-      border: 1px solid #b9d3c0;
+      border: 1px solid var(--brand-200);
       border-radius: 999px;
-      color: var(--ok);
-      background: var(--ok-bg);
+      color: var(--brand-700);
+      background: var(--brand-50);
       font-size: 14px;
       font-weight: 800;
     }
@@ -379,15 +393,29 @@
 
     .cover-aside {
       padding: 26px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--brand-200);
       border-radius: var(--radius-lg);
-      background: var(--surface);
-      box-shadow: var(--shadow);
+      background: var(--brand-50);
+      box-shadow: none;
     }
 
     .cover-aside h2 {
       margin-bottom: 18px;
       font-size: 21px;
+    }
+
+    .cover-exclusion {
+      padding-top: 16px;
+      margin: 18px 0 0;
+      border-top: 1px solid var(--brand-200);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 680;
+      line-height: 1.5;
+    }
+
+    .cover-exclusion strong {
+      color: var(--brand-700);
     }
 
     .boundary-list,
@@ -428,6 +456,7 @@
     }
 
     .callout {
+      flex: 0 0 auto;
       display: flex;
       gap: 14px;
       align-items: flex-start;
@@ -439,6 +468,10 @@
       background: var(--brand-50);
       font-size: clamp(18px, 1.7vw, 23px);
       font-weight: 700;
+    }
+
+    .slide:not(.cover) .callout {
+      margin-top: auto;
     }
 
     .callout::before {
@@ -460,8 +493,8 @@
     .topic-card,
     .question-card,
     .decision-card {
-      border: 1px solid var(--line);
-      background: var(--surface);
+      border: 1px solid var(--brand-200);
+      background: var(--surface-soft);
     }
 
     .fact-card {
@@ -530,11 +563,32 @@
 
     .fact-empty {
       max-width: 480px;
-      margin: 26px 0 0;
+      margin: 14px 0 12px;
       color: var(--brand-700);
       font-size: 18px;
       font-weight: 700;
       line-height: 1.55;
+    }
+
+    .fact-checklist {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .fact-checklist li {
+      min-width: 0;
+      padding: 7px 9px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgb(255 255 255 / 66%);
+      font-size: 12px;
+      font-weight: 720;
+      text-align: center;
     }
 
     .topic-grid {
@@ -587,9 +641,9 @@
 
     .prompt-panel {
       padding: 20px 22px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--brand-200);
       border-radius: var(--radius-md);
-      background: var(--surface);
+      background: var(--surface-soft);
     }
 
     .prompt-panel.emphasis {
@@ -679,10 +733,34 @@
       color: var(--brand-700);
     }
 
-    .decision-legend span:not(:last-child)::after {
-      margin-left: 12px;
-      color: var(--line-strong);
-      content: "·";
+    .decision-legend span {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .decision-legend span::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-400);
+      content: "";
+    }
+
+    .decision-legend span:nth-of-type(1)::before {
+      background: #4c9562;
+    }
+
+    .decision-legend span:nth-of-type(2)::before {
+      background: var(--brand-400);
+    }
+
+    .decision-legend span:nth-of-type(3)::before {
+      background: #c89b24;
+    }
+
+    .decision-legend span:nth-of-type(4)::before {
+      background: #9b949e;
     }
 
     .decision-progress {
@@ -847,9 +925,27 @@
       background: var(--brand-900);
     }
 
+    #next-slide:disabled {
+      border-color: var(--line);
+      color: var(--muted);
+      background: var(--surface-soft);
+      opacity: 1;
+    }
+
     .control-button[aria-pressed="true"] {
       color: #fff;
       background: var(--brand-700);
+    }
+
+    .control-icon {
+      display: block;
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
     }
 
     .progress-wrap {
@@ -989,8 +1085,19 @@
 
     .dialog-actions {
       display: flex;
+      gap: 10px;
       justify-content: flex-end;
       border-top: 1px solid var(--line);
+    }
+
+    .danger-button {
+      border-color: var(--danger);
+      color: #fff;
+      background: var(--danger);
+    }
+
+    .danger-button:hover {
+      background: #842d2d;
     }
 
     .print-summary {
@@ -1034,7 +1141,8 @@
       }
 
       .header-subtitle {
-        display: none;
+        margin-top: 2px;
+        font-size: 11px;
       }
 
       .state-pill {
@@ -1043,7 +1151,11 @@
       }
 
       .slide {
-        padding: 24px 34px;
+        padding: 10px 14px 12px;
+      }
+
+      .slide-inner {
+        padding: 20px 28px;
       }
 
       .lead {
@@ -1076,23 +1188,25 @@
 
       .header-inner {
         grid-template-columns: minmax(122px, 1fr) auto auto;
-        gap: 8px;
+        gap: 6px;
         width: 100%;
         padding-inline: 11px;
       }
 
       .state-strip {
+        gap: 4px;
         justify-content: flex-end;
       }
 
-      .state-pill:not(:first-child) {
-        display: none;
+      .state-pill {
+        min-height: 28px;
+        padding: 3px 7px;
+        font-size: 0;
       }
 
-      .state-pill {
-        min-height: 30px;
-        padding: 4px 9px;
-        font-size: 10px;
+      .state-pill::after {
+        font-size: 9px;
+        content: attr(data-mobile-label);
       }
 
       .header-meta {
@@ -1114,10 +1228,19 @@
 
       .slide {
         align-content: start;
-        padding: 25px 18px 34px;
+        padding: 10px 10px 14px;
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior: contain;
+      }
+
+      .slide-inner {
+        height: auto;
+        min-height: 100%;
+        padding: 24px 18px 30px;
+        overflow: visible;
+        border-radius: 18px;
+        box-shadow: 0 8px 22px rgb(46 35 53 / 7%);
       }
 
       h1 {
@@ -1158,6 +1281,10 @@
         grid-column: span 2;
       }
 
+      .fact-checklist {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .topic-grid,
       .question-row,
       .decision-grid {
@@ -1186,8 +1313,35 @@
         width: calc(100% - 24px);
       }
 
-      .progress-wrap,
       .button-label {
+        display: none;
+      }
+
+      #next-slide:disabled .button-label {
+        display: inline;
+        font-size: 11px;
+      }
+
+      #next-slide:disabled {
+        min-width: 96px;
+        padding-inline: 10px;
+      }
+
+      .progress-wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+        width: 100%;
+        pointer-events: none;
+      }
+
+      .progress-track {
+        height: 3px;
+        border-radius: 0;
+      }
+
+      .progress-label {
         display: none;
       }
 
@@ -1304,9 +1458,9 @@
         <span class="header-subtitle">共同启动需求定义与项目协作</span>
       </div>
       <div class="state-strip" aria-label="项目状态">
-        <span class="state-pill" data-state-approval>项目已批准</span>
-        <span class="state-pill" data-state-direction>一期方向待确认</span>
-        <span class="state-pill" data-state-development>尚未开发</span>
+        <span class="state-pill" data-mobile-label="已批准" data-state-approval>项目已批准</span>
+        <span class="state-pill" data-mobile-label="待确认" data-state-direction>一期方向待确认</span>
+        <span class="state-pill" data-mobile-label="未开发" data-state-development>尚未开发</span>
       </div>
       <div class="header-meta">
         <span class="step-count" id="step-count">封面</span>
@@ -1318,10 +1472,10 @@
     <section class="slide cover is-active" data-slide-index="0" aria-labelledby="cover-title">
       <div class="slide-inner">
         <div class="cover-copy">
-          <span class="cover-mark" data-state-approval>项目已批准</span>
-          <p class="slide-kicker">客服 Agent · 一期项目启动</p>
+          <span class="cover-mark">一期项目启动</span>
+          <p class="slide-kicker">客服团队 · 业务与协作对齐</p>
           <h1 id="cover-title" data-pretext>客服 Agent<br>一期启动会</h1>
-          <p class="cover-goal" data-pretext>今天共同启动需求定义与项目协作，确认一期主问题、范围、责任与下一步。</p>
+          <p class="cover-goal" data-pretext>今天共同确认一期主问题、范围、责任与下一步。</p>
         </div>
         <aside class="cover-aside" aria-labelledby="cover-boundary-title">
           <h2 id="cover-boundary-title">本次启动目标</h2>
@@ -1330,6 +1484,7 @@
             <li>明确范围、成功与试点条件</li>
             <li>确认责任、未决事项与下一步</li>
           </ol>
+          <p class="cover-exclusion"><strong>本次不决定：</strong>技术选型、开发开工与上线承诺。</p>
         </aside>
       </div>
     </section>
@@ -1370,6 +1525,7 @@
           <article class="fact-card" data-fact-card="0" data-empty="true">
             <div class="fact-card-head"><h3>高频任务</h3><span class="fact-status" data-fact="status">会上确认</span></div>
             <p class="fact-empty">我们先确认：谁在什么平台处理，当前要经过哪些步骤？</p>
+            <ul class="fact-checklist" aria-label="待确认信息"><li>主用户</li><li>平台</li><li>频次 / 样本</li><li>当前步骤</li><li>主要卡点</li><li>业务影响</li></ul>
             <dl class="fact-fields" hidden>
               <div><dt>主用户类别</dt><dd data-fact="userType">会上确认</dd></div>
               <div><dt>平台</dt><dd data-fact="platform">会上确认</dd></div>
@@ -1382,6 +1538,7 @@
           <article class="fact-card" data-fact-card="1" data-empty="true">
             <div class="fact-card-head"><h3>高影响任务</h3><span class="fact-status" data-fact="status">会上确认</span></div>
             <p class="fact-empty">我们再确认：哪里最容易出错、返工或升级，带来什么影响？</p>
+            <ul class="fact-checklist" aria-label="待确认信息"><li>主用户</li><li>平台</li><li>频次 / 样本</li><li>当前步骤</li><li>主要卡点</li><li>业务影响</li></ul>
             <dl class="fact-fields" hidden>
               <div><dt>主用户类别</dt><dd data-fact="userType">会上确认</dd></div>
               <div><dt>平台</dt><dd data-fact="platform">会上确认</dd></div>
@@ -1392,6 +1549,7 @@
             </dl>
           </article>
         </div>
+        <p class="callout" data-label="会中产出">两个真实任务的主用户、平台、频次 / 样本、流程卡点与业务影响。</p>
       </div>
     </section>
 
@@ -1411,6 +1569,7 @@
           <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
           <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
         </div>
+        <p class="callout" data-label="会中产出">一期唯一主问题；证据不足时，写清还要补什么、由谁补、在哪里确认。</p>
       </div>
     </section>
 
@@ -1460,6 +1619,7 @@
             <div class="metric-line"><strong>证据</strong><span>数据无法复核，或样本不足以支持继续判断</span></div>
           </article>
         </div>
+        <p class="callout" data-label="会中产出">指标名称、数据出处、负责人，以及明确的停止信号。</p>
       </div>
     </section>
 
@@ -1488,6 +1648,7 @@
             </ul>
           </article>
         </div>
+        <p class="callout" data-label="会中产出">唯一内容来源、当前版本、访问权限、维护人和冲突裁决方式。</p>
       </div>
     </section>
 
@@ -1556,11 +1717,11 @@
         <span class="progress-label" id="progress-label">客服 Agent 一期启动会 · 封面</span>
       </div>
       <div class="control-group">
-        <button class="control-button" id="fullscreen-button" type="button" aria-label="进入全屏">⛶</button>
+        <button class="control-button" id="fullscreen-button" type="button" aria-label="进入全屏"><svg class="control-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
         <button class="control-button" id="help-button" type="button" aria-label="查看快捷键帮助">?</button>
         <details class="more-menu" id="more-menu">
-          <summary aria-label="更多操作">•••</summary>
-          <div class="menu-panel">
+          <summary aria-label="更多操作" aria-controls="more-menu-panel" aria-expanded="false">•••</summary>
+          <div class="menu-panel" id="more-menu-panel">
             <button id="print-button" type="button">打印启动会摘要</button>
             <button class="danger-action" id="reset-button" type="button">重置全部状态</button>
           </div>
@@ -1583,6 +1744,15 @@
       </dl>
     </div>
     <div class="dialog-actions"><button class="control-button primary" id="help-close" type="button">知道了</button></div>
+  </dialog>
+
+  <dialog id="reset-dialog" aria-labelledby="reset-title" aria-describedby="reset-description">
+    <div class="dialog-head"><h2 id="reset-title">重置全部状态？</h2></div>
+    <div class="dialog-body" id="reset-description">将回到封面，并清空九项启动结果。此操作无法撤销。</div>
+    <div class="dialog-actions">
+      <button class="control-button" id="reset-cancel" type="button">取消</button>
+      <button class="control-button danger-button" id="reset-confirm" type="button">确认重置</button>
+    </div>
   </dialog>
 
   <section class="print-summary" aria-label="启动会摘要">
@@ -1749,6 +1919,7 @@
           });
           card.dataset.empty = String(allOpen);
           card.querySelector(".fact-empty").hidden = !allOpen;
+          card.querySelector(".fact-checklist").hidden = !allOpen;
           card.querySelector(".fact-fields").hidden = allOpen;
           card.querySelectorAll("[data-fact]").forEach((field) => {
             const value = fact[field.dataset.fact];
@@ -1826,6 +1997,9 @@
       const fullscreenButton = document.querySelector("#fullscreen-button");
       const helpButton = document.querySelector("#help-button");
       const helpDialog = document.querySelector("#help-dialog");
+      const resetDialog = document.querySelector("#reset-dialog");
+      const moreMenu = document.querySelector("#more-menu");
+      const moreSummary = moreMenu.querySelector("summary");
       const liveStatus = document.querySelector("#live-status");
       const meetingProgress = document.querySelector("#meeting-progress");
       const progressBar = document.querySelector("#progress-bar");
@@ -1853,8 +2027,9 @@
         previousButton.disabled = state.index === 0;
         const isLast = state.index === slides.length - 1;
         nextButton.disabled = isLast;
+        nextButton.classList.toggle("primary", !isLast);
         nextButton.querySelector(".button-label").textContent = isLast
-          ? "启动会结束"
+          ? "已是最后一页"
           : state.index === slides.length - 2
             ? "进入核对"
             : "下一页";
@@ -1912,13 +2087,17 @@
         fullscreenButton.setAttribute("aria-pressed", String(active));
       }
 
+      function requestReset() {
+        moreMenu.open = false;
+        resetDialog.showModal();
+      }
+
       function resetAll() {
-        if (!window.confirm("确定重置页码和九项启动结果吗？")) return;
         state = defaultState();
         saveState();
         renderSlide({ focus: true });
         renderDecisions();
-        document.querySelector("#more-menu").open = false;
+        resetDialog.close();
         announce("会议状态已全部重置");
       }
 
@@ -1947,7 +2126,12 @@
       helpButton.addEventListener("click", () => helpDialog.showModal());
       document.querySelector("#help-close").addEventListener("click", () => helpDialog.close());
       document.querySelector("#print-button").addEventListener("click", () => window.print());
-      document.querySelector("#reset-button").addEventListener("click", resetAll);
+      document.querySelector("#reset-button").addEventListener("click", requestReset);
+      document.querySelector("#reset-cancel").addEventListener("click", () => resetDialog.close());
+      document.querySelector("#reset-confirm").addEventListener("click", resetAll);
+      moreMenu.addEventListener("toggle", () => {
+        moreSummary.setAttribute("aria-expanded", String(moreMenu.open));
+      });
       document.addEventListener("fullscreenchange", renderFullscreenState);
 
       decisionCards.forEach((card, index) => {
@@ -1966,7 +2150,7 @@
 
       document.addEventListener("keydown", (event) => {
         if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
-        if (helpDialog.open) return;
+        if (helpDialog.open || resetDialog.open) return;
         if (event.key === "ArrowRight" || event.key === "PageDown") {
           event.preventDefault();
           moveSlide(1);
