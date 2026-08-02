@@ -678,6 +678,24 @@
       font-size: 20px;
     }
 
+    @media (min-width: 761px) {
+      .slide-split-fill .prompt-grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-bottom: 22px;
+      }
+
+      .slide-split-fill .prompt-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .slide-split-fill .callout {
+        margin-top: 0;
+      }
+    }
+
     .prompt-list {
       display: grid;
       gap: 9px;
@@ -1512,7 +1530,7 @@
       </div>
     </section>
 
-    <section class="slide" data-slide-index="1" aria-labelledby="boundary-title">
+    <section class="slide slide-split-fill" data-slide-index="1" aria-labelledby="boundary-title">
       <div class="slide-inner">
         <p class="slide-kicker">环节 1 / 8</p>
         <h2 id="boundary-title" data-agenda-topic="0" data-pretext>先对齐启动目标与参与方式</h2>
@@ -1596,7 +1614,7 @@
       </div>
     </section>
 
-    <section class="slide" data-slide-index="4" aria-labelledby="scope-title">
+    <section class="slide slide-split-fill" data-slide-index="4" aria-labelledby="scope-title">
       <div class="slide-inner">
         <p class="slide-kicker">环节 4 / 8</p>
         <h2 id="scope-title" data-agenda-topic="3" data-pretext>一起明确一期先做到哪一步</h2>
@@ -1646,7 +1664,7 @@
       </div>
     </section>
 
-    <section class="slide" data-slide-index="6" aria-labelledby="truth-title">
+    <section class="slide slide-split-fill" data-slide-index="6" aria-labelledby="truth-title">
       <div class="slide-inner">
         <p class="slide-kicker">环节 6 / 8</p>
         <h2 id="truth-title" data-agenda-topic="5" data-pretext>一起确认可靠的内容依据</h2>
@@ -1675,7 +1693,7 @@
       </div>
     </section>
 
-    <section class="slide" data-slide-index="7" aria-labelledby="pilot-title">
+    <section class="slide slide-split-fill" data-slide-index="7" aria-labelledby="pilot-title">
       <div class="slide-inner">
         <p class="slide-kicker">环节 7 / 8</p>
         <h2 id="pilot-title" data-agenda-topic="6" data-pretext>一起确认试点与真实使用环境</h2>
