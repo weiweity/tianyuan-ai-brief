@@ -1894,11 +1894,20 @@ __PRETEXT_VENDOR__
         .padStart(8, "0")}`;
     }
 
+    function locationTail(value) {
+      return String(value)
+        .replaceAll("\\", "/")
+        .split("/")
+        .filter(Boolean)
+        .slice(-2)
+        .join("/");
+    }
+
     const expectedCanonicalLocation = data.runtime?.canonicalLocationFingerprint;
     const hasCanonicalSiblingContext =
       location.protocol !== "file:" ||
       (typeof expectedCanonicalLocation === "string" &&
-        locationFingerprint(location.pathname) === expectedCanonicalLocation);
+        locationFingerprint(locationTail(location.pathname)) === expectedCanonicalLocation);
 
     if (!hasCanonicalSiblingContext) {
       const unavailableMeeting = document.createElement("span");

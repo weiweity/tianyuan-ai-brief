@@ -206,7 +206,19 @@ function locationFingerprint(value) {
     .padStart(8, "0")}`;
 }
 
-const canonicalLocationFingerprint = locationFingerprint(pathToFileURL(outputPath).pathname);
+function locationTail(value) {
+  return String(value)
+    .replaceAll("\\", "/")
+    .split("/")
+    .filter(Boolean)
+    .slice(-2)
+    .join("/");
+}
+
+// 只使用“项目目录 / 文件名”，既能区分孤立拷贝，又不把开发机绝对路径写入生成物。
+const canonicalLocationFingerprint = locationFingerprint(
+  locationTail(pathToFileURL(outputPath).pathname)
+);
 
 function shortDate(value) {
   const match = String(value).match(/^\d{4}-(\d{2})-(\d{2})$/);
