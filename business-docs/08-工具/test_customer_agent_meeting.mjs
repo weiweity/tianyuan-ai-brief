@@ -473,6 +473,10 @@ try {
           ?.slice(0, 22),
         headerTitle: document.querySelector(".header-title")?.textContent.trim(),
         headerTitleVisible: document.querySelector(".header-title")?.checkVisibility(),
+        headerSubtitleVisible: document.querySelector(".header-subtitle")?.checkVisibility(),
+        headerSubtitleFont: parseFloat(
+          getComputedStyle(document.querySelector(".header-subtitle")).fontSize
+        ),
         headerChrome: (() => {
           const style = getComputedStyle(document.querySelector(".header-inner"));
           return {
@@ -481,6 +485,23 @@ try {
             borderWidth: parseFloat(style.borderTopWidth),
           };
         })(),
+        bodyStage: (() => {
+          const stage = document.querySelector(".slide.is-active .slide-inner");
+          const style = getComputedStyle(stage);
+          const box = stage.getBoundingClientRect();
+          return {
+            background: style.backgroundColor,
+            borderRadius: parseFloat(style.borderRadius),
+            borderWidth: parseFloat(style.borderTopWidth),
+            boxShadow: style.boxShadow,
+            left: box.left,
+            right: box.right,
+            height: box.height,
+          };
+        })(),
+        deckHeight: document.querySelector(".deck").getBoundingClientRect().height,
+        coverAsideBackground: getComputedStyle(document.querySelector(".cover-aside"))
+          .backgroundColor,
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
         bodyFont: parseFloat(getComputedStyle(document.body).fontSize),
@@ -496,6 +517,12 @@ try {
         visibleFactFields: [...document.querySelectorAll("[data-fact-card] .fact-fields")].filter(
           (item) => item.checkVisibility()
         ).length,
+        renderedFactChecklists: [
+          ...document.querySelectorAll("[data-fact-card] .fact-checklist"),
+        ].filter((item) => !item.hidden).length,
+        factChecklistLabels: [
+          ...document.querySelectorAll("[data-fact-card] .fact-checklist li"),
+        ].map((item) => item.textContent.trim()),
         payloadOpenCount: Object.values(
           JSON.parse(document.querySelector("#meeting-data").textContent).meeting.factCards
         )
@@ -520,7 +547,16 @@ try {
         decisionLegend: [...document.querySelectorAll("#decision-option-legend span")].map(
           (item) => item.textContent.trim()
         ),
+        decisionLegendDots: [...document.querySelectorAll("#decision-option-legend span")].map(
+          (item) => getComputedStyle(item, "::before").backgroundColor
+        ),
         decisionProgress: document.querySelector("#decision-progress").textContent.trim(),
+        progressTrackVisible: document.querySelector(".progress-track").checkVisibility(),
+        fullscreenIconCount: document.querySelectorAll("#fullscreen-button svg").length,
+        coverMark: document.querySelector(".cover-mark")?.textContent.trim(),
+        coverKicker: document.querySelector(".cover .slide-kicker")?.textContent.trim(),
+        coverGoal: document.querySelector(".cover-goal")?.textContent.trim(),
+        coverExclusion: document.querySelector(".cover-exclusion")?.textContent.trim(),
         goalMarkers: [...document.querySelectorAll(".boundary-list li")].map((item) =>
           getComputedStyle(item, "::before").content.replaceAll('"', "")
         ),
@@ -536,7 +572,7 @@ try {
       assert.equal(structure.slides, 9);
       assert.equal(structure.activeSlides, 1);
       assert.equal(structure.stepCountVisible, true);
-      assert.equal(structure.visibleStatePills, viewport.width <= 760 ? 1 : 3);
+      assert.equal(structure.visibleStatePills, 3);
       assert.deepEqual(structure.brandLogo, {
         count: 1,
         alt: "SHINE MAGE",
@@ -548,9 +584,27 @@ try {
       assert.equal(structure.appleTouchIcon, "data:image/png;base64,");
       assert.equal(structure.headerTitle, "客服 Agent 一期启动会");
       assert.equal(structure.headerTitleVisible, viewport.width > 760);
+      assert.equal(structure.headerSubtitleVisible, viewport.width > 760);
+      if (viewport.width > 760) assert.ok(structure.headerSubtitleFont >= 11);
       assert.ok(structure.headerChrome.borderRadius >= 16, JSON.stringify(structure.headerChrome));
       assert.ok(structure.headerChrome.borderWidth >= 1, JSON.stringify(structure.headerChrome));
       assert.notEqual(structure.headerChrome.background, "rgba(0, 0, 0, 0)");
+      assert.equal(structure.bodyStage.background, "rgb(255, 255, 255)");
+      assert.ok(structure.bodyStage.borderRadius >= 16, JSON.stringify(structure.bodyStage));
+      assert.ok(structure.bodyStage.borderWidth >= 1, JSON.stringify(structure.bodyStage));
+      assert.notEqual(structure.bodyStage.boxShadow, "none");
+      assert.ok(structure.bodyStage.left >= 9, JSON.stringify(structure.bodyStage));
+      assert.ok(
+        structure.bodyStage.right <= structure.clientWidth - 9,
+        JSON.stringify(structure.bodyStage)
+      );
+      if (viewport.width >= 1024) {
+        assert.ok(
+          structure.bodyStage.height >= structure.deckHeight - 24,
+          JSON.stringify({ bodyStage: structure.bodyStage, deckHeight: structure.deckHeight })
+        );
+      }
+      assert.notEqual(structure.coverAsideBackground, structure.bodyStage.background);
       assertNoHeadingSkip(structure.headings);
       assert.ok(structure.scrollWidth <= structure.clientWidth + 1, JSON.stringify(structure));
       assert.ok(structure.bodyFont >= (viewport.width >= 1024 ? 18 : 16));
@@ -592,7 +646,14 @@ try {
         "本次暂不决定",
       ]);
       assert.deepEqual(structure.decisionLegend, structure.decisionOptionLabels.slice(1));
+      assert.equal(new Set(structure.decisionLegendDots).size, 4);
       assert.equal(structure.decisionProgress, "0 / 9 已处理");
+      assert.equal(structure.progressTrackVisible, true);
+      assert.equal(structure.fullscreenIconCount, 1);
+      assert.equal(structure.coverMark, "一期项目启动");
+      assert.equal(structure.coverKicker, "客服团队 · 业务与协作对齐");
+      assert.equal(structure.coverGoal, "今天共同确认一期主问题、范围、责任与下一步。");
+      assert.match(structure.coverExclusion, /技术选型、开发开工与上线承诺/);
       assert.equal(structure.goalListTag, "OL");
       assert.deepEqual(structure.goalMarkers, Array(3).fill("counter(meeting-goal)"));
       assert.deepEqual(structure.goalTexts, [
@@ -608,11 +669,16 @@ try {
       assert.equal(structure.factLabels.some((value) => /OPEN|PRECONFIRM|READY/.test(value)), false);
       assert.equal(structure.emptyFactCards, 2);
       assert.equal(structure.visibleFactFields, 0);
+      assert.equal(structure.renderedFactChecklists, 2);
+      assert.deepEqual(
+        structure.factChecklistLabels.slice(0, 6),
+        ["主用户", "平台", "频次 / 样本", "当前步骤", "主要卡点", "业务影响"]
+      );
       assert.deepEqual(
         await page.locator(".callout").evaluateAll((items) =>
           items.map((item) => getComputedStyle(item, "::before").content.replaceAll('"', ""))
         ),
-        ["结论", "验收", "用途", "输出"]
+        ["结论", "会中产出", "会中产出", "验收", "会中产出", "会中产出", "用途", "输出"]
       );
       return `${structure.slides} 屏 · ${structure.scrollWidth}/${structure.clientWidth}px`;
     });
@@ -622,6 +688,7 @@ try {
         document.querySelectorAll("[data-fact-card]").forEach((card) => {
           card.dataset.empty = "false";
           card.querySelector(".fact-empty").hidden = true;
+          card.querySelector(".fact-checklist").hidden = true;
           card.querySelector(".fact-fields").hidden = false;
           Object.entries(limits).forEach(([field, limit]) => {
             if (field === "status") return;
@@ -657,6 +724,12 @@ try {
         );
         if (index < 8) await page.locator("#next-slide").click();
       }
+      assert.equal(await page.locator("#next-slide .button-label").isVisible(), true);
+      assert.equal(await page.locator("#next-slide .button-label").innerText(), "已是最后一页");
+      assert.ok(
+        (await page.locator("#next-slide").boundingBox()).width >= 44,
+        "末页终态按钮需保留可见语义与触控宽度"
+      );
       metrics.forEach((item, index) => {
         assert.ok(item.innerLeft >= item.slideLeft - 1, `第 ${index + 1} 屏左溢出`);
         assert.ok(item.innerRight <= item.slideRight + 1, `第 ${index + 1} 屏右溢出`);
@@ -790,7 +863,8 @@ try {
     for (let index = 0; index < 8; index += 1) await page.locator("#next-slide").click();
     assert.equal(await page.locator(".slide.is-active").getAttribute("data-slide-index"), "8");
     assert.equal(await page.locator("#next-slide").isDisabled(), true);
-    assert.equal(await page.locator("#next-slide .button-label").innerText(), "启动会结束");
+    assert.equal(await page.locator("#next-slide .button-label").innerText(), "已是最后一页");
+    assert.equal(await page.locator("#next-slide").evaluate((item) => item.classList.contains("primary")), false);
     assert.equal(await page.locator("#next-slide .next-arrow").isHidden(), true);
     assert.equal(await page.locator("#meeting-progress").getAttribute("aria-valuenow"), "8");
     assert.equal(await page.locator("#meeting-progress").getAttribute("aria-valuemax"), "8");
@@ -914,13 +988,20 @@ try {
     assert.equal(await page.locator("#decision-progress").innerText(), "2 / 9 已处理");
 
     await page.locator("#more-menu summary").click();
-    let confirmation = "";
-    page.once("dialog", async (dialog) => {
-      confirmation = dialog.message();
-      await dialog.accept();
-    });
+    await page.locator('#more-menu summary[aria-expanded="true"]').waitFor();
+    assert.equal(await page.locator("#more-menu summary").getAttribute("aria-expanded"), "true");
     await page.locator("#reset-button").click();
-    assert.match(confirmation, /确定重置/);
+    await page.locator('#more-menu summary[aria-expanded="false"]').waitFor();
+    assert.equal(await page.locator("#more-menu summary").getAttribute("aria-expanded"), "false");
+    assert.equal(await page.locator("#reset-dialog").getAttribute("open"), "");
+    assert.match(await page.locator("#reset-dialog").innerText(), /重置全部状态/);
+    await page.locator("#reset-cancel").click();
+    assert.equal(await page.locator("#reset-dialog").getAttribute("open"), null);
+    assert.equal(await page.locator(".decision-select").nth(1).inputValue(), "needs-evidence");
+    await page.locator("#more-menu summary").click();
+    await page.locator("#reset-button").click();
+    await page.locator("#reset-confirm").click();
+    assert.equal(await page.locator("#reset-dialog").getAttribute("open"), null);
     assert.equal(await page.locator(".slide.is-active").getAttribute("data-slide-index"), "0");
     assert.equal(
       await page.locator(".decision-select").evaluateAll((items) =>
@@ -937,7 +1018,7 @@ try {
     assert.equal(await page.locator("#decision-progress").innerText(), "0 / 9 已处理");
     assertHealthy(health);
     await context.close();
-    return "9 项四态结果 · 刷新恢复 · reset confirm";
+    return "9 项四态结果 · 刷新恢复 · 自定义二次确认";
   });
 
   await check("帮助、全屏失败降级与打印按钮", async () => {
