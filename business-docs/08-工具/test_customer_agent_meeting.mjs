@@ -195,7 +195,7 @@ await check("安全数据白名单与会议契约", async () => {
   );
   assert.equal(
     payload.meeting.agenda.at(-1).decision,
-    "逐项选择九项启动结果；未确认的事项写清负责人、补充内容、确认日期与位置。"
+    "只有结论能被全场复述，才选择“已确认”；其余事项写清负责人、补充内容、确认日期与位置。"
   );
   return "4 个顶层白名单 · 8 段议程 · 9 项结果 · 4 种选择";
 });
@@ -485,6 +485,17 @@ try {
             borderWidth: parseFloat(style.borderTopWidth),
           };
         })(),
+        surfaceEdges: (() => {
+          const edge = (selector) => {
+            const box = document.querySelector(selector).getBoundingClientRect();
+            return { left: box.left, right: box.right, width: box.width };
+          };
+          return {
+            header: edge(".header-inner"),
+            body: edge(".slide.is-active .slide-inner"),
+            footer: edge(".controls-inner"),
+          };
+        })(),
         bodyStage: (() => {
           const stage = document.querySelector(".slide.is-active .slide-inner");
           const style = getComputedStyle(stage);
@@ -540,6 +551,9 @@ try {
         directionQuestions: [...document.querySelectorAll("#core-question-list .question-card")].map(
           (item) => item.textContent.trim()
         ),
+        topicKickers: [...document.querySelectorAll(".topic-card > span")].map((item) =>
+          item.textContent.trim()
+        ),
         decisionSelectCount: document.querySelectorAll(".decision-select").length,
         decisionOptionLabels: [...document.querySelector(".decision-select").options].map(
           (item) => item.textContent.trim()
@@ -547,6 +561,9 @@ try {
         decisionLegend: [...document.querySelectorAll("#decision-option-legend span")].map(
           (item) => item.textContent.trim()
         ),
+        decisionLegendTitle: document
+          .querySelector("#decision-option-legend strong")
+          ?.textContent.trim(),
         decisionLegendDots: [...document.querySelectorAll("#decision-option-legend span")].map(
           (item) => getComputedStyle(item, "::before").backgroundColor
         ),
@@ -589,6 +606,16 @@ try {
       assert.ok(structure.headerChrome.borderRadius >= 16, JSON.stringify(structure.headerChrome));
       assert.ok(structure.headerChrome.borderWidth >= 1, JSON.stringify(structure.headerChrome));
       assert.notEqual(structure.headerChrome.background, "rgba(0, 0, 0, 0)");
+      for (const edge of ["left", "right", "width"]) {
+        assert.ok(
+          Math.abs(structure.surfaceEdges.header[edge] - structure.surfaceEdges.body[edge]) <= 1,
+          JSON.stringify(structure.surfaceEdges)
+        );
+        assert.ok(
+          Math.abs(structure.surfaceEdges.footer[edge] - structure.surfaceEdges.body[edge]) <= 1,
+          JSON.stringify(structure.surfaceEdges)
+        );
+      }
       assert.equal(structure.bodyStage.background, "rgb(255, 255, 255)");
       assert.ok(structure.bodyStage.borderRadius >= 16, JSON.stringify(structure.bodyStage));
       assert.ok(structure.bodyStage.borderWidth >= 1, JSON.stringify(structure.bodyStage));
@@ -632,11 +659,18 @@ try {
         structure.agendaDecisions[6],
         "确认试点人员、班次、设备、网络限制和使用高峰。"
       );
+      assert.equal(
+        structure.agendaDecisions[2],
+        "先用三问判断；下方常见表现不是选项，可改、可删，也可以提出其他真实问题。"
+      );
+      assert.match(structure.agendaDecisions[3], /^基于刚才确定的一期主问题/);
+      assert.match(structure.agendaDecisions[7], /结论能被全场复述/);
       assert.deepEqual(structure.directionQuestions, [
         "结合刚才两个真实任务，哪一个最该成为一期唯一主问题？",
         "这个主问题的损失或卡点，能否拿出可核对的证据？",
         "能否在 3–5 名坐席的小范围试点中先验证改善？",
       ]);
+      assert.deepEqual(structure.topicKickers, Array(4).fill("常见表现 · 非选项"));
       assert.equal(structure.decisionSelectCount, 9);
       assert.deepEqual(structure.decisionOptionLabels, [
         "请选择结果",
@@ -646,6 +680,7 @@ try {
         "本次暂不决定",
       ]);
       assert.deepEqual(structure.decisionLegend, structure.decisionOptionLabels.slice(1));
+      assert.equal(structure.decisionLegendTitle, "结论可复述后选择");
       assert.equal(new Set(structure.decisionLegendDots).size, 4);
       assert.equal(structure.decisionProgress, "0 / 9 已处理");
       assert.equal(structure.progressTrackVisible, true);
@@ -671,9 +706,15 @@ try {
       assert.equal(structure.visibleFactFields, 0);
       assert.equal(structure.renderedFactChecklists, 2);
       assert.deepEqual(
-        structure.factChecklistLabels.slice(0, 6),
-        ["主用户", "平台", "频次 / 样本", "当前步骤", "主要卡点", "业务影响"]
+        structure.factChecklistLabels,
+        Array(2)
+          .fill(["真实任务名称", "主用户", "平台", "频次 / 样本", "主要卡点", "业务影响"])
+          .flat()
       );
+      const meetingCallouts = await page.locator(".callout").allTextContents();
+      assert.match(meetingCallouts[1], /两个真实任务名称/);
+      assert.match(meetingCallouts[4], /谁上报、谁拍板、先停用并回到原流程/);
+      assert.match(meetingCallouts[4], /纪要与台账/);
       assert.deepEqual(
         await page.locator(".callout").evaluateAll((items) =>
           items.map((item) => getComputedStyle(item, "::before").content.replaceAll('"', ""))
