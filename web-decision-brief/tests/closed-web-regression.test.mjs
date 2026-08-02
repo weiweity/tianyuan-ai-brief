@@ -73,7 +73,7 @@ function fakeWindow(initialUrl) {
   };
 }
 
-test("历史页首屏强标识非当前 SSOT，并提供两个现行本地入口", async () => {
+test("历史页首屏强标识非当前 SSOT，并提供三个现行本地入口", async () => {
   const [index, content] = await Promise.all([
     read("docs/index.html"),
     read("docs/data/content.json").then(JSON.parse),
@@ -83,6 +83,7 @@ test("历史页首屏强标识非当前 SSOT，并提供两个现行本地入口
   assert.match(index, /2026-07-31 已收尾/);
   assert.match(index, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/07-客服Agent立项PRD\.html/);
   assert.match(index, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/08-客服Agent立项执行中心\.html/);
+  assert.match(index, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
   assert.match(content.meta.title, /历史快照/);
   assert.match(content.meta.subtitle, /非当前项目 SSOT/);
   assert.match(content.meta.roleLine, /已收尾/);

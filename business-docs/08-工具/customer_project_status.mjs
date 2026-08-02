@@ -272,7 +272,7 @@ export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) 
   }
 
   const raciRows = parseTable(getSection(ledger, "## 5. RACI 具名区"), "RACI 具名区");
-  const requiredRoles = ["项目负责人", "客服业务 Owner", "话术真源 Owner", "预算责任人", "IT / 安全责任人", "IT 服务 / 运维责任人", "设计负责人", "前端负责人", "后端负责人", "AI / RAG 负责人", "QA 负责人", "数据 / 内容接口人", "业务验收人"];
+  const requiredRoles = ["项目负责人", "客服业务 Owner", "内容 / 话术 Owner", "预算责任人", "IT / 安全责任人", "IT 服务 / 运维责任人", "设计负责人", "前端负责人", "后端负责人", "AI / RAG 负责人", "QA 负责人", "数据 / 内容接口人", "业务验收人"];
   if (new Set(raciRows.map((row) => row["角色"])).size !== raciRows.length || requiredRoles.some((role) => !raciRows.some((row) => row["角色"] === role))) {
     throw new Error("RACI 13 个必需角色必须完整且唯一");
   }
@@ -370,7 +370,7 @@ export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) 
   }
   const roleGateMap = {
     "G0-04": "客服业务 Owner",
-    "G0-05": "话术真源 Owner",
+    "G0-05": "内容 / 话术 Owner",
     "G0-07": "预算责任人",
     "G0-11": "IT / 安全责任人",
     "G0-12": "IT 服务 / 运维责任人",

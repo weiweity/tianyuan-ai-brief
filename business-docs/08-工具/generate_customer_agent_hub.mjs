@@ -1,9 +1,25 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import { lstat, mkdir, open, readFile, realpath, rename, unlink } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { deriveProjectStatus, isChecked, latestSourceDate } from "./customer_project_status.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { isChecked, latestSourceDate } from "./customer_project_status.mjs";
+import {
+  buildCustomerProjectSurfaceModel,
+  assertIncludes,
+  getSection,
+  humanizeMeetingText,
+  parseBullets,
+  parseChecklist,
+  parseTable,
+  requiredMatch,
+} from "./customer_project_surface_model.mjs";
+import {
+  extractPretextVendor,
+  loadCustomerProjectSources,
+  safeJson,
+  sha256,
+} from "./customer_project_surface_io.mjs";
 import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -134,10 +150,6 @@ function resolveProjectHtmlOutput(value) {
   return candidate;
 }
 
-function safeJson(value) {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
-}
-
 async function loadPortablePrd() {
   const prdHtml = await readProjectInput(prdPath, "PRD ");
   const match = prdHtml.match(
@@ -175,119 +187,26 @@ async function loadPretextVendor() {
     return (await readFile(path.resolve(process.env.PRETEXT_VENDOR), "utf8")).trim();
   }
   const prdHtml = await readProjectInput(prdPath, "PRD ");
-  const match = [...prdHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].find(
-    ([, attributes]) =>
-      /\bid=["']pretext-source["']/i.test(attributes) &&
-      /\btype=["']text\/plain["']/i.test(attributes)
-  );
-  if (!match || match[2].trim().length < 1000) {
-    throw new Error(`无法从已跟踪 PRD 提取 Pretext：${prdPath}`);
-  }
-  const source = match[2].trim();
-  if (!source.includes("export{") || !source.includes("prepare")) {
-    throw new Error("PRD 中的 pretext-source 不是预期的模块源码");
-  }
-  return source;
+  return extractPretextVendor(prdHtml, `PRD：${prdPath}`);
 }
 
 const outputPath = resolveProjectHtmlOutput(requestedOutput);
 
-const sourceDefinitions = [
-  { id: "charter", file: "00-项目章程.md", label: "项目章程" },
-  { id: "schedule", file: "01-总排期与阶段门禁.md", label: "总排期与阶段门禁" },
-  { id: "ledger", file: "02-G0责任与证据台账.md", label: "G0 责任与证据台账" },
-  { id: "scope", file: "03-Scope与验收.md", label: "Scope 与验收" },
-  { id: "cost", file: "04-费用与成本控制.md", label: "费用与成本控制" },
-  { id: "delivery", file: "05-全栈交付计划.md", label: "全栈交付计划" },
-  { id: "cadence", file: "06-启动会与周推进.md", label: "启动会与周推进" },
-];
-
-function sha256(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function stripMarkdown(value) {
-  return String(value ?? "")
-    .trim()
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/<br\s*\/?>/gi, " / ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function requiredMatch(text, pattern, label) {
-  const match = text.match(pattern);
-  if (!match) throw new Error(`无法从真源解析：${label}`);
-  return stripMarkdown(match[1]);
-}
-
-function getSection(text, heading) {
-  const lines = text.split(/\r?\n/);
-  const start = lines.findIndex((line) => line.trim() === heading);
-  if (start < 0) throw new Error(`缺少章节：${heading}`);
-  const level = heading.match(/^#+/)?.[0].length ?? 2;
-  let end = lines.length;
-  for (let index = start + 1; index < lines.length; index += 1) {
-    const match = lines[index].match(/^(#+)\s/);
-    if (match && match[1].length <= level) {
-      end = index;
-      break;
-    }
+function locationFingerprint(value) {
+  const input = String(value);
+  let primary = 0x811c9dc5;
+  let secondary = 0x9e3779b9;
+  for (let index = 0; index < input.length; index += 1) {
+    const code = input.charCodeAt(index);
+    primary = Math.imul(primary ^ code, 0x01000193);
+    secondary = Math.imul(secondary ^ code, 0x85ebca6b);
   }
-  return lines.slice(start + 1, end).join("\n");
+  return `${(primary >>> 0).toString(16).padStart(8, "0")}${(secondary >>> 0)
+    .toString(16)
+    .padStart(8, "0")}`;
 }
 
-function parseTable(sectionText, label) {
-  const sectionLines = sectionText.split(/\r?\n/).map((line) => line.trim());
-  const tableStart = sectionLines.findIndex(
-    (line) => line.startsWith("|") && line.endsWith("|")
-  );
-  const lines = [];
-  if (tableStart >= 0) {
-    for (let index = tableStart; index < sectionLines.length; index += 1) {
-      const line = sectionLines[index];
-      if (!line.startsWith("|") || !line.endsWith("|")) break;
-      lines.push(line);
-    }
-  }
-  if (lines.length < 2) throw new Error(`章节没有可解析表格：${label}`);
-  const rows = lines.map((line) =>
-    line
-      .slice(1, -1)
-      .split("|")
-      .map(stripMarkdown)
-  );
-  const header = rows[0];
-  const contentRows = rows
-    .slice(1)
-    .filter(
-      (row) =>
-        !row.every((cell) => /^:?-{3,}:?$/.test(cell.replace(/\s/g, "")))
-    );
-  return contentRows.map((row) =>
-    Object.fromEntries(header.map((key, index) => [key, row[index] ?? ""]))
-  );
-}
-
-function parseChecklist(sectionText) {
-  return [...sectionText.matchAll(/^- \[ \]\s+(.+)$/gm)].map((match) =>
-    stripMarkdown(match[1])
-  );
-}
-
-function parseBullets(sectionText) {
-  return [...sectionText.matchAll(/^-\s+(.+)$/gm)].map((match) =>
-    stripMarkdown(match[1])
-  );
-}
-
-function assertIncludes(text, value, label) {
-  if (!text.includes(value)) {
-    throw new Error(`真源一致性失败：${label} 缺少“${value}”`);
-  }
-}
+const canonicalLocationFingerprint = locationFingerprint(pathToFileURL(outputPath).pathname);
 
 function shortDate(value) {
   const match = String(value).match(/^\d{4}-(\d{2})-(\d{2})$/);
@@ -295,77 +214,45 @@ function shortDate(value) {
   return `${match[1]}-${match[2]}`;
 }
 
-const sourceEntries = await Promise.all(
-  sourceDefinitions.map(async (source) => {
-    const sourcePath = path.join(projectDir, source.file);
-    const text = await readProjectInput(sourcePath, `真源 ${source.file} `);
-    return {
-      ...source,
-      sourcePath,
-      text,
-      hash: sha256(text),
-    };
-  })
-);
-const sourceById = Object.fromEntries(
-  sourceEntries.map((source) => [source.id, source.text])
-);
-const [template, pretextVendor, portablePrd, generatorSource, statusModuleSource] = await Promise.all([
+const { entries: sourceEntries, byId: sourceById } = await loadCustomerProjectSources({
+  projectDir,
+  canonicalProjectDir,
+});
+const [
+  template,
+  pretextVendor,
+  portablePrd,
+  generatorSource,
+  statusModuleSource,
+  surfaceModelSource,
+  surfaceIoSource,
+  meetingModuleSource,
+] = await Promise.all([
   readFile(templatePath, "utf8"),
   loadPretextVendor(),
   loadPortablePrd(),
   readFile(scriptPath, "utf8"),
   readFile(path.join(scriptDir, "customer_project_status.mjs"), "utf8"),
+  readFile(path.join(scriptDir, "customer_project_surface_model.mjs"), "utf8"),
+  readFile(path.join(scriptDir, "customer_project_surface_io.mjs"), "utf8"),
+  readFile(path.join(scriptDir, "customer_project_meeting.mjs"), "utf8"),
 ]);
 
-for (const sourceId of ["charter", "schedule", "ledger", "scope", "cost"]) {
-  assertIncludes(sourceById[sourceId], "2026-08-04", sourceId);
-}
-for (const sourceId of ["charter", "schedule", "ledger", "scope", "cost", "delivery"]) {
-  assertIncludes(sourceById[sourceId], "Ddev", sourceId);
-}
-assertIncludes(sourceById.charter, "禁止自动代发", "charter");
-assertIncludes(sourceById.schedule, "供应链是独立 P1", "schedule");
-assertIncludes(sourceById.cost, "B（钱后置）", "cost");
-assertIncludes(sourceById.cost, "保持 0 支出", "cost");
-
-const projectStatus = deriveProjectStatus({
-  charter: sourceById.charter,
-  schedule: sourceById.schedule,
-  ledger: sourceById.ledger,
-  scope: sourceById.scope,
-  cost: sourceById.cost,
-});
-
-const projectName = requiredMatch(
-  sourceById.charter,
-  /\*\*项目正式名称：\*\*\s*([^\n]+)/,
-  "项目名称"
-);
-const deliveryName = requiredMatch(
-  sourceById.charter,
-  /\*\*首期交付名称：\*\*\s*([^\n]+)/,
-  "首期交付"
-);
-const projectCode = requiredMatch(
-  sourceById.charter,
-  /\*\*项目代号：\*\*\s*([^\n]+)/,
-  "项目代号"
-);
-const d0 = requiredMatch(
-  sourceById.charter,
-  /\*\*项目启动日 D0：\*\*\s*([^\n]+)/,
-  "D0"
-);
+const sharedSurface = buildCustomerProjectSurfaceModel(sourceById);
+const projectStatus = sharedSurface.projectStatus;
+const projectName = sharedSurface.project.name;
+const deliveryName = sharedSurface.project.delivery;
+const projectCode = sharedSurface.project.code;
+const d0 = sharedSurface.project.date;
 const g0Target = requiredMatch(
   sourceById.ledger,
   /\*\*G0 决策日：\*\*\s*目标\s*([^\n]+)/,
   "G0 目标日"
 );
-const preScoreDeadline = requiredMatch(
+const meetingPackDeadline = requiredMatch(
   sourceById.cadence,
-  /在\s*(\d{2}-\d{2}\s+\d{2}:\d{2})\s*前完成统一评分卡/,
-  "独立预评分截止"
+  /在\s*(\d{2}-\d{2}\s+\d{2}:\d{2})\s*前完成会前资料包/,
+  "会前资料包截止"
 );
 
 const gateRows = parseTable(
@@ -400,10 +287,6 @@ const deliveryScheduleRows = parseTable(
 const soloDeliveryScheduleRows = parseTable(
   getSection(sourceById.schedule, "### 4.2 单人全栈 / FDE 基线"),
   "单人全栈 / FDE 基线"
-);
-const meetingAgenda = parseTable(
-  getSection(sourceById.ledger, "## 4. 8 月 4 日启动会议程"),
-  "启动会议程"
 );
 const prelaunchChecklist = parseChecklist(
   getSection(sourceById.cadence, "## 1. 8 月 4 日前准备")
@@ -551,7 +434,7 @@ if (ddevReady) {
 } else if (problemFitFailed) {
   headline = {
     title: "问题适配未通过，必须重定首期范围。",
-    summary: "不得为匹配现有页面强留话术库 MVP-A；先登记 CR / DEC，再重新冻结 Scope。",
+    summary: "回到真实客服任务重新确认一期主问题，不为匹配现有页面保留任何预设功能。",
     nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
     nextTitle: "范围重定向",
     nextOutput: "CR / DEC · 新优先级 · 新 Scope",
@@ -566,11 +449,11 @@ if (ddevReady) {
   };
 } else if (!projectStatus.problemFitReady) {
   headline = {
-        title: "现在不是开工，是把 G0 证据补齐。",
-        summary: `工作方向已登记，不等于公司批准或问题适配；${preScoreDeadline} 前先交独立评分，${shortDate(d0)} 只做评分与证据复核。${projectStatus.externalTotal} 项外部责任包与 ${projectStatus.scopeTotal} 项 Scope 检查全部通过后，才可签发 Ddev。`,
-        nextDate: preScoreDeadline,
-        nextTitle: "独立预评分提交",
-        nextOutput: "5 份原始评分 · 每候选 ≥3 样本 · 异常分清单",
+        title: "项目已批准，8 月 4 日要把一期方向和未决项处理清楚。",
+        summary: `批准凭证已归档。${meetingPackDeadline} 前准备真实任务、当前指标、权威来源、试点人员和预计使用人数；${shortDate(d0)} 有证据就决定，缺证据就明确负责人和日期，不宣布开发开工。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，开发开工许可仍不成立。`,
+        nextDate: meetingPackDeadline,
+        nextTitle: "会前资料包",
+        nextOutput: "真实任务 · 指标基线 · 权威来源 · 试点与人数",
       };
 } else if (!allEvidenceReady) {
   headline = {
@@ -619,36 +502,14 @@ const displaySchedule = ddevReady
     : scheduleRows.map((row) => ({
         date: row["日期"],
         title: row["主题"],
-        action: row["主要动作"],
-        output: row["当日输出"],
+        action: humanizeMeetingText(row["主要动作"]),
+        output: humanizeMeetingText(row["当日输出"]),
       }));
-const displayAgenda = ddevReady
-  ? [
-      { time: "0～10", topic: "Ddev 与变更边界", decision: "确认本次工作仍在已签授权、费用和 Scope 内" },
-      { time: "10～35", topic: "WBS、质量与风险", decision: "核对完成证据、测试、阻塞、成本与回退" },
-      { time: "35～50", topic: "业务与内容验收", decision: "确认内容版本、引用、人在环与业务验收差距" },
-      { time: "50～60", topic: "下一门禁", decision: "具名 Owner、截止、证据与 CR / DEC" },
-    ]
-  : awaitingDdev
-    ? [
-        { time: "0～20", topic: "G0 签发复核", decision: "确认 G0 结论、证据包哈希与未决项" },
-        { time: "20～40", topic: "Ddev 授权边界", decision: "确认日期、授权证据 ID、Scope、费用、环境与负责人" },
-        { time: "40～60", topic: "开工条件", decision: "Ddev 未填写前不得开发；签发后按 WBS 启动" },
-      ]
-  : projectPaused
-    ? [
-        { time: "0～15", topic: "失败 / 暂停原因", decision: "冻结事实、影响与不可继续事项" },
-        { time: "15～40", topic: "解除条件", decision: "逐项具名 Owner、证据和截止日" },
-        { time: "40～60", topic: "复审安排", decision: "确认复审日期；此前 Ddev 保持未成立" },
-      ]
-    : meetingAgenda.map((row) => ({
-        time: row["分钟"],
-        topic: row["议题"],
-        decision: row["必须形成的结论"],
-      }));
-
 const payload = {
   schemaVersion: 1,
+  runtime: {
+    canonicalLocationFingerprint,
+  },
   project: {
     name: projectName,
     delivery: deliveryName,
@@ -677,21 +538,21 @@ const payload = {
   },
   headline: {
     ...headline,
-    principle: "系统推荐 → 坐席确认 → 人工发送",
+    principle: "系统辅助 → 坐席核对 → 人工处理 → 记录结果",
     nowTitle: ddevReady
       ? "按 Ddev、WBS 和证据链推进。"
       : awaitingDdev
         ? "G0 已签，等待 Ddev 正式授权。"
       : projectPaused
         ? "按暂停或整改条件行动，不越过门禁。"
-        : "先把启动会和证据目录准备好。",
+        : "先把需求会资料和责任清单准备好。",
     nowSummary: ddevReady
       ? "只做 Ddev 已授权范围；每次变更保留测试、回退与决定证据。"
       : awaitingDdev
         ? `不得早于 ${projectStatus.earliestDdev} 开发；Ddev 日期与授权证据 ID 未填写前继续保持未开发。`
       : projectPaused
         ? "只补解除阻塞所需证据；不得开发、付费调用、部署或承诺试点。"
-        : "只做能帮助 G0 决策的工作，不用代码提交制造“已经开工”的错觉。",
+        : "只做能帮助需求确认和开发前总检查的工作，不提前创建产品代码。",
     actionLabel: ddevReady || projectPaused ? "当前行动" : awaitingDdev ? "Ddev 签发前" : "8 月 4 日前",
     scheduleTitle: ddevReady
       ? `Ddev 已签；按${projectStatus.resourceBaseline}基线相对顺延，不把原日期当最新承诺。`
@@ -699,7 +560,7 @@ const payload = {
         ? "G0 已签，Ddev 未成立；不提前开工。"
       : projectPaused
         ? "当前处于暂停 / 整改，不进入 Ddev。"
-        : `${shortDate(d0)} 到 ${shortDate(g0Target)}，只承诺 G0。`,
+        : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
   },
   prelaunchChecklist: ddevReady
     ? allowedRows.map((row) => row["08-04 起可以做"]).filter(Boolean).slice(0, 8)
@@ -707,7 +568,7 @@ const payload = {
       ? ["核对 G0 签发结论与证据包哈希", "确认 Ddev 最早日期与授权证据 ID", "冻结授权 Scope、费用路径、环境和负责人", "Ddev 未填写前保持产品开发未开始"]
     : projectPaused
       ? ["记录失败或暂停原因", "具名补证 Owner 与截止日", "冻结开发、付费调用、部署和试点承诺", "达到解除条件后重新评审"]
-    : prelaunchChecklist.slice(0, 8),
+    : prelaunchChecklist.map(humanizeMeetingText).slice(0, 8),
   schedule: displaySchedule,
   gates: externalGates.map((row) => ({
     id: row.ID,
@@ -729,16 +590,17 @@ const payload = {
   scope: {
     in: inScope.map((row) => ({
       title: row["能力"],
-      detail: row["MVP-A 最小范围"],
+      detail: row["一期最小范围"],
     })),
     out: outOfScope,
   },
   metrics: [
-    { value: `≥${top3Target}`, label: "Top3 命中", note: "20 条正例；分层 ≥50% 且至少命中 1 条" },
-    { value: citationTarget, label: "引用 / 版本正确", note: "每条建议可追溯" },
-    { value: negativeTarget, label: "错误直答", note: "不少于 5 条负例" },
+    { value: "OPEN", label: "一期主业务指标", note: "08-04 确认指标名称、基线来源和数据负责人；无基线不填目标值" },
     { value: pilotDisplay, label: "内部真实试点", note: `${pilotTarget}；每人每周 ≥${pilotThreshold.weeklyTasks} 个去重任务` },
     { value: "0", label: "自动代发", note: "人在环硬门槛" },
+    { value: `≥${top3Target}`, label: "知识辅助 Top3（条件项）", note: "仅当知识辅助成为一期方向：20 条正例；分层 ≥50% 且至少命中 1 条" },
+    { value: citationTarget, label: "知识来源正确（条件项）", note: "仅当知识辅助成为一期方向；每条建议可追溯" },
+    { value: negativeTarget, label: "知识错误直答（条件项）", note: "仅当知识辅助成为一期方向；不少于 5 条负例" },
   ],
   meeting: {
     title: ddevReady
@@ -754,7 +616,7 @@ const payload = {
         ? "这是 G0 已签后的 Ddev 授权会；签发日期、授权证据 ID、范围与费用边界未落档前不得开发。"
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
-        : "可召开需求澄清与范围冻结准备会；不是 PRD 终审、G0 通过或开发开工会。",
+        : "这是需求决策与补证安排会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
     controlsLabel: ddevReady || awaitingDdev || projectPaused ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady
       ? "客服 Agent 当前推进清单"
@@ -762,28 +624,23 @@ const payload = {
         ? "客服 Agent Ddev 签发清单"
       : projectPaused
         ? "客服 Agent 暂停 / 整改复审清单"
-        : "客服 Agent PRD 需求会会前准备",
+        : "客服 Agent 一期需求会会前准备",
     copyButton: ddevReady || awaitingDdev || projectPaused ? "复制当前清单" : "复制会前清单",
-    agenda: displayAgenda,
     director: [
-      "业务目标、优先级及本期必须解决的问题",
-      "四候选的经营影响、主要风险与不可突破边界",
-      "可拍板的业务 Owner、验收人、预算路径与试点资源",
-      "成功、止损、暂停条件与范围取舍",
+      "本期必须先解决的一个真实客服问题",
+      "业务目标、当前基线、成功与停止条件",
+      "最终负责人、验收人、预算路径与试点资源",
+      "哪些内容明确不进入一期",
     ],
     manager: [
-      "Top 场景、平台分布、真实任务量与脱敏案例",
-      "话术真源清单、版本状态及维护 SLA",
-      "查找时长、错答 / 冲突、未命中与新人学习基线",
-      "20 条正例、至少 5 条负例与转人工 SOP",
+      "高频场景、平台分布、真实任务量与脱敏案例",
+      "权威文档 / 数据来源、权限、更新时间和维护人",
+      "当前耗时、返工、错误、升级和客户影响",
+      "坐席怎样核对、修改、拒绝或转人工",
       "3–5 名试点坐席、投入时间与反馈安排",
+      "预计后续使用人数、并发高峰、设备与网络",
     ],
-    coreQuestions: [
-      "首期最值得解决的 3–5 个真实任务是什么？",
-      "哪个来源才是正确答案，谁最终负责？",
-      "系统何时必须拒答、追问或转人工？",
-      "什么指标算成功，什么情况必须停止？",
-    ],
+    coreQuestions: sharedSurface.meeting.coreQuestions,
   },
   governance: {
     fee: [
@@ -835,7 +692,7 @@ const payload = {
     })),
     boundaryTitle: ddevReady ? "持续边界" : "允许 / 禁止",
     allowedTitle: ddevReady ? "当前可做" : "可以做",
-    forbiddenTitle: ddevReady ? "持续禁止" : "Ddev 前禁止",
+    forbiddenTitle: ddevReady ? "持续禁止" : "开发开工许可前禁止",
     allowed: governanceBoundaries,
   },
   sources: sourceEntries.map((source) => ({
@@ -864,6 +721,10 @@ const releaseHash = sha256(
     portablePrd.html,
     generatorSource,
     statusModuleSource,
+    surfaceModelSource,
+    surfaceIoSource,
+    meetingModuleSource,
+    canonicalLocationFingerprint,
   ].join("\n/* source-boundary */\n")
 );
 const releaseId = `hub-v1-${releaseHash.slice(0, 12)}`;

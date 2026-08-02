@@ -101,7 +101,7 @@ test("结果根目录的中间分量是符号链接时拒绝且不在根外建�
   await assert.rejects(stat(path.join(outside, "customer-agent")), { code: "ENOENT" });
 });
 
-test("三套浏览器 QA 不得恢复递归结果目录清理", async () => {
+test("客服三视图与历史 Web QA 不得恢复递归结果目录清理", async () => {
   const files = [
     path.join(repoRoot, "business-docs/08-工具/test_customer_agent_prd.mjs"),
     path.join(repoRoot, "business-docs/08-工具/test_customer_agent_hub.mjs"),
@@ -112,4 +112,12 @@ test("三套浏览器 QA 不得恢复递归结果目录清理", async () => {
     assert.doesNotMatch(source, /\brm\s*\(/, file);
     assert.doesNotMatch(source, /\brecursive\s*:\s*true\s*,\s*force\s*:\s*true\b/, file);
   }
+
+  const meetingQa = await readFile(
+    path.join(repoRoot, "business-docs/08-工具/test_customer_agent_meeting.mjs"),
+    "utf8"
+  );
+  assert.match(meetingQa, /const sandbox = await mkdtemp\(/);
+  assert.match(meetingQa, /await rm\(sandbox, \{ recursive: true, force: true \}\)/);
+  assert.doesNotMatch(meetingQa, /\brm\s*\(\s*(?:resultsDir|qaPaths|targetPath)/);
 });

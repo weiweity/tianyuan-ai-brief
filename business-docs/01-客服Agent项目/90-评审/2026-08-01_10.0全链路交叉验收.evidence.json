@@ -1,10 +1,10 @@
 {
-  "evidenceVersion": "1.0",
+  "evidenceVersion": "2.0",
   "verifiedAt": "2026-08-01",
-  "scope": "verified-software-and-document-delivery",
+  "scope": "repository-static-doc-code-and-automated-browser-evidence",
   "result": "PASS",
   "score": {
-    "dimensions": 7,
+    "dimensions": 9,
     "minimum": 10.0,
     "mean": 10.0,
     "openP0": 0,
@@ -13,13 +13,17 @@
   "businessState": {
     "project": "customer-agent",
     "priority": "P0",
-    "projectStart": "2026-08-04",
-    "externalResponsibilityPass": "0/14",
-    "scopePass": "0/15",
-    "totalGatePass": "0/29",
+    "approvalEvidence": "EVD-CUSTOMER-APPROVAL-20260801",
+    "demandMeeting": "2026-08-04",
+    "externalResponsibilityPass": "1/14",
+    "scopePass": "1/15",
+    "totalGatePass": "2/29",
     "g0Signed": false,
     "ddevEstablished": false,
-    "developmentStarted": false
+    "developmentStarted": false,
+    "productCodeCreated": false,
+    "feePath": "B · 临时管控，未签",
+    "paidSpend": "新增付费授权 = 0"
   },
   "commands": [
     {
@@ -30,13 +34,13 @@
     {
       "command": "cd web-decision-brief && npm run test:all",
       "exitCode": 0,
-      "result": "90/90 Node; Web UI pass; PRD 47/47; Hub 53/53; dependency audit clean"
+      "result": "91/91 Node; Web UI pass; PRD 47/47; Hub 53/53; dependency audit clean"
     }
   ],
   "automatedEvidence": {
     "node": {
-      "passed": 90,
-      "total": 90
+      "passed": 91,
+      "total": 91
     },
     "prdBrowserQa": {
       "passed": 47,
@@ -107,12 +111,15 @@
     "unchangedContentPreservesBytesAndMtime": true
   },
   "notClaimedAsVerified": [
-    "company-approval-and-real-owner-signatures",
-    "real-business-samples-and-budget-cap",
+    "original-approval-document-content",
+    "real-owner-signatures",
+    "real-business-samples-metric-baselines-and-budget-cap",
+    "onsite-demand-meeting-outcome",
     "ios-safari-and-android-real-devices",
-    "physical-screen-reader",
+    "physical-screen-reader-and-voiceover-talkback",
     "xga-or-1080p-projector",
     "physical-printing",
-    "real-windows-cross-drive-path"
+    "real-windows-cross-drive-path",
+    "software-launch-pilot-and-business-outcome"
   ]
 }

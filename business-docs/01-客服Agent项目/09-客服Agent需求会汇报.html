@@ -1,0 +1,1986 @@
+<!doctype html>
+<!-- GENERATED FILE — safe meeting view; DO NOT EDIT -->
+<html lang="zh-CN" data-release="meeting-v1-72e891510925">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f3f0f6">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="data:,">
+  <title>客服 Agent 一期启动会</title>
+  <script>document.documentElement.classList.add("js");</script>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand-50: #f8f6fa;
+      --brand-100: #eee8f3;
+      --brand-200: #ddd1e7;
+      --brand-400: #9d82b2;
+      --brand-600: #674b7b;
+      --brand-700: #513a63;
+      --brand-900: #2e2335;
+      --canvas: #f3f0f6;
+      --surface: #fff;
+      --surface-soft: #faf8fb;
+      --ink: #231c28;
+      --muted: #686070;
+      --line: #ded7e4;
+      --line-strong: #c8bbd2;
+      --ok: #24633a;
+      --ok-bg: #eaf5ed;
+      --warn: #795b00;
+      --warn-bg: #fff3cf;
+      --danger: #a13939;
+      --danger-bg: #fdeaea;
+      --info: #285d88;
+      --info-bg: #eaf3fa;
+      --shadow: 0 16px 42px rgb(46 35 53 / 10%);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --touch: 44px;
+      --content: 1320px;
+      --header-height: 72px;
+      --control-height: 76px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
+        "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--canvas);
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: var(--font-sans);
+      font-size: 18px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    summary,
+    select {
+      color: inherit;
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .4;
+    }
+
+    button:focus-visible,
+    summary:focus-visible,
+    select:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgb(103 75 123 / 42%);
+      outline-offset: 3px;
+    }
+
+    .slide h1[tabindex="-1"]:focus,
+    .slide h2[tabindex="-1"]:focus {
+      outline: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p,
+    ul,
+    ol {
+      margin-top: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--brand-900);
+      line-height: 1.13;
+      letter-spacing: -.025em;
+    }
+
+    h1,
+    h2 {
+      text-wrap: balance;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin-bottom: 22px;
+      font-size: clamp(46px, 6.3vw, 88px);
+      font-weight: 820;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: clamp(34px, 4.2vw, 58px);
+      font-weight: 790;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: clamp(19px, 2vw, 25px);
+      font-weight: 760;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: 10px;
+      left: 12px;
+      min-height: var(--touch);
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--brand-700);
+      transform: translateY(-160%);
+      transition: transform 160ms var(--ease);
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .meeting-header {
+      position: relative;
+      z-index: 20;
+      height: var(--header-height);
+      border-bottom: 1px solid rgb(222 215 228 / 88%);
+      background: rgb(243 240 246 / 94%);
+      backdrop-filter: blur(14px);
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: clamp(148px, 16vw, 210px) minmax(340px, 1fr) auto;
+      gap: 22px;
+      align-items: center;
+      width: min(calc(100% - 40px), var(--content));
+      height: 100%;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      display: block;
+      width: min(100%, 176px);
+      height: auto;
+      max-height: 38px;
+      object-fit: contain;
+      object-position: left center;
+    }
+
+    .state-strip {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--brand-700);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .state-pill:first-child {
+      border-color: #b9d3c0;
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-count {
+      min-width: 58px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 760;
+      text-align: right;
+    }
+
+    .deck {
+      position: relative;
+      width: min(100%, 1600px);
+      height: calc(100vh - var(--header-height) - var(--control-height));
+      margin: 0 auto;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-content: center;
+      width: 100%;
+      height: 100%;
+      padding: clamp(24px, 4.4vh, 56px) clamp(34px, 5.5vw, 86px);
+      overflow: hidden;
+      background: var(--canvas);
+    }
+
+    .js .slide:not(.is-active) {
+      display: none;
+    }
+
+    .slide-inner {
+      width: min(100%, var(--content));
+      max-height: 100%;
+      margin: 0 auto;
+    }
+
+    .slide-kicker {
+      margin-bottom: 14px;
+      color: var(--brand-600);
+      font-size: 14px;
+      font-weight: 790;
+      letter-spacing: .05em;
+    }
+
+    .lead {
+      max-width: 980px;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font-size: clamp(19px, 2vw, 26px);
+      line-height: 1.45;
+      text-wrap: pretty;
+    }
+
+    .cover .slide-inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, .7fr);
+      gap: clamp(34px, 6vw, 92px);
+      align-items: center;
+    }
+
+    .cover-copy {
+      min-width: 0;
+    }
+
+    .cover h1 {
+      max-width: none;
+      font-size: clamp(52px, 5.6vw, 88px);
+    }
+
+    .cover-mark {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 7px 13px;
+      margin-bottom: 24px;
+      border: 1px solid #b9d3c0;
+      border-radius: 999px;
+      color: var(--ok);
+      background: var(--ok-bg);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .cover-goal {
+      max-width: 900px;
+      margin-bottom: 0;
+      color: var(--brand-700);
+      font-size: clamp(22px, 2.5vw, 32px);
+      font-weight: 720;
+      line-height: 1.4;
+    }
+
+    .cover-aside {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .cover-aside h2 {
+      margin-bottom: 18px;
+      font-size: 21px;
+    }
+
+    .boundary-list,
+    .plain-list,
+    .prompt-list {
+      padding: 0;
+      margin-bottom: 0;
+      list-style: none;
+    }
+
+    .boundary-list {
+      display: grid;
+      gap: 12px;
+      counter-reset: meeting-goal;
+    }
+
+    .boundary-list li {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      color: var(--ink);
+      font-size: 16px;
+      counter-increment: meeting-goal;
+    }
+
+    .boundary-list li::before {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      color: var(--brand-700);
+      background: var(--brand-100);
+      font-size: 13px;
+      font-weight: 900;
+      content: counter(meeting-goal);
+      place-items: center;
+    }
+
+    .callout {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 18px 20px;
+      margin-top: 22px;
+      border-left: 4px solid var(--brand-400);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: var(--brand-900);
+      background: var(--brand-50);
+      font-size: clamp(18px, 1.7vw, 23px);
+      font-weight: 700;
+    }
+
+    .callout::before {
+      flex: 0 0 auto;
+      color: var(--brand-600);
+      content: attr(data-label);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .08em;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .fact-card,
+    .topic-card,
+    .question-card,
+    .decision-card {
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .fact-card {
+      padding: 20px 22px;
+      border-radius: var(--radius-md);
+    }
+
+    .fact-card[data-empty="true"] {
+      min-height: 210px;
+    }
+
+    .fact-card-head {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .fact-card-head h3 {
+      margin-bottom: 0;
+    }
+
+    .fact-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .fact-fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px 16px;
+      margin: 0;
+    }
+
+    .fact-fields div {
+      min-width: 0;
+    }
+
+    .fact-fields .wide {
+      grid-column: span 3;
+    }
+
+    .fact-fields dt {
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .fact-fields dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+
+    .fact-empty {
+      max-width: 480px;
+      margin: 26px 0 0;
+      color: var(--brand-700);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .topic-card {
+      min-height: 146px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+    }
+
+    .topic-card span {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--brand-600);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .topic-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .question-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .question-card {
+      padding: 15px 17px;
+      border-radius: var(--radius-sm);
+      color: var(--brand-900);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .prompt-panel {
+      padding: 20px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+
+    .prompt-panel.emphasis {
+      border-color: var(--line-strong);
+      background: var(--brand-50);
+    }
+
+    .prompt-panel h3 {
+      font-size: 20px;
+    }
+
+    .prompt-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .prompt-list li {
+      position: relative;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .prompt-list li::before {
+      position: absolute;
+      top: .68em;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand-400);
+      content: "";
+    }
+
+    .metric-line {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric-line:last-child {
+      border-bottom: 0;
+    }
+
+    .metric-line strong {
+      color: var(--brand-700);
+      font-size: 15px;
+    }
+
+    .metric-line span {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .decision-toolbar {
+      display: flex;
+      gap: 12px 20px;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 42px;
+      margin: -4px 0 12px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--brand-50);
+      font-size: 14px;
+    }
+
+    .decision-legend {
+      display: flex;
+      gap: 5px 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 0;
+    }
+
+    .decision-legend strong {
+      color: var(--brand-700);
+    }
+
+    .decision-legend span:not(:last-child)::after {
+      margin-left: 12px;
+      color: var(--line-strong);
+      content: "·";
+    }
+
+    .decision-progress {
+      flex: 0 0 auto;
+      color: var(--brand-700);
+      font-weight: 800;
+    }
+
+    .decision-card {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr) 134px;
+      gap: 10px;
+      align-items: center;
+      min-height: 66px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      transition: background-color 160ms var(--ease), border-color 160ms var(--ease);
+    }
+
+    .decision-card[data-result="confirmed"] {
+      border-color: #b9d3c0;
+      background: var(--ok-bg);
+    }
+
+    .decision-card[data-result="confirm-on-site"] {
+      border-color: var(--brand-200);
+      background: var(--brand-50);
+    }
+
+    .decision-card[data-result="needs-evidence"] {
+      border-color: #ead59b;
+      background: var(--warn-bg);
+    }
+
+    .decision-card[data-result="not-in-this-meeting"] {
+      border-color: #d6d1da;
+      background: #f4f2f5;
+    }
+
+    .decision-number {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: var(--brand-700);
+      background: var(--brand-100);
+      font-size: 12px;
+      font-weight: 850;
+      place-items: center;
+    }
+
+    .decision-title {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 720;
+      line-height: 1.28;
+    }
+
+    .decision-control {
+      position: relative;
+      width: 134px;
+      min-width: 0;
+    }
+
+    .decision-control::after {
+      position: absolute;
+      top: 50%;
+      right: 11px;
+      color: var(--brand-600);
+      content: "⌄";
+      font-size: 15px;
+      line-height: 1;
+      pointer-events: none;
+      transform: translateY(-58%);
+    }
+
+    .decision-select {
+      width: 100%;
+      min-height: var(--touch);
+      padding: 7px 30px 7px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      color: var(--brand-700);
+      background: var(--surface-soft);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      appearance: none;
+    }
+
+    .decision-card[data-result="confirmed"] .decision-select {
+      border-color: #9fc3a9;
+      color: var(--ok);
+      background: #f7fcf8;
+    }
+
+    .decision-card[data-result="needs-evidence"] .decision-select {
+      border-color: #d7bd72;
+      color: var(--warn);
+      background: #fffaf0;
+    }
+
+    .meeting-controls {
+      position: relative;
+      z-index: 30;
+      height: var(--control-height);
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .controls-inner {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      width: min(calc(100% - 40px), var(--content));
+      height: 100%;
+      margin: 0 auto;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .control-group:last-child {
+      justify-content: flex-end;
+    }
+
+    .control-button,
+    .more-menu summary {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      justify-content: center;
+      min-width: var(--touch);
+      min-height: var(--touch);
+      padding: 9px 14px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--brand-700);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 780;
+      text-decoration: none;
+    }
+
+    .control-button:hover,
+    .more-menu summary:hover {
+      background: var(--brand-50);
+    }
+
+    .control-button.primary {
+      border-color: var(--brand-700);
+      color: #fff;
+      background: var(--brand-700);
+    }
+
+    .control-button.primary:hover {
+      background: var(--brand-900);
+    }
+
+    .control-button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--brand-700);
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 5px;
+      width: min(340px, 32vw);
+    }
+
+    .progress-track {
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--brand-100);
+    }
+
+    .progress-bar {
+      display: block;
+      width: 11.111%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--brand-600);
+      transition: width 180ms var(--ease);
+    }
+
+    .progress-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 680;
+      text-align: center;
+    }
+
+    .more-menu {
+      position: relative;
+    }
+
+    .more-menu summary {
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .more-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .menu-panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 10px);
+      display: grid;
+      gap: 6px;
+      width: 190px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .menu-panel button {
+      min-height: var(--touch);
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: var(--brand-700);
+      background: transparent;
+      font-size: 14px;
+      font-weight: 720;
+      text-align: left;
+    }
+
+    .menu-panel button:hover {
+      background: var(--brand-50);
+    }
+
+    .menu-panel .danger-action {
+      color: var(--danger);
+    }
+
+    dialog {
+      width: min(560px, calc(100% - 32px));
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 24px 80px rgb(46 35 53 / 22%);
+    }
+
+    dialog::backdrop {
+      background: rgb(35 28 40 / 42%);
+      backdrop-filter: blur(3px);
+    }
+
+    .dialog-head,
+    .dialog-body,
+    .dialog-actions {
+      padding: 18px 22px;
+    }
+
+    .dialog-head {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 25px;
+    }
+
+    .dialog-body {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .shortcut-list {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px 16px;
+      margin: 0;
+    }
+
+    .shortcut-list dt,
+    .shortcut-list dd {
+      margin: 0;
+    }
+
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 8px;
+      border: 1px solid var(--line-strong);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      color: var(--brand-900);
+      background: var(--surface-soft);
+      font: 700 12px var(--font-sans);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+    }
+
+    .print-summary {
+      display: none;
+    }
+
+    noscript .no-script-notice {
+      padding: 12px 18px;
+      color: var(--warn);
+      background: var(--warn-bg);
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    html:not(.js) body {
+      overflow: auto;
+    }
+
+    html:not(.js) .meeting-header,
+    html:not(.js) .meeting-controls {
+      display: none;
+    }
+
+    html:not(.js) .deck {
+      height: auto;
+    }
+
+    html:not(.js) .slide {
+      position: relative;
+      min-height: auto;
+      padding-block: 46px;
+      overflow: visible;
+      border-bottom: 1px solid var(--line);
+    }
+
+    @media (max-width: 1100px) {
+      .header-inner {
+        grid-template-columns: minmax(148px, .55fr) minmax(300px, 1.3fr) auto;
+        gap: 12px;
+      }
+
+      .state-pill {
+        padding-inline: 8px;
+        font-size: 11px;
+      }
+
+      .slide {
+        padding: 24px 34px;
+      }
+
+      .lead {
+        margin-bottom: 18px;
+      }
+
+      .topic-card {
+        min-height: 126px;
+        padding: 14px;
+      }
+
+      .prompt-panel {
+        padding: 16px 18px;
+      }
+
+      .decision-card {
+        min-height: 60px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --header-height: 94px;
+        --control-height: 72px;
+      }
+
+      body {
+        font-size: 16px;
+      }
+
+      .header-inner {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: 54px 34px;
+        width: calc(100% - 24px);
+      }
+
+      .state-strip {
+        grid-row: 2;
+        grid-column: 1 / -1;
+        gap: 6px;
+        justify-content: flex-start;
+        align-self: start;
+      }
+
+      .state-pill {
+        min-height: 28px;
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+
+      .header-meta {
+        grid-row: 1;
+        grid-column: 2;
+        min-width: 38px;
+      }
+
+      .brand {
+        grid-row: 1;
+        grid-column: 1;
+      }
+
+      .deck {
+        height: calc(100dvh - var(--header-height) - var(--control-height));
+      }
+
+      .slide {
+        align-content: start;
+        padding: 25px 18px 34px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+
+      h1 {
+        font-size: clamp(40px, 13vw, 60px);
+      }
+
+      .cover h1 {
+        font-size: clamp(40px, 13vw, 60px);
+      }
+
+      h2 {
+        font-size: clamp(32px, 10vw, 44px);
+      }
+
+      .lead {
+        font-size: 18px;
+      }
+
+      .cover .slide-inner,
+      .card-grid,
+      .prompt-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cover .slide-inner {
+        gap: 26px;
+      }
+
+      .cover-aside {
+        padding: 20px;
+      }
+
+      .fact-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .fact-fields .wide {
+        grid-column: span 2;
+      }
+
+      .topic-grid,
+      .question-row,
+      .decision-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topic-card {
+        min-height: auto;
+      }
+
+      .decision-card {
+        grid-template-columns: 32px minmax(0, 1fr) 134px;
+      }
+
+      .decision-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .decision-progress {
+        align-self: flex-end;
+      }
+
+      .controls-inner {
+        grid-template-columns: 1fr auto;
+        width: calc(100% - 24px);
+      }
+
+      .progress-wrap,
+      .button-label {
+        display: none;
+      }
+
+      .control-group:last-child {
+        grid-column: 2;
+      }
+
+      .control-button,
+      .more-menu summary {
+        padding-inline: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 11mm;
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+      }
+
+      html,
+      body {
+        width: auto;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+        color: #111;
+        background: #fff;
+        font-size: 10pt;
+      }
+
+      .meeting-header,
+      .deck,
+      .meeting-controls,
+      dialog,
+      noscript {
+        display: none !important;
+      }
+
+      .print-summary {
+        display: block;
+      }
+
+      .print-summary h1 {
+        margin-bottom: 4mm;
+        color: #221a28;
+        font-size: 24pt;
+      }
+
+      .print-summary h2 {
+        margin: 5mm 0 2mm;
+        color: #221a28;
+        font-size: 15pt;
+      }
+
+      .print-summary p,
+      .print-summary li {
+        margin-bottom: 1.5mm;
+        line-height: 1.38;
+      }
+
+      .print-state {
+        display: flex;
+        gap: 3mm;
+        flex-wrap: wrap;
+        padding-bottom: 3mm;
+        border-bottom: 1px solid #ccc;
+      }
+
+      .print-agenda,
+      .print-decisions,
+      .print-outputs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2mm 7mm;
+        padding-left: 5mm;
+      }
+
+      .print-footer {
+        padding-top: 4mm;
+        margin-top: 5mm;
+        border-top: 1px solid #ccc;
+        color: #555;
+        font-size: 8pt;
+      }
+    }
+  </style>
+</head>
+<body id="meeting-app" data-release="meeting-v1-72e891510925">
+  <a class="skip-link" href="#meeting-main">跳到启动会正文</a>
+  <noscript><div class="no-script-notice">当前浏览器未启用脚本，以下内容已按顺序完整展开，可继续阅读。</div></noscript>
+
+  <header class="meeting-header" aria-label="会议页眉">
+    <div class="header-inner">
+      <div class="brand" aria-label="SHINE MAGE">
+        <img class="brand-logo" src="data:image/png;base64,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" alt="SHINE MAGE">
+      </div>
+      <div class="state-strip" aria-label="项目状态">
+        <span class="state-pill" data-state-approval>项目已批准</span>
+        <span class="state-pill" data-state-direction>一期方向待确认</span>
+        <span class="state-pill" data-state-development>尚未开发</span>
+      </div>
+      <div class="header-meta">
+        <span class="step-count" id="step-count">封面</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="deck" id="meeting-main" tabindex="-1">
+    <section class="slide cover is-active" data-slide-index="0" aria-labelledby="cover-title">
+      <div class="slide-inner">
+        <div class="cover-copy">
+          <span class="cover-mark" data-state-approval>项目已批准</span>
+          <p class="slide-kicker">客服 Agent · 一期项目启动</p>
+          <h1 id="cover-title" data-pretext>客服 Agent<br>一期启动会</h1>
+          <p class="cover-goal" data-pretext>今天共同启动需求定义与项目协作，确认一期主问题、范围、责任与下一步。</p>
+        </div>
+        <aside class="cover-aside" aria-labelledby="cover-boundary-title">
+          <h2 id="cover-boundary-title">本次启动目标</h2>
+          <ol class="boundary-list">
+            <li>对齐一个一期主问题</li>
+            <li>明确范围、成功与试点条件</li>
+            <li>确认责任、未决事项与下一步</li>
+          </ol>
+        </aside>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="1" aria-labelledby="boundary-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 1 / 8</p>
+        <h2 id="boundary-title" data-agenda-topic="0" data-pretext>先对齐启动目标与参与方式</h2>
+        <p class="lead" data-agenda-decision="0" data-pretext>项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。</p>
+        <div class="prompt-grid">
+          <article class="prompt-panel">
+            <h3>共同参与</h3>
+            <ul class="prompt-list">
+              <li>业务负责人：确认业务问题和优先级</li>
+              <li>一线代表：还原真实任务和使用环境</li>
+              <li>项目协调人：记录决定并推进未决事项</li>
+            </ul>
+          </article>
+          <article class="prompt-panel emphasis">
+            <h3>共同规则</h3>
+            <ul class="prompt-list">
+              <li>有事实支撑，现场形成决定</li>
+              <li>证据不足，写清负责人和确认位置</li>
+              <li>超出一期范围，记录后单独处理</li>
+            </ul>
+          </article>
+        </div>
+        <p class="callout" data-label="结论">会议结论必须能回答“谁负责、补充什么、在哪里确认”。</p>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="2" aria-labelledby="facts-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 2 / 8</p>
+        <h2 id="facts-title" data-agenda-topic="1" data-pretext>一起还原两个真实任务</h2>
+        <p class="lead" data-agenda-decision="1" data-pretext>用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。</p>
+        <div class="card-grid" id="fact-card-list">
+          <article class="fact-card" data-fact-card="0" data-empty="true">
+            <div class="fact-card-head"><h3>高频任务</h3><span class="fact-status" data-fact="status">会上确认</span></div>
+            <p class="fact-empty">我们先确认：谁在什么平台处理，当前要经过哪些步骤？</p>
+            <dl class="fact-fields" hidden>
+              <div><dt>主用户类别</dt><dd data-fact="userType">会上确认</dd></div>
+              <div><dt>平台</dt><dd data-fact="platform">会上确认</dd></div>
+              <div><dt>频次 / 样本</dt><dd data-fact="frequency">会上确认</dd></div>
+              <div class="wide"><dt>任务</dt><dd data-fact="task">会上确认</dd></div>
+              <div class="wide"><dt>当前流程与问题</dt><dd data-fact="currentFlow">会上确认</dd></div>
+              <div class="wide"><dt>业务影响</dt><dd data-fact="impact">会上确认</dd></div>
+            </dl>
+          </article>
+          <article class="fact-card" data-fact-card="1" data-empty="true">
+            <div class="fact-card-head"><h3>高影响任务</h3><span class="fact-status" data-fact="status">会上确认</span></div>
+            <p class="fact-empty">我们再确认：哪里最容易出错、返工或升级，带来什么影响？</p>
+            <dl class="fact-fields" hidden>
+              <div><dt>主用户类别</dt><dd data-fact="userType">会上确认</dd></div>
+              <div><dt>平台</dt><dd data-fact="platform">会上确认</dd></div>
+              <div><dt>频次 / 样本</dt><dd data-fact="frequency">会上确认</dd></div>
+              <div class="wide"><dt>任务</dt><dd data-fact="task">会上确认</dd></div>
+              <div class="wide"><dt>当前流程与问题</dt><dd data-fact="currentFlow">会上确认</dd></div>
+              <div class="wide"><dt>业务影响</dt><dd data-fact="impact">会上确认</dd></div>
+            </dl>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="3" aria-labelledby="direction-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 3 / 8</p>
+        <h2 id="direction-title" data-agenda-topic="2" data-pretext>一起确定一期主问题</h2>
+        <p class="lead" data-agenda-decision="2" data-pretext>四个方向只用于理解问题；我们确认一个主问题，证据不足就写清还要补什么。</p>
+        <div class="topic-grid" aria-label="候选讨论方向">
+          <article class="topic-card"><span>讨论起点 01</span><h3>找答案慢 / 容易找错</h3><p>需要回答：哪些任务依赖可靠内容，查找或核对哪里最慢。</p></article>
+          <article class="topic-card"><span>讨论起点 02</span><h3>质检难发现 / 难复核</h3><p>需要回答：哪些质量问题高频、难发现或难复核。</p></article>
+          <article class="topic-card"><span>讨论起点 03</span><h3>反馈分散 / 难汇总</h3><p>需要回答：哪些反馈长期分散，影响了什么业务结果。</p></article>
+          <article class="topic-card"><span>讨论起点 04</span><h3>对话重点难提取</h3><p>需要回答：现有对话里，哪些关键信息最值得提取和验证。</p></article>
+        </div>
+        <div class="question-row" id="core-question-list">
+          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
+          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
+          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="4" aria-labelledby="scope-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 4 / 8</p>
+        <h2 id="scope-title" data-agenda-topic="3" data-pretext>一起明确一期先做到哪一步</h2>
+        <p class="lead" data-agenda-decision="3" data-pretext>确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。</p>
+        <div class="prompt-grid">
+          <article class="prompt-panel emphasis">
+            <h3>必须说清</h3>
+            <ul class="prompt-list">
+              <li>哪类坐席，在什么平台，完成哪个任务</li>
+              <li>软件从哪里开始帮忙，到哪里停止</li>
+              <li>人工在什么位置确认、纠正或接管</li>
+            </ul>
+          </article>
+          <article class="prompt-panel">
+            <h3>一期边界</h3>
+            <ul class="prompt-list">
+              <li>只服务一个主问题，不并行铺开四个方向</li>
+              <li>不自动向客户发送内容</li>
+              <li>不把尚未验证的效果或上线安排当作既定结论</li>
+            </ul>
+          </article>
+        </div>
+        <p class="callout" data-label="验收">一句话验收：坐席完成这项任务时，哪一步变得更快、更准或更容易复核？</p>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="5" aria-labelledby="success-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 5 / 8</p>
+        <h2 id="success-title" data-agenda-topic="4" data-pretext>一起确认成功与停止条件</h2>
+        <p class="lead" data-agenda-decision="4" data-pretext>确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。</p>
+        <div class="prompt-grid">
+          <article class="prompt-panel">
+            <h3>成功方向</h3>
+            <div class="metric-line"><strong>效率</strong><span>处理时长、查找时间或重复操作是否下降</span></div>
+            <div class="metric-line"><strong>质量</strong><span>一次解决、正确引用、返工或投诉是否改善</span></div>
+            <div class="metric-line"><strong>使用</strong><span>坐席是否愿意持续使用，人工确认是否顺畅</span></div>
+          </article>
+          <article class="prompt-panel emphasis">
+            <h3>停止信号</h3>
+            <div class="metric-line"><strong>安全</strong><span>出现不可接受的错误回答、越权或敏感信息暴露</span></div>
+            <div class="metric-line"><strong>业务</strong><span>真实任务没有改善，或者明显增加坐席负担</span></div>
+            <div class="metric-line"><strong>证据</strong><span>数据无法复核，或样本不足以支持继续判断</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="6" aria-labelledby="truth-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 6 / 8</p>
+        <h2 id="truth-title" data-agenda-topic="5" data-pretext>一起确认可靠的内容依据</h2>
+        <p class="lead" data-agenda-decision="5" data-pretext>同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。</p>
+        <div class="prompt-grid">
+          <article class="prompt-panel emphasis">
+            <h3>每类内容都要回答</h3>
+            <ul class="prompt-list">
+              <li>最高频信息来自哪里</li>
+              <li>当前有效版本是什么</li>
+              <li>谁可以查看，谁可以修改</li>
+              <li>多久更新一次，由谁维护</li>
+            </ul>
+          </article>
+          <article class="prompt-panel">
+            <h3>出现冲突时</h3>
+            <ul class="prompt-list">
+              <li>明确一个最终裁决人</li>
+              <li>旧内容应当可识别、可停止使用</li>
+              <li>个人经验可以补充，但不能成为唯一答案</li>
+              <li>材料不完整时，直接标记“待确认”</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="7" aria-labelledby="pilot-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 7 / 8</p>
+        <h2 id="pilot-title" data-agenda-topic="6" data-pretext>一起确认试点与真实使用环境</h2>
+        <p class="lead" data-agenda-decision="6" data-pretext>确认试点人员、班次、设备、网络限制和使用高峰。</p>
+        <div class="prompt-grid">
+          <article class="prompt-panel">
+            <h3>试点坐席</h3>
+            <ul class="prompt-list">
+              <li>选择 3–5 名代表性坐席，并准备替补</li>
+              <li>覆盖典型任务、不同熟练度和真实工作班次</li>
+              <li>说明如何退出试点、如何反馈问题</li>
+            </ul>
+          </article>
+          <article class="prompt-panel emphasis">
+            <h3>使用环境</h3>
+            <ul class="prompt-list">
+              <li>预计总人数与同时使用人数</li>
+              <li>高峰时段、主要平台与设备</li>
+              <li>网络限制、登录方式和必要安全要求</li>
+            </ul>
+          </article>
+        </div>
+        <p class="callout" data-label="用途">这些信息将作为后续试点准备与协作安排的共同依据。</p>
+      </div>
+    </section>
+
+    <section class="slide" data-slide-index="8" aria-labelledby="readback-title">
+      <div class="slide-inner">
+        <p class="slide-kicker">环节 8 / 8</p>
+        <h2 id="readback-title" data-agenda-topic="7" data-pretext>确认启动结果与下一步</h2>
+        <p class="lead" data-agenda-decision="7" data-pretext>逐项选择九项启动结果；未确认的事项写清负责人、补充内容、确认日期与位置。</p>
+        <div class="decision-toolbar" aria-label="结果状态说明">
+          <p class="decision-legend" id="decision-option-legend">
+            <strong>每项选择</strong><span>已确认</span><span>待共同确认</span><span>待补材料</span><span>本次暂不决定</span>
+          </p>
+          <span class="decision-progress" id="decision-progress" aria-live="polite">0 / 9 已处理</span>
+        </div>
+        <div class="decision-grid" id="decision-list">
+          <article class="decision-card" data-decision-index="0" data-result="pending"><span class="decision-number">01</span><span class="decision-title">一期主问题</span><span class="decision-control"><select class="decision-select" aria-label="一期主问题的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="1" data-result="pending"><span class="decision-number">02</span><span class="decision-title">主用户与场景</span><span class="decision-control"><select class="decision-select" aria-label="主用户与场景的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="2" data-result="pending"><span class="decision-number">03</span><span class="decision-title">一期做到哪一步</span><span class="decision-control"><select class="decision-select" aria-label="一期做到哪一步的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="3" data-result="pending"><span class="decision-number">04</span><span class="decision-title">做什么 / 不做什么</span><span class="decision-control"><select class="decision-select" aria-label="做什么与不做什么的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="4" data-result="pending"><span class="decision-number">05</span><span class="decision-title">成功 / 停止</span><span class="decision-control"><select class="decision-select" aria-label="成功与停止的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="5" data-result="pending"><span class="decision-number">06</span><span class="decision-title">内容依据</span><span class="decision-control"><select class="decision-select" aria-label="内容依据的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="6" data-result="pending"><span class="decision-number">07</span><span class="decision-title">试点人员</span><span class="decision-control"><select class="decision-select" aria-label="试点人员的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="7" data-result="pending"><span class="decision-number">08</span><span class="decision-title">使用环境与限制</span><span class="decision-control"><select class="decision-select" aria-label="使用环境与限制的启动结果"><option value="pending">请选择结果</option></select></span></article>
+          <article class="decision-card" data-decision-index="8" data-result="pending"><span class="decision-number">09</span><span class="decision-title">责任与下一步</span><span class="decision-control"><select class="decision-select" aria-label="责任与下一步的启动结果"><option value="pending">请选择结果</option></select></span></article>
+        </div>
+        <p class="callout" data-label="输出">一期结论、材料与权限清单、试点准备清单；正式结果以会后纪要为准。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="meeting-controls" aria-label="会议控制">
+    <div class="controls-inner">
+      <div class="control-group">
+        <button class="control-button" id="previous-slide" type="button" disabled aria-label="上一页">← <span class="button-label">上一页</span></button>
+        <button class="control-button primary" id="next-slide" type="button" aria-label="下一页"><span class="button-label">下一页</span> <span class="next-arrow" aria-hidden="true">→</span></button>
+      </div>
+      <div class="progress-wrap" id="meeting-progress" role="progressbar" aria-label="启动会进度" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+        <div class="progress-track" aria-hidden="true"><span class="progress-bar" id="progress-bar"></span></div>
+        <span class="progress-label" id="progress-label">客服 Agent 一期启动会 · 封面</span>
+      </div>
+      <div class="control-group">
+        <button class="control-button" id="fullscreen-button" type="button" aria-label="进入全屏">⛶</button>
+        <button class="control-button" id="help-button" type="button" aria-label="查看快捷键帮助">?</button>
+        <details class="more-menu" id="more-menu">
+          <summary aria-label="更多操作">•••</summary>
+          <div class="menu-panel">
+            <button id="print-button" type="button">打印启动会摘要</button>
+            <button class="danger-action" id="reset-button" type="button">重置全部状态</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </footer>
+
+  <p class="sr-only" id="live-status" aria-live="polite"></p>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <div class="dialog-head"><h2 id="help-title">快捷键</h2></div>
+    <div class="dialog-body">
+      <dl class="shortcut-list">
+        <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>上一页 / 下一页</dd>
+        <dt><kbd>PageUp</kbd> <kbd>PageDown</kbd></dt><dd>上一页 / 下一页</dd>
+        <dt><kbd>F</kbd></dt><dd>进入或退出全屏</dd>
+        <dt><kbd>?</kbd></dt><dd>打开本帮助</dd>
+        <dt><kbd>Esc</kbd></dt><dd>关闭帮助或退出全屏</dd>
+      </dl>
+    </div>
+    <div class="dialog-actions"><button class="control-button primary" id="help-close" type="button">知道了</button></div>
+  </dialog>
+
+  <section class="print-summary" aria-label="启动会摘要">
+    <h1>客服 Agent 一期启动会</h1>
+    <div class="print-state">
+      <span data-state-approval>项目已批准</span>
+      <span data-state-direction>一期方向待确认</span>
+      <span data-state-development>尚未开发</span>
+    </div>
+    <h2>启动议程</h2>
+    <ol class="print-agenda" id="print-agenda">
+      <li>启动目标与参与方式</li><li>两个真实任务</li>
+      <li>一期主问题</li><li>一期先做到哪一步</li>
+      <li>成功与停止条件</li><li>可靠内容依据</li>
+      <li>试点与使用环境</li><li>启动结果与下一步</li>
+    </ol>
+    <h2>九项启动结果</h2>
+    <ol class="print-decisions" id="print-decisions">
+      <li>一期主问题</li><li>主用户与场景</li><li>一期做到哪一步</li>
+      <li>做什么 / 不做什么</li><li>成功 / 停止</li><li>内容依据</li>
+      <li>试点人员</li><li>使用环境与限制</li><li>责任与下一步</li>
+    </ol>
+    <h2>会后形成</h2>
+    <ul class="print-outputs">
+      <li>一期结论</li><li>材料与权限清单</li><li>试点准备清单</li>
+    </ul>
+    <p class="print-footer">本页用于启动会展示和核对，不保存正式结论。确认结果会写回项目记录。</p>
+  </section>
+
+  <script id="meeting-data" type="application/json">{"project":{"name":"客服 Agent","code":"CS-AI-C11"},"state":{"approval":"项目已批准","direction":"一期方向待确认","development":"尚未开发"},"meeting":{"agenda":[{"topic":"先对齐启动目标与参与方式","decision":"项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。"},{"topic":"一起还原两个真实任务","decision":"用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。"},{"topic":"一起确定一期主问题","decision":"四个方向只用于理解问题；我们确认一个主问题，证据不足就写清还要补什么。"},{"topic":"一起明确一期先做到哪一步","decision":"确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。"},{"topic":"一起确认成功与停止条件","decision":"确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。"},{"topic":"一起确认可靠的内容依据","decision":"同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。"},{"topic":"一起确认试点与真实使用环境","decision":"确认试点人员、班次、设备、网络限制和使用高峰。"},{"topic":"确认启动结果与下一步","decision":"逐项选择九项启动结果；未确认的事项写清负责人、补充内容、确认日期与位置。"}],"decisions":[{"title":"一期主问题"},{"title":"主用户与场景"},{"title":"一期做到哪一步"},{"title":"做什么 / 不做什么"},{"title":"成功 / 停止"},{"title":"内容依据"},{"title":"试点人员"},{"title":"使用环境与限制"},{"title":"责任与下一步"}],"decisionOptions":[{"value":"confirmed","label":"已确认"},{"value":"confirm-on-site","label":"待共同确认"},{"value":"needs-evidence","label":"待补材料"},{"value":"not-in-this-meeting","label":"本次暂不决定"}],"coreQuestions":["结合刚才两个真实任务，哪一个最该成为一期唯一主问题？","这个主问题的损失或卡点，能否拿出可核对的证据？","能否在 3–5 名坐席的小范围试点中先验证改善？"],"factCards":[{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"},{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"}]},"release":{"id":"meeting-v1-72e891510925"}}</script>
+  <script id="pretext-source" type="text/plain">var x0=["BN","BN","BN","BN","BN","BN","BN","BN","BN","S","B","S","WS","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","B","B","B","S","WS","ON","ON","ET","ET","ET","ON","ON","ON","ON","ON","ON","CS","ON","CS","ON","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","ON","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","BN","BN","BN","BN","BN","BN","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","CS","ON","ET","ET","ET","ET","ON","ON","ON","ON","L","ON","ON","ON","ON","ON","ET","ET","EN","EN","ON","L","ON","ON","ON","EN","L","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L"],bidiClassTable=["AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","CS","AL","ON","ON","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AN","AN","AN","AN","AN","AN","AN","AN","AN","AN","ET","AN","AN","AL","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","ON","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL"];function m0(O){if(O<=255)return x0[O];if(1424<=O&&O<=1524)return"R";if(1536<=O&&O<=1791)return bidiClassTable[O&255];if(1792<=O&&O<=2220)return"AL";return"L"}function r0(O){let _=O.length;if(_===0)return null;let J=Array(_),Y=0;for(let V=0;V<_;V++){let $=m0(O.charCodeAt(V));if($==="R"||$==="AL"||$==="AN")Y++;J[V]=$}if(Y===0)return null;let X=_/Y<0.3?0:1,R=new Int8Array(_);for(let V=0;V<_;V++)R[V]=X;let Z=X&1?"R":"L",Q=Z,f=Q;for(let V=0;V<_;V++)if(J[V]==="NSM")J[V]=f;else f=J[V];f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="AL"?"AN":"EN";else if($==="R"||$==="L"||$==="AL")f=$}for(let V=0;V<_;V++)if(J[V]==="AL")J[V]="R";for(let V=1;V<_-1;V++){if(J[V]==="ES"&&J[V-1]==="EN"&&J[V+1]==="EN")J[V]="EN";if(J[V]==="CS"&&(J[V-1]==="EN"||J[V-1]==="AN")&&J[V+1]===J[V-1])J[V]=J[V-1]}for(let V=0;V<_;V++){if(J[V]!=="EN")continue;let $;for($=V-1;$>=0&&J[$]==="ET";$--)J[$]="EN";for($=V+1;$<_&&J[$]==="ET";$++)J[$]="EN"}for(let V=0;V<_;V++){let $=J[V];if($==="WS"||$==="ES"||$==="ET"||$==="CS")J[V]="ON"}f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="L"?"L":"EN";else if($==="R"||$==="L")f=$}for(let V=0;V<_;V++){if(J[V]!=="ON")continue;let $=V+1;while($<_&&J[$]==="ON")$++;let u=V>0?J[V-1]:Q,q=$<_?J[$]:Q,D=u!=="L"?"R":"L";if(D===(q!=="L"?"R":"L"))for(let K=V;K<$;K++)J[K]=D;V=$-1}for(let V=0;V<_;V++)if(J[V]==="ON")J[V]=Z;for(let V=0;V<_;V++){let $=J[V];if((R[V]&1)===0){if($==="R")R[V]++;else if($==="AN"||$==="EN")R[V]+=2}else if($==="L"||$==="AN"||$==="EN")R[V]++}return R}function u0(O,_){let J=r0(O);if(J===null)return null;let Y=new Int8Array(_.length);for(let X=0;X<_.length;X++)Y[X]=J[_[X]];return Y}var a0=/[ \t\n\r\f]+/g,s0=/[\t\n\r\f]| {2,}|^ | $/;function d0(O){let _=O??"normal";return _==="pre-wrap"?{mode:_,preserveOrdinarySpaces:!0,preserveHardBreaks:!0}:{mode:_,preserveOrdinarySpaces:!1,preserveHardBreaks:!1}}function i0(O){if(!s0.test(O))return O;let _=O.replace(a0," ");if(_.charCodeAt(0)===32)_=_.slice(1);if(_.length>0&&_.charCodeAt(_.length-1)===32)_=_.slice(0,-1);return _}function t0(O){if(!/[\r\f]/.test(O))return O.replace(/\r\n/g,`
+`);return O.replace(/\r\n/g,`
+`).replace(/[\r\f]/g,`
+`)}var d=null,V0;function n0(){if(d===null)d=new Intl.Segmenter(V0,{granularity:"word"});return d}function z0(){d=null}function j0(O){let _=O&&O.length>0?O:void 0;if(V0===_)return;V0=_,d=null}var e0=/\p{Script=Arabic}/u,O0=/\p{M}/u,b0=/\p{Nd}/u;function X0(O){return e0.test(O)}function p(O){for(let _ of O){let J=_.codePointAt(0);if(J>=19968&&J<=40959||J>=13312&&J<=19903||J>=131072&&J<=173791||J>=173824&&J<=177983||J>=177984&&J<=178207||J>=178208&&J<=183983||J>=183984&&J<=191471||J>=196608&&J<=201551||J>=63744&&J<=64255||J>=194560&&J<=195103||J>=12288&&J<=12351||J>=12352&&J<=12447||J>=12448&&J<=12543||J>=44032&&J<=55215||J>=65280&&J<=65519)return!0}return!1}var $0=new Set(["，","．","！","：","；","？","、","。","・","）","〕","〉","》","」","』","】","〗","〙","〛","ー","々","〻","ゝ","ゞ","ヽ","ヾ"]),i=new Set(['"',"(","[","{","“","‘","«","‹","（","〔","〈","《","「","『","【","〖","〘","〚"]),Q0=new Set(["'","’"]),r=new Set([".",",","!","?",":",";","،","؛","؟","।","॥","၊","။","၌","၍","၏",")","]","}","%",'"',"”","’","»","›","…"]),OO=new Set([":",".","،","؛"]),_O=new Set(["၏"]),JO=new Set(["”","’","»","›","」","』","】","》","〉","〕","）"]);function RO(O){if(q0(O))return!0;let _=!1;for(let J of O){if(r.has(J)){_=!0;continue}if(_&&O0.test(J))continue;return!1}return _}function VO(O){for(let _ of O)if(!$0.has(_)&&!r.has(_))return!1;return O.length>0}function XO(O){if(q0(O))return!0;for(let _ of O)if(!i.has(_)&&!Q0.has(_)&&!O0.test(_))return!1;return O.length>0}function q0(O){let _=!1;for(let J of O){if(J==="\\"||O0.test(J))continue;if(i.has(J)||r.has(J)||Q0.has(J)){_=!0;continue}return!1}return _}function YO(O){let _=Array.from(O),J=_.length;while(J>0){let Y=_[J-1];if(O0.test(Y)){J--;continue}if(i.has(Y)||Q0.has(Y)){J--;continue}break}if(J<=0||J===_.length)return null;return{head:_.slice(0,J).join(""),tail:_.slice(J).join("")}}function ZO(O,_){if(O.length===0)return!1;for(let J of O)if(J!==_)return!1;return!0}function $O(O){if(!X0(O)||O.length===0)return!1;return OO.has(O[O.length-1])}function QO(O){if(O.length===0)return!1;return _O.has(O[O.length-1])}function qO(O){if(O.length<2||O[0]!==" ")return null;let _=O.slice(1);if(/^\p{M}+$/u.test(_))return{space:" ",marks:_};return null}function D0(O){for(let _=O.length-1;_>=0;_--){let J=O[_];if(JO.has(J))return!0;if(!r.has(J))return!1}return!1}function DO(O,_){if(_.preserveOrdinarySpaces||_.preserveHardBreaks){if(O===" ")return"preserved-space";if(O==="\t")return"tab";if(_.preserveHardBreaks&&O===`
+`)return"hard-break"}if(O===" ")return"space";if(O===" "||O===" "||O==="⁠"||O==="\uFEFF")return"glue";if(O==="​")return"zero-width-break";if(O==="­")return"soft-hyphen";return"text"}function NO(O,_,J,Y){let X=[],R=null,Z="",Q=J,f=!1,V=0;for(let $ of O){let u=DO($,Y),q=u==="text"&&_;if(R!==null&&u===R&&q===f){Z+=$,V+=$.length;continue}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});R=u,Z=$,Q=J+V,f=q,V+=$.length}if(R!==null)X.push({text:Z,isWordLike:f,kind:R,start:Q});return X}function Y0(O){return O==="space"||O==="preserved-space"||O==="zero-width-break"||O==="hard-break"}var fO=/^[A-Za-z][A-Za-z0-9+.-]*:$/;function HO(O,_){let J=O.texts[_];if(J.startsWith("www."))return!0;return fO.test(J)&&_+1<O.len&&O.kinds[_+1]==="text"&&O.texts[_+1]==="//"}function UO(O){return O.includes("?")&&(O.includes("://")||O.startsWith("www."))}function MO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let Z=0;Z<O.len;Z++){if(Y[Z]!=="text"||!HO(O,Z))continue;let Q=Z+1;while(Q<O.len&&!Y0(Y[Q])){_[Z]+=_[Q],J[Z]=!0;let f=_[Q].includes("?");if(Y[Q]="text",_[Q]="",Q++,f)break}}let R=0;for(let Z=0;Z<_.length;Z++){let Q=_[Z];if(Q.length===0)continue;if(R!==Z)_[R]=Q,J[R]=J[Z],Y[R]=Y[Z],X[R]=X[Z];R++}return _.length=R,J.length=R,Y.length=R,X.length=R,{len:R,texts:_,isWordLike:J,kinds:Y,starts:X}}function CO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R]),!UO(Z))continue;let Q=R+1;if(Q>=O.len||Y0(O.kinds[Q]))continue;let f="",V=O.starts[Q],$=Q;while($<O.len&&!Y0(O.kinds[$]))f+=O.texts[$],$++;if(f.length>0)_.push(f),J.push(!0),Y.push("text"),X.push(V),R=$-1}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}var FO=new Set([":","-","/","×",",",".","+","–","—"]),K0=/^[A-Za-z0-9_]+[,:;]*$/,vO=/[,:;]+$/;function E0(O){for(let _ of O)if(b0.test(_))return!0;return!1}function Z0(O){if(O.length===0)return!1;for(let _ of O){if(b0.test(_)||FO.has(_))continue;return!1}return!0}function uO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R];if(Q==="text"&&Z0(Z)&&E0(Z)){let f=Z,V=R+1;while(V<O.len&&O.kinds[V]==="text"&&Z0(O.texts[V]))f+=O.texts[V],V++;_.push(f),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=V-1;continue}_.push(Z),J.push(O.isWordLike[R]),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function KO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R],Q=O.kinds[R],f=O.isWordLike[R];if(Q==="text"&&f&&K0.test(Z)){let V=Z,$=R+1;while(vO.test(V)&&$<O.len&&O.kinds[$]==="text"&&O.isWordLike[$]&&K0.test(O.texts[$]))V+=O.texts[$],$++;_.push(V),J.push(!0),Y.push("text"),X.push(O.starts[R]),R=$-1;continue}_.push(Z),J.push(f),Y.push(Q),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function zO(O){let _=[],J=[],Y=[],X=[];for(let R=0;R<O.len;R++){let Z=O.texts[R];if(O.kinds[R]==="text"&&Z.includes("-")){let Q=Z.split("-"),f=Q.length>1;for(let V=0;V<Q.length;V++){let $=Q[V];if(!f)break;if($.length===0||!E0($)||!Z0($))f=!1}if(f){let V=0;for(let $=0;$<Q.length;$++){let u=Q[$],q=$<Q.length-1?`${u}-`:u;_.push(q),J.push(!0),Y.push("text"),X.push(O.starts[R]+V),V+=q.length}continue}}_.push(Z),J.push(O.isWordLike[R]),Y.push(O.kinds[R]),X.push(O.starts[R])}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function jO(O){let _=[],J=[],Y=[],X=[],R=0;while(R<O.len){let Z=O.texts[R],Q=O.isWordLike[R],f=O.kinds[R],V=O.starts[R];if(f==="glue"){let $=Z,u=V;R++;while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text")Z=$+O.texts[R],Q=O.isWordLike[R],f="text",V=u,R++;else{_.push($),J.push(!1),Y.push("glue"),X.push(u);continue}}else R++;if(f==="text")while(R<O.len&&O.kinds[R]==="glue"){let $="";while(R<O.len&&O.kinds[R]==="glue")$+=O.texts[R],R++;if(R<O.len&&O.kinds[R]==="text"){Z+=$+O.texts[R],Q=Q||O.isWordLike[R],R++;continue}Z+=$}_.push(Z),J.push(Q),Y.push(f),X.push(V)}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function bO(O){let _=O.texts.slice(),J=O.isWordLike.slice(),Y=O.kinds.slice(),X=O.starts.slice();for(let R=0;R<_.length-1;R++){if(Y[R]!=="text"||Y[R+1]!=="text")continue;if(!p(_[R])||!p(_[R+1]))continue;let Z=YO(_[R]);if(Z===null)continue;_[R]=Z.head,_[R+1]=Z.tail+_[R+1],X[R+1]=X[R]+Z.head.length}return{len:_.length,texts:_,isWordLike:J,kinds:Y,starts:X}}function EO(O,_,J){let Y=n0(),X=0,R=[],Z=[],Q=[],f=[];for(let q of Y.segment(O))for(let D of NO(q.segment,q.isWordLike??!1,q.index,J)){let b=D.kind==="text";if(_.carryCJKAfterClosingQuote&&b&&X>0&&Q[X-1]==="text"&&p(D.text)&&p(R[X-1])&&D0(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&VO(D.text)&&p(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&QO(R[X-1]))R[X-1]+=D.text,Z[X-1]=Z[X-1]||D.isWordLike;else if(b&&X>0&&Q[X-1]==="text"&&D.isWordLike&&X0(D.text)&&$O(R[X-1]))R[X-1]+=D.text,Z[X-1]=!0;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&D.text.length===1&&D.text!=="-"&&D.text!=="—"&&ZO(R[X-1],D.text))R[X-1]+=D.text;else if(b&&!D.isWordLike&&X>0&&Q[X-1]==="text"&&(RO(D.text)||D.text==="-"&&Z[X-1]))R[X-1]+=D.text;else R[X]=D.text,Z[X]=D.isWordLike,Q[X]=D.kind,f[X]=D.start,X++}for(let q=1;q<X;q++)if(Q[q]==="text"&&!Z[q]&&q0(R[q])&&Q[q-1]==="text")R[q-1]+=R[q],Z[q-1]=Z[q-1]||Z[q],R[q]="";for(let q=X-2;q>=0;q--)if(Q[q]==="text"&&!Z[q]&&XO(R[q])){let D=q+1;while(D<X&&R[D]==="")D++;if(D<X&&Q[D]==="text")R[D]=R[q]+R[D],f[D]=f[q],R[q]=""}let V=0;for(let q=0;q<X;q++){let D=R[q];if(D.length===0)continue;if(V!==q)R[V]=D,Z[V]=Z[q],Q[V]=Q[q],f[V]=f[q];V++}R.length=V,Z.length=V,Q.length=V,f.length=V;let $=jO({len:V,texts:R,isWordLike:Z,kinds:Q,starts:f}),u=bO(KO(zO(uO(CO(MO($))))));for(let q=0;q<u.len-1;q++){let D=qO(u.texts[q]);if(D===null)continue;if(u.kinds[q]!=="space"&&u.kinds[q]!=="preserved-space"||u.kinds[q+1]!=="text"||!X0(u.texts[q+1]))continue;u.texts[q]=D.space,u.isWordLike[q]=!1,u.kinds[q]=u.kinds[q]==="preserved-space"?"preserved-space":"space",u.texts[q+1]=D.marks+u.texts[q+1],u.starts[q+1]=u.starts[q]+D.space.length}return u}function GO(O,_){if(O.len===0)return[];if(!_.preserveHardBreaks)return[{startSegmentIndex:0,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len}];let J=[],Y=0;for(let X=0;X<O.len;X++){if(O.kinds[X]!=="hard-break")continue;J.push({startSegmentIndex:Y,endSegmentIndex:X,consumedEndSegmentIndex:X+1}),Y=X+1}if(Y<O.len)J.push({startSegmentIndex:Y,endSegmentIndex:O.len,consumedEndSegmentIndex:O.len});return J}function N0(O,_,J="normal"){let Y=d0(J),X=Y.mode==="pre-wrap"?t0(O):i0(O);if(X.length===0)return{normalized:X,chunks:[],len:0,texts:[],isWordLike:[],kinds:[],starts:[]};let R=EO(X,_,Y);return{normalized:X,chunks:GO(R,Y),...R}}var a=null,f0=new Map,s=null,PO=/\p{Emoji_Presentation}/u,AO=/[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Regional_Indicator}\uFE0F\u20E3]/u,_0=null,H0=new Map;function U0(){if(a!==null)return a;if(typeof OffscreenCanvas<"u")return a=new OffscreenCanvas(1,1).getContext("2d"),a;if(typeof document<"u")return a=document.createElement("canvas").getContext("2d"),a;throw Error("Text measurement requires OffscreenCanvas or a DOM canvas context.")}function BO(O){let _=f0.get(O);if(!_)_=new Map,f0.set(O,_);return _}function x(O,_){let J=_.get(O);if(J===void 0)J={width:U0().measureText(O).width,containsCJK:p(O)},_.set(O,J);return J}function h(){if(s!==null)return s;if(typeof navigator>"u")return s={lineFitEpsilon:0.005,carryCJKAfterClosingQuote:!1,preferPrefixWidthsForBreakableRuns:!1,preferEarlySoftHyphenBreak:!1},s;let O=navigator.userAgent,J=navigator.vendor==="Apple Computer, Inc."&&O.includes("Safari/")&&!O.includes("Chrome/")&&!O.includes("Chromium/")&&!O.includes("CriOS/")&&!O.includes("FxiOS/")&&!O.includes("EdgiOS/"),Y=O.includes("Chrome/")||O.includes("Chromium/")||O.includes("CriOS/")||O.includes("Edg/");return s={lineFitEpsilon:J?0.015625:0.005,carryCJKAfterClosingQuote:Y,preferPrefixWidthsForBreakableRuns:J,preferEarlySoftHyphenBreak:J},s}function TO(O){let _=O.match(/(\d+(?:\.\d+)?)\s*px/);return _?parseFloat(_[1]):16}function M0(){if(_0===null)_0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return _0}function wO(O){return PO.test(O)||O.includes("️")}function containsEmojiText(O){return AO.test(O)}function yO(O,_){let J=H0.get(O);if(J!==void 0)return J;let Y=U0();Y.font=O;let X=Y.measureText("\uD83D\uDE00").width;if(J=0,X>_+0.5&&typeof document<"u"&&document.body!==null){let R=document.createElement("span");R.style.font=O,R.style.display="inline-block",R.style.visibility="hidden",R.style.position="absolute",R.textContent="\uD83D\uDE00",document.body.appendChild(R);let Z=R.getBoundingClientRect().width;if(document.body.removeChild(R),X-Z>0.5)J=X-Z}return H0.set(O,J),J}function LO(O){let _=0,J=M0();for(let Y of J.segment(O))if(wO(Y.segment))_++;return _}function WO(O,_){if(_.emojiCount===void 0)_.emojiCount=LO(O);return _.emojiCount}function g(O,_,J){if(J===0)return _.width;return _.width-WO(O,_)*J}function P0(O,_,J,Y){if(_.graphemeWidths!==void 0)return _.graphemeWidths;let X=[],R=M0();for(let Z of R.segment(O)){let Q=x(Z.segment,J);X.push(g(Z.segment,Q,Y))}return _.graphemeWidths=X.length>1?X:null,_.graphemeWidths}function A0(O,_,J,Y){if(_.graphemePrefixWidths!==void 0)return _.graphemePrefixWidths;let X=[],R=M0(),Z="";for(let Q of R.segment(O)){Z+=Q.segment;let f=x(Z,J);X.push(g(Z,f,Y))}return _.graphemePrefixWidths=X.length>1?X:null,_.graphemePrefixWidths}function B0(O,_){let J=U0();J.font=O;let Y=BO(O),X=TO(O),R=_?yO(O,X):0;return{cache:Y,fontSize:X,emojiCorrection:R}}function T0(){f0.clear(),H0.clear(),_0=null}function m(O){return O==="space"||O==="preserved-space"||O==="tab"||O==="zero-width-break"||O==="soft-hyphen"}function SO(O){return O==="space"}function w0(O,_){if(_<=0)return 0;let J=O%_;if(Math.abs(J)<=0.000001)return _;return _-J}function t(O,_,J,Y){if(!Y||_===null)return O[J];return _[J]-(J>0?_[J-1]:0)}function y0(O,_,J,Y,X,R){let Z=0,Q=_;while(Z<O.length){let f=R?_+O[Z]:Q+O[Z];if((Z+1<O.length?f+X:f)>J+Y)break;Q=f,Z++}return{fitCount:Z,fittedWidth:Q}}function L0(O,_){for(let J=0;J<O.chunks.length;J++){let Y=O.chunks[J];if(_<Y.consumedEndSegmentIndex)return J}return-1}function kO(O,_){let{segmentIndex:J,graphemeIndex:Y}=_;if(J>=O.widths.length)return null;if(Y>0)return _;let X=L0(O,J);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex&&J===R.startSegmentIndex)return{segmentIndex:J,graphemeIndex:0};if(J<R.startSegmentIndex)J=R.startSegmentIndex;while(J<R.endSegmentIndex){let Z=O.kinds[J];if(Z!=="space"&&Z!=="zero-width-break"&&Z!=="soft-hyphen")return{segmentIndex:J,graphemeIndex:0};J++}if(R.consumedEndSegmentIndex>=O.widths.length)return null;return{segmentIndex:R.consumedEndSegmentIndex,graphemeIndex:0}}function W0(O,_){if(O.simpleLineWalkFastPath)return IO(O,_);return J0(O,_)}function IO(O,_){let{widths:J,kinds:Y,breakableWidths:X,breakablePrefixWidths:R}=O;if(J.length===0)return 0;let Z=h(),Q=Z.lineFitEpsilon,f=0,V=0,$=!1;function u(q){let D=J[q];if(D>_&&X[q]!==null){let b=X[q],K=R[q]??null;V=0;for(let j=0;j<b.length;j++){let B=t(b,K,j,Z.preferPrefixWidthsForBreakableRuns);if(V>0&&V+B>_+Q)f++,V=B;else{if(V===0)f++;V+=B}}}else V=D,f++;$=!0}for(let q=0;q<J.length;q++){let D=J[q],b=Y[q];if(!$){u(q);continue}let K=V+D;if(K>_+Q){if(SO(b))continue;V=0,$=!1,u(q);continue}V=K}if(!$)return f+1;return f}function cO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O;if(Y.length===0)return 0;let Q=h(),f=Q.lineFitEpsilon,V=0,$=0,u=!1,q=0,D=0,b=0,K=0,j=-1,B=0;function k(){j=-1,B=0}function y(H=b,z=K,W=$){V++,J?.({startSegmentIndex:q,startGraphemeIndex:D,endSegmentIndex:H,endGraphemeIndex:z,width:W}),$=0,u=!1,k()}function A(H,z){u=!0,q=H,D=0,b=H+1,K=0,$=z}function T(H,z,W){u=!0,q=H,D=z,b=H,K=z+1,$=W}function L(H,z){if(!u){A(H,z);return}$+=z,b=H+1,K=0}function C(H,z){if(!m(X[H]))return;j=H+1,B=$-z}function F(H){P(H,0)}function P(H,z){let W=R[H],c=Z[H]??null;for(let I=z;I<W.length;I++){let o=t(W,c,I,Q.preferPrefixWidthsForBreakableRuns);if(!u){T(H,I,o);continue}if($+o>_+f)y(),T(H,I,o);else $+=o,b=H,K=I+1}if(u&&b===H&&K===W.length)b=H+1,K=0}let E=0;while(E<Y.length){let H=Y[E],z=X[E];if(!u){if(H>_&&R[E]!==null)F(E);else A(E,H);C(E,H),E++;continue}if($+H>_+f){if(m(z)){L(E,H),y(E+1,0,$-H),E++;continue}if(j>=0){y(j,0,B);continue}if(H>_&&R[E]!==null){y(),F(E),E++;continue}y();continue}L(E,H),C(E,H),E++}if(u)y();return V}function J0(O,_,J){if(O.simpleLineWalkFastPath)return cO(O,_,J);let{widths:Y,lineEndFitAdvances:X,lineEndPaintAdvances:R,kinds:Z,breakableWidths:Q,breakablePrefixWidths:f,discretionaryHyphenWidth:V,tabStopAdvance:$,chunks:u}=O;if(Y.length===0||u.length===0)return 0;let q=h(),D=q.lineFitEpsilon,b=0,K=0,j=!1,B=0,k=0,y=0,A=0,T=-1,L=0,C=0,F=null;function P(){T=-1,L=0,C=0,F=null}function E(N=y,M=A,v=K){b++,J?.({startSegmentIndex:B,startGraphemeIndex:k,endSegmentIndex:N,endGraphemeIndex:M,width:v}),K=0,j=!1,P()}function H(N,M){j=!0,B=N,k=0,y=N+1,A=0,K=M}function z(N,M,v){j=!0,B=N,k=M,y=N,A=M+1,K=v}function W(N,M){if(!j){H(N,M);return}K+=M,y=N+1,A=0}function c(N,M){if(!m(Z[N]))return;let v=Z[N]==="tab"?0:X[N],w=Z[N]==="tab"?M:R[N];T=N+1,L=K-M+v,C=K-M+w,F=Z[N]}function I(N){o(N,0)}function o(N,M){let v=Q[N],w=f[N]??null;for(let G=M;G<v.length;G++){let l=t(v,w,G,q.preferPrefixWidthsForBreakableRuns);if(!j){z(N,G,l);continue}if(K+l>_+D)E(),z(N,G,l);else K+=l,y=N,A=G+1}if(j&&y===N&&A===v.length)y=N+1,A=0}function S(N){if(F!=="soft-hyphen")return!1;let M=Q[N];if(M===null)return!1;let v=q.preferPrefixWidthsForBreakableRuns?f[N]??M:M,w=v!==M,{fitCount:G,fittedWidth:l}=y0(v,K,_,D,V,w);if(G===0)return!1;if(K=l,y=N,A=G,P(),G===M.length)return y=N+1,A=0,!0;return E(N,G,l+V),o(N,G),!0}function U(N){b++,J?.({startSegmentIndex:N.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:N.consumedEndSegmentIndex,endGraphemeIndex:0,width:0}),P()}for(let N=0;N<u.length;N++){let M=u[N];if(M.startSegmentIndex===M.endSegmentIndex){U(M);continue}j=!1,K=0,B=M.startSegmentIndex,k=0,y=M.startSegmentIndex,A=0,P();let v=M.startSegmentIndex;while(v<M.endSegmentIndex){let w=Z[v],G=w==="tab"?w0(K,$):Y[v];if(w==="soft-hyphen"){if(j)y=v+1,A=0,T=v+1,L=K+V,C=K+V,F=w;v++;continue}if(!j){if(G>_&&Q[v]!==null)I(v);else H(v,G);c(v,G),v++;continue}if(K+G>_+D){let n=K+(w==="tab"?0:X[v]),e=K+(w==="tab"?G:R[v]);if(F==="soft-hyphen"&&q.preferEarlySoftHyphenBreak&&L<=_+D){E(T,0,C);continue}if(F==="soft-hyphen"&&S(v)){v++;continue}if(m(w)&&n<=_+D){W(v,G),E(v+1,0,e),v++;continue}if(T>=0&&L<=_+D){E(T,0,C);continue}if(G>_&&Q[v]!==null){E(),I(v),v++;continue}E();continue}W(v,G),c(v,G),v++}if(j){let w=T===M.consumedEndSegmentIndex?C:K;E(M.consumedEndSegmentIndex,0,w)}}return b}function S0(O,_,J){let Y=kO(O,_);if(Y===null)return null;if(O.simpleLineWalkFastPath)return oO(O,Y,J);let X=L0(O,Y.segmentIndex);if(X<0)return null;let R=O.chunks[X];if(R.startSegmentIndex===R.endSegmentIndex)return{startSegmentIndex:R.startSegmentIndex,startGraphemeIndex:0,endSegmentIndex:R.consumedEndSegmentIndex,endGraphemeIndex:0,width:0};let{widths:Z,lineEndFitAdvances:Q,lineEndPaintAdvances:f,kinds:V,breakableWidths:$,breakablePrefixWidths:u,discretionaryHyphenWidth:q,tabStopAdvance:D}=O,b=h(),K=b.lineFitEpsilon,j=0,B=!1,k=Y.segmentIndex,y=Y.graphemeIndex,A=k,T=y,L=-1,C=0,F=0,P=null;function E(){L=-1,C=0,F=0,P=null}function H(U=A,N=T,M=j){if(!B)return null;return{startSegmentIndex:k,startGraphemeIndex:y,endSegmentIndex:U,endGraphemeIndex:N,width:M}}function z(U,N){B=!0,A=U+1,T=0,j=N}function W(U,N,M){B=!0,A=U,T=N+1,j=M}function c(U,N){if(!B){z(U,N);return}j+=N,A=U+1,T=0}function I(U,N){if(!m(V[U]))return;let M=V[U]==="tab"?0:Q[U],v=V[U]==="tab"?N:f[U];L=U+1,C=j-N+M,F=j-N+v,P=V[U]}function o(U,N){let M=$[U],v=u[U]??null;for(let w=N;w<M.length;w++){let G=t(M,v,w,b.preferPrefixWidthsForBreakableRuns);if(!B){W(U,w,G);continue}if(j+G>J+K)return H();j+=G,A=U,T=w+1}if(B&&A===U&&T===M.length)A=U+1,T=0;return null}function S(U){if(P!=="soft-hyphen"||L<0)return null;let N=$[U]??null;if(N!==null){let M=b.preferPrefixWidthsForBreakableRuns?u[U]??N:N,v=M!==N,{fitCount:w,fittedWidth:G}=y0(M,j,J,K,q,v);if(w===N.length)return j=G,A=U+1,T=0,E(),null;if(w>0)return H(U,w,G+q)}if(C<=J+K)return H(L,0,F);return null}for(let U=Y.segmentIndex;U<R.endSegmentIndex;U++){let N=V[U],M=U===Y.segmentIndex?Y.graphemeIndex:0,v=N==="tab"?w0(j,D):Z[U];if(N==="soft-hyphen"&&M===0){if(B)A=U+1,T=0,L=U+1,C=j+q,F=j+q,P=N;continue}if(!B){if(M>0){let G=o(U,M);if(G!==null)return G}else if(v>J&&$[U]!==null){let G=o(U,0);if(G!==null)return G}else z(U,v);I(U,v);continue}if(j+v>J+K){let G=j+(N==="tab"?0:Q[U]),l=j+(N==="tab"?v:f[U]);if(P==="soft-hyphen"&&b.preferEarlySoftHyphenBreak&&C<=J+K)return H(L,0,F);let n=S(U);if(n!==null)return n;if(m(N)&&G<=J+K)return c(U,v),H(U+1,0,l);if(L>=0&&C<=J+K)return H(L,0,F);if(v>J&&$[U]!==null){let e=H();if(e!==null)return e;let v0=o(U,0);if(v0!==null)return v0}return H()}c(U,v),I(U,v)}if(L===R.consumedEndSegmentIndex&&T===0)return H(R.consumedEndSegmentIndex,0,F);return H(R.consumedEndSegmentIndex,0,j)}function oO(O,_,J){let{widths:Y,kinds:X,breakableWidths:R,breakablePrefixWidths:Z}=O,Q=h(),f=Q.lineFitEpsilon,V=0,$=!1,u=_.segmentIndex,q=_.graphemeIndex,D=u,b=q,K=-1,j=0;function B(C=D,F=b,P=V){if(!$)return null;return{startSegmentIndex:u,startGraphemeIndex:q,endSegmentIndex:C,endGraphemeIndex:F,width:P}}function k(C,F){$=!0,D=C+1,b=0,V=F}function y(C,F,P){$=!0,D=C,b=F+1,V=P}function A(C,F){if(!$){k(C,F);return}V+=F,D=C+1,b=0}function T(C,F){if(!m(X[C]))return;K=C+1,j=V-F}function L(C,F){let P=R[C],E=Z[C]??null;for(let H=F;H<P.length;H++){let z=t(P,E,H,Q.preferPrefixWidthsForBreakableRuns);if(!$){y(C,H,z);continue}if(V+z>J+f)return B();V+=z,D=C,b=H+1}if($&&D===C&&b===P.length)D=C+1,b=0;return null}for(let C=_.segmentIndex;C<Y.length;C++){let F=Y[C],P=X[C],E=C===_.segmentIndex?_.graphemeIndex:0;if(!$){if(E>0){let z=L(C,E);if(z!==null)return z}else if(F>J&&R[C]!==null){let z=L(C,0);if(z!==null)return z}else k(C,F);T(C,F);continue}if(V+F>J+f){if(m(P))return A(C,F),B(C+1,0,V-F);if(K>=0)return B(K,0,j);if(F>J&&R[C]!==null){let z=B();if(z!==null)return z;let W=L(C,0);if(W!==null)return W}return B()}A(C,F),T(C,F)}return B()}var R0=null,C0=new WeakMap;function I0(){if(R0===null)R0=new Intl.Segmenter(void 0,{granularity:"grapheme"});return R0}function lO(O){if(O)return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[],segments:[]};return{widths:[],lineEndFitAdvances:[],lineEndPaintAdvances:[],kinds:[],simpleLineWalkFastPath:!0,segLevels:null,breakableWidths:[],breakablePrefixWidths:[],discretionaryHyphenWidth:0,tabStopAdvance:0,chunks:[]}}function c0(O,_,J){let Y=I0(),X=h(),{cache:R,emojiCorrection:Z}=B0(_,containsEmojiText(O.normalized)),Q=g("-",x("-",R),Z),V=g(" ",x(" ",R),Z)*8;if(O.len===0)return lO(J);let $=[],u=[],q=[],D=[],b=O.chunks.length<=1,K=J?[]:null,j=[],B=[],k=J?[]:null,y=Array.from({length:O.len}),A=Array.from({length:O.len});function T(F,P,E,H,z,W,c,I){if(z!=="text"&&z!=="space"&&z!=="zero-width-break")b=!1;if($.push(P),u.push(E),q.push(H),D.push(z),K?.push(W),j.push(c),B.push(I),k!==null)k.push(F)}for(let F=0;F<O.len;F++){y[F]=$.length;let P=O.texts[F],E=O.isWordLike[F],H=O.kinds[F],z=O.starts[F];if(H==="soft-hyphen"){T(P,0,Q,Q,H,z,null,null),A[F]=$.length;continue}if(H==="hard-break"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}if(H==="tab"){T(P,0,0,0,H,z,null,null),A[F]=$.length;continue}let W=x(P,R);if(H==="text"&&W.containsCJK){let S="",U=0;for(let N of Y.segment(P)){let M=N.segment;if(S.length===0){S=M,U=N.index;continue}if(i.has(S)||$0.has(M)||r.has(M)||X.carryCJKAfterClosingQuote&&p(M)&&D0(S)){S+=M;continue}let v=x(S,R),w=g(S,v,Z);T(S,w,w,w,"text",z+U,null,null),S=M,U=N.index}if(S.length>0){let N=x(S,R),M=g(S,N,Z);T(S,M,M,M,"text",z+U,null,null)}A[F]=$.length;continue}let c=g(P,W,Z),I=H==="space"||H==="preserved-space"||H==="zero-width-break"?0:c,o=H==="space"||H==="zero-width-break"?0:c;if(E&&P.length>1){let S=P0(P,W,R,Z),U=X.preferPrefixWidthsForBreakableRuns?A0(P,W,R,Z):null;T(P,c,I,o,H,z,S,U)}else T(P,c,I,o,H,z,null,null);A[F]=$.length}let L=hO(O.chunks,y,A),C=K===null?null:u0(O.normalized,K);if(k!==null)return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L,segments:k};return{widths:$,lineEndFitAdvances:u,lineEndPaintAdvances:q,kinds:D,simpleLineWalkFastPath:b,segLevels:C,breakableWidths:j,breakablePrefixWidths:B,discretionaryHyphenWidth:Q,tabStopAdvance:V,chunks:L}}function hO(O,_,J){let Y=[];for(let X=0;X<O.length;X++){let R=O[X],Z=R.startSegmentIndex<_.length?_[R.startSegmentIndex]:J[J.length-1]??0,Q=R.endSegmentIndex<_.length?_[R.endSegmentIndex]:J[J.length-1]??0,f=R.consumedEndSegmentIndex<_.length?_[R.consumedEndSegmentIndex]:J[J.length-1]??0;Y.push({startSegmentIndex:Z,endSegmentIndex:Q,consumedEndSegmentIndex:f})}return Y}function o0(O,_,J,Y){let X=N0(O,h(),Y?.whiteSpace);return c0(X,_,J)}function V1(O,_,J){let Y=performance.now(),X=N0(O,h(),J?.whiteSpace),R=performance.now(),Z=c0(X,_,!1),Q=performance.now(),f=0;for(let V of Z.breakableWidths)if(V!==null)f++;return{analysisMs:R-Y,measureMs:Q-R,totalMs:Q-Y,analysisSegments:X.len,preparedSegments:Z.widths.length,breakableSegments:f}}function X1(O,_,J){return o0(O,_,!1,J)}function Y1(O,_,J){return o0(O,_,!0,J)}function F0(O){return O}function Z1(O,_,J){let Y=W0(F0(O),_);return{lineCount:Y,height:Y*J}}function k0(O,_,J){let Y=J.get(O);if(Y!==void 0)return Y;Y=[];let X=I0();for(let R of X.segment(_[O]))Y.push(R.segment);return J.set(O,Y),Y}function l0(O){let _=C0.get(O);if(_!==void 0)return _;return _=new Map,C0.set(O,_),_}function pO(O,_,J,Y){return Y>0&&O[Y-1]==="soft-hyphen"&&!(_===Y&&J>0)}function xO(O,_,J,Y,X,R,Z){let Q="",f=pO(_,Y,X,R);for(let V=Y;V<R;V++){if(_[V]==="soft-hyphen"||_[V]==="hard-break")continue;if(V===Y&&X>0)Q+=k0(V,O,J).slice(X).join("");else Q+=O[V]}if(Z>0){if(f)Q+="-";Q+=k0(R,O,J).slice(Y===R?X:0,Z).join("")}else if(f)Q+="-";return Q}function h0(O,_,J,Y,X,R,Z){return{text:xO(O.segments,O.kinds,_,Y,X,R,Z),width:J,start:{segmentIndex:Y,graphemeIndex:X},end:{segmentIndex:R,graphemeIndex:Z}}}function gO(O,_,J){return h0(O,_,J.width,J.startSegmentIndex,J.startGraphemeIndex,J.endSegmentIndex,J.endGraphemeIndex)}function p0(O){return{width:O.width,start:{segmentIndex:O.startSegmentIndex,graphemeIndex:O.startGraphemeIndex},end:{segmentIndex:O.endSegmentIndex,graphemeIndex:O.endGraphemeIndex}}}function mO(O,_,J){let Y=S0(O,_,J);if(Y===null)return null;return p0(Y)}function rO(O,_){return h0(O,l0(O),_.width,_.start.segmentIndex,_.start.graphemeIndex,_.end.segmentIndex,_.end.graphemeIndex)}function $1(O,_,J){if(O.widths.length===0)return 0;return J0(F0(O),_,(Y)=>{J(p0(Y))})}function Q1(O,_,J){let Y=mO(O,_,J);if(Y===null)return null;return rO(O,Y)}function q1(O,_,J){let Y=[];if(O.widths.length===0)return{lineCount:0,height:0,lines:Y};let X=l0(O),R=J0(F0(O),_,(Z)=>{Y.push(gO(O,X,Z))});return{lineCount:R,height:R*J,lines:Y}}function aO(){z0(),R0=null,C0=new WeakMap,T0()}function D1(O){j0(O),aO()}export{$1 as walkLineRanges,D1 as setLocale,V1 as profilePrepare,Y1 as prepareWithSegments,X1 as prepare,q1 as layoutWithLines,Q1 as layoutNextLine,Z1 as layout,aO as clearCache};</script>
+  <script>
+    (() => {
+      "use strict";
+
+      const OPEN = "OPEN";
+      const STATUS_LABELS = Object.freeze({
+        OPEN: "会上确认",
+        PRECONFIRM: "待确认",
+        READY: "材料已齐",
+      });
+      const FACT_CONTENT_FIELDS = Object.freeze([
+        "userType",
+        "platform",
+        "task",
+        "frequency",
+        "currentFlow",
+        "impact",
+      ]);
+      const STORAGE_PREFIX = "customer-agent-meeting:";
+      const slides = [...document.querySelectorAll(".slide")];
+      const decisionCards = [...document.querySelectorAll("[data-decision-index]")];
+      const releaseId = document.documentElement.dataset.release || "meeting-local";
+      const storageKey = `${STORAGE_PREFIX}${releaseId}`;
+      document.documentElement.dataset.storageKey = storageKey;
+
+      let data = null;
+      try {
+        data = JSON.parse(document.querySelector("#meeting-data").textContent);
+      } catch {
+        data = null;
+      }
+
+      const decisionOptions = Array.isArray(data?.meeting?.decisionOptions)
+        ? data.meeting.decisionOptions
+            .filter(
+              (option) =>
+                option &&
+                typeof option.value === "string" &&
+                option.value.trim() &&
+                typeof option.label === "string" &&
+                option.label.trim()
+            )
+            .slice(0, 4)
+        : [];
+      const decisionValueSet = new Set(["pending", ...decisionOptions.map((option) => option.value)]);
+      const decisionLabelByValue = new Map([
+        ["pending", "未处理"],
+        ...decisionOptions.map((option) => [option.value, option.label]),
+      ]);
+
+      const defaultState = () => ({
+        releaseId,
+        index: 0,
+        decisionStates: Array(9).fill("pending"),
+      });
+
+      let memoryState = defaultState();
+      let state = loadState();
+      let lastAnnouncement = "";
+      let pretextRelayout = () => {};
+
+      function normalizedState(value) {
+        const next = defaultState();
+        if (!value || value.releaseId !== releaseId) return next;
+        next.index = Math.min(slides.length - 1, Math.max(0, Number(value.index) || 0));
+        next.decisionStates = Array.from({ length: 9 }, (_, index) => {
+          const result = Array.isArray(value.decisionStates) ? value.decisionStates[index] : null;
+          return decisionValueSet.has(result) ? result : "pending";
+        });
+        return next;
+      }
+
+      function loadState() {
+        try {
+          for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+            const key = sessionStorage.key(index);
+            if (key && key.startsWith(STORAGE_PREFIX) && key !== storageKey) {
+              sessionStorage.removeItem(key);
+            }
+          }
+          return normalizedState(JSON.parse(sessionStorage.getItem(storageKey) || "null"));
+        } catch {
+          return normalizedState(memoryState);
+        }
+      }
+
+      function saveState() {
+        const value = { ...state };
+        memoryState = value;
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(value));
+        } catch {
+          memoryState = value;
+        }
+      }
+
+      function setText(selector, value) {
+        if (typeof value !== "string" || !value.trim()) return;
+        document.querySelectorAll(selector).forEach((item) => {
+          item.textContent = value.trim();
+        });
+      }
+
+      function renderPayload() {
+        if (!data) return;
+        setText("[data-state-approval]", data.state?.approval);
+        setText("[data-state-direction]", data.state?.direction);
+        setText("[data-state-development]", data.state?.development);
+
+        const agenda = Array.isArray(data.meeting?.agenda) ? data.meeting.agenda.slice(0, 8) : [];
+        agenda.forEach((item, index) => {
+          setText(`[data-agenda-topic="${index}"]`, item.topic);
+          setText(`[data-agenda-decision="${index}"]`, item.decision);
+        });
+
+        const questions = Array.isArray(data.meeting?.coreQuestions)
+          ? data.meeting.coreQuestions.slice(0, 3)
+          : [];
+        document.querySelectorAll("#core-question-list .question-card").forEach((item, index) => {
+          if (typeof questions[index] === "string" && questions[index].trim()) {
+            item.textContent = questions[index].trim();
+          }
+        });
+
+        const factCards = Array.isArray(data.meeting?.factCards)
+          ? data.meeting.factCards.slice(0, 2)
+          : [];
+        document.querySelectorAll("[data-fact-card]").forEach((card, index) => {
+          const fact = factCards[index] || {};
+          const allOpen = FACT_CONTENT_FIELDS.every((field) => {
+            const value = fact[field];
+            return !(typeof value === "string" && value.trim()) || value.trim() === OPEN;
+          });
+          card.dataset.empty = String(allOpen);
+          card.querySelector(".fact-empty").hidden = !allOpen;
+          card.querySelector(".fact-fields").hidden = allOpen;
+          card.querySelectorAll("[data-fact]").forEach((field) => {
+            const value = fact[field.dataset.fact];
+            const normalized = typeof value === "string" && value.trim() ? value.trim() : OPEN;
+            field.textContent = STATUS_LABELS[normalized] || normalized;
+          });
+        });
+
+        const decisions = Array.isArray(data.meeting?.decisions)
+          ? data.meeting.decisions.slice(0, 9)
+          : [];
+        decisionCards.forEach((card, index) => {
+          const title = decisions[index]?.title;
+          if (typeof title === "string" && title.trim()) {
+            card.querySelector(".decision-title").textContent = title.trim();
+          }
+          const select = card.querySelector(".decision-select");
+          const placeholder = document.createElement("option");
+          placeholder.value = "pending";
+          placeholder.textContent = "请选择结果";
+          select.replaceChildren(
+            placeholder,
+            ...decisionOptions.map((item) => {
+              const option = document.createElement("option");
+              option.value = item.value;
+              option.textContent = item.label;
+              return option;
+            })
+          );
+          select.setAttribute(
+            "aria-label",
+            `${card.querySelector(".decision-title").textContent.trim()}的启动结果`
+          );
+        });
+
+        const decisionLegend = document.querySelector("#decision-option-legend");
+        if (decisionOptions.length === 4) {
+          const legendTitle = document.createElement("strong");
+          legendTitle.textContent = "每项选择";
+          decisionLegend.replaceChildren(
+            legendTitle,
+            ...decisionOptions.map((item) => {
+              const label = document.createElement("span");
+              label.textContent = item.label;
+              return label;
+            })
+          );
+        }
+
+        const printAgenda = document.querySelector("#print-agenda");
+        if (agenda.length === 8) {
+          printAgenda.replaceChildren(
+            ...agenda.map((item) => {
+              const li = document.createElement("li");
+              li.textContent = item.topic;
+              return li;
+            })
+          );
+        }
+        const printDecisions = document.querySelector("#print-decisions");
+        if (decisions.length === 9) {
+          printDecisions.replaceChildren(
+            ...decisions.map((item, index) => {
+              const li = document.createElement("li");
+              li.textContent = item.title;
+              li.dataset.printDecisionIndex = String(index);
+              return li;
+            })
+          );
+        }
+      }
+
+      const previousButton = document.querySelector("#previous-slide");
+      const nextButton = document.querySelector("#next-slide");
+      const fullscreenButton = document.querySelector("#fullscreen-button");
+      const helpButton = document.querySelector("#help-button");
+      const helpDialog = document.querySelector("#help-dialog");
+      const liveStatus = document.querySelector("#live-status");
+      const meetingProgress = document.querySelector("#meeting-progress");
+      const progressBar = document.querySelector("#progress-bar");
+      const progressLabel = document.querySelector("#progress-label");
+      const stepCount = document.querySelector("#step-count");
+      const agendaCount = slides.length - 1;
+
+      function announce(message) {
+        if (!message || message === lastAnnouncement) return;
+        lastAnnouncement = message;
+        liveStatus.textContent = "";
+        requestAnimationFrame(() => {
+          liveStatus.textContent = message;
+        });
+      }
+
+      function renderSlide({ focus = false } = {}) {
+        slides.forEach((slide, index) => {
+          const active = index === state.index;
+          slide.classList.toggle("is-active", active);
+          slide.setAttribute("aria-hidden", String(!active));
+          if (active) slide.removeAttribute("inert");
+          else slide.setAttribute("inert", "");
+        });
+        previousButton.disabled = state.index === 0;
+        const isLast = state.index === slides.length - 1;
+        nextButton.disabled = isLast;
+        nextButton.querySelector(".button-label").textContent = isLast
+          ? "启动会结束"
+          : state.index === slides.length - 2
+            ? "进入核对"
+            : "下一页";
+        nextButton.querySelector(".next-arrow").hidden = isLast;
+        nextButton.setAttribute("aria-label", isLast ? "已到最后一页" : "下一页");
+        stepCount.textContent = state.index === 0 ? "封面" : `${state.index} / ${agendaCount}`;
+        stepCount.setAttribute(
+          "aria-label",
+          state.index === 0 ? "启动会封面" : `第 ${state.index} 个环节，共 ${agendaCount} 个环节`
+        );
+        meetingProgress.setAttribute("aria-valuenow", String(state.index));
+        progressBar.style.width = `${(state.index / agendaCount) * 100}%`;
+        const activeTitle =
+          slides[state.index]
+            .querySelector("h1, h2")
+            ?.innerText?.replace(/\s+/g, " ")
+            .trim() || "本页";
+        progressLabel.textContent =
+          state.index === 0
+            ? `${activeTitle} · 封面`
+            : `${activeTitle} · 环节 ${state.index} / ${agendaCount}`;
+        document.title = `${activeTitle} · 客服 Agent 启动会`;
+        if (focus) {
+          const title = slides[state.index].querySelector("h1, h2");
+          title?.setAttribute("tabindex", "-1");
+          title?.focus({ preventScroll: true });
+        }
+        requestAnimationFrame(pretextRelayout);
+        saveState();
+      }
+
+      function moveSlide(delta) {
+        const nextIndex = Math.min(slides.length - 1, Math.max(0, state.index + delta));
+        if (nextIndex === state.index) return;
+        state.index = nextIndex;
+        renderSlide({ focus: true });
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+          } else {
+            announce("当前浏览器不支持页面全屏，请使用系统全屏键");
+          }
+        } catch {
+          announce("浏览器未进入全屏，请使用系统全屏键");
+        }
+      }
+
+      function renderFullscreenState() {
+        const active = Boolean(document.fullscreenElement);
+        fullscreenButton.setAttribute("aria-label", active ? "退出全屏" : "进入全屏");
+        fullscreenButton.setAttribute("aria-pressed", String(active));
+      }
+
+      function resetAll() {
+        if (!window.confirm("确定重置页码和九项启动结果吗？")) return;
+        state = defaultState();
+        saveState();
+        renderSlide({ focus: true });
+        renderDecisions();
+        document.querySelector("#more-menu").open = false;
+        announce("会议状态已全部重置");
+      }
+
+      function renderDecisions() {
+        let completed = 0;
+        decisionCards.forEach((card, index) => {
+          const select = card.querySelector(".decision-select");
+          const result = decisionValueSet.has(state.decisionStates[index])
+            ? state.decisionStates[index]
+            : "pending";
+          if (result !== "pending") completed += 1;
+          select.value = result;
+          card.dataset.result = result;
+          const printItem = document.querySelector(`[data-print-decision-index="${index}"]`);
+          if (printItem) {
+            const title = card.querySelector(".decision-title").textContent.trim();
+            printItem.textContent = `${title}：${decisionLabelByValue.get(result) || "未处理"}`;
+          }
+        });
+        document.querySelector("#decision-progress").textContent = `${completed} / 9 已处理`;
+      }
+
+      previousButton.addEventListener("click", () => moveSlide(-1));
+      nextButton.addEventListener("click", () => moveSlide(1));
+      fullscreenButton.addEventListener("click", toggleFullscreen);
+      helpButton.addEventListener("click", () => helpDialog.showModal());
+      document.querySelector("#help-close").addEventListener("click", () => helpDialog.close());
+      document.querySelector("#print-button").addEventListener("click", () => window.print());
+      document.querySelector("#reset-button").addEventListener("click", resetAll);
+      document.addEventListener("fullscreenchange", renderFullscreenState);
+
+      decisionCards.forEach((card, index) => {
+        card.querySelector(".decision-select").addEventListener("change", (event) => {
+          const result = decisionValueSet.has(event.currentTarget.value)
+            ? event.currentTarget.value
+            : "pending";
+          state.decisionStates[index] = result;
+          renderDecisions();
+          saveState();
+          announce(
+            `${card.querySelector(".decision-title").textContent.trim()}：${decisionLabelByValue.get(result) || "未处理"}`
+          );
+        });
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+        if (helpDialog.open) return;
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          moveSlide(1);
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          moveSlide(-1);
+        } else if (event.key.toLowerCase() === "f") {
+          event.preventDefault();
+          toggleFullscreen();
+        } else if (event.key === "?") {
+          event.preventDefault();
+          helpDialog.showModal();
+        }
+      });
+
+      document.querySelector(".skip-link").addEventListener("click", () => {
+        requestAnimationFrame(() => document.querySelector("#meeting-main").focus({ preventScroll: true }));
+      });
+
+      async function wirePretext() {
+        const vendor = document.querySelector("#pretext-source").textContent;
+        if (!vendor || vendor.includes("PRETEXT_VENDOR_MISSING")) return;
+        const moduleUrl = URL.createObjectURL(new Blob([vendor], { type: "text/javascript" }));
+        try {
+          const { prepare, layout, setLocale } = await import(moduleUrl);
+          if (typeof setLocale === "function") setLocale("zh-CN");
+          await document.fonts.ready;
+          const prepared = new Map();
+          const elements = [...document.querySelectorAll("[data-pretext]")];
+          elements.forEach((item) => {
+            const style = getComputedStyle(item);
+            prepared.set(item, prepare(item.textContent.trim(), style.font));
+          });
+          pretextRelayout = () => {
+            prepared.forEach((handle, item) => {
+              if (item.clientWidth <= 0) return;
+              const style = getComputedStyle(item);
+              const result = layout(handle, item.clientWidth, parseFloat(style.lineHeight));
+              if (Number.isFinite(result.height)) item.style.minHeight = `${Math.ceil(result.height)}px`;
+            });
+          };
+          if (typeof ResizeObserver === "function") {
+            new ResizeObserver(pretextRelayout).observe(document.body);
+          }
+          pretextRelayout();
+        } catch {
+          document.documentElement.dataset.pretext = "fallback";
+        } finally {
+          URL.revokeObjectURL(moduleUrl);
+        }
+      }
+
+      renderPayload();
+      renderDecisions();
+      renderSlide();
+      renderFullscreenState();
+      wirePretext();
+    })();
+  </script>
+</body>
+</html>

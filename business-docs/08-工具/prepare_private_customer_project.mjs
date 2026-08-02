@@ -19,6 +19,7 @@ const files = [
   "06-启动会与周推进.md",
   "07-客服Agent立项PRD.html",
   "08-客服Agent立项执行中心.html",
+  "09-客服Agent需求会汇报.html",
 ];
 
 function quotePosixShellLiteral(value) {
@@ -44,7 +45,7 @@ try {
 }
 const templateReadme = await readFile(path.join(sourceDir, "README.md"), "utf8");
 const publicBoundaryPattern = /^> \*\*公共仓安全边界：\*\*[^\n]*(?:\n|$)/m;
-const migrationInstructionPattern = /^进入真实状态或选择 A 前，[^\n]*(?:\n|$)/m;
+const migrationInstructionPattern = /^如需录入真实姓名、客户原文、内部链接、精确费用或安全细节，[^\n]*(?:\n|$)/m;
 if (!publicBoundaryPattern.test(templateReadme) || !migrationInstructionPattern.test(templateReadme)) {
   throw new Error("公开模板 README 的边界提示已变更，拒绝生成规则冲突的私有 README");
 }
@@ -64,7 +65,7 @@ await writeFile(
 );
 await writeFile(
   path.join(targetDir, "PRIVATE-WORKSPACE.md"),
-  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n当前目录已完成迁移；不要再次运行 \`prepare_private_customer_project.mjs\`，也不得将本目录回推公开仓。两套浏览器 QA 证据默认写入本目录的 \`.qa-output/\`。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${quotePosixShellLiteral(targetDir)}\nnode ${quotePosixShellLiteral(path.join(scriptDir, "sync_customer_agent_surfaces.mjs"))}\n\`\`\`\n\n这一个同步命令会让 PRD 与执行中心互相内嵌后收敛到同一稳定点；只校验时追加 \`--check\`。\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
+  `# 私有客服项目工作区\n\n此目录位于公开仓外，可填写真实 cap 与受控状态；仍建议只在正文保存 EVD / ROLE / USR 代号，原始 PII 和审批原文继续留在受控系统。\n\n当前目录已完成迁移；不要再次运行 \`prepare_private_customer_project.mjs\`，也不得将本目录回推公开仓。三套浏览器 QA 证据默认写入本目录的 \`.qa-output/\`。\n\n## 启用\n\n\`\`\`bash\nexport CUSTOMER_PROJECT_MODE=private\nexport CUSTOMER_PROJECT_ROOT=${quotePosixShellLiteral(targetDir)}\nnode ${quotePosixShellLiteral(path.join(scriptDir, "sync_customer_agent_surfaces.mjs"))}\n\`\`\`\n\n这一个同步命令会让 PRD、执行中心与需求会汇报收敛到同一稳定点；只校验时追加 \`--check\`。\n\n公开模板导航长度：${privateReadme.length} 字节。\n`,
   { flag: "wx" }
 );
 console.log(`私有客服工作区已创建：${targetDir}`);

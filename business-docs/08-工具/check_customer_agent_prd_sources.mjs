@@ -4,6 +4,7 @@ import { lstat, open, realpath, rename, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveProjectStatus } from "./customer_project_status.mjs";
+import { assertMeetingAgendaConsistency } from "./customer_project_meeting.mjs";
 import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -25,25 +26,27 @@ const sourceDefinitions = [
   { id: "cadence", file: "06-启动会与周推进.md", label: "启动会与周推进" },
 ];
 
-const forceRankCandidates = Object.freeze([
-  "话术库 / 检索推荐",
+const demandMeetingDirections = Object.freeze([
+  "知识 / 话术辅助",
   "智能质检",
-  "评价分析报告",
+  "反馈分析",
   "聊天分析",
 ]);
-const forceRankRules = Object.freeze([
-  "独立预评分",
-  "频次与痛点 25%",
-  "耗时 / 错误基线 25%",
-  "价值 20%",
-  "数据与责任可得性 15%",
-  "两周可验证性 15%",
-  "缺证据记 0",
-  "中位数",
-  "领先超过 3 分",
-  "CR / DEC",
-  "重新冻结 Scope",
-  "不得为了匹配现有页面强行保留",
+const demandMeetingRules = Object.freeze([
+  "真实客服任务",
+  "一期主问题",
+  "主用户",
+  "In Scope",
+  "Out of Scope",
+  "成功",
+  "停止",
+  "权威来源",
+  "3–5 名试点",
+  "预计使用人数",
+  "最终负责人",
+  "OPEN",
+  "不做功能投票",
+  "不让客服人员选择技术框架",
 ]);
 
 function sha256(value) {
@@ -349,7 +352,7 @@ function derivePrdFacts(sourceById, projectStatus) {
   assertSame("G0 决策日", g0Date, charterG0Date);
 
   const ddevEarliest = projectStatus.earliestDdev;
-  const scheduleDdev = schedule.match(/G0 决策会；全部门禁 Pass 时，最早于 (\d{1,2}) 月 (\d{1,2}) 日签发开发日 Ddev/);
+  const scheduleDdev = schedule.match(/最早于\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日签发开发(?:开工许可|日)\s*\(?Ddev\)?/);
   if (!scheduleDdev) throw new Error("无法从真源解析：排期 Ddev 最早日");
   const scheduleDdevIso = `${d0.slice(0, 4)}-${String(scheduleDdev[1]).padStart(2, "0")}-${String(scheduleDdev[2]).padStart(2, "0")}`;
   assertSame("Ddev 最早日", ddevEarliest, scheduleDdevIso);
@@ -408,7 +411,7 @@ function derivePrdFacts(sourceById, projectStatus) {
   };
 }
 
-function validatePrdContract(html, projectStatus, forceRankDate, facts) {
+function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   const { statusAxes } = projectStatus;
   for (const [axis, copy] of Object.entries(statusAxes)) {
     requirePattern(
@@ -422,17 +425,18 @@ function validatePrdContract(html, projectStatus, forceRankDate, facts) {
 
   requirePattern(
     html,
-    /data-evidence-grade=["']fact["'][^>]*>[\s\S]{0,300}智能质检、评价分析报告与聊天分析/,
-    "已核实主诉必须标为 fact"
+    /data-evidence-grade=["']fact["'][^>]*>[\s\S]{0,300}项目已批准/,
+    "项目批准必须标为 fact"
   );
   requirePattern(
     html,
-    /data-evidence-grade=["']hypothesis["'][^>]*>[\s\S]{0,300}待验证假设/,
-    "方案前提必须标为 hypothesis"
+    /data-evidence-grade=["']hypothesis["'][^>]*>[\s\S]{0,300}一期主问题待确认/,
+    "一期主问题待确认必须标为 hypothesis"
   );
-  requireText(html, "这不等于公司正式批准", "工作方向不等于公司批准");
+  requireText(html, "项目已批准", "已批准事实");
+  requireText(html, "不等于一期功能或开发已经批准", "批准边界");
   if (projectStatus.approvalReady) {
-    requirePattern(html, /已归档[\s\S]{0,160}正式批准凭证|正式批准凭证[\s\S]{0,160}已归档/, "已批准状态必须展示归档证据语义");
+    requirePattern(html, /批准凭证已归档|EVD-CUSTOMER-APPROVAL-20260801/, "已批准状态必须展示归档证据语义");
   } else if (projectStatus.approval === "Fail") {
     requirePattern(
       html,
@@ -448,12 +452,15 @@ function validatePrdContract(html, projectStatus, forceRankDate, facts) {
   }
   requirePattern(
     html,
-    new RegExp(`data-force-rank=["']${escapeRegExp(forceRankDate)}["'][^>]*>[\\s\\S]{0,500}话术库[\\s\\S]{0,120}智能质检[\\s\\S]{0,120}评价分析[\\s\\S]{0,120}聊天分析`),
-    `${forceRankDate} 四候选强制排序容器`
+    new RegExp(`data-demand-meeting=["']${escapeRegExp(demandMeetingDate)}["'][^>]*>[\\s\\S]{0,900}知识 \/ 话术辅助[\\s\\S]{0,240}智能质检[\\s\\S]{0,240}反馈分析[\\s\\S]{0,240}聊天分析`),
+    `${demandMeetingDate} 需求会四个讨论起点`
   );
-  requirePattern(html, /data-force-rank-rule(?:\s|>)/, "强制排序规则段");
-  for (const candidate of forceRankCandidates) requireText(html, candidate, `排序候选 ${candidate}`);
-  for (const rule of forceRankRules) requireText(html, rule, `排序规则 ${rule}`);
+  requirePattern(html, /data-demand-meeting-rule(?:\s|>)/, "需求会规则段");
+  for (const direction of demandMeetingDirections) requireText(html, direction, `讨论方向 ${direction}`);
+  for (const rule of demandMeetingRules) requireText(html, rule, `需求会规则 ${rule}`);
+  if (/data-force-rank/.test(html) || /独立预评分|强制排序/.test(visibleText(html))) {
+    throw new Error("PRD 不得继续使用旧的强制排序 / 独立预评分叙事");
+  }
 
   const contracts = parseDataContracts(html);
   requireDataContract(contracts, "d0", { "data-date": facts.d0 }, [facts.d0.slice(5)]);
@@ -534,6 +541,7 @@ function validatePrdContract(html, projectStatus, forceRankDate, facts) {
 
 function buildManifest(html, sources) {
   const sourceById = Object.fromEntries(sources.map((source) => [source.id, source.text]));
+  const meetingAgenda = assertMeetingAgendaConsistency(sourceById.ledger, sourceById.cadence);
   const projectStatus = deriveProjectStatus({
     charter: sourceById.charter,
     schedule: sourceById.schedule,
@@ -542,23 +550,24 @@ function buildManifest(html, sources) {
     cost: sourceById.cost,
   });
   const facts = derivePrdFacts(sourceById, projectStatus);
-  const forceRankDate = facts.d0;
-  validatePrdContract(html, projectStatus, forceRankDate, facts);
+  const demandMeetingDate = facts.d0;
+  validatePrdContract(html, projectStatus, demandMeetingDate, facts);
   const manifestSources = sources.map(
     ({ text: _text, sourcePath: _sourcePath, mode: _mode, ...source }) => source
   );
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     prd: { file: prdFile, sha256: sha256(html) },
     sources: manifestSources,
     sourceHash: sha256(manifestSources.map((source) => source.sha256).join("\n")),
     contracts: {
       statusAxes: projectStatus.statusAxes,
       evidenceGrades: ["fact", "hypothesis"],
-      forceRank: {
-        date: forceRankDate,
-        candidates: forceRankCandidates,
-        nonFirstAction: "记录 CR / DEC 并重新冻结 Scope",
+      demandMeeting: {
+        date: demandMeetingDate,
+        directions: demandMeetingDirections,
+        decisionRule: "客服负责人根据真实工作、业务影响、数据条件和可验证性作出决定；不做功能投票",
+        agendaSha256: sha256(JSON.stringify(meetingAgenda)),
       },
       milestones: {
         d0: facts.d0,

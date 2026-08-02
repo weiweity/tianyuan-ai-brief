@@ -18,6 +18,7 @@ const scriptPath = fileURLToPath(import.meta.url);
 const webRoot = path.resolve(path.dirname(scriptPath), "..");
 const LOCAL_PRD_HREF = "../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html";
 const LOCAL_HUB_HREF = "../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html";
+const LOCAL_MEETING_HREF = "../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html";
 const INTERNAL_ONLY_HREF = "./internal-only.html";
 const REPOSITORY_ONLY_NOTE = "内部资料（仅授权内部访问；公开版不提供）";
 
@@ -190,12 +191,19 @@ async function populateArtifact({ stagingOutput, webDocsPath }) {
 
   const stagedIndexPath = path.join(stagingOutput, "index.html");
   const stagedIndex = await readFile(stagedIndexPath, "utf8");
-  if (!stagedIndex.includes(LOCAL_PRD_HREF) || !stagedIndex.includes(LOCAL_HUB_HREF)) {
-    throw new Error("历史页缺少两个仓库内现行材料入口，无法生成公开投影");
+  if (
+    !stagedIndex.includes(LOCAL_PRD_HREF) ||
+    !stagedIndex.includes(LOCAL_HUB_HREF) ||
+    !stagedIndex.includes(LOCAL_MEETING_HREF)
+  ) {
+    throw new Error("历史页缺少三个仓库内现行材料入口，无法生成公开投影");
   }
   await writeFile(
     stagedIndexPath,
-    stagedIndex.replaceAll(LOCAL_PRD_HREF, INTERNAL_ONLY_HREF).replaceAll(LOCAL_HUB_HREF, INTERNAL_ONLY_HREF),
+    stagedIndex
+      .replaceAll(LOCAL_PRD_HREF, INTERNAL_ONLY_HREF)
+      .replaceAll(LOCAL_HUB_HREF, INTERNAL_ONLY_HREF)
+      .replaceAll(LOCAL_MEETING_HREF, INTERNAL_ONLY_HREF),
     "utf8"
   );
   await writeFile(path.join(stagingOutput, "internal-only.html"), INTERNAL_ONLY_PAGE, "utf8");

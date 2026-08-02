@@ -1,61 +1,61 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "dce49725c5557c209169bb9b1be7f72e50455c6092e199fa53b4e8817108033b"
+    "sha256": "31e0568759380eb8f2150e3bbdb9f9fe7d6105305cd98f6098484942031f1070"
   },
   "sources": [
     {
       "id": "charter",
       "file": "00-项目章程.md",
       "label": "项目章程",
-      "sha256": "d7b87eda3486befd648753607049d84f9b68bd470fbd856b44412d49b999eae3"
+      "sha256": "0ed7e1e8f4dfba529342b478a2378ff9dab07e5d9eb8467e8fb49fc606011e7e"
     },
     {
       "id": "schedule",
       "file": "01-总排期与阶段门禁.md",
       "label": "总排期与阶段门禁",
-      "sha256": "da2cd8faacd77f939c55bc621a778c06eded191ec2d5841a2760325c78b594ab"
+      "sha256": "030a2371957f5c7db7b52f130d1ebb66c8f2d3a6e01c86990996a60303ca8a5e"
     },
     {
       "id": "ledger",
       "file": "02-G0责任与证据台账.md",
       "label": "G0 责任与证据台账",
-      "sha256": "497e4574ec6fccaa85fd7f96381c85748d7bc027d88fc6ab5335f2c474b42edc"
+      "sha256": "14f222f6e2cb09eb2e77a99606fe334668d0eda5e0fe0d978104bde9f7bf2e7b"
     },
     {
       "id": "scope",
       "file": "03-Scope与验收.md",
       "label": "Scope 与验收",
-      "sha256": "ba3d2b9797096ce2a5048b66c906f9553b2f80794480cb5e7c28e946d448258e"
+      "sha256": "c460d93b924cb4f633d1ecc2d42e7a89a140408add45ab2b2c940c23ca718b21"
     },
     {
       "id": "cost",
       "file": "04-费用与成本控制.md",
       "label": "费用与成本控制",
-      "sha256": "5d592e48fdc47d39061d6c6a41bb5d0cfefb9ad0856ad84b773a1a2ba10a0e1c"
+      "sha256": "3a36e41c50e641aa2e67d9c294c859325e48cbea07dee245b10fd2bd88848a44"
     },
     {
       "id": "delivery",
       "file": "05-全栈交付计划.md",
       "label": "全栈交付计划",
-      "sha256": "229b4fb38f9dea1152f92abdeb144d5f2410d8a99d31174944f0d7bdf63f5e42"
+      "sha256": "068a59a8769f96700400f8aefdac271ca4d570d7c6eb4e0b8c752513949a3dfa"
     },
     {
       "id": "cadence",
       "file": "06-启动会与周推进.md",
       "label": "启动会与周推进",
-      "sha256": "314ec1428d924a4f6e98fe8ab56d7f2efea6b65009e1b8efdf48d6c2a0a9a851"
+      "sha256": "470ecf6413bd19f730c8406af8cf42ef7bd285898f5fac652827e9a959a22759"
     }
   ],
-  "sourceHash": "f231c460ad2407f1eb2fe69e9e88c6b7741792e80d8655c15e881e0e2e1db334",
+  "sourceHash": "39a6fe9f4b00155e8787186389b2d9ad419a450a4d1424716ff7d4e8e8068e1f",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",
-      "approval": "公司批准 · 未完成",
+      "approval": "公司批准 · 已批准",
       "problem-fit": "问题适配 · 待核验",
-      "external": "外部责任包 · 0 / 14",
-      "scope": "Scope · 0 / 15",
+      "external": "外部责任包 · 1 / 14",
+      "scope": "Scope · 1 / 15",
       "resource": "资源基线 · 未选择",
       "ddev": "Ddev · 未成立"
     },
@@ -63,21 +63,22 @@
       "fact",
       "hypothesis"
     ],
-    "forceRank": {
+    "demandMeeting": {
       "date": "2026-08-04",
-      "candidates": [
-        "话术库 / 检索推荐",
+      "directions": [
+        "知识 / 话术辅助",
         "智能质检",
-        "评价分析报告",
+        "反馈分析",
         "聊天分析"
       ],
-      "nonFirstAction": "记录 CR / DEC 并重新冻结 Scope"
+      "decisionRule": "客服负责人根据真实工作、业务影响、数据条件和可验证性作出决定；不做功能投票",
+      "agendaSha256": "a747df815c15d1877ac7a1aa9f65ba12e4fcdeeabdd1e83d3012038ad89324ee"
     },
     "milestones": {
       "d0": "2026-08-04",
       "g0Date": "2026-08-14",
       "g0State": "未签发",
-      "ddevEarliest": "2026-08-17",
+      "ddevEarliest": "2026-08-14",
       "ddevState": "未成立"
     },
     "resourceBaseline": "未选择",
@@ -92,7 +93,7 @@
       "pilotMaxPeople": 5,
       "pilotWeeks": 2,
       "pilotTasksPerPersonWeek": 5,
-      "scopePass": 0,
+      "scopePass": 1,
       "scopeTotal": 15
     },
     "fee": {

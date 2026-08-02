@@ -8,6 +8,7 @@ const WORKSPACE_MODES = new Set(["public-template", "private"]);
 const QA_OUTPUT_DIRECTORIES = Object.freeze({
   prd: "customer-agent-prd-qa",
   hub: "customer-agent-hub-qa",
+  meeting: "customer-agent-meeting-qa",
 });
 
 function isWithin(parent, candidate) {

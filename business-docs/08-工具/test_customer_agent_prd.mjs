@@ -91,6 +91,19 @@ function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function visibleHtmlText(html) {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&gt;/g, ">")
+    .replace(/&lt;/g, "<")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 await check("PRD 真源清单与内容契约 --check", async () => {
   const { stdout, stderr } = await execFileAsync(
     process.execPath,
@@ -114,23 +127,30 @@ await check("HTML 文件存在且体积受控", async () => {
 
 await check("关键业务口径完整", async () => {
   const html = await readFile(targetPath, "utf8");
+  const visible = visibleHtmlText(html);
   const requiredFacts = [
-    "客服 Agent",
-    "话术库 MVP-A",
+    "客服 Agent 一期需求会",
+    "项目已批准",
+    "一期主问题待确认",
     "2026-08-04",
     "自动代发 = 0",
-    "供应链能力不进入本项目",
+    "供应链不进入客服一期范围、预算和排期",
+    "不做功能投票",
+    "不让客服人员选择技术框架",
   ];
   if (mode === "public-template") {
     requiredFacts.push(
       "G0 未签发",
-      "0 / 14",
-      "0 / 15",
-      "8 月 4 日启动立项，不启动开发"
+      "1 / 14",
+      "1 / 15",
+      "最早 08-14"
     );
   }
-  const missing = requiredFacts.filter((fact) => !html.includes(fact));
+  const missing = requiredFacts.filter((fact) => !visible.includes(fact));
   assert.deepEqual(missing, [], `缺少关键口径：${missing.join("、")}`);
+  for (const stale of ["话术库 MVP-A", "独立预评分", "强制排序"]) {
+    assert.equal(visible.includes(stale), false, `可见页面仍包含废止口径：${stale}`);
+  }
   return `${requiredFacts.length} 项`;
 });
 
@@ -516,8 +536,8 @@ try {
       });
 
       await check("资源情景切换与 URL 深链", async () => {
-        const soloButton = page.getByRole("button", { name: "单人全栈 · 保守基线" });
-        const teamButton = page.getByRole("button", { name: "跨职能小队 · 资源满足" });
+        const soloButton = page.getByRole("button", { name: "单人全栈" });
+        const teamButton = page.getByRole("button", { name: "完整小队" });
         await soloButton.click();
         assert.equal(
           await soloButton.getAttribute("aria-pressed"),
@@ -546,7 +566,7 @@ try {
         const opener = page.locator("#map-open");
         assert.equal(
           await opener.getAttribute("aria-label"),
-          "放大查看话术库 MVP-A 能力地图"
+          "放大查看客服 Agent 一期最小闭环"
         );
         await opener.click();
         assert.equal(await page.locator("#map-dialog").evaluate((element) => element.open), true);
@@ -683,7 +703,7 @@ try {
       });
 
       await page.goto(portableUrl, { waitUntil: "load" });
-      assert.equal(await page.title(), "客服 Agent · 立项 PRD");
+      assert.equal(await page.title(), "客服 Agent 一期 · 需求会项目说明");
       assert.equal(page.url(), portableUrl, "应先从仅有 PRD 的隔离目录打开");
 
       await page.locator(".source-maintenance > summary").click();
@@ -711,7 +731,7 @@ try {
       assert.equal(await executionCenterButton.evaluate((element) => element.tagName), "BUTTON");
       assert.equal(await executionCenterButton.getAttribute("href"), null);
       await executionCenterButton.click();
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
       assert.equal(new URL(page.url()).protocol, "file:");
       assert.equal(fileURLToPath(new URL(page.url())), portablePath);
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
@@ -723,15 +743,15 @@ try {
       );
 
       await page.reload({ waitUntil: "load" });
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
       assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
 
       await page.goBack({ waitUntil: "load" });
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项 PRD");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
       assert.equal(new URL(page.url()).searchParams.get("portable"), null);
       await page.goForward({ waitUntil: "load" });
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
 
       await page.locator("#source-drawer > summary").click();
@@ -748,14 +768,14 @@ try {
       assert.equal(await returnToPrdButton.evaluate((element) => element.tagName), "BUTTON");
       assert.equal(await returnToPrdButton.getAttribute("href"), null);
       await returnToPrdButton.click();
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项 PRD");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
       assert.equal(new URL(page.url()).protocol, "file:");
       assert.equal(fileURLToPath(new URL(page.url())), portablePath);
       assert.equal(new URL(page.url()).searchParams.get("portable"), null);
       assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
 
       await page.locator("#open-execution-center").click();
-      await page.waitForFunction(() => document.title === "客服 Agent · 立项执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
       assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
 

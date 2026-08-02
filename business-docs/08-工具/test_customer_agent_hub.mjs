@@ -126,7 +126,7 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     manifest.sources,
     "Hub 真源身份与 manifest 不一致"
   );
-  assert.match(payload.metrics.find((item) => item.label === "Top3 命中")?.note || "", /分层 ≥50% 且至少命中 1 条/);
+  assert.match(payload.metrics.find((item) => item.label === "知识辅助 Top3（条件项）")?.note || "", /分层 ≥50% 且至少命中 1 条/);
   assert.equal(payload.metrics.find((item) => item.label === "内部真实试点")?.value, "3–5 人 × 2 周");
   assert.ok(payload.portablePrd?.htmlBase64, "缺少便携 PRD");
   const portablePrdHtml = Buffer.from(payload.portablePrd.htmlBase64, "base64").toString("utf8");
@@ -157,12 +157,12 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   assert.equal(payload.status.scopePass, contracts.acceptance.scopePass);
   assert.equal(payload.status.scopeTotal, contracts.acceptance.scopeTotal);
   const metricByLabel = Object.fromEntries(payload.metrics.map((metric) => [metric.label, metric]));
-  assert.equal(Number(metricByLabel["Top3 命中"].value.match(/\d+/)[0]), contracts.acceptance.top3OverallMinPercent);
-  assert.match(metricByLabel["Top3 命中"].note, new RegExp(`分层 ≥${contracts.acceptance.top3StratumMinPercent}%`));
-  assert.match(metricByLabel["Top3 命中"].note, new RegExp(`至少命中 ${contracts.acceptance.top3StratumMinHits} 条`));
-  assert.equal(Number(metricByLabel["引用 / 版本正确"].value.match(/\d+/)[0]), contracts.acceptance.citationCorrectPercent);
-  assert.equal(Number(metricByLabel["错误直答"].value), contracts.acceptance.negativeMaxWrongAnswers);
-  assert.match(metricByLabel["错误直答"].note, new RegExp(`不少于 ${contracts.acceptance.negativeMinCases} 条`));
+  assert.equal(Number(metricByLabel["知识辅助 Top3（条件项）"].value.match(/\d+/)[0]), contracts.acceptance.top3OverallMinPercent);
+  assert.match(metricByLabel["知识辅助 Top3（条件项）"].note, new RegExp(`分层 ≥${contracts.acceptance.top3StratumMinPercent}%`));
+  assert.match(metricByLabel["知识辅助 Top3（条件项）"].note, new RegExp(`至少命中 ${contracts.acceptance.top3StratumMinHits} 条`));
+  assert.equal(Number(metricByLabel["知识来源正确（条件项）"].value.match(/\d+/)[0]), contracts.acceptance.citationCorrectPercent);
+  assert.equal(Number(metricByLabel["知识错误直答（条件项）"].value), contracts.acceptance.negativeMaxWrongAnswers);
+  assert.match(metricByLabel["知识错误直答（条件项）"].note, new RegExp(`不少于 ${contracts.acceptance.negativeMinCases} 条`));
   assert.equal(
     metricByLabel["内部真实试点"].value,
     `${contracts.acceptance.pilotMinPeople}–${contracts.acceptance.pilotMaxPeople} 人 × ${contracts.acceptance.pilotWeeks} 周`
@@ -170,27 +170,40 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   assert.match(metricByLabel["内部真实试点"].note, new RegExp(`每人每周 ≥${contracts.acceptance.pilotTasksPerPersonWeek} 个`));
   assert.equal(payload.governance.fee.find((item) => item.current)?.id, contracts.fee.pathCode);
   assert.equal(payload.status.feeSelected, contracts.fee.selected);
+  assert.equal("forceRank" in contracts, false, "manifest 不得保留废止的强制排序契约");
+  assert.equal(contracts.demandMeeting.date, "2026-08-04");
+  assert.equal(contracts.demandMeeting.agendaSha256.length, 64);
+  assert.equal("agenda" in payload.meeting, false, "08 不得继续内嵌现场议程");
+  assert.equal("decisions" in payload.meeting, false, "08 不得继续内嵌九项回读");
+  assert.equal("facilitation" in payload.meeting, false, "08 不得继续内嵌主持控制");
+  assert.match(payload.runtime?.canonicalLocationFingerprint || "", /^[a-f0-9]{16}$/);
+  assert.match(html, /data-meeting-link[^>]+09-客服Agent需求会汇报\.html/);
+  assert.doesNotMatch(html, /id="facilitator-|id="agenda"|id="decision-progress"|print-host|is-facilitating/);
   if (contracts.fee.paidAuthorization === "0") {
     assert.match(payload.status.paidSpend, /= 0/);
   } else {
     assert.equal(payload.status.paidSpend, "按已批准 cap 执行");
   }
   if (mode === "public-template") {
-    assert.match(html, /现在不是开工，是把 G0 证据补齐/);
-    assert.equal(payload.status.externalPass, 0);
+    assert.match(html, /项目已批准/);
+    assert.equal(payload.status.externalPass, 1);
     assert.equal(payload.status.externalTotal, 14);
-    assert.equal(payload.status.scopePass, 0);
+    assert.equal(payload.status.scopePass, 1);
     assert.equal(payload.status.scopeTotal, 15);
     assert.equal(payload.status.direction, "已记录");
-    assert.equal(payload.status.approval, "未完成");
+    assert.equal(payload.status.approval, "已批准");
     assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
-    assert.match(payload.headline.summary, /工作方向已登记，不等于公司批准/);
-    assert.match(payload.headline.nextOutput, /5 份原始评分 · 每候选 ≥3 样本 · 异常分清单/);
+    assert.match(payload.headline.summary, /批准凭证已归档/);
+    assert.match(payload.headline.nextOutput, /真实任务 · 指标基线 · 权威来源 · 试点与人数/);
     assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
     assert.equal(payload.governance.fee.find((item) => item.current)?.selected, false);
     assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /临时管控（未签）/);
     assert.equal(payload.governance.roles.filter((item) => item.needsNaming).length, 13);
     assert.equal(payload.prelaunchChecklist.length, 8);
+    assert.doesNotMatch(payload.headline.summary, /\b(?:Owner|Scope)\b/);
+    assert.doesNotMatch(payload.meeting.positioning, /\b(?:Owner|PRD|G0)\b/);
+    assert.doesNotMatch(payload.meeting.copyTitle, /\bPRD\b/);
+    assert.equal(payload.governance.forbiddenTitle, "开发开工许可前禁止");
   }
   assert.doesNotMatch(payload.meeting.director.join("\n"), /外包推进节奏/);
   assert.match(html, /Ddev/);
@@ -209,6 +222,7 @@ if (process.env.CHROME_PATH) {
 const servedFiles = new Set([
   "07-客服Agent立项PRD.html",
   "08-客服Agent立项执行中心.html",
+  "09-客服Agent需求会汇报.html",
 ]);
 const staticServer = createServer(async (request, response) => {
   try {
@@ -314,7 +328,7 @@ try {
       return `${structure.scrollWidth}/${structure.clientWidth}`;
     });
 
-    await check(`${viewport.name} · 资源基线与动态真源一致`, async () => {
+    await check(`${viewport.name} · 开发资源与动态真源一致`, async () => {
       const statusStrip = await page.evaluate(() => {
         const payload = JSON.parse(document.querySelector("#hub-data").textContent);
         const items = [...document.querySelectorAll("#status-strip .status-item")].map((item) => ({
@@ -325,15 +339,15 @@ try {
       });
       assert.equal(statusStrip.items.length, 6, "状态条应保持 6 格");
       assert.deepEqual(
-        statusStrip.items.filter((item) => item.label === "资源基线"),
-        [{ value: statusStrip.expected, label: "资源基线" }]
+        statusStrip.items.filter((item) => item.label === "开发资源"),
+        [{ value: statusStrip.expected, label: "开发资源" }]
       );
       assert.equal(
         statusStrip.items.some((item) => item.label === "工作方向"),
         false,
         "状态条不应重复 hero 中的工作方向"
       );
-      return `资源基线 · ${statusStrip.expected}`;
+      return `开发资源 · ${statusStrip.expected}`;
     });
 
     await check(`${viewport.name} · 控制台、请求与性能`, async () => {
@@ -486,15 +500,25 @@ try {
         )}px`;
       });
 
-      await check(`${viewport.name} · 返回 PRD 始终可见可点`, async () => {
-        const control = page.getByRole("button", { name: "返回 PRD" });
+      await check(`${viewport.name} · 返回项目说明始终可见可点`, async () => {
+        const control = page.getByRole("button", { name: "返回项目说明" });
         assert.equal(await control.isVisible(), true);
         const box = await control.boundingBox();
-        assert.ok(box && box.width >= 44 && box.height >= 44, `返回 PRD 热区：${JSON.stringify(box)}`);
+        assert.ok(box && box.width >= 44 && box.height >= 44, `返回项目说明热区：${JSON.stringify(box)}`);
         const canonicalHref = await control.getAttribute("data-canonical-href");
         assert.ok(canonicalHref);
         await stat(fileURLToPath(new URL(canonicalHref, targetUrl)));
         return `${Math.round(box.width)}×${Math.round(box.height)}`;
+      });
+
+      await check(`${viewport.name} · 独立汇报入口先于会前长清单`, async () => {
+        await page.locator("#meeting").scrollIntoViewIfNeeded();
+        const positions = await page.evaluate(() => ({
+          launchTop: document.querySelector(".meeting-launch").getBoundingClientRect().top,
+          prepTop: document.querySelector(".meeting-prep").getBoundingClientRect().top,
+        }));
+        assert.ok(positions.launchTop < positions.prepTop, JSON.stringify(positions));
+        return `launch ${Math.round(positions.launchTop)} < prep ${Math.round(positions.prepTop)}`;
       });
     }
 
@@ -715,7 +739,7 @@ try {
         return `7/7 结构化内容、无 Markdown/链接/脚本、axe、Esc、关闭与焦点恢复 · ${JSON.stringify(structuredTotals)}`;
       });
 
-      await check("孤立 file 返回 PRD 使用持久 query 路由", async () => {
+      await check("孤立 file 返回项目说明使用持久 query 路由", async () => {
         try {
           const isolatedHubPath = path.join(resultsDir, "isolated-customer-agent-hub.html");
           await writeFile(isolatedHubPath, await readFile(targetPath, "utf8"), "utf8");
@@ -724,9 +748,12 @@ try {
           const control = page.locator("#return-to-prd");
           assert.equal(await control.getAttribute("data-portable"), "true");
           assert.equal(await control.getAttribute("data-canonical-href"), "./07-客服Agent立项PRD.html");
+          assert.equal(await page.locator("a[data-meeting-link]").count(), 0);
+          assert.match(await page.locator(".meeting-unavailable").innerText(), /不在此便携文件内/);
+          assert.match(await page.locator("#meeting-launch-note").innerText(), /项目目录.*09-客服Agent需求会汇报\.html/);
           await control.click();
-          await page.waitForFunction(() => document.title.includes("PRD"));
-          assert.match(await page.title(), /客服 Agent.*PRD/);
+          await page.waitForFunction(() => document.title.includes("项目说明"));
+          assert.match(await page.title(), /客服 Agent.*项目说明/);
           assert.equal(new URL(page.url()).protocol, "file:");
           assert.equal(new URL(page.url()).pathname, originalPathname);
           assert.equal(new URL(page.url()).searchParams.get("portable"), "prd");
@@ -737,7 +764,7 @@ try {
           assert.equal(portableData.hub, null);
           assert.equal(portableData.sources.length, 7);
           await page.reload({ waitUntil: "load" });
-          await page.waitForFunction(() => document.title.includes("PRD"));
+          await page.waitForFunction(() => document.title.includes("项目说明"));
           assert.equal(new URL(page.url()).searchParams.get("portable"), "prd");
           await page.goBack();
           await page.waitForFunction(() =>
@@ -746,12 +773,12 @@ try {
           assert.equal(new URL(page.url()).pathname, originalPathname);
           await page.goForward();
           await page.waitForFunction(() =>
-            document.title.includes("PRD") && new URL(location.href).searchParams.get("portable") === "prd"
+            document.title.includes("项目说明") && new URL(location.href).searchParams.get("portable") === "prd"
           );
           await page.goBack();
           await page.waitForFunction(() => document.title.includes("执行中心"));
           await page.locator("#return-to-prd").click();
-          await page.waitForFunction(() => document.title.includes("PRD"));
+          await page.waitForFunction(() => document.title.includes("项目说明"));
           assert.doesNotMatch(page.url(), /^(?:blob:|chrome-error:)/);
           await page.locator("#open-execution-center").click();
           await page.waitForFunction(() =>
@@ -764,7 +791,18 @@ try {
           await page.waitForFunction(() => document.title.includes("执行中心"));
           assert.equal(new URL(page.url()).pathname, originalPathname);
           assert.equal(new URL(page.url()).searchParams.has("portable"), false);
-          return "click / reload / back / forward / reclick / PRD 回宿主 Hub / reload";
+
+          const canonicalNamedCopy = path.join(resultsDir, path.basename(targetPath));
+          await writeFile(canonicalNamedCopy, await readFile(targetPath, "utf8"), "utf8");
+          await page.goto(pathToFileURL(canonicalNamedCopy).href, { waitUntil: "load" });
+          assert.equal(
+            await page.locator("a[data-meeting-link]").count(),
+            0,
+            "同名孤立副本也不得误认为 canonical 目录"
+          );
+          assert.match(await page.locator(".meeting-unavailable").innerText(), /不在此便携文件内/);
+          assert.match(await page.locator("#meeting-launch-note").innerText(), /项目目录.*09-客服Agent需求会汇报\.html/);
+          return "click / reload / back / forward / reclick / PRD 回宿主 Hub / reload / 同名孤立副本";
         } finally {
           await page.goto(targetUrl, { waitUntil: "load" });
         }
@@ -784,10 +822,11 @@ try {
         return `${payload.prelaunchChecklist.length} 项 · ${unnamedCount} 角色待具名 · 指标分层`;
       });
 
-      await check("业务决策 / 一线运营候选角色筛选与深链", async () => {
-        await page.getByRole("button", { name: "业务决策候选" }).click();
+      await check("业务拍板 / BP 协同与经理 / 坐席角色筛选及深链", async () => {
+        const directorFilter = page.getByRole("button", { name: "客服总监（拍板）/ BP（协同）" });
+        await directorFilter.click();
         assert.equal(
-          await page.getByRole("button", { name: "业务决策候选" }).getAttribute("aria-pressed"),
+          await directorFilter.getAttribute("aria-pressed"),
           "true"
         );
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
@@ -797,10 +836,10 @@ try {
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), true);
         assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), false);
         assert.equal(
-          await page.getByRole("button", { name: "业务决策候选" }).getAttribute("aria-pressed"),
+          await directorFilter.getAttribute("aria-pressed"),
           "true"
         );
-        await page.getByRole("button", { name: "一线运营候选" }).click();
+        await page.getByRole("button", { name: "客服经理 / 坐席" }).click();
         assert.equal(await page.locator('[data-role-panel="director"]').isVisible(), false);
         assert.equal(await page.locator('[data-role-panel="manager"]').isVisible(), true);
         assert.match(page.url(), /role=manager/);
@@ -819,13 +858,26 @@ try {
         return "reload / back / forward · all / director / manager";
       });
 
+      await check("08 仅保留会前准备与独立 09 入口", async () => {
+        await page.goto(targetUrl, { waitUntil: "load" });
+        assert.equal(await page.locator("#meeting .meeting-prep").count(), 1);
+        assert.equal(await page.locator("#facilitator-console, #agenda, #decision-progress, #print-host-card").count(), 0);
+        const meetingControl = page.locator("[data-meeting-link]");
+        assert.equal(await meetingControl.innerText(), "打开启动会主屏");
+        assert.equal(await meetingControl.getAttribute("href"), "./09-客服Agent需求会汇报.html");
+        const meetingPath = fileURLToPath(new URL(await meetingControl.getAttribute("href"), targetUrl));
+        const meetingStat = await stat(meetingPath);
+        assert.ok(meetingStat.size > 20_000, `09 生成物体积异常：${meetingStat.size}`);
+        return `会前准备 1 份 · 现场实现 0 套 · 09 ${meetingStat.size} bytes`;
+      });
+
       await check("复制会前清单", async () => {
         await page.locator("#copy-checklist").click();
         await page.waitForFunction(() => Boolean(window.__hubCopiedText));
         const copied = await page.evaluate(() => window.__hubCopiedText);
-        assert.match(copied, /业务决策角色候选（待核验）/);
-        assert.match(copied, /一线运营角色候选（待核验）/);
-        assert.match(copied, /谁最终负责/);
+        assert.match(copied, /客服总监（拍板）\/ BP（协同）/);
+        assert.match(copied, /客服经理 \/ 坐席/);
+        assert.match(copied, /最终负责人/);
         assert.equal(await page.locator("#copy-status").innerText(), "已复制");
         return `${copied.length} 字`;
       });
@@ -877,7 +929,7 @@ try {
         await page.locator("#source-dialog").evaluate((item) => item.close());
         await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
         assert.equal(await details.evaluateAll((items) => items.every((item) => !item.open)), true);
-        return `${pageCount} 页，${pdf.byteLength} bytes`;
+        return `内部执行中心 ${pageCount} 页`;
       });
 
       await check("跳到正文与键盘焦点", async () => {

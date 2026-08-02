@@ -1,6 +1,6 @@
 # 08 · 客服立项校验工具
 
-本目录只维护客服 Agent 现行双页与 00–06 真源之间的生成、合同和浏览器验收工具。历史 Python 核验脚本不属于本轮日常门禁，也不应随本轮提交。
+本目录只维护客服 Agent 现行三视图与 00–06 真源之间的生成、合同和浏览器验收工具。历史 Python 核验脚本不属于本轮日常门禁，也不应随本轮提交。
 
 | 文件 | 唯一用途 |
 |------|----------|
@@ -8,8 +8,11 @@
 | `check_customer_agent_prd_sources.mjs` | 校验 PRD 的状态、里程碑、验收和费用动态合同，并维护 7 份真源清单 |
 | `generate_customer_agent_hub.mjs` | 从 00–06 生成只读执行中心；`--check` 拒绝过期页面 |
 | `templates/customer-agent-hub.template.html` | 执行中心唯一 HTML 模板 |
+| `generate_customer_agent_meeting.mjs` | 从 00–06 生成可授权转发的启动会主屏（文件名保留既有契约）；`--check` 拒绝过期页面 |
+| `templates/customer-agent-meeting.template.html` | 启动会主屏唯一 HTML 模板 |
 | `test_customer_agent_prd.mjs` | PRD 五视口、交互、打印、深色与无障碍验收 |
 | `test_customer_agent_hub.mjs` | 执行中心五视口、筛选、复制、打印、深色与无障碍验收 |
+| `test_customer_agent_meeting.mjs` | 启动会主屏的泄漏门禁、五视口、交互、离线、打印与无障碍验收 |
 | `project_workspace.mjs` | 强制公开模板 / 仓外私有工作区二选一；私有模式须有标记且不得位于公开仓内 |
 | `prepare_private_customer_project.mjs` | 在公开仓外创建不覆盖的私有副本，供 A 路径和真实状态使用 |
 
@@ -21,17 +24,16 @@ node business-docs/08-工具/prepare_private_customer_project.mjs --target=/绝�
 export CUSTOMER_PROJECT_MODE=private
 export CUSTOMER_PROJECT_ROOT=/绝对路径/客服Agent项目
 
-# 真源变更后，先更新衍生物
-node business-docs/08-工具/check_customer_agent_prd_sources.mjs --update
-node business-docs/08-工具/generate_customer_agent_hub.mjs
+# 真源变更后，按 PRD → Hub → PRD 收敛 → Meeting 的固定顺序生成
+node business-docs/08-工具/sync_customer_agent_surfaces.mjs
 
 # CI / 会前只读检查
-node business-docs/08-工具/check_customer_agent_prd_sources.mjs --check
-node business-docs/08-工具/generate_customer_agent_hub.mjs --check
+node business-docs/08-工具/sync_customer_agent_surfaces.mjs --check
 
 # 浏览器交叉验收
 node business-docs/08-工具/test_customer_agent_prd.mjs --round=ci
 node business-docs/08-工具/test_customer_agent_hub.mjs --round=ci
+node business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci
 ```
 
 ## 数据边界

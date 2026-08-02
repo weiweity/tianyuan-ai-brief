@@ -25,7 +25,9 @@ const privateProjectFiles = [
   "05-全栈交付计划.md",
   "06-启动会与周推进.md",
   "07-客服Agent立项PRD.html",
+  "07-客服Agent立项PRD.sources.json",
   "08-客服Agent立项执行中心.html",
+  "09-客服Agent需求会汇报.html",
 ];
 
 async function walkFiles(root) {
@@ -57,17 +59,18 @@ test("Pages artifact 只发布历史 Web 与统一内部访问提示，不复制
 
   const index = await readFile(path.join(outputPath, "index.html"), "utf8");
   assert.doesNotMatch(index, /business-docs|current\/customer-agent/);
-  assert.equal((index.match(/href="\.\/internal-only\.html"/g) || []).length, 2);
+  assert.equal((index.match(/href="\.\/internal-only\.html"/g) || []).length, 3);
 
   const internalOnly = await readFile(path.join(outputPath, "internal-only.html"), "utf8");
   assert.match(internalOnly, /现行材料仅授权内部访问/);
   assert.match(internalOnly, /本地仓库路径不会在此公开/);
-  assert.doesNotMatch(internalOnly, /business-docs|客服Agent立项PRD|客服Agent立项执行中心/);
+  assert.doesNotMatch(internalOnly, /business-docs|客服Agent立项PRD|客服Agent立项执行中心|客服Agent需求会汇报|meeting-v1-/);
   await assert.rejects(stat(path.join(outputPath, "current/customer-agent")), { code: "ENOENT" });
 
   await validateArtifactLinks(outputPath);
   const artifactText = await publicText(outputPath);
   assert.doesNotMatch(artifactText, /business-docs|current\/customer-agent/);
+  assert.doesNotMatch(artifactText, /客服 Agent 一期(?:需求确认会|启动会)|meeting-v1-/);
   for (const name of privateProjectFiles) assert.doesNotMatch(artifactText, new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
   const privateHashes = await Promise.all(privateProjectFiles.map(async (name) => {
@@ -93,7 +96,7 @@ test("发布副本降级指向仓库外的 Markdown 链接，保留公开 Web �
   await mkdir(docs);
   await writeFile(
     path.join(docs, "index.html"),
-    '<a href="../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html">A</a><a href="../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html">B</a>'
+    '<a href="../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html">A</a><a href="../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html">B</a><a href="../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html">C</a>'
   );
   await writeFile(path.join(docs, "public.md"), "[公开入口](./index.html)\n[内部材料](../../business-docs/private.md)\n");
   await stagePagesArtifact({ outputPath, webDocsPath: docs });
@@ -117,10 +120,11 @@ test("链接校验剥离 query 与 fragment，并递归检查 HTML / Markdown", 
   await assert.rejects(validateArtifactLinks(root), /missing\.html\?query=1#fragment（目标不存在）/);
 });
 
-test("源码历史页保留本地 PRD / Hub 入口，仅发布副本改写", async () => {
+test("源码历史页保留本地 PRD / Hub / Meeting 入口，仅发布副本改写", async () => {
   const sourceIndex = await readFile(path.join(webRoot, "docs/index.html"), "utf8");
   assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/07-客服Agent立项PRD\.html/);
   assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/08-客服Agent立项执行中心\.html/);
+  assert.match(sourceIndex, /\.\.\/\.\.\/business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
 });
 
 test("Pages staging 对现存自定义目录和文件明确返回 EEXIST 且不覆盖", async () => {
@@ -158,7 +162,7 @@ test("canonical replace 遇到 dist symlink 时拒绝，仓库外目录不删除
 test("Pages 只由公开 Web 触发，不上传客服证据且第三方 Action 固定提交", async () => {
   const workflow = await readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8");
   assert.match(workflow, /web-decision-brief\/\*\*/);
-  assert.doesNotMatch(workflow, /business-docs|customer-agent-(?:prd|hub)-qa|Upload quality evidence/);
+  assert.doesNotMatch(workflow, /business-docs|customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);
   assert.match(workflow, /actions\/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa/);
   assert.match(workflow, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
   assert.match(workflow, /path:\s*web-decision-brief\/dist\/pages/);

@@ -18,7 +18,7 @@
     "pretest": "npm run build:check",
     "test": "node --test tests/*.test.mjs",
     "test:ui": "node tests/ui-audit.mjs",
-    "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci",
+    "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci",
     "audit:deps": "npm audit --registry=https://registry.npmjs.org",
     "test:all": "npm run test && npm run test:ui && npm run test:business && npm run audit:deps"
   },

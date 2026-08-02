@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#f3f0f6">
   <link rel="icon" href="data:,">
-  <title>客服 Agent · 立项执行中心</title>
+  <title>客服 Agent 一期 · 需求会执行中心</title>
   <style>
     :root {
       color-scheme: light;
@@ -425,8 +425,7 @@
     }
 
     .action-layout,
-    .scope-layout,
-    .meeting-layout {
+    .scope-layout {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       border-top: 1px solid var(--line-strong);
@@ -434,14 +433,12 @@
     }
 
     .action-column,
-    .scope-column,
-    .meeting-column {
+    .scope-column {
       padding: clamp(24px, 4vw, 42px);
     }
 
     .action-column + .action-column,
-    .scope-column + .scope-column,
-    .meeting-column + .meeting-column {
+    .scope-column + .scope-column {
       border-left: 1px solid var(--line-strong);
     }
 
@@ -792,41 +789,75 @@
       display: none;
     }
 
+    .meeting-launch {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-5);
+      align-items: center;
+      margin-bottom: var(--space-6);
+      padding: clamp(22px, 4vw, 36px);
+      border: 1px solid var(--brand-300);
+      border-left: 5px solid var(--brand-600);
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--brand-50), var(--surface));
+    }
+
+    .meeting-launch h3,
+    .meeting-launch p {
+      margin-bottom: 6px;
+    }
+
+    .meeting-launch p,
+    .meeting-launch-note {
+      color: var(--muted);
+    }
+
+    .meeting-launch-actions {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+    }
+
+    .meeting-launch-note {
+      max-width: 360px;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .meeting-unavailable {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--touch);
+      padding: 9px 14px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .meeting-prep {
+      padding: clamp(24px, 4vw, 42px);
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      background: var(--surface);
+    }
+
+    .role-separation-note {
+      margin: 0 0 var(--space-4);
+      padding: 12px 14px;
+      border-left: 3px solid var(--brand-300);
+      color: var(--muted);
+      background: var(--surface-soft);
+    }
+
     .meeting-position {
       margin-bottom: var(--space-6);
       padding: 14px 16px;
       border-left: 3px solid var(--warn);
       color: var(--warn);
       background: var(--warn-bg);
-    }
-
-    .agenda {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .agenda li {
-      display: grid;
-      grid-template-columns: 70px 1fr;
-      gap: var(--space-3);
-      padding: 12px 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .agenda time {
-      color: var(--brand-600);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .agenda strong {
-      display: block;
-    }
-
-    .agenda span {
-      color: var(--muted);
-      font-size: 13px;
     }
 
     .copy-row {
@@ -1290,14 +1321,12 @@
       }
 
       .action-layout,
-      .scope-layout,
-      .meeting-layout {
+      .scope-layout {
         grid-template-columns: 1fr;
       }
 
       .action-column + .action-column,
-      .scope-column + .scope-column,
-      .meeting-column + .meeting-column {
+      .scope-column + .scope-column {
         border-top: 1px solid var(--line-strong);
         border-left: 0;
       }
@@ -1425,8 +1454,16 @@
         border-bottom: 0;
       }
 
-      .agenda li {
-        grid-template-columns: 58px 1fr;
+      .meeting-launch {
+        grid-template-columns: 1fr;
+      }
+
+      .meeting-launch-actions {
+        justify-items: start;
+      }
+
+      .meeting-launch-note {
+        text-align: left;
       }
 
       .compact-row {
@@ -1572,6 +1609,7 @@
         color: var(--ink);
         text-decoration: none;
       }
+
     }
   </style>
 </head>
@@ -1580,23 +1618,23 @@
 
   <header class="site-header" aria-label="页面导航">
     <div class="header-inner">
-      <a class="brand" href="#overview" aria-label="客服 Agent 立项执行中心首页">
+      <a class="brand" href="#overview" aria-label="客服 Agent 一期需求会执行中心首页">
         天元
-        <small>客服 Agent · 执行中心</small>
+        <small>客服 Agent 一期 · 需求会</small>
       </a>
 
       <nav class="top-nav" aria-label="执行中心章节">
         <a href="#overview">总览</a>
         <a href="#now">现在做</a>
-        <a href="#gates">G0 门禁</a>
+        <a href="#gates">开发前检查</a>
         <a href="#schedule">排期</a>
-        <a href="#acceptance">范围验收</a>
+        <a href="#acceptance">做与不做</a>
         <a href="#meeting">需求会</a>
-        <a href="#governance">责任边界</a>
+        <a href="#governance">人和费用</a>
       </nav>
 
       <div class="header-actions">
-        <button class="quiet-link" id="return-to-prd" type="button" data-canonical-href="./07-客服Agent立项PRD.html">返回 PRD</button>
+        <button class="quiet-link" id="return-to-prd" type="button" data-canonical-href="./07-客服Agent立项PRD.html">返回项目说明</button>
         <button class="button" id="print-button" type="button">打印会议包</button>
       </div>
     </div>
@@ -1611,7 +1649,7 @@
       </div>
 
       <aside class="next-card" aria-labelledby="next-title">
-        <p class="next-label">下一门禁</p>
+        <p class="next-label">下一件关键事</p>
         <time class="next-date" id="next-date"></time>
         <h2 id="next-title"></h2>
         <p id="next-output"></p>
@@ -1648,7 +1686,7 @@
               <ul class="boundary-list allowed" id="allowed-list"></ul>
             </div>
             <div class="scope-column">
-              <h3 id="forbidden-title">Ddev 前禁止</h3>
+              <h3 id="forbidden-title">开发许可前禁止</h3>
               <ul class="boundary-list forbidden" id="forbidden-list"></ul>
             </div>
           </div>
@@ -1658,10 +1696,10 @@
 
     <section class="section-block" id="gates" aria-labelledby="gates-title">
       <header class="section-head">
-        <p class="section-kicker">02 / Gates</p>
+        <p class="section-kicker">02 / 开发前检查</p>
         <div class="section-intro">
-          <h2 id="gates-title" data-pretext>不是完成百分比，是逐项验真。</h2>
-          <p>外部责任包 14 项与 Scope 15 项必须同时全 Pass；证据不齐，Ddev 保持为空。</p>
+          <h2 id="gates-title" data-pretext>每一项都有负责人和证据，才允许开发。</h2>
+          <p>14 项跨团队责任和 15 项范围检查必须全部完成；证据不齐，开发开工许可保持未成立。</p>
         </div>
       </header>
 
@@ -1670,7 +1708,7 @@
 
       <details>
         <summary>
-          <span>Scope 冻结 · 15 项检查</span>
+          <span>范围确认 · 15 项检查</span>
           <span class="summary-meta" id="scope-summary"></span>
         </summary>
         <div class="compact-list" id="scope-checks"></div>
@@ -1679,10 +1717,10 @@
 
     <section class="section-block" id="schedule" aria-labelledby="schedule-title">
       <header class="section-head">
-        <p class="section-kicker">03 / Schedule</p>
+        <p class="section-kicker">03 / 排期</p>
         <div class="section-intro">
           <h2 id="schedule-title" data-pretext></h2>
-          <p>每天都有输出；任一硬门禁未过，后续日期按可用工作日顺延。</p>
+          <p>每天都要有看得见的产出；任一关键检查未过，后续日期按实际情况顺延。</p>
         </div>
       </header>
       <ol class="timeline" id="timeline"></ol>
@@ -1690,18 +1728,18 @@
 
     <section class="section-block" id="acceptance" aria-labelledby="acceptance-title">
       <header class="section-head">
-        <p class="section-kicker">04 / Scope</p>
+        <p class="section-kicker">04 / 做与不做</p>
         <div class="section-intro">
-          <h2 id="acceptance-title" data-pretext>首期只把话术闭环做对。</h2>
-          <p>指标能量化，口径在 G0 冻结；负例错误直答、越权泄露或自动代发任一大于 0，直接不通过。</p>
+          <h2 id="acceptance-title" data-pretext>一期只解决一个真实客服问题。</h2>
+          <p>8 月 4 日确认业务指标与停止条件；知识辅助相关数字只在该方向被选中时使用。</p>
         </div>
       </header>
 
-      <ul class="metric-grid" id="metric-grid" aria-label="MVP-A 暂定成功指标"></ul>
+      <ul class="metric-grid" id="metric-grid" aria-label="客服 Agent 一期暂定成功指标"></ul>
 
       <div class="scope-layout">
         <article class="scope-column">
-          <h3>In · MVP-A</h3>
+          <h3>In Scope · 一期要做</h3>
           <ul class="plain-list" id="in-scope"></ul>
         </article>
         <article class="scope-column">
@@ -1713,27 +1751,37 @@
 
     <section class="section-block" id="meeting" aria-labelledby="meeting-title">
       <header class="section-head">
-        <p class="section-kicker">05 / Meeting</p>
+        <p class="section-kicker">05 / 需求会</p>
         <div class="section-intro">
           <h2 id="meeting-title" data-pretext></h2>
           <p id="meeting-position"></p>
         </div>
       </header>
 
-      <div class="role-controls" aria-label="会前准备角色筛选">
-        <button class="role-button" type="button" data-role-filter="all" aria-pressed="true">全部</button>
-        <button class="role-button" type="button" data-role-filter="director" aria-pressed="false">业务决策候选</button>
-        <button class="role-button" type="button" data-role-filter="manager" aria-pressed="false">一线运营候选</button>
-      </div>
+      <aside class="meeting-launch" aria-labelledby="meeting-launch-title">
+        <div>
+          <h3 id="meeting-launch-title">会场使用独立汇报页</h3>
+          <p>这里继续用于会前准备和内部推进；正式启动会只打开独立主屏，避免内部提醒、门禁和台账进入投影。</p>
+        </div>
+        <div class="meeting-launch-actions">
+          <a class="button" data-meeting-link href="./09-客服Agent需求会汇报.html">打开启动会主屏</a>
+          <span class="meeting-launch-note" id="meeting-launch-note">从项目目录打开时，可直接进入相邻的 09 汇报页。</span>
+        </div>
+      </aside>
 
-      <div class="meeting-layout">
-        <article class="meeting-column">
+      <article class="meeting-prep">
+          <div class="role-controls" aria-label="会前准备角色筛选">
+            <button class="role-button" type="button" data-role-filter="all" aria-pressed="true">全部</button>
+            <button class="role-button" type="button" data-role-filter="director" aria-pressed="false">客服总监（拍板）/ BP（协同）</button>
+            <button class="role-button" type="button" data-role-filter="manager" aria-pressed="false">客服经理 / 坐席</button>
+          </div>
+          <p class="role-separation-note"><strong>职责分开：</strong>客服总监负责最终业务拍板；客服 BP 负责跨团队协调与记录，不代替拍板。</p>
           <section class="role-panel" data-role-panel="director">
-            <h3>业务决策角色候选准备（待核验）</h3>
+            <h3>客服总监（拍板）/ BP（协同）会前准备</h3>
             <ul class="plain-list" id="director-list"></ul>
           </section>
           <section class="role-panel" data-role-panel="manager">
-            <h3>一线运营角色候选准备（待核验）</h3>
+            <h3>客服经理 / 坐席会前准备</h3>
             <ul class="plain-list" id="manager-list"></ul>
           </section>
           <section>
@@ -1744,21 +1792,15 @@
             <button class="button" id="copy-checklist" type="button">复制会前清单</button>
             <span class="copy-status" id="copy-status" aria-live="polite"></span>
           </div>
-        </article>
-
-        <article class="meeting-column">
-          <h3>60 分钟议程</h3>
-          <ol class="agenda" id="agenda"></ol>
-        </article>
-      </div>
+      </article>
     </section>
 
     <section class="section-block" id="governance" aria-labelledby="governance-title">
       <header class="section-head">
-        <p class="section-kicker">06 / Guardrails</p>
+        <p class="section-kicker">06 / 人和边界</p>
         <div class="section-intro">
-          <h2 id="governance-title" data-pretext>费用、责任、技术与风险都要有人签。</h2>
-          <p>这里只展示费用管控规则与授权状态，不代表已核验实际财务流水；技术栈、复用、部署和运行责任都待 G0 冻结。</p>
+          <h2 id="governance-title" data-pretext>钱、责任和风险都要有人负责。</h2>
+          <p>费用尚未批准，当前新增付费为 0；工程团队在业务要求明确后提出技术方案，并由 IT / 安全复核。</p>
         </div>
       </header>
 
@@ -1788,8 +1830,8 @@
 
       <details>
         <summary>
-          <span>全栈 G0 交付</span>
-          <span class="summary-meta">技术栈未冻结</span>
+          <span>给工程同事的开发前交付</span>
+          <span class="summary-meta">普通参会人无需展开</span>
         </summary>
         <div class="compact-list" id="functions"></div>
       </details>
@@ -1834,8 +1876,37 @@ __PRETEXT_VENDOR__
     const data = JSON.parse(document.querySelector("#hub-data").textContent);
 
     const returnToPrd = document.querySelector("#return-to-prd");
+    const meetingLink = document.querySelector("[data-meeting-link]");
+    const meetingLaunchNote = document.querySelector("#meeting-launch-note");
     const initialPortableSurface = new URL(location.href).searchParams.get("portable");
     const canRenderPortablePrd = location.protocol === "file:" && Boolean(data.portablePrd?.htmlBase64);
+    function locationFingerprint(value) {
+      const input = String(value);
+      let primary = 0x811c9dc5;
+      let secondary = 0x9e3779b9;
+      for (let index = 0; index < input.length; index += 1) {
+        const code = input.charCodeAt(index);
+        primary = Math.imul(primary ^ code, 0x01000193);
+        secondary = Math.imul(secondary ^ code, 0x85ebca6b);
+      }
+      return `${(primary >>> 0).toString(16).padStart(8, "0")}${(secondary >>> 0)
+        .toString(16)
+        .padStart(8, "0")}`;
+    }
+
+    const expectedCanonicalLocation = data.runtime?.canonicalLocationFingerprint;
+    const hasCanonicalSiblingContext =
+      location.protocol !== "file:" ||
+      (typeof expectedCanonicalLocation === "string" &&
+        locationFingerprint(location.pathname) === expectedCanonicalLocation);
+
+    if (!hasCanonicalSiblingContext) {
+      const unavailableMeeting = document.createElement("span");
+      unavailableMeeting.className = "meeting-unavailable";
+      unavailableMeeting.textContent = "启动会主屏不在此便携文件内";
+      meetingLink.replaceWith(unavailableMeeting);
+      meetingLaunchNote.textContent = "当前是孤立便携文件；请回到项目目录，打开 09-客服Agent需求会汇报.html。";
+    }
 
     function decodePortableHtml(encoded) {
       const binary = atob(encoded);
@@ -2249,18 +2320,18 @@ __PRETEXT_VENDOR__
       `${data.status.feePath} · ${data.status.paidSpend}`;
 
     const statusItems = [
-      { value: data.status.approval, label: "公司正式批准" },
-      { value: data.status.problemFit, label: "问题适配" },
+      { value: data.status.approval, label: "项目批准" },
+      { value: data.status.problemFit, label: "一期问题" },
       {
         value: `${data.status.externalPass} / ${data.status.externalTotal}`,
-        label: "外部责任包",
+        label: "跨团队责任",
       },
       {
         value: `${data.status.scopePass} / ${data.status.scopeTotal}`,
-        label: "Scope 检查",
+        label: "范围检查",
       },
-      { value: data.status.resourceBaseline, label: "资源基线" },
-      { value: data.status.ddev, label: "Ddev" },
+      { value: data.status.resourceBaseline, label: "开发资源" },
+      { value: data.status.ddev, label: "开发开工许可" },
     ];
     document.querySelector("#status-strip").replaceChildren(
       ...statusItems.map((item) =>
@@ -2292,17 +2363,17 @@ __PRETEXT_VENDOR__
         element("strong", {
           text: `${data.status.externalPass} / ${data.status.externalTotal}`,
         }),
-        element("span", { text: "外部责任包 Pass" }),
+        element("span", { text: "跨团队责任已完成" }),
       ]),
       element("div", {}, [
         element("strong", {
           text: `${data.status.scopePass} / ${data.status.scopeTotal}`,
         }),
-        element("span", { text: "Scope 检查 Pass" }),
+        element("span", { text: "范围检查已完成" }),
       ]),
       element("div", {}, [
         element("strong", { text: data.status.ddev }),
-        element("span", { text: `G0 ${data.status.g0}` }),
+        element("span", { text: `开发前总检查 ${data.status.g0}` }),
       ])
     );
 
@@ -2416,17 +2487,6 @@ __PRETEXT_VENDOR__
     appendTextList(document.querySelector("#director-list"), data.meeting.director);
     appendTextList(document.querySelector("#manager-list"), data.meeting.manager);
     appendTextList(document.querySelector("#core-questions"), data.meeting.coreQuestions);
-    document.querySelector("#agenda").replaceChildren(
-      ...data.meeting.agenda.map((item) =>
-        element("li", {}, [
-          element("time", { text: item.time }),
-          element("div", {}, [
-            element("strong", { text: item.topic }),
-            element("span", { text: item.decision }),
-          ]),
-        ])
-      )
-    );
 
     const roleButtons = [...document.querySelectorAll("[data-role-filter]")];
     const rolePanels = [...document.querySelectorAll("[data-role-panel]")];
@@ -2465,10 +2525,10 @@ __PRETEXT_VENDOR__
     const copyText = [
       data.meeting.copyTitle,
       "",
-      "业务决策角色候选（待核验）：",
+      "客服总监（拍板）/ BP（协同）：",
       ...data.meeting.director.map((item) => `- ${item}`),
       "",
-      "一线运营角色候选（待核验）：",
+      "客服经理 / 坐席：",
       ...data.meeting.manager.map((item) => `- ${item}`),
       "",
       "核心问题：",
@@ -2494,7 +2554,7 @@ __PRETEXT_VENDOR__
         }
         status.textContent = "已复制";
       } catch {
-        status.textContent = "复制失败，请使用打印会议包";
+        status.textContent = "复制失败，请手动选择清单";
       } finally {
         document.body.classList.remove("copying");
       }

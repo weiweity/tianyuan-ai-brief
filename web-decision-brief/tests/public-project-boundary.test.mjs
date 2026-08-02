@@ -68,24 +68,24 @@ async function advancePrivateFixture(target) {
 
   const charter = replaceRequired(
     await readFile(charterPath, "utf8"),
-    "外部责任包 **0/14**、Scope **0/15**，合计 **0/29**",
-    "外部责任包 **1/14**、Scope **0/15**，合计 **1/29**",
+    "外部责任包 **1/14**、Scope **1/15**",
+    "外部责任包 **2/14**、Scope **1/15**",
     "私有章程门禁汇总"
   );
   await writeFile(charterPath, charter, "utf8");
 
   const readme = replaceRequired(
     await readFile(readmePath, "utf8"),
-    "外部责任包 0/14、Scope 0/15（合计 0/29）",
-    "外部责任包 1/14、Scope 0/15（合计 1/29）",
+    "外部责任包 1/14、Scope 1/15（合计 2/29）",
+    "外部责任包 2/14、Scope 1/15（合计 3/29）",
     "私有 README 门禁汇总"
   );
   await writeFile(readmePath, readme, "utf8");
 
   let ledger = replaceRequired(
     await readFile(ledgerPath, "utf8"),
-    "| 外部责任包 | **0/14 Pass** | G0-02～G0-15 |",
-    "| 外部责任包 | **1/14 Pass** | G0-02～G0-15 |",
+    "| 外部责任包 | **1/14 Pass** | G0-02 已完成；G0-03～15 待关闭 |",
+    "| 外部责任包 | **2/14 Pass** | G0-02、G0-08 已完成；其余待关闭 |",
     "私有台账外部责任包汇总"
   );
   ledger = replaceRequired(
@@ -109,15 +109,21 @@ async function advancePrivateFixture(target) {
   let prd = await readFile(prdPath, "utf8");
   prd = replaceRequired(
     prd,
-    "外部责任包 · 0 / 14",
     "外部责任包 · 1 / 14",
+    "外部责任包 · 2 / 14",
     "PRD 外部责任包状态轴"
   );
   prd = replaceRequired(
     prd,
-    "当前：外部责任包 0 / 14 Pass；",
-    "当前：外部责任包 1 / 14 Pass；",
+    "外部责任包 1 / 14；Scope 检查 1 / 15；",
+    "外部责任包 2 / 14；Scope 检查 1 / 15；",
     "PRD Ddev 门禁摘要"
+  );
+  prd = replaceRequired(
+    prd,
+    "当前只完成 2 / 29 项准备",
+    "当前只完成 3 / 29 项准备",
+    "PRD 总准备计数"
   );
   prd = replaceRequired(
     prd,
@@ -165,18 +171,18 @@ test("公开副本不得落正式 A 金额，真实 cap 只能进入私有副本
   assert.match(cost, /必须先把 00–06 迁到私有仓/);
 });
 
-test("公共 CI 不上传客服 PRD 或执行中心浏览器证据", async () => {
+test("公共 CI 不上传客服三视图浏览器证据", async () => {
   const [quality, pages] = await Promise.all([
     readFile(path.join(repoRoot, ".github/workflows/quality.yml"), "utf8"),
     readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8"),
   ]);
   for (const workflow of [quality, pages]) {
-    assert.doesNotMatch(workflow, /output\/customer-agent-(?:prd|hub)-qa/);
+    assert.doesNotMatch(workflow, /output\/customer-agent-(?:prd|hub|meeting)-qa/);
   }
   assert.doesNotMatch(pages, /business-docs\/01-客服Agent项目/);
 });
 
-test("公开现行文档的相对链接只指向 Git 已跟踪目标，且不暴露姓名或 notes 路径", async () => {
+test("公开现行文档的相对链接只指向已跟踪目标或 canonical 09 生成视图，且不暴露姓名或 notes 路径", async () => {
   const referenceDir = path.join(projectRoot, "80-参考");
   const referenceFiles = await collectFiles(referenceDir);
   const documentPaths = [
@@ -192,6 +198,9 @@ test("公开现行文档的相对链接只指向 Git 已跟踪目标，且不暴
   });
   assert.equal(trackedResult.status, 0, trackedResult.stderr);
   const trackedFiles = new Set(trackedResult.stdout.split("\0").filter(Boolean));
+  const canonicalGeneratedFiles = new Set([
+    "business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html",
+  ]);
   const failures = [];
 
   for (const { file, text } of entries) {
@@ -229,7 +238,7 @@ test("公开现行文档的相对链接只指向 Git 已跟踪目标，且不暴
         const repoRelative = path.relative(repoRoot, target).split(path.sep).join("/");
         const tracked = targetStat.isDirectory()
           ? [...trackedFiles].some((trackedFile) => trackedFile.startsWith(`${repoRelative}/`))
-          : trackedFiles.has(repoRelative);
+          : trackedFiles.has(repoRelative) || canonicalGeneratedFiles.has(repoRelative);
         if (!tracked) failures.push(`${path.relative(repoRoot, file)} -> 未跟踪 ${destination}`);
       } catch (error) {
         failures.push(`${path.relative(repoRoot, file)} -> 不存在 ${destination} (${error.code || error.message})`);
@@ -238,6 +247,8 @@ test("公开现行文档的相对链接只指向 Git 已跟踪目标，且不暴
   }
 
   assert.deepEqual(failures, []);
+  const meetingHtml = await readFile(path.join(projectRoot, "09-客服Agent需求会汇报.html"), "utf8");
+  assert.match(meetingHtml, /GENERATED FILE — safe meeting view; DO NOT EDIT/);
   const joined = entries.map(({ file, text }) => `\n# ${path.relative(repoRoot, file)}\n${text}`).join("\n");
   assert.doesNotMatch(joined, /魏炜/);
   assert.doesNotMatch(joined, /\bnotes[\\/]/i);
@@ -387,11 +398,12 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   assert.match(privateReadme, /私有现行工作区/);
   assert.match(privateReadme, /当前目录已经完成迁移/);
   assert.match(privateReadme, /不要再次运行 `prepare_private_customer_project\.mjs`/);
-  assert.doesNotMatch(privateReadme, /公共仓安全边界|进入真实状态或选择 A 前/);
+  assert.doesNotMatch(privateReadme, /公共仓安全边界|进入真实状态或选择 A 前|如需录入真实姓名/);
   assert.match(privateGuide, /当前目录已完成迁移/);
-  assert.match(privateGuide, /QA 证据默认写入本目录的 `\.qa-output\/`/);
+  assert.match(privateGuide, /三套浏览器 QA 证据默认写入本目录的 `\.qa-output\/`/);
   assert.match(privateGuide, /sync_customer_agent_surfaces\.mjs/);
   await stat(path.join(target, "08-客服Agent立项执行中心.html"));
+  await stat(path.join(target, "09-客服Agent需求会汇报.html"));
 
   const env = { ...process.env, CUSTOMER_PROJECT_MODE: "private", CUSTOMER_PROJECT_ROOT: target };
   const workspace = await resolveCustomerProjectWorkspace(workspaceModuleUrl, env);
@@ -410,6 +422,7 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   for (const [surface, outputDirectory] of [
     ["prd", "customer-agent-prd-qa"],
     ["hub", "customer-agent-hub-qa"],
+    ["meeting", "customer-agent-meeting-qa"],
   ]) {
     const qaPaths = resolveCustomerProjectQaPaths(workspace, surface);
     assert.deepEqual(qaPaths, {
@@ -426,7 +439,7 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     maxBuffer: 10 * 1024 * 1024,
   });
   assert.equal(sync.status, 0, `${sync.stderr}\n${sync.stdout}`);
-  assert.match(sync.stdout, /客服双页已同步并收敛 · private/);
+  assert.match(sync.stdout, /客服三视图已同步并收敛 · private/);
   const stable = spawnSync(process.execPath, [surfaceSync, "--check"], {
     cwd: repoRoot,
     env,
@@ -434,11 +447,12 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     maxBuffer: 10 * 1024 * 1024,
   });
   assert.equal(stable.status, 0, `${stable.stderr}\n${stable.stdout}`);
-  assert.match(stable.stdout, /客服双页已在稳定点 · private/);
+  assert.match(stable.stdout, /客服三视图已在稳定点 · private/);
   const prdPath = path.join(target, "07-客服Agent立项PRD.html");
   const manifestPath = path.join(target, "07-客服Agent立项PRD.sources.json");
   const hubPath = path.join(target, "08-客服Agent立项执行中心.html");
-  const managedSurfaces = [prdPath, manifestPath, hubPath];
+  const meetingPath = path.join(target, "09-客服Agent需求会汇报.html");
+  const managedSurfaces = [prdPath, manifestPath, hubPath, meetingPath];
   const fixedTime = new Date("2001-01-01T00:00:00.000Z");
   await Promise.all(managedSurfaces.map((filePath) => utimes(filePath, fixedTime, fixedTime)));
 
@@ -464,6 +478,28 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     "generator 连续运行时 Hub bytes + mtime 必须幂等"
   );
 
+  const meetingGenerator = path.join(repoRoot, "business-docs/08-工具/generate_customer_agent_meeting.mjs");
+  const meetingStableBefore = await artifactState([meetingPath]);
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    const directGenerator = spawnSync(process.execPath, [meetingGenerator], {
+      cwd: repoRoot,
+      env,
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    assert.equal(
+      directGenerator.status,
+      0,
+      `第 ${iteration + 1} 次直接 Meeting 生成失败\n${directGenerator.stderr}\n${directGenerator.stdout}`
+    );
+    assert.match(directGenerator.stdout, /需求会汇报已稳定，未重写/);
+  }
+  assert.deepEqual(
+    await artifactState([meetingPath]),
+    meetingStableBefore,
+    "generator 连续运行时 Meeting bytes + mtime 必须幂等"
+  );
+
   const syncStableBefore = await artifactState(managedSurfaces);
   for (let iteration = 0; iteration < 2; iteration += 1) {
     const stableSync = spawnSync(process.execPath, [surfaceSync], {
@@ -479,21 +515,22 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     );
     assert.match(stableSync.stdout, /PRD 真源清单已稳定，未重写/);
     assert.match(stableSync.stdout, /执行中心已稳定，未重写/);
+    assert.match(stableSync.stdout, /需求会汇报已稳定，未重写/);
   }
   assert.deepEqual(
     await artifactState(managedSurfaces),
     syncStableBefore,
-    "连续 sync 在稳定点必须保持 PRD / manifest / Hub bytes + mtime 全部不变"
+    "连续 sync 在稳定点必须保持 PRD / manifest / Hub / Meeting bytes + mtime 全部不变"
   );
   await stat(path.join(target, "07-客服Agent立项PRD.sources.json"));
   const prd = await readFile(prdPath, "utf8");
   const hub = await readFile(hubPath, "utf8");
-  assert.match(prd, /data-status-axis="external">\s*外部责任包 · 1 \/ 14/);
-  assert.doesNotMatch(prd, /data-status-axis="external">\s*外部责任包 · 0 \/ 14/);
+  assert.match(prd, /data-status-axis="external">\s*外部责任包 · 2 \/ 14/);
+  assert.doesNotMatch(prd, /data-status-axis="external">\s*外部责任包 · 1 \/ 14/);
   const payloadMatch = hub.match(/<script id="hub-data" type="application\/json">([\s\S]*?)<\/script>/);
   assert.ok(payloadMatch, "私有 Hub 缺少 hub-data");
   const payload = JSON.parse(payloadMatch[1]);
-  assert.equal(payload.status.externalPass, 1);
+  assert.equal(payload.status.externalPass, 2);
   assert.equal(payload.status.externalTotal, 14);
   assert.equal(payload.status.resourceBaseline, "单人全栈 / FDE");
   assert.equal(payload.gates.find((gate) => gate.id === "G0-08")?.status, "Pass");
@@ -527,6 +564,20 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   const hubResults = JSON.parse(await readFile(path.join(hubEvidenceDir, "results.json"), "utf8"));
   assert.equal(hubResults.summary.failed, 0);
   assert.equal(hubResults.targetPath, path.join(canonicalTarget, "08-客服Agent立项执行中心.html"));
+
+  const meetingQa = spawnSync(
+    process.execPath,
+    [path.join(repoRoot, "business-docs/08-工具/test_customer_agent_meeting.mjs"), "--round=private-progress"],
+    { cwd: repoRoot, env: qaEnv, encoding: "utf8", timeout: 120_000, maxBuffer: 5 * 1024 * 1024 }
+  );
+  const meetingEvidenceDir = qaEvidenceDirectory(
+    meetingQa,
+    path.join(canonicalTarget, ".qa-output/customer-agent-meeting-qa"),
+    "私有 Meeting QA"
+  );
+  const meetingResults = JSON.parse(await readFile(path.join(meetingEvidenceDir, "results.json"), "utf8"));
+  assert.equal(meetingResults.summary.failed, 0);
+  assert.equal(meetingResults.targetPath, path.join(canonicalTarget, "09-客服Agent需求会汇报.html"));
 
   const second = spawnSync(process.execPath, [prepare, `--target=${target}`], { cwd: repoRoot, encoding: "utf8" });
   assert.notEqual(second.status, 0, "迁移脚本不得覆盖既有私有工作区");
