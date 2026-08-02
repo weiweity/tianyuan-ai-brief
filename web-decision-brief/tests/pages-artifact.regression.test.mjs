@@ -52,26 +52,39 @@ async function publicText(artifactRoot) {
   return contents.join("\n");
 }
 
-test("Pages artifact 只发布历史 Web 与统一内部访问提示，不复制客服项目资料", async () => {
+test("Pages artifact 发布历史 Web 与脱敏启动会，PRD / Hub 仍降级", async () => {
   const parent = await mkdtemp(path.join(tmpdir(), "pages-artifact-"));
   const outputPath = path.join(parent, "pages");
   await stagePagesArtifact({ outputPath });
 
   const index = await readFile(path.join(outputPath, "index.html"), "utf8");
   assert.doesNotMatch(index, /business-docs|current\/customer-agent/);
-  assert.equal((index.match(/href="\.\/internal-only\.html"/g) || []).length, 3);
+  assert.equal((index.match(/href="\.\/internal-only\.html"/g) || []).length, 2);
+  assert.equal((index.match(/href="\.\/customer-agent\/"/g) || []).length, 1);
 
   const internalOnly = await readFile(path.join(outputPath, "internal-only.html"), "utf8");
   assert.match(internalOnly, /现行材料仅授权内部访问/);
   assert.match(internalOnly, /本地仓库路径不会在此公开/);
   assert.doesNotMatch(internalOnly, /business-docs|客服Agent立项PRD|客服Agent立项执行中心|客服Agent需求会汇报|meeting-v1-/);
+  const publicMeeting = await readFile(path.join(outputPath, "customer-agent/index.html"), "utf8");
+  assert.match(publicMeeting, /GENERATED FILE — safe meeting view; DO NOT EDIT/);
+  assert.match(publicMeeting, /data-release="meeting-v1-[a-f0-9]{12}"/);
+  assert.match(publicMeeting, /<title>天元 · 客服 Agent 一期启动会<\/title>/);
+  assert.match(publicMeeting, /<link rel="icon" href="data:image\/png;base64,/);
+  assert.match(publicMeeting, /<img class="brand-logo" src="data:image\/png;base64,[^"]+" alt="SHINE MAGE">/);
+  assert.doesNotMatch(
+    publicMeeting,
+    /\bbusiness-docs\b|\bsources\b|portablePrd|\bG0(?:-|\b)|\bRACI\b|\b(?:EVD|ROLE|USR)[-_]|费用|风险/i
+  );
   await assert.rejects(stat(path.join(outputPath, "current/customer-agent")), { code: "ENOENT" });
 
   await validateArtifactLinks(outputPath);
   const artifactText = await publicText(outputPath);
   assert.doesNotMatch(artifactText, /business-docs|current\/customer-agent/);
-  assert.doesNotMatch(artifactText, /客服 Agent 一期(?:需求确认会|启动会)|meeting-v1-/);
-  for (const name of privateProjectFiles) assert.doesNotMatch(artifactText, new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(artifactText, /客服 Agent 一期启动会|meeting-v1-/);
+  for (const name of privateProjectFiles.filter((name) => name !== "09-客服Agent需求会汇报.html")) {
+    assert.doesNotMatch(artifactText, new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 
   const privateHashes = await Promise.all(privateProjectFiles.map(async (name) => {
     const source = await readFile(path.join(privateProjectRoot, name));
@@ -85,6 +98,7 @@ test("Pages artifact 只发布历史 Web 与统一内部访问提示，不复制
   assert.equal(manifest.visibility, "public");
   assert.ok(manifest.files.includes("internal-only.html"));
   assert.ok(manifest.files.includes("index.html"));
+  assert.ok(manifest.files.includes("customer-agent/index.html"));
   assert.equal(manifest.files.some((file) => file.startsWith("current/") || file.includes("business-docs")), false);
   assert.doesNotMatch(JSON.stringify(manifest), /sha256|sourceSha|[a-f\d]{64}/i);
 });
@@ -159,10 +173,11 @@ test("canonical replace 遇到 dist symlink 时拒绝，仓库外目录不删除
   await assert.rejects(stat(path.join(external, "pages")), { code: "ENOENT" });
 });
 
-test("Pages 只由公开 Web 触发，不上传客服证据且第三方 Action 固定提交", async () => {
+test("Pages 由公开 Web 或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
   const workflow = await readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8");
   assert.match(workflow, /web-decision-brief\/\*\*/);
-  assert.doesNotMatch(workflow, /business-docs|customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);
+  assert.match(workflow, /business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
+  assert.doesNotMatch(workflow, /customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);
   assert.match(workflow, /actions\/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa/);
   assert.match(workflow, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
   assert.match(workflow, /path:\s*web-decision-brief\/dist\/pages/);

@@ -179,7 +179,11 @@ test("公共 CI 不上传客服三视图浏览器证据", async () => {
   for (const workflow of [quality, pages]) {
     assert.doesNotMatch(workflow, /output\/customer-agent-(?:prd|hub|meeting)-qa/);
   }
-  assert.doesNotMatch(pages, /business-docs\/01-客服Agent项目/);
+  assert.match(pages, /business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
+  assert.doesNotMatch(
+    pages,
+    /business-docs\/01-客服Agent项目\/(?:00-|01-|02-|03-|04-|05-|06-|07-|08-)/
+  );
 });
 
 test("公开现行文档的相对链接只指向已跟踪目标或 canonical 09 生成视图，且不暴露姓名或 notes 路径", async () => {

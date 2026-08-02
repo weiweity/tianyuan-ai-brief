@@ -34,26 +34,31 @@ const canonicalProjectDir = await realpath(projectDir);
 const prdPath = path.join(projectDir, "07-客服Agent立项PRD.html");
 const templatePath = path.join(scriptDir, "templates/customer-agent-meeting.template.html");
 const brandLogoPath = path.join(repoRoot, "web-decision-brief/docs/assets/logo.png");
+const faviconPath = path.join(repoRoot, "web-decision-brief/docs/assets/favicon.png");
+const appleTouchIconPath = path.join(
+  repoRoot,
+  "web-decision-brief/docs/assets/apple-touch-icon.png"
+);
 const canonicalOutputPath = path.join(projectDir, "09-客服Agent需求会汇报.html");
 
-async function readBrandLogo() {
-  const fileStat = await lstat(brandLogoPath);
-  if (fileStat.isSymbolicLink()) throw new Error(`会议品牌 Logo 不能是符号链接：${brandLogoPath}`);
-  if (!fileStat.isFile()) throw new Error(`会议品牌 Logo 必须是普通文件：${brandLogoPath}`);
-  const canonicalLogoPath = await realpath(brandLogoPath);
-  if (!isWithin(canonicalRepoRoot, canonicalLogoPath)) {
-    throw new Error(`会议品牌 Logo 真实路径越出仓库：${canonicalLogoPath}`);
+async function readBrandAsset(assetPath, label) {
+  const fileStat = await lstat(assetPath);
+  if (fileStat.isSymbolicLink()) throw new Error(`${label}不能是符号链接：${assetPath}`);
+  if (!fileStat.isFile()) throw new Error(`${label}必须是普通文件：${assetPath}`);
+  const canonicalAssetPath = await realpath(assetPath);
+  if (!isWithin(canonicalRepoRoot, canonicalAssetPath)) {
+    throw new Error(`${label}真实路径越出仓库：${canonicalAssetPath}`);
   }
 
   const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
   let handle;
   try {
-    handle = await open(brandLogoPath, flags);
+    handle = await open(assetPath, flags);
     const openedStat = await handle.stat();
-    if (!openedStat.isFile()) throw new Error(`会议品牌 Logo 必须是普通文件：${brandLogoPath}`);
+    if (!openedStat.isFile()) throw new Error(`${label}必须是普通文件：${assetPath}`);
     return await handle.readFile();
   } catch (error) {
-    if (error?.code === "ELOOP") throw new Error(`会议品牌 Logo 不能是符号链接：${brandLogoPath}`);
+    if (error?.code === "ELOOP") throw new Error(`${label}不能是符号链接：${assetPath}`);
     throw error;
   } finally {
     await handle?.close();
@@ -61,8 +66,18 @@ async function readBrandLogo() {
 }
 
 const initialSources = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
-const [template, prdHtml, brandLogo, generatorSource, statusModuleSource, surfaceModelSource, surfaceIoSource, meetingModuleSource] =
-  await Promise.all([
+const [
+  template,
+  prdHtml,
+  brandLogo,
+  favicon,
+  appleTouchIcon,
+  generatorSource,
+  statusModuleSource,
+  surfaceModelSource,
+  surfaceIoSource,
+  meetingModuleSource,
+] = await Promise.all([
     readRegularFileNoFollow(templatePath, {
       allowedRoot: canonicalToolDir,
       label: "需求会汇报模板",
@@ -71,13 +86,15 @@ const [template, prdHtml, brandLogo, generatorSource, statusModuleSource, surfac
       allowedRoot: canonicalProjectDir,
       label: "PRD ",
     }),
-    readBrandLogo(),
+    readBrandAsset(brandLogoPath, "会议品牌 Logo"),
+    readBrandAsset(faviconPath, "会议标签页图标"),
+    readBrandAsset(appleTouchIconPath, "会议 Apple Touch 图标"),
     readFile(scriptPath, "utf8"),
     readFile(path.join(scriptDir, "customer_project_status.mjs"), "utf8"),
     readFile(path.join(scriptDir, "customer_project_surface_model.mjs"), "utf8"),
     readFile(path.join(scriptDir, "customer_project_surface_io.mjs"), "utf8"),
     readFile(path.join(scriptDir, "customer_project_meeting.mjs"), "utf8"),
-  ]);
+]);
 const rawPretextVendor = extractPretextVendor(prdHtml, `PRD：${prdPath}`);
 const pretextLowerG0Identifiers = rawPretextVendor.match(/\bg0\b/g) ?? [];
 const pretextUpperG0Identifiers = rawPretextVendor.match(/\bG0\b/g) ?? [];
@@ -107,6 +124,8 @@ const releaseHash = sha256(
     template,
     pretextVendor,
     sha256(brandLogo),
+    sha256(favicon),
+    sha256(appleTouchIcon),
     generatorSource,
     statusModuleSource,
     surfaceModelSource,
@@ -284,19 +303,30 @@ for (const placeholder of [
   "__MEETING_DATA__",
   "__PRETEXT_VENDOR__",
   "__BRAND_LOGO_DATA_URI__",
+  "__FAVICON_DATA_URI__",
+  "__APPLE_TOUCH_ICON_DATA_URI__",
 ]) {
   if (!template.includes(placeholder)) throw new Error(`需求会汇报模板缺少占位符：${placeholder}`);
 }
 const brandLogoDataUri = `data:image/png;base64,${brandLogo.toString("base64")}`;
+const faviconDataUri = `data:image/png;base64,${favicon.toString("base64")}`;
+const appleTouchIconDataUri = `data:image/png;base64,${appleTouchIcon.toString("base64")}`;
 const generated = template
   .replaceAll("__RELEASE_ID__", releaseId)
   .replace("__MEETING_DATA__", () => safePayload)
   .replace("__PRETEXT_VENDOR__", () => pretextVendor)
-  .replace("__BRAND_LOGO_DATA_URI__", () => brandLogoDataUri);
+  .replace("__BRAND_LOGO_DATA_URI__", () => brandLogoDataUri)
+  .replace("__FAVICON_DATA_URI__", () => faviconDataUri)
+  .replace("__APPLE_TOUCH_ICON_DATA_URI__", () => appleTouchIconDataUri);
 if (
-  ["__RELEASE_ID__", "__MEETING_DATA__", "__PRETEXT_VENDOR__", "__BRAND_LOGO_DATA_URI__"].some(
-    (value) => generated.includes(value)
-  )
+  [
+    "__RELEASE_ID__",
+    "__MEETING_DATA__",
+    "__PRETEXT_VENDOR__",
+    "__BRAND_LOGO_DATA_URI__",
+    "__FAVICON_DATA_URI__",
+    "__APPLE_TOUCH_ICON_DATA_URI__",
+  ].some((value) => generated.includes(value))
 ) {
   throw new Error("需求会汇报模板占位符替换不完整");
 }

@@ -6,9 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f3f0f6">
+  <meta name="description" content="客服 Agent 一期项目启动会：共同确认一期主问题、范围、责任与下一步。">
   <meta name="robots" content="noindex,nofollow">
-  <link rel="icon" href="data:,">
-  <title>客服 Agent 一期启动会</title>
+  <link rel="icon" href="__FAVICON_DATA_URI__" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="__APPLE_TOUCH_ICON_DATA_URI__" sizes="180x180">
+  <title>天元 · 客服 Agent 一期启动会</title>
   <script>document.documentElement.classList.add("js");</script>
   <style>
     :root {
@@ -41,7 +43,7 @@
       --radius-lg: 24px;
       --touch: 44px;
       --content: 1320px;
-      --header-height: 72px;
+      --header-height: 76px;
       --control-height: 76px;
       --ease: cubic-bezier(.2, .8, .2, 1);
       --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
@@ -183,19 +185,25 @@
       position: relative;
       z-index: 20;
       height: var(--header-height);
-      border-bottom: 1px solid rgb(222 215 228 / 88%);
-      background: rgb(243 240 246 / 94%);
-      backdrop-filter: blur(14px);
+      padding: 6px 10px 2px;
+      background: transparent;
     }
 
     .header-inner {
       display: grid;
-      grid-template-columns: clamp(148px, 16vw, 210px) minmax(340px, 1fr) auto;
-      gap: 22px;
+      grid-template-columns: clamp(140px, 14vw, 176px) minmax(180px, 1fr) auto auto;
+      gap: 16px;
       align-items: center;
-      width: min(calc(100% - 40px), var(--content));
+      width: min(100%, 1580px);
       height: 100%;
       margin: 0 auto;
+      padding: 7px 14px;
+      overflow: hidden;
+      border: 1px solid rgb(222 215 228 / 92%);
+      border-radius: 18px;
+      background: rgb(255 255 255 / 92%);
+      box-shadow: 0 8px 26px rgb(46 35 53 / 8%);
+      backdrop-filter: blur(18px);
     }
 
     .brand {
@@ -206,11 +214,40 @@
 
     .brand-logo {
       display: block;
-      width: min(100%, 176px);
+      width: min(100%, 172px);
       height: auto;
-      max-height: 38px;
+      max-height: 36px;
       object-fit: contain;
       object-position: left center;
+    }
+
+    .header-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+      line-height: 1.2;
+    }
+
+    .header-title,
+    .header-subtitle {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header-title {
+      color: var(--brand-900);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    .header-subtitle {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
     }
 
     .state-strip {
@@ -992,8 +1029,12 @@
 
     @media (max-width: 1100px) {
       .header-inner {
-        grid-template-columns: minmax(148px, .55fr) minmax(300px, 1.3fr) auto;
-        gap: 12px;
+        grid-template-columns: minmax(138px, 170px) minmax(150px, 1fr) auto auto;
+        gap: 10px;
+      }
+
+      .header-subtitle {
+        display: none;
       }
 
       .state-pill {
@@ -1025,7 +1066,7 @@
 
     @media (max-width: 760px) {
       :root {
-        --header-height: 94px;
+        --header-height: 76px;
         --control-height: 72px;
       }
 
@@ -1034,34 +1075,37 @@
       }
 
       .header-inner {
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-rows: 54px 34px;
-        width: calc(100% - 24px);
+        grid-template-columns: minmax(122px, 1fr) auto auto;
+        gap: 8px;
+        width: 100%;
+        padding-inline: 11px;
       }
 
       .state-strip {
-        grid-row: 2;
-        grid-column: 1 / -1;
-        gap: 6px;
-        justify-content: flex-start;
-        align-self: start;
+        justify-content: flex-end;
+      }
+
+      .state-pill:not(:first-child) {
+        display: none;
       }
 
       .state-pill {
-        min-height: 28px;
-        padding: 4px 8px;
+        min-height: 30px;
+        padding: 4px 9px;
         font-size: 10px;
       }
 
       .header-meta {
-        grid-row: 1;
-        grid-column: 2;
         min-width: 38px;
       }
 
-      .brand {
-        grid-row: 1;
-        grid-column: 1;
+      .header-copy {
+        display: none;
+      }
+
+      .brand-logo {
+        width: min(100%, 148px);
+        max-height: 34px;
       }
 
       .deck {
@@ -1254,6 +1298,10 @@
     <div class="header-inner">
       <div class="brand" aria-label="SHINE MAGE">
         <img class="brand-logo" src="__BRAND_LOGO_DATA_URI__" alt="SHINE MAGE">
+      </div>
+      <div class="header-copy" aria-label="当前页面">
+        <span class="header-title">客服 Agent 一期启动会</span>
+        <span class="header-subtitle">共同启动需求定义与项目协作</span>
       </div>
       <div class="state-strip" aria-label="项目状态">
         <span class="state-pill" data-state-approval>项目已批准</span>
@@ -1828,7 +1876,7 @@
           state.index === 0
             ? `${activeTitle} · 封面`
             : `${activeTitle} · 环节 ${state.index} / ${agendaCount}`;
-        document.title = `${activeTitle} · 客服 Agent 启动会`;
+        document.title = `${activeTitle} · 天元 · 客服 Agent 启动会`;
         if (focus) {
           const title = slides[state.index].querySelector("h1, h2");
           title?.setAttribute("tabindex", "-1");

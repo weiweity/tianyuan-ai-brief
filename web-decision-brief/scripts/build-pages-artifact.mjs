@@ -1,8 +1,10 @@
+import { constants as fsConstants } from "node:fs";
 import {
   cp,
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
   realpath,
@@ -16,10 +18,17 @@ import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const webRoot = path.resolve(path.dirname(scriptPath), "..");
+const repoRoot = path.resolve(webRoot, "..");
 const LOCAL_PRD_HREF = "../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html";
 const LOCAL_HUB_HREF = "../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html";
 const LOCAL_MEETING_HREF = "../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html";
 const INTERNAL_ONLY_HREF = "./internal-only.html";
+const PUBLIC_MEETING_HREF = "./customer-agent/";
+const PUBLIC_MEETING_DIRECTORY = "customer-agent";
+const CANONICAL_MEETING_SOURCE = path.join(
+  repoRoot,
+  "business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html"
+);
 const REPOSITORY_ONLY_NOTE = "内部资料（仅授权内部访问；公开版不提供）";
 
 const INTERNAL_ONLY_PAGE = `<!doctype html>
@@ -68,6 +77,59 @@ async function pathExists(target) {
     if (error?.code === "ENOENT") return false;
     throw error;
   }
+}
+
+export async function readSafePublicMeeting(sourcePath = CANONICAL_MEETING_SOURCE) {
+  const source = path.resolve(sourcePath);
+  if (!isWithin(repoRoot, source)) throw new Error(`启动会公开源文件越出仓库：${source}`);
+  const sourceInfo = await lstat(source);
+  if (sourceInfo.isSymbolicLink() || !sourceInfo.isFile()) {
+    throw new Error(`启动会公开源必须是仓库内普通文件：${source}`);
+  }
+  const canonicalSource = await realpath(source);
+  if (!isWithin(await realpath(repoRoot), canonicalSource)) {
+    throw new Error(`启动会公开源真实路径越出仓库：${canonicalSource}`);
+  }
+
+  const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+  let handle;
+  let html;
+  try {
+    handle = await open(source, flags);
+    const openedInfo = await handle.stat();
+    if (!openedInfo.isFile()) throw new Error(`启动会公开源必须是仓库内普通文件：${source}`);
+    html = (await handle.readFile()).toString("utf8");
+  } catch (error) {
+    if (error?.code === "ELOOP") throw new Error(`启动会公开源不能是符号链接：${source}`);
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+  const required = [
+    /GENERATED FILE — safe meeting view; DO NOT EDIT/,
+    /<meta name="robots" content="noindex,nofollow">/,
+    /<link rel="icon" href="data:image\/png;base64,/,
+    /<img class="brand-logo" src="data:image\/png;base64,[^"]+" alt="SHINE MAGE">/,
+    /<script id="meeting-data" type="application\/json">/,
+  ];
+  const missing = required.filter((pattern) => !pattern.test(html));
+  if (missing.length) throw new Error(`启动会公开源缺少安全标记：${missing.join("、")}`);
+
+  const forbidden = [
+    /\bbusiness-docs\b/i,
+    /\bsources\b/i,
+    /portablePrd/i,
+    /\bG0(?:-|\b)/i,
+    /\bRACI\b/i,
+    /\b(?:EVD|ROLE|USR)[-_]/i,
+    /费用|风险/,
+    /<a\b[^>]*href=["']https?:/i,
+    /<script\b[^>]*src=/i,
+    /<link\b[^>]*href=["']https?:/i,
+  ];
+  const hits = forbidden.filter((pattern) => pattern.test(html));
+  if (hits.length) throw new Error(`启动会公开源命中禁区：${hits.join("、")}`);
+  return html;
 }
 
 /**
@@ -185,7 +247,7 @@ export async function validateArtifactLinks(artifactRoot) {
   return true;
 }
 
-async function populateArtifact({ stagingOutput, webDocsPath }) {
+async function populateArtifact({ stagingOutput, webDocsPath, meetingSourcePath }) {
   const sourceRoot = path.resolve(webDocsPath);
   await cp(sourceRoot, stagingOutput, { recursive: true, force: false, errorOnExist: true });
 
@@ -203,10 +265,17 @@ async function populateArtifact({ stagingOutput, webDocsPath }) {
     stagedIndex
       .replaceAll(LOCAL_PRD_HREF, INTERNAL_ONLY_HREF)
       .replaceAll(LOCAL_HUB_HREF, INTERNAL_ONLY_HREF)
-      .replaceAll(LOCAL_MEETING_HREF, INTERNAL_ONLY_HREF),
+      .replaceAll(LOCAL_MEETING_HREF, PUBLIC_MEETING_HREF),
     "utf8"
   );
   await writeFile(path.join(stagingOutput, "internal-only.html"), INTERNAL_ONLY_PAGE, "utf8");
+  const publicMeetingDirectory = path.join(stagingOutput, PUBLIC_MEETING_DIRECTORY);
+  await mkdir(publicMeetingDirectory);
+  await writeFile(
+    path.join(publicMeetingDirectory, "index.html"),
+    await readSafePublicMeeting(meetingSourcePath),
+    "utf8"
+  );
 
   for (const stagedFile of await walkFiles(stagingOutput)) {
     if (path.extname(stagedFile).toLowerCase() !== ".md") continue;
@@ -235,6 +304,7 @@ async function populateArtifact({ stagingOutput, webDocsPath }) {
 export async function stagePagesArtifact({
   outputPath = path.join(webRoot, "dist/pages"),
   webDocsPath = path.join(webRoot, "docs"),
+  meetingSourcePath = CANONICAL_MEETING_SOURCE,
   replaceExisting = false,
 } = {}) {
   const output = path.resolve(outputPath);
@@ -254,7 +324,7 @@ export async function stagePagesArtifact({
   const stagingParent = await mkdtemp(path.join(path.dirname(output), `.${path.basename(output)}.stage-`));
   const stagingOutput = path.join(stagingParent, "artifact");
   try {
-    const files = await populateArtifact({ stagingOutput, webDocsPath });
+    const files = await populateArtifact({ stagingOutput, webDocsPath, meetingSourcePath });
     if (replaceExisting) {
       await assertSafeReplaceTarget({
         outputPath: output,

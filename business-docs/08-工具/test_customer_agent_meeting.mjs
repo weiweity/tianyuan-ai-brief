@@ -114,7 +114,9 @@ await check("模板占位符契约", async () => {
     (match) => match[0]
   );
   assert.deepEqual([...new Set(placeholders)].sort(), [
+    "__APPLE_TOUCH_ICON_DATA_URI__",
     "__BRAND_LOGO_DATA_URI__",
+    "__FAVICON_DATA_URI__",
     "__MEETING_DATA__",
     "__PRETEXT_VENDOR__",
     "__RELEASE_ID__",
@@ -223,11 +225,19 @@ await check("生成文件无内部内容与外部依赖", async () => {
   assert.match(html, /GENERATED FILE — safe meeting view; DO NOT EDIT/);
   assert.doesNotMatch(
     html,
-    /__MEETING_DATA__|__PRETEXT_VENDOR__|__RELEASE_ID__/
+    /__MEETING_DATA__|__PRETEXT_VENDOR__|__RELEASE_ID__|__BRAND_LOGO_DATA_URI__|__FAVICON_DATA_URI__|__APPLE_TOUCH_ICON_DATA_URI__/
   );
   assert.doesNotMatch(html, /contenteditable/i);
   assert.doesNotMatch(html, /\bfetch\s*\(|XMLHttpRequest|new WebSocket\s*\(/);
   assert.match(html, /<img class="brand-logo" src="data:image\/png;base64,[^"]+" alt="SHINE MAGE">/);
+  assert.match(
+    html,
+    /<link rel="icon" href="data:image\/png;base64,[^"]+" type="image\/png" sizes="64x64">/
+  );
+  assert.match(
+    html,
+    /<link rel="apple-touch-icon" href="data:image\/png;base64,[^"]+" sizes="180x180">/
+  );
   for (const removedTimeUi of [
     /id="meeting-clock"/,
     /id="meeting-time"/,
@@ -456,6 +466,21 @@ try {
               }
             : null;
         })(),
+        favicon: document.querySelector('link[rel="icon"]')?.getAttribute("href")?.slice(0, 22),
+        appleTouchIcon: document
+          .querySelector('link[rel="apple-touch-icon"]')
+          ?.getAttribute("href")
+          ?.slice(0, 22),
+        headerTitle: document.querySelector(".header-title")?.textContent.trim(),
+        headerTitleVisible: document.querySelector(".header-title")?.checkVisibility(),
+        headerChrome: (() => {
+          const style = getComputedStyle(document.querySelector(".header-inner"));
+          return {
+            borderRadius: parseFloat(style.borderRadius),
+            background: style.backgroundColor,
+            borderWidth: parseFloat(style.borderTopWidth),
+          };
+        })(),
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
         bodyFont: parseFloat(getComputedStyle(document.body).fontSize),
@@ -505,13 +530,13 @@ try {
         ),
       }));
       assert.equal(structure.lang, "zh-CN");
-      assert.equal(structure.title, "客服 Agent 一期启动会 · 客服 Agent 启动会");
+      assert.equal(structure.title, "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会");
       assert.match(structure.release, /^meeting-v1-[a-f0-9]{12}$/);
       assert.equal(structure.h1Count, 2, "正文与打印摘要各应有一个 h1");
       assert.equal(structure.slides, 9);
       assert.equal(structure.activeSlides, 1);
       assert.equal(structure.stepCountVisible, true);
-      assert.equal(structure.visibleStatePills, 3);
+      assert.equal(structure.visibleStatePills, viewport.width <= 760 ? 1 : 3);
       assert.deepEqual(structure.brandLogo, {
         count: 1,
         alt: "SHINE MAGE",
@@ -519,6 +544,13 @@ try {
         naturalWidth: 249,
         naturalHeight: 45,
       });
+      assert.equal(structure.favicon, "data:image/png;base64,");
+      assert.equal(structure.appleTouchIcon, "data:image/png;base64,");
+      assert.equal(structure.headerTitle, "客服 Agent 一期启动会");
+      assert.equal(structure.headerTitleVisible, viewport.width > 760);
+      assert.ok(structure.headerChrome.borderRadius >= 16, JSON.stringify(structure.headerChrome));
+      assert.ok(structure.headerChrome.borderWidth >= 1, JSON.stringify(structure.headerChrome));
+      assert.notEqual(structure.headerChrome.background, "rgba(0, 0, 0, 0)");
       assertNoHeadingSkip(structure.headings);
       assert.ok(structure.scrollWidth <= structure.clientWidth + 1, JSON.stringify(structure));
       assert.ok(structure.bodyFont >= (viewport.width >= 1024 ? 18 : 16));

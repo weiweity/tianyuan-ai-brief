@@ -1,11 +1,12 @@
 name: pages
 
-# 站点源码在 web-decision-brief/docs；用 Actions 发布，不再依赖仓库根 /docs
+# 站点源码在 web-decision-brief/docs；额外发布经脱敏门禁的客服启动会单页。
 on:
   push:
     branches: [main]
     paths:
       - "web-decision-brief/**"
+      - "business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -36,7 +37,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run all quality gates before deployment
         run: npm run test:all
-      - name: Stage public historical Web artifact
+      - name: Stage public historical Web and safe kickoff artifact
         run: npm run build:pages
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:

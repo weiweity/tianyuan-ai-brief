@@ -41,6 +41,6 @@ node business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci
 - 本仓只接受 `ROLE-*` / `USR-*` 人员代号与 `EVD-*` 证据 ID。
 - 真实姓名、客户原文、审批原话、原始协作链接、精确 cap、PII 与安全细节只存受控系统。
 - Git 远端为公开仓；含真实状态的本地分支不得直接推送，除非先迁移到私有仓或完成正式安全复核。
-- 公共 Pages 只发布已收尾历史 Web，不读取或复制客服项目资料。
+- 公共 Pages 发布已收尾历史 Web，并仅复制通过脱敏门禁的 `09` 启动会生成视图到 `/customer-agent/`；`00`–`08`、源 Markdown、证据和 QA 产物仍不发布。
 
 返回 [`业务文档地图`](../README.md)。

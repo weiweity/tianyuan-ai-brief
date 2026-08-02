@@ -891,7 +891,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await hubPage.waitForLoadState("networkidle");
   await assertHealthyPage(
     hubPage,
-    "客服 Agent 一期启动会 · 客服 Agent 启动会",
+    "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
     /项目已批准.*一期方向待确认.*尚未开发/s,
     "Hub → HTTP Meeting"
   );
@@ -911,7 +911,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await meetingPage.waitForLoadState("networkidle");
   await assertHealthyPage(
     meetingPage,
-    "客服 Agent 一期启动会 · 客服 Agent 启动会",
+    "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
     /项目已批准.*一期方向待确认.*尚未开发/s,
     "HTTP Meeting"
   );
@@ -974,7 +974,7 @@ async function runPublicArtifactNavigationAudit(browser) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const failures = [];
   const publicUrl = `${origin}/web-decision-brief/dist/pages/index.html`;
-  for (const linkName of ["启动会主屏", "现行 PRD", "执行中心"]) {
+  for (const linkName of ["现行 PRD", "执行中心"]) {
     const page = await context.newPage();
     page.on("pageerror", (error) => failures.push(`${linkName} pageerror: ${error.message}`));
     page.on("console", (message) => {
@@ -1000,9 +1000,39 @@ async function runPublicArtifactNavigationAudit(browser) {
     assert.doesNotMatch(body, /ERR_FILE_NOT_FOUND|无法访问您的文件/);
     await page.close();
   }
+
+  const meetingPage = await context.newPage();
+  meetingPage.on("pageerror", (error) => failures.push(`启动会主屏 pageerror: ${error.message}`));
+  meetingPage.on("console", (message) => {
+    if (message.type() === "error") failures.push(`启动会主屏 console: ${message.text()}`);
+  });
+  meetingPage.on("requestfailed", (request) => {
+    failures.push(`启动会主屏 requestfailed: ${request.url()} ${request.failure()?.errorText || ""}`);
+  });
+  meetingPage.on("response", (response) => {
+    if (response.status() >= 400) failures.push(`启动会主屏 HTTP ${response.status()}: ${response.url()}`);
+  });
+  await meetingPage.goto(publicUrl, { waitUntil: "networkidle" });
+  await Promise.all([
+    meetingPage.waitForURL((url) =>
+      url.pathname.endsWith("/web-decision-brief/dist/pages/customer-agent/")
+    ),
+    meetingPage.getByRole("link", { name: "启动会主屏", exact: true }).click(),
+  ]);
+  await meetingPage.waitForLoadState("networkidle");
+  assert.match(await meetingPage.title(), /天元 · 客服 Agent 启动会$/);
+  assert.match(await meetingPage.locator("html").getAttribute("data-release"), /^meeting-v1-[a-f0-9]{12}$/);
+  assert.equal(await meetingPage.locator(".brand-logo").getAttribute("alt"), "SHINE MAGE");
+  assert.match(
+    await meetingPage.locator('link[rel="icon"]').getAttribute("href"),
+    /^data:image\/png;base64,/
+  );
+  await assertNoHorizontalOverflow(meetingPage, "Pages 启动会主屏");
+  await meetingPage.close();
+
   assert.deepEqual(failures, [], `公开 Pages 现行入口失败：${failures.join("\n")}`);
   await context.close();
-  return "Pages 启动会主屏 / 现行 PRD / 执行中心 → internal-only.html";
+  return "Pages 启动会主屏 → /customer-agent/；现行 PRD / 执行中心 → internal-only.html";
 }
 
 async function runFileAudit(browser, viewport, useLegacyEntry) {
