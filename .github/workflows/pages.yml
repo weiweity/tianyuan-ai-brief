@@ -35,6 +35,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Install deterministic browser
         run: npx playwright install --with-deps chromium
+      - name: Install zsh for workspace path safety checks
+        run: sudo apt-get install --yes zsh
       - name: Run all quality gates before deployment
         run: npm run test:all
       - name: Stage public historical Web and safe kickoff artifact
