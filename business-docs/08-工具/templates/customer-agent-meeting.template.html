@@ -594,43 +594,66 @@
     .topic-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
+      gap: 12px;
     }
 
     .topic-card {
-      min-height: 146px;
-      padding: 18px;
+      min-height: 112px;
+      padding: 14px 16px;
       border-radius: var(--radius-md);
     }
 
     .topic-card span {
       display: block;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
       color: var(--brand-600);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
+    }
+
+    .topic-card h3 {
+      font-size: 18px;
     }
 
     .topic-card p {
       margin-bottom: 0;
       color: var(--muted);
-      font-size: 15px;
-      line-height: 1.45;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .question-row {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
-      margin-top: 18px;
+      margin: 0 0 18px;
+      counter-reset: decision-question;
     }
 
     .question-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      min-height: 84px;
       padding: 15px 17px;
-      border-radius: var(--radius-sm);
+      border: 1px solid var(--brand-200);
+      border-radius: var(--radius-md);
       color: var(--brand-900);
-      font-size: 16px;
-      font-weight: 700;
+      background: var(--brand-50);
+      font-size: 17px;
+      font-weight: 760;
+      counter-increment: decision-question;
+    }
+
+    .question-card::before {
+      align-self: start;
+      min-width: 68px;
+      color: var(--brand-600);
+      content: "判断 0" counter(decision-question);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
     }
 
     .prompt-grid {
@@ -1557,17 +1580,17 @@
       <div class="slide-inner">
         <p class="slide-kicker">环节 3 / 8</p>
         <h2 id="direction-title" data-agenda-topic="2" data-pretext>一起确定一期主问题</h2>
-        <p class="lead" data-agenda-decision="2" data-pretext>四个方向只用于理解问题；我们确认一个主问题，证据不足就写清还要补什么。</p>
-        <div class="topic-grid" aria-label="候选讨论方向">
+        <p class="lead" data-agenda-decision="2" data-pretext>先用三问判断；四个方向只是参考，可改、可删，也可以提出其他真实问题。</p>
+        <div class="question-row" id="core-question-list" aria-label="选择一期主问题的三个判断">
+          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
+          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
+          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
+        </div>
+        <div class="topic-grid" aria-label="可修改、可删除、可新增的讨论起点参考">
           <article class="topic-card"><span>讨论起点 01</span><h3>找答案慢 / 容易找错</h3><p>需要回答：哪些任务依赖可靠内容，查找或核对哪里最慢。</p></article>
           <article class="topic-card"><span>讨论起点 02</span><h3>质检难发现 / 难复核</h3><p>需要回答：哪些质量问题高频、难发现或难复核。</p></article>
           <article class="topic-card"><span>讨论起点 03</span><h3>反馈分散 / 难汇总</h3><p>需要回答：哪些反馈长期分散，影响了什么业务结果。</p></article>
           <article class="topic-card"><span>讨论起点 04</span><h3>对话重点难提取</h3><p>需要回答：现有对话里，哪些关键信息最值得提取和验证。</p></article>
-        </div>
-        <div class="question-row" id="core-question-list">
-          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
-          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
-          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
         </div>
         <p class="callout" data-label="会中产出">一期唯一主问题；证据不足时，写清还要补什么、由谁补、在哪里确认。</p>
       </div>

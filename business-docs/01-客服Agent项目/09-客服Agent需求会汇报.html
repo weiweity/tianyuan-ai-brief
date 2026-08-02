@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- GENERATED FILE — safe meeting view; DO NOT EDIT -->
-<html lang="zh-CN" data-release="meeting-v1-dcd10963d74f">
+<html lang="zh-CN" data-release="meeting-v1-c6747ec38b64">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -594,43 +594,66 @@
     .topic-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
+      gap: 12px;
     }
 
     .topic-card {
-      min-height: 146px;
-      padding: 18px;
+      min-height: 112px;
+      padding: 14px 16px;
       border-radius: var(--radius-md);
     }
 
     .topic-card span {
       display: block;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
       color: var(--brand-600);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
+    }
+
+    .topic-card h3 {
+      font-size: 18px;
     }
 
     .topic-card p {
       margin-bottom: 0;
       color: var(--muted);
-      font-size: 15px;
-      line-height: 1.45;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .question-row {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
-      margin-top: 18px;
+      margin: 0 0 18px;
+      counter-reset: decision-question;
     }
 
     .question-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      min-height: 84px;
       padding: 15px 17px;
-      border-radius: var(--radius-sm);
+      border: 1px solid var(--brand-200);
+      border-radius: var(--radius-md);
       color: var(--brand-900);
-      font-size: 16px;
-      font-weight: 700;
+      background: var(--brand-50);
+      font-size: 17px;
+      font-weight: 760;
+      counter-increment: decision-question;
+    }
+
+    .question-card::before {
+      align-self: start;
+      min-width: 68px;
+      color: var(--brand-600);
+      content: "判断 0" counter(decision-question);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
     }
 
     .prompt-grid {
@@ -1444,7 +1467,7 @@
     }
   </style>
 </head>
-<body id="meeting-app" data-release="meeting-v1-dcd10963d74f">
+<body id="meeting-app" data-release="meeting-v1-c6747ec38b64">
   <a class="skip-link" href="#meeting-main">跳到启动会正文</a>
   <noscript><div class="no-script-notice">当前浏览器未启用脚本，以下内容已按顺序完整展开，可继续阅读。</div></noscript>
 
@@ -1557,17 +1580,17 @@
       <div class="slide-inner">
         <p class="slide-kicker">环节 3 / 8</p>
         <h2 id="direction-title" data-agenda-topic="2" data-pretext>一起确定一期主问题</h2>
-        <p class="lead" data-agenda-decision="2" data-pretext>四个方向只用于理解问题；我们确认一个主问题，证据不足就写清还要补什么。</p>
-        <div class="topic-grid" aria-label="候选讨论方向">
+        <p class="lead" data-agenda-decision="2" data-pretext>先用三问判断；四个方向只是参考，可改、可删，也可以提出其他真实问题。</p>
+        <div class="question-row" id="core-question-list" aria-label="选择一期主问题的三个判断">
+          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
+          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
+          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
+        </div>
+        <div class="topic-grid" aria-label="可修改、可删除、可新增的讨论起点参考">
           <article class="topic-card"><span>讨论起点 01</span><h3>找答案慢 / 容易找错</h3><p>需要回答：哪些任务依赖可靠内容，查找或核对哪里最慢。</p></article>
           <article class="topic-card"><span>讨论起点 02</span><h3>质检难发现 / 难复核</h3><p>需要回答：哪些质量问题高频、难发现或难复核。</p></article>
           <article class="topic-card"><span>讨论起点 03</span><h3>反馈分散 / 难汇总</h3><p>需要回答：哪些反馈长期分散，影响了什么业务结果。</p></article>
           <article class="topic-card"><span>讨论起点 04</span><h3>对话重点难提取</h3><p>需要回答：现有对话里，哪些关键信息最值得提取和验证。</p></article>
-        </div>
-        <div class="question-row" id="core-question-list">
-          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
-          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
-          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
         </div>
         <p class="callout" data-label="会中产出">一期唯一主问题；证据不足时，写清还要补什么、由谁补、在哪里确认。</p>
       </div>
@@ -1782,7 +1805,7 @@
     <p class="print-footer">本页用于启动会展示和核对，不保存正式结论。确认结果会写回项目记录。</p>
   </section>
 
-  <script id="meeting-data" type="application/json">{"project":{"name":"客服 Agent","code":"CS-AI-C11"},"state":{"approval":"项目已批准","direction":"一期方向待确认","development":"尚未开发"},"meeting":{"agenda":[{"topic":"先对齐启动目标与参与方式","decision":"项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。"},{"topic":"一起还原两个真实任务","decision":"用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。"},{"topic":"一起确定一期主问题","decision":"四个方向只用于理解问题；我们确认一个主问题，证据不足就写清还要补什么。"},{"topic":"一起明确一期先做到哪一步","decision":"确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。"},{"topic":"一起确认成功与停止条件","decision":"确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。"},{"topic":"一起确认可靠的内容依据","decision":"同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。"},{"topic":"一起确认试点与真实使用环境","decision":"确认试点人员、班次、设备、网络限制和使用高峰。"},{"topic":"确认启动结果与下一步","decision":"逐项选择九项启动结果；未确认的事项写清负责人、补充内容、确认日期与位置。"}],"decisions":[{"title":"一期主问题"},{"title":"主用户与场景"},{"title":"一期做到哪一步"},{"title":"做什么 / 不做什么"},{"title":"成功 / 停止"},{"title":"内容依据"},{"title":"试点人员"},{"title":"使用环境与限制"},{"title":"责任与下一步"}],"decisionOptions":[{"value":"confirmed","label":"已确认"},{"value":"confirm-on-site","label":"待共同确认"},{"value":"needs-evidence","label":"待补材料"},{"value":"not-in-this-meeting","label":"本次暂不决定"}],"coreQuestions":["结合刚才两个真实任务，哪一个最该成为一期唯一主问题？","这个主问题的损失或卡点，能否拿出可核对的证据？","能否在 3–5 名坐席的小范围试点中先验证改善？"],"factCards":[{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"},{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"}]},"release":{"id":"meeting-v1-dcd10963d74f"}}</script>
+  <script id="meeting-data" type="application/json">{"project":{"name":"客服 Agent","code":"CS-AI-C11"},"state":{"approval":"项目已批准","direction":"一期方向待确认","development":"尚未开发"},"meeting":{"agenda":[{"topic":"先对齐启动目标与参与方式","decision":"项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。"},{"topic":"一起还原两个真实任务","decision":"用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。"},{"topic":"一起确定一期主问题","decision":"先用三问判断；四个方向只是参考，可改、可删，也可以提出其他真实问题。"},{"topic":"一起明确一期先做到哪一步","decision":"确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。"},{"topic":"一起确认成功与停止条件","decision":"确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。"},{"topic":"一起确认可靠的内容依据","decision":"同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。"},{"topic":"一起确认试点与真实使用环境","decision":"确认试点人员、班次、设备、网络限制和使用高峰。"},{"topic":"确认启动结果与下一步","decision":"逐项选择九项启动结果；未确认的事项写清负责人、补充内容、确认日期与位置。"}],"decisions":[{"title":"一期主问题"},{"title":"主用户与场景"},{"title":"一期做到哪一步"},{"title":"做什么 / 不做什么"},{"title":"成功 / 停止"},{"title":"内容依据"},{"title":"试点人员"},{"title":"使用环境与限制"},{"title":"责任与下一步"}],"decisionOptions":[{"value":"confirmed","label":"已确认"},{"value":"confirm-on-site","label":"待共同确认"},{"value":"needs-evidence","label":"待补材料"},{"value":"not-in-this-meeting","label":"本次暂不决定"}],"coreQuestions":["结合刚才两个真实任务，哪一个最该成为一期唯一主问题？","这个主问题的损失或卡点，能否拿出可核对的证据？","能否在 3–5 名坐席的小范围试点中先验证改善？"],"factCards":[{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"},{"userType":"OPEN","platform":"OPEN","task":"OPEN","frequency":"OPEN","currentFlow":"OPEN","impact":"OPEN","status":"OPEN"}]},"release":{"id":"meeting-v1-c6747ec38b64"}}</script>
   <script id="pretext-source" type="text/plain">var x0=["BN","BN","BN","BN","BN","BN","BN","BN","BN","S","B","S","WS","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","B","B","B","S","WS","ON","ON","ET","ET","ET","ON","ON","ON","ON","ON","ON","CS","ON","CS","ON","EN","EN","EN","EN","EN","EN","EN","EN","EN","EN","ON","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","ON","ON","ON","BN","BN","BN","BN","BN","BN","B","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","BN","CS","ON","ET","ET","ET","ET","ON","ON","ON","ON","L","ON","ON","ON","ON","ON","ET","ET","EN","EN","ON","L","ON","ON","ON","EN","L","ON","ON","ON","ON","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","L","ON","L","L","L","L","L","L","L","L"],bidiClassTable=["AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","CS","AL","ON","ON","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AN","AN","AN","AN","AN","AN","AN","AN","AN","AN","ET","AN","AN","AL","AL","AL","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","NSM","ON","NSM","NSM","NSM","NSM","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL","AL"];function m0(O){if(O<=255)return x0[O];if(1424<=O&&O<=1524)return"R";if(1536<=O&&O<=1791)return bidiClassTable[O&255];if(1792<=O&&O<=2220)return"AL";return"L"}function r0(O){let _=O.length;if(_===0)return null;let J=Array(_),Y=0;for(let V=0;V<_;V++){let $=m0(O.charCodeAt(V));if($==="R"||$==="AL"||$==="AN")Y++;J[V]=$}if(Y===0)return null;let X=_/Y<0.3?0:1,R=new Int8Array(_);for(let V=0;V<_;V++)R[V]=X;let Z=X&1?"R":"L",Q=Z,f=Q;for(let V=0;V<_;V++)if(J[V]==="NSM")J[V]=f;else f=J[V];f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="AL"?"AN":"EN";else if($==="R"||$==="L"||$==="AL")f=$}for(let V=0;V<_;V++)if(J[V]==="AL")J[V]="R";for(let V=1;V<_-1;V++){if(J[V]==="ES"&&J[V-1]==="EN"&&J[V+1]==="EN")J[V]="EN";if(J[V]==="CS"&&(J[V-1]==="EN"||J[V-1]==="AN")&&J[V+1]===J[V-1])J[V]=J[V-1]}for(let V=0;V<_;V++){if(J[V]!=="EN")continue;let $;for($=V-1;$>=0&&J[$]==="ET";$--)J[$]="EN";for($=V+1;$<_&&J[$]==="ET";$++)J[$]="EN"}for(let V=0;V<_;V++){let $=J[V];if($==="WS"||$==="ES"||$==="ET"||$==="CS")J[V]="ON"}f=Q;for(let V=0;V<_;V++){let $=J[V];if($==="EN")J[V]=f==="L"?"L":"EN";else if($==="R"||$==="L")f=$}for(let V=0;V<_;V++){if(J[V]!=="ON")continue;let $=V+1;while($<_&&J[$]==="ON")$++;let u=V>0?J[V-1]:Q,q=$<_?J[$]:Q,D=u!=="L"?"R":"L";if(D===(q!=="L"?"R":"L"))for(let K=V;K<$;K++)J[K]=D;V=$-1}for(let V=0;V<_;V++)if(J[V]==="ON")J[V]=Z;for(let V=0;V<_;V++){let $=J[V];if((R[V]&1)===0){if($==="R")R[V]++;else if($==="AN"||$==="EN")R[V]+=2}else if($==="L"||$==="AN"||$==="EN")R[V]++}return R}function u0(O,_){let J=r0(O);if(J===null)return null;let Y=new Int8Array(_.length);for(let X=0;X<_.length;X++)Y[X]=J[_[X]];return Y}var a0=/[ \t\n\r\f]+/g,s0=/[\t\n\r\f]| {2,}|^ | $/;function d0(O){let _=O??"normal";return _==="pre-wrap"?{mode:_,preserveOrdinarySpaces:!0,preserveHardBreaks:!0}:{mode:_,preserveOrdinarySpaces:!1,preserveHardBreaks:!1}}function i0(O){if(!s0.test(O))return O;let _=O.replace(a0," ");if(_.charCodeAt(0)===32)_=_.slice(1);if(_.length>0&&_.charCodeAt(_.length-1)===32)_=_.slice(0,-1);return _}function t0(O){if(!/[\r\f]/.test(O))return O.replace(/\r\n/g,`
 `);return O.replace(/\r\n/g,`
 `).replace(/[\r\f]/g,`
