@@ -113,7 +113,7 @@ function fullyAdvance(sources, ddev = "2026-08-14") {
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.0 / 台账 v3.2 / Scope v3.0 / 排期 v3.1"],
+    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
     ["G0-02～15", "Pass 14 / 14；Fail 0 / 14"],
     ["Scope 检查", "Pass 15 / 15；Fail 0 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
@@ -139,7 +139,7 @@ test("当前 2/29 真源动态导出七条状态轴与临时 B", async () => {
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
     approval: "公司批准 · 已批准",
-    "problem-fit": "问题适配 · 待核验",
+    "problem-fit": "问题适配 · PRECONFIRM · 待核验",
     external: "外部责任包 · 1 / 14",
     scope: "Scope · 1 / 15",
     resource: "资源基线 · 未选择",
@@ -421,7 +421,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.0 / 台账 v3.2 / Scope v3.0 / 排期 v3.1"],
+    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
     ["G0-02～15", "Pass 0 / 14；Fail 1 / 14"],
     ["Scope 检查", "Pass 1 / 15；Fail 14 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],

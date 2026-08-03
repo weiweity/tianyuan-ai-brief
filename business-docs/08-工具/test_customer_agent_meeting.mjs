@@ -151,7 +151,7 @@ await check("安全数据白名单与会议契约", async () => {
   assertExactKeys(payload.state, ["approval", "direction", "development"], "state");
   assertExactKeys(
     payload.meeting,
-    ["agenda", "decisions", "decisionOptions", "coreQuestions", "factCards"],
+    ["agenda", "decisions", "decisionOptions", "proposal", "coreQuestions", "factCards"],
     "meeting"
   );
   assertExactKeys(payload.release, ["id"], "release");
@@ -173,6 +173,23 @@ await check("安全数据白名单与会议契约", async () => {
   ]);
   assert.equal(payload.meeting.decisions[7].title, "使用环境与限制");
   assert.equal(payload.meeting.decisions[2].title, "一期做到哪一步");
+  assertExactKeys(
+    payload.meeting.proposal,
+    ["name", "phaseOneFocus", "workingBoundary", "shadowGate", "meetingAction"],
+    "proposal"
+  );
+  assert.deepEqual(payload.meeting.proposal, {
+    name: "证据型客服助理",
+    phaseOneFocus: "商品话术与活动话术",
+    workingBoundary:
+      "展示证据，信息不足时澄清，有冲突、过期或无依据时升级；坐席人工确认，不自动发送",
+    shadowGate: "冻结历史问题影子回放通过后，再开放 3～5 名坐席",
+    meetingAction: "客服确认、修正或否决",
+  });
+  assert.doesNotMatch(
+    Object.values(payload.meeting.proposal).join("\n"),
+    /\b(?:DEC|PRECONFIRM|OPEN|PARKING|FDE|G0|Ddev|RACI|EVD|ROLE|USR)\b|技术栈|技术框架|[`*_~]|\[[^\]]*\]\([^)]*\)|<\/?[a-z][^>]*>/i
+  );
   assert.equal(payload.meeting.factCards.length <= 2, true);
   payload.meeting.factCards.forEach((item, index) => {
     assertExactKeys(
@@ -184,9 +201,9 @@ await check("安全数据白名单与会议契约", async () => {
   });
   assert.equal(payload.meeting.coreQuestions.every((item) => typeof item === "string"), true);
   assert.deepEqual(payload.meeting.coreQuestions, [
-    "结合刚才两个真实任务，哪一个最该成为一期唯一主问题？",
-    "这个主问题的损失或卡点，能否拿出可核对的证据？",
-    "能否在 3–5 名坐席的小范围试点中先验证改善？",
+    "“证据型客服助理”是否对准当前最痛的问题？",
+    "一期先做“商品话术与活动话术”是否合适？",
+    "工作边界和灰度前门是否正确，还需要修正什么？",
   ]);
   assert.doesNotMatch(JSON.stringify(payload), /"(?:date|time|sourceDate)"\s*:/);
   assert.doesNotMatch(
@@ -197,7 +214,7 @@ await check("安全数据白名单与会议契约", async () => {
     payload.meeting.agenda.at(-1).decision,
     "只有结论能被全场复述，才选择“已确认”；其余事项写清负责人、补充内容、确认日期与位置。"
   );
-  return "4 个顶层白名单 · 8 段议程 · 9 项结果 · 4 种选择";
+  return "4 个顶层白名单 · 5 项建议字段 · 8 段议程 · 9 项结果 · 4 种选择";
 });
 
 function documentRelease(html) {
@@ -556,9 +573,18 @@ try {
         directionQuestions: [...document.querySelectorAll("#core-question-list .question-card")].map(
           (item) => item.textContent.trim()
         ),
+        proposalValues: Object.fromEntries(
+          [...document.querySelectorAll("[data-proposal]")].map((item) => [
+            item.dataset.proposal,
+            item.textContent.trim(),
+          ])
+        ),
         topicKickers: [...document.querySelectorAll(".topic-card > span")].map((item) =>
           item.textContent.trim()
         ),
+        successText: document.querySelector('[data-slide-index="5"]').textContent,
+        pilotText: document.querySelector('[data-slide-index="7"]').textContent,
+        meetingText: document.querySelector("#meeting-main").innerText,
         decisionSelectCount: document.querySelectorAll(".decision-select").length,
         decisionOptionLabels: [...document.querySelector(".decision-select").options].map(
           (item) => item.textContent.trim()
@@ -653,7 +679,7 @@ try {
       assert.deepEqual(structure.agendaTopics, [
         "先对齐启动目标与参与方式",
         "一起还原两个真实任务",
-        "一起确定一期主问题",
+        "一起校准项目侧建议",
         "一起明确一期先做到哪一步",
         "一起确认成功与停止条件",
         "一起确认可靠的内容依据",
@@ -666,16 +692,34 @@ try {
       );
       assert.equal(
         structure.agendaDecisions[2],
-        "先用三问判断；下方常见表现不是选项，可改、可删，也可以提出其他真实问题。"
+        "对照真实任务校准项目侧建议；客服可以确认、修正或否决，证据不足就明确待补材料。"
       );
-      assert.match(structure.agendaDecisions[3], /^基于刚才确定的一期主问题/);
+      assert.match(structure.agendaDecisions[3], /^确认谁在什么场景使用/);
       assert.match(structure.agendaDecisions[7], /结论能被全场复述/);
       assert.deepEqual(structure.directionQuestions, [
-        "结合刚才两个真实任务，哪一个最该成为一期唯一主问题？",
-        "这个主问题的损失或卡点，能否拿出可核对的证据？",
-        "能否在 3–5 名坐席的小范围试点中先验证改善？",
+        "“证据型客服助理”是否对准当前最痛的问题？",
+        "一期先做“商品话术与活动话术”是否合适？",
+        "工作边界和灰度前门是否正确，还需要修正什么？",
       ]);
-      assert.deepEqual(structure.topicKickers, Array(4).fill("常见表现 · 非选项"));
+      assert.deepEqual(structure.proposalValues, {
+        name: "证据型客服助理",
+        phaseOneFocus: "商品话术与活动话术",
+        workingBoundary:
+          "展示证据，信息不足时澄清，有冲突、过期或无依据时升级；坐席人工确认，不自动发送",
+        shadowGate: "冻结历史问题影子回放通过后，再开放 3～5 名坐席",
+        meetingAction: "客服确认、修正或否决",
+      });
+      assert.deepEqual(structure.topicKickers, ["一期切口", "工作边界", "灰度前门"]);
+      assert.match(structure.successText, /过期话术使用为 0/);
+      assert.match(structure.successText, /自动发送[、。\s\S]*次数必须为 0/);
+      assert.match(structure.successText, /不做统计显著性结论/);
+      assert.match(structure.pilotText, /2 名新手 \+ 2 名老手只是首批候选/);
+      assert.match(structure.pilotText, /覆盖不足就增补或替换/);
+      assert.match(structure.pilotText, /环比只作辅助趋势/);
+      assert.doesNotMatch(
+        structure.meetingText,
+        /\bPRECONFIRM\b|技术栈|技术框架/
+      );
       assert.equal(structure.decisionSelectCount, 9);
       assert.deepEqual(structure.decisionOptionLabels, [
         "请选择结果",
@@ -692,13 +736,16 @@ try {
       assert.equal(structure.fullscreenIconCount, 1);
       assert.equal(structure.coverMark, "一期项目启动");
       assert.equal(structure.coverKicker, "客服团队 · 业务与协作对齐");
-      assert.equal(structure.coverGoal, "今天共同确认一期主问题、范围、责任与下一步。");
+      assert.equal(
+        structure.coverGoal,
+        "今天请客服确认、修正或否决一期建议，再明确责任与下一步。"
+      );
       assert.match(structure.coverExclusion, /技术选型、开发开工与上线承诺/);
       assert.equal(structure.goalListTag, "OL");
       assert.deepEqual(structure.goalMarkers, Array(3).fill("counter(meeting-goal)"));
       assert.deepEqual(structure.goalTexts, [
-        "对齐一个一期主问题",
-        "明确范围、成功与试点条件",
+        "用真实任务校准会前建议",
+        "明确一期边界、成功与试点条件",
         "确认责任、未决事项与下一步",
       ]);
       assert.equal(

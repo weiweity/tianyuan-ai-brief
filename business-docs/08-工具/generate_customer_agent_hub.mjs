@@ -12,6 +12,7 @@ import {
   parseBullets,
   parseChecklist,
   parseTable,
+  readAcceptanceContract,
   requiredMatch,
 } from "./customer_project_surface_model.mjs";
 import {
@@ -338,21 +339,10 @@ function gateGroup(id) {
   return "delivery";
 }
 
-const top3Target = requiredMatch(
-  sourceById.scope,
-  /总体正例 Top3 ≥\s*\*\*([^*]+)\*\*/,
-  "Top3 门槛"
-);
-const citationTarget = requiredMatch(
-  sourceById.scope,
-  /总体及各分层引用 \/ 版本正确率 =\s*\*\*([^*]+)\*\*/,
-  "引用正确率门槛"
-);
-const negativeTarget = requiredMatch(
-  sourceById.scope,
-  /负例错误直答 =\s*\*\*([^*]+)\*\*/,
-  "负例门槛"
-);
+const acceptanceContract = readAcceptanceContract(sourceById.charter, sourceById.scope);
+const top3Target = `${acceptanceContract.overallTop3}%`;
+const citationTarget = `${acceptanceContract.citationCorrect}%`;
+const negativeTarget = String(acceptanceContract.negativeMaxWrongAnswers);
 const scopePilotMatch = sourceById.scope.match(
   /\*\*暂定门槛：\*\*\s*≥(\d+) 人 × 连续 (\d+) 周 × 每人每周 ≥(\d+) 个去重真实任务/
 );
@@ -461,8 +451,8 @@ if (ddevReady) {
   };
 } else if (!projectStatus.problemFitReady) {
   headline = {
-        title: "项目已批准，8 月 4 日要把一期方向和未决项处理清楚。",
-        summary: `批准凭证已归档。${meetingPackDeadline} 前准备真实任务、当前指标、权威来源、试点人员和预计使用人数；${shortDate(d0)} 有证据就决定，缺证据就明确负责人和日期，不宣布开发开工。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，开发开工许可仍不成立。`,
+        title: "项目侧已有一期建议，8 月 4 日由客服校准并处理未决项。",
+        summary: `项目已批准，批准凭证已归档。${meetingPackDeadline} 前准备真实任务、当前指标、权威来源、试点人员和预计使用人数；${shortDate(d0)} 有证据就决定，缺证据就明确负责人和日期，不宣布开发开工。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，开发开工许可仍不成立。`,
         nextDate: meetingPackDeadline,
         nextTitle: "会前资料包",
         nextOutput: "真实任务 · 指标基线 · 权威来源 · 试点与人数",
@@ -557,7 +547,7 @@ const payload = {
         ? "G0 已签，等待 Ddev 正式授权。"
       : projectPaused
         ? "按暂停或整改条件行动，不越过门禁。"
-        : "先把需求会资料和责任清单准备好。",
+        : "先把启动会资料和责任清单准备好。",
     nowSummary: ddevReady
       ? "只做 Ddev 已授权范围；每次变更保留测试、回退与决定证据。"
       : awaitingDdev
@@ -610,9 +600,9 @@ const payload = {
     { value: "OPEN", label: "一期主业务指标", note: "08-04 确认指标名称、基线来源和数据负责人；无基线不填目标值" },
     { value: pilotDisplay, label: "内部真实试点", note: `${pilotTarget}；每人每周 ≥${pilotThreshold.weeklyTasks} 个去重任务` },
     { value: "0", label: "自动代发", note: "人在环硬门槛" },
-    { value: `≥${top3Target}`, label: "知识辅助 Top3（条件项）", note: "仅当知识辅助成为一期方向：20 条正例；分层 ≥50% 且至少命中 1 条" },
-    { value: citationTarget, label: "知识来源正确（条件项）", note: "仅当知识辅助成为一期方向；每条建议可追溯" },
-    { value: negativeTarget, label: "知识错误直答（条件项）", note: "仅当知识辅助成为一期方向；不少于 5 条负例" },
+    { value: `≥${top3Target}`, label: "证据型助理 Top3（建议）", note: "项目侧一期建议：20 条正例；分层 ≥50% 且至少命中 1 条" },
+    { value: citationTarget, label: "知识来源正确（建议）", note: "项目侧一期建议；每条候选必须可追溯" },
+    { value: negativeTarget, label: "风险错误直答（建议）", note: `项目侧一期建议；不少于 ${acceptanceContract.negativeMinCases} 条负例` },
   ],
   meeting: {
     title: ddevReady
@@ -621,14 +611,14 @@ const payload = {
         ? "可以准备 Ddev，不能提前开工。"
       : projectPaused
         ? "可以开复审会，不能绕过暂停结论。"
-        : "可以开需求会，不能宣布开工。",
+        : "可以开启动会，不能宣布开工。",
     positioning: ddevReady
       ? "这是 Ddev 后推进与证据复核会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
       : awaitingDdev
         ? "这是 G0 已签后的 Ddev 授权会；签发日期、授权证据 ID、范围与费用边界未落档前不得开发。"
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
-        : "这是需求决策与补证安排会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
+        : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
     controlsLabel: ddevReady || awaitingDdev || projectPaused ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady
       ? "客服 Agent 当前推进清单"
@@ -636,7 +626,7 @@ const payload = {
         ? "客服 Agent Ddev 签发清单"
       : projectPaused
         ? "客服 Agent 暂停 / 整改复审清单"
-        : "客服 Agent 一期需求会会前准备",
+        : "客服 Agent 一期启动会会前准备",
     copyButton: ddevReady || awaitingDdev || projectPaused ? "复制当前清单" : "复制会前清单",
     director: [
       "本期必须先解决的一个真实客服问题",
@@ -721,7 +711,11 @@ const payload = {
   },
 };
 
-for (const metric of ["Top3 ≥ **70%**", "引用 / 版本正确率 = **100%**", "错误直答 = **0**"]) {
+for (const metric of [
+  `总体正例 Top3 ≥ **${acceptanceContract.overallTop3}%**`,
+  `总体及各分层来源 / 版本 / 适用范围正确率 = **${acceptanceContract.citationCorrect}%**`,
+  `负例错误直答 = **${acceptanceContract.negativeMaxWrongAnswers}**`,
+]) {
   assertIncludes(sourceById.scope, metric, "scope");
 }
 

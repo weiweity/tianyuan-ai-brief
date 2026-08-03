@@ -144,7 +144,7 @@ function meetingAudienceText(value) {
 const meetingAudienceTopics = [
   "先对齐启动目标与参与方式",
   "一起还原两个真实任务",
-  "一起确定一期主问题",
+  "一起校准项目侧建议",
   "一起明确一期先做到哪一步",
   "一起确认成功与停止条件",
   "一起确认可靠的内容依据",
@@ -153,10 +153,10 @@ const meetingAudienceTopics = [
 ];
 
 const meetingAudienceDecisions = [
-  "项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。",
+  "项目已批准；项目侧已准备会前建议，今天由客服确认、修正或否决，并明确后续责任。",
   "用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。",
-  "先用三问判断；下方常见表现不是选项，可改、可删，也可以提出其他真实问题。",
-  "基于刚才确定的一期主问题，确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。",
+  "对照真实任务校准项目侧建议；客服可以确认、修正或否决，证据不足就明确待补材料。",
+  "确认谁在什么场景使用、系统展示什么证据、何时澄清或升级，以及坐席如何人工确认。",
   "确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。",
   "同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。",
   "确认试点人员、班次、设备、网络限制和使用高峰。",
@@ -191,7 +191,7 @@ const payload = {
   },
   state: {
     approval: "项目已批准",
-    direction: "一期方向待确认",
+    direction: "一期建议待确认",
     development: "尚未开发",
   },
   meeting: {
@@ -215,10 +215,11 @@ const payload = {
       if (!option) throw new Error(`需求会结果状态没有会场映射：${status}`);
       return { ...option };
     }),
+    proposal: sharedSurface.meeting.proposal,
     coreQuestions: [
-      "结合刚才两个真实任务，哪一个最该成为一期唯一主问题？",
-      "这个主问题的损失或卡点，能否拿出可核对的证据？",
-      "能否在 3–5 名坐席的小范围试点中先验证改善？",
+      `“${sharedSurface.meeting.proposal.name}”是否对准当前最痛的问题？`,
+      `一期先做“${sharedSurface.meeting.proposal.phaseOneFocus}”是否合适？`,
+      "工作边界和灰度前门是否正确，还需要修正什么？",
     ],
     factCards: sharedSurface.meeting.factCards,
   },
@@ -240,7 +241,7 @@ assertExactKeys(payload.project, ["name", "code"], "project");
 assertExactKeys(payload.state, ["approval", "direction", "development"], "state");
 assertExactKeys(
   payload.meeting,
-  ["agenda", "decisions", "decisionOptions", "coreQuestions", "factCards"],
+  ["agenda", "decisions", "decisionOptions", "proposal", "coreQuestions", "factCards"],
   "meeting"
 );
 assertExactKeys(payload.release, ["id"], "release");
@@ -253,6 +254,11 @@ for (const [index, item] of payload.meeting.decisions.entries()) {
 for (const [index, item] of payload.meeting.decisionOptions.entries()) {
   assertExactKeys(item, ["value", "label"], `decisionOptions[${index}]`);
 }
+assertExactKeys(
+  payload.meeting.proposal,
+  ["name", "phaseOneFocus", "workingBoundary", "shadowGate", "meetingAction"],
+  "proposal"
+);
 for (const [index, item] of payload.meeting.factCards.entries()) {
   assertExactKeys(
     item,
@@ -285,6 +291,17 @@ for (const forbiddenMeetingContent of ["费用", "风险"]) {
   if (safePayload.includes(forbiddenMeetingContent)) {
     throw new Error(`需求会 payload 包含内部禁区文本：${forbiddenMeetingContent}`);
   }
+}
+const proposalText = Object.values(payload.meeting.proposal).join("\n");
+if (
+  /\b(?:DEC|PRECONFIRM|OPEN|PARKING|FDE|G0|Ddev|RACI|EVD|ROLE|USR)\b|技术栈|技术框架/i.test(
+    proposalText
+  )
+) {
+  throw new Error("需求会 proposal 包含内部状态码或技术术语");
+}
+if (/[`*_~]|\[[^\]]*\]\([^)]*\)|<\/?[a-z][^>]*>/i.test(proposalText)) {
+  throw new Error("需求会 proposal 包含 Markdown 或 HTML");
 }
 for (const [index, item] of payload.meeting.agenda.entries()) {
   if (

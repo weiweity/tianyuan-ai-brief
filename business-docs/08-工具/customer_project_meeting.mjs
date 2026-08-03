@@ -57,7 +57,7 @@ export function readCanonicalMeetingAgenda(ledger) {
 
 export function readFacilitatorMeetingAgenda(cadence) {
   return parseTable(
-    getSection(cadence, "## 2. 60 分钟会议怎么开"),
+    getSection(cadence, "## 2. 60 分钟启动会怎么开"),
     "启动会手册第 2 节议程"
   ).map((row) => ({
     time: row["时间"],

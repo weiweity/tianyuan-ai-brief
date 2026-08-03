@@ -892,7 +892,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await assertHealthyPage(
     hubPage,
     "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
-    /项目已批准.*一期方向待确认.*尚未开发/s,
+    /项目已批准.*一期建议待确认.*尚未开发/s,
     "Hub → HTTP Meeting"
   );
   assertCanonicalHttp(hubPage, "/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html", "Hub → HTTP Meeting");
@@ -912,7 +912,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await assertHealthyPage(
     meetingPage,
     "客服 Agent 一期启动会 · 天元 · 客服 Agent 启动会",
-    /项目已批准.*一期方向待确认.*尚未开发/s,
+    /项目已批准.*一期建议待确认.*尚未开发/s,
     "HTTP Meeting"
   );
   assertCanonicalHttp(meetingPage, "/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html", "HTTP Meeting 直达");

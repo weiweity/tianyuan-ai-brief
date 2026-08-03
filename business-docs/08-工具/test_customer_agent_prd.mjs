@@ -129,9 +129,11 @@ await check("关键业务口径完整", async () => {
   const html = await readFile(targetPath, "utf8");
   const visible = visibleHtmlText(html);
   const requiredFacts = [
-    "客服 Agent 一期需求会",
+    "客服 Agent 一期启动会",
     "项目已批准",
-    "一期主问题待确认",
+    "项目侧建议待客服确认",
+    "证据型客服助理",
+    "灰度前影子回放",
     "2026-08-04",
     "自动代发 = 0",
     "供应链不进入客服一期范围、预算和排期",

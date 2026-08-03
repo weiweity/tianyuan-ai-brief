@@ -1388,6 +1388,15 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .status-item {
+        padding-inline: 12px;
+      }
+
+      .status-value {
+        overflow-wrap: anywhere;
+        font-size: clamp(18px, 5vw, 20px);
+      }
+
       .status-item,
       .status-item:nth-child(3) {
         border-right: 1px solid var(--line);

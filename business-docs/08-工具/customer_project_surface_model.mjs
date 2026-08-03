@@ -104,6 +104,84 @@ export function assertIncludes(text, value, label) {
   }
 }
 
+function requiredInteger(text, pattern, label) {
+  const value = requiredMatch(text, pattern, label);
+  if (!/^\d+$/.test(value)) throw new Error(`无法从真源解析：${label}`);
+  return Number(value);
+}
+
+function assertContractSame(label, left, right) {
+  if (left !== right) {
+    throw new Error(`真源一致性失败：${label}（${left} != ${right}）`);
+  }
+}
+
+export function readAcceptanceContract(charter, scope) {
+  const overallTop3 = requiredInteger(
+    scope,
+    /总体正例 Top3 ≥\s*\*\*(\d+)%\*\*/,
+    "总体 Top3 门槛"
+  );
+  const stratumTop3 = requiredInteger(
+    scope,
+    /每个已冻结分层 Top3 ≥\s*\*\*(\d+)%\*\*/,
+    "分层 Top3 门槛"
+  );
+  const stratumMinHits = requiredInteger(
+    scope,
+    /每个已冻结分层 Top3[^\n]*且至少命中 (\d+) 条/,
+    "分层 Top3 最小命中数"
+  );
+  const citationCorrect = requiredInteger(
+    scope,
+    /总体及各分层(?:来源|引用)\s*\/\s*版本(?:\s*\/\s*适用范围)?正确率\s*=\s*\*\*(\d+)%\*\*/,
+    "来源 / 版本正确率"
+  );
+  const negativeMaxWrongAnswers = requiredInteger(
+    scope,
+    /负例错误直答 =\s*\*\*(\d+)\*\*/,
+    "负例错误直答门槛"
+  );
+  const riskMatch = scope.match(/六类风险负例为([^；\n]+)；每类至少\s*(\d+)\s*条/);
+  if (!riskMatch) throw new Error("无法从真源解析：六类风险负例门槛");
+  const riskTypes = riskMatch[1].split("、").map(stripMarkdown).filter(Boolean);
+  if (riskTypes.length !== 6) {
+    throw new Error(`六类风险负例必须恰好解析为 6 类，当前为 ${riskTypes.length} 类`);
+  }
+  const negativeCasesPerType = Number(riskMatch[2]);
+  const negativeMinCases = riskTypes.length * negativeCasesPerType;
+
+  const charterOverallTop3 = requiredInteger(
+    charter,
+    /Top3 命中率(?:暂定)?\s*≥(\d+)%/,
+    "章程总体 Top3 门槛"
+  );
+  const charterCitation = requiredInteger(
+    charter,
+    /引用\s*\/\s*版本正确率\s*=\s*(\d+)%/,
+    "章程来源 / 版本正确率"
+  );
+  const charterNegativePerType = requiredInteger(
+    charter,
+    /六类风险各不少于\s*(\d+)\s*条/,
+    "章程六类风险负例门槛"
+  );
+  assertContractSame("总体 Top3 门槛", overallTop3, charterOverallTop3);
+  assertContractSame("来源 / 版本正确率", citationCorrect, charterCitation);
+  assertContractSame("每类负例最小数", negativeCasesPerType, charterNegativePerType);
+
+  return {
+    overallTop3,
+    stratumTop3,
+    stratumMinHits,
+    citationCorrect,
+    riskTypes,
+    negativeCasesPerType,
+    negativeMinCases,
+    negativeMaxWrongAnswers,
+  };
+}
+
 const SENSITIVE_FACT_PATTERN = new RegExp(
   [
     "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}",
@@ -136,6 +214,28 @@ const FACT_CARD_FIELD_LABELS = Object.freeze({
   impact: "业务影响",
   status: "状态",
 });
+
+export const MEETING_PROPOSAL_FIELD_LIMITS = Object.freeze({
+  name: 24,
+  phaseOneFocus: 40,
+  workingBoundary: 96,
+  shadowGate: 64,
+  meetingAction: 28,
+});
+
+const MEETING_PROPOSAL_FIELDS = Object.freeze([
+  { label: "建议名称", key: "name" },
+  { label: "一期切口", key: "phaseOneFocus" },
+  { label: "工作边界", key: "workingBoundary" },
+  { label: "灰度前门", key: "shadowGate" },
+  { label: "会中动作", key: "meetingAction" },
+]);
+
+const MEETING_INTERNAL_TERM_PATTERN =
+  /\b(?:DEC|PRECONFIRM|OPEN|PARKING|FDE|G0|Ddev|RACI|EVD|ROLE|USR)\b|技术栈|技术框架|内部台账|证据代号/i;
+
+const MARKDOWN_SYNTAX_PATTERN =
+  /(?:^|\s)#{1,6}\s|(?:^|\s)(?:[-*+]\s|\d+\.\s)|[`*_~]|\[[^\]]*\]\([^)]*\)|<\/?[a-z][^>]*>/i;
 
 function readFactCards(ledger) {
   const rows = parseTable(
@@ -173,6 +273,47 @@ function readFactCards(ledger) {
     }
     return card;
   });
+}
+
+export function readMeetingProposal(ledger) {
+  const rows = parseTable(
+    getSection(ledger, "## 4P. 项目侧推荐方案（PRECONFIRM）"),
+    "项目侧推荐方案"
+  );
+  if (rows.length !== MEETING_PROPOSAL_FIELDS.length) {
+    throw new Error(
+      `项目侧推荐方案必须且只能有 ${MEETING_PROPOSAL_FIELDS.length} 个可投影字段`
+    );
+  }
+
+  const proposal = {};
+  rows.forEach((row, index) => {
+    const expected = MEETING_PROPOSAL_FIELDS[index];
+    if (row["字段"] !== expected.label) {
+      throw new Error(
+        `项目侧推荐方案第 ${index + 1} 行必须是“${expected.label}”，当前为“${row["字段"] || "空"}”`
+      );
+    }
+    const value = String(row["可投影内容"] || "").trim();
+    if (!value) throw new Error(`项目侧推荐方案的“${expected.label}”不能为空`);
+    const limit = MEETING_PROPOSAL_FIELD_LIMITS[expected.key];
+    if (Array.from(value).length > limit) {
+      throw new Error(
+        `项目侧推荐方案的“${expected.label}”最多 ${limit} 个字符，已拒绝生成`
+      );
+    }
+    if (SENSITIVE_FACT_PATTERN.test(value)) {
+      throw new Error(`项目侧推荐方案的“${expected.label}”包含明显敏感信息`);
+    }
+    if (MEETING_INTERNAL_TERM_PATTERN.test(value)) {
+      throw new Error(`项目侧推荐方案的“${expected.label}”包含内部状态码或技术术语`);
+    }
+    if (MARKDOWN_SYNTAX_PATTERN.test(value)) {
+      throw new Error(`项目侧推荐方案的“${expected.label}”必须是纯文本，不能包含 Markdown 或 HTML`);
+    }
+    proposal[expected.key] = value;
+  });
+  return proposal;
 }
 
 export function buildCustomerProjectSurfaceModel(sourceById) {
@@ -216,7 +357,7 @@ export function buildCustomerProjectSurfaceModel(sourceById) {
     throw new Error("九项决定必须按 DEC-REQ-01～09 连续排列");
   }
   const facilitation = parseBullets(
-    getSection(sourceById.cadence, "## 2. 60 分钟会议怎么开")
+    getSection(sourceById.cadence, "## 2. 60 分钟启动会怎么开")
   ).map(humanizeMeetingText);
   if (facilitation.length < 6) {
     throw new Error(`60 分钟主持规则至少应有 6 条，当前解析到 ${facilitation.length} 条`);
@@ -258,6 +399,7 @@ export function buildCustomerProjectSurfaceModel(sourceById) {
       facilitation,
       coreQuestions,
       factCards: readFactCards(sourceById.ledger),
+      proposal: readMeetingProposal(sourceById.ledger),
     },
   };
 }
