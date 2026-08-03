@@ -46,7 +46,8 @@
       --shell: 1580px;
       --stage: var(--shell);
       --header-height: 76px;
-      --control-height: 76px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --control-height: calc(76px + var(--safe-bottom));
       --ease: cubic-bezier(.2, .8, .2, 1);
       --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
         "Noto Sans SC", "Microsoft YaHei", sans-serif;
@@ -893,18 +894,25 @@
       position: relative;
       z-index: 30;
       height: var(--control-height);
-      border-top: 1px solid var(--line);
-      background: var(--surface);
+      padding: 2px 10px calc(6px + var(--safe-bottom));
+      background: transparent;
     }
 
     .controls-inner {
+      position: relative;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       gap: 16px;
       align-items: center;
-      width: min(calc(100% - 20px), var(--shell));
+      width: min(100%, var(--shell));
       height: 100%;
       margin: 0 auto;
+      padding: 7px 14px;
+      border: 1px solid rgb(222 215 228 / 92%);
+      border-radius: 18px;
+      background: rgb(255 255 255 / 94%);
+      box-shadow: 0 8px 26px rgb(46 35 53 / 8%);
+      backdrop-filter: blur(18px);
     }
 
     .control-group {
@@ -1204,7 +1212,7 @@
     @media (max-width: 760px) {
       :root {
         --header-height: 76px;
-        --control-height: 72px;
+        --control-height: calc(72px + var(--safe-bottom));
       }
 
       body {
@@ -1335,7 +1343,8 @@
 
       .controls-inner {
         grid-template-columns: 1fr auto;
-        width: calc(100% - 20px);
+        width: 100%;
+        padding-inline: 11px;
       }
 
       .button-label {
