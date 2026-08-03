@@ -4,7 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildCustomerProjectSurfaceModel } from "./customer_project_surface_model.mjs";
-import { loadCustomerProjectSources } from "./customer_project_surface_io.mjs";
+import { assertSafeMeetingArtifact } from "./customer_project_meeting.mjs";
+import {
+  loadCustomerProjectSources,
+  readCanonicalSurfaceOutput,
+} from "./customer_project_surface_io.mjs";
+import { meetingLifecycleState } from "./customer_project_status.mjs";
 import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -26,8 +31,11 @@ const surfaceSources = await loadCustomerProjectSources({
   canonicalProjectDir,
 });
 const surfaceModel = buildCustomerProjectSurfaceModel(surfaceSources.byId);
-const meetingLifecycleClosed =
-  surfaceModel.projectStatus.problemFitReady || surfaceModel.projectStatus.ddevReady;
+const meetingLifecycle = meetingLifecycleState(surfaceModel.projectStatus);
+if (meetingLifecycle === "not-eligible") {
+  throw new Error("项目批准尚未成立，拒绝同步或校验写有“项目已批准”的启动会视图");
+}
+const meetingLifecycleClosed = meetingLifecycle === "closed";
 
 function run(label, script, scriptArgs) {
   const result = spawnSync(process.execPath, [script, ...scriptArgs], {
@@ -44,10 +52,22 @@ function run(label, script, scriptArgs) {
   }
 }
 
+async function verifyFrozenMeetingSnapshot() {
+  const outputPath = path.join(workspace.projectDir, "09-客服Agent需求会汇报.html");
+  const snapshot = await readCanonicalSurfaceOutput({
+    outputPath,
+    canonicalProjectDir,
+    label: "启动会冻结快照",
+  });
+  const { releaseId } = assertSafeMeetingArtifact(snapshot.text);
+  console.log(`启动会冻结快照有效 · ${releaseId}`);
+}
+
 if (checkOnly) {
   run("Hub 稳定点校验", generator, ["--check"]);
   run("PRD 稳定点校验", checker, ["--check"]);
   if (meetingLifecycleClosed) {
+    await verifyFrozenMeetingSnapshot();
     console.log(`客服双视图已在稳定点；需求会视图生命周期已结束，保留历史文件 · ${workspace.mode} · ${workspace.projectDir}`);
   } else {
     run("需求会汇报稳定点校验", meetingGenerator, ["--check"]);
@@ -64,6 +84,7 @@ if (checkOnly) {
   run("Hub 稳定点校验", generator, ["--check"]);
   run("PRD 稳定点校验", checker, ["--check"]);
   if (meetingLifecycleClosed) {
+    await verifyFrozenMeetingSnapshot();
     console.log(`客服双视图已同步并收敛；需求会视图生命周期已结束，保留历史文件 · ${workspace.mode} · ${workspace.projectDir}`);
   } else {
     run("需求会汇报稳定点校验", meetingGenerator, ["--check"]);

@@ -129,9 +129,11 @@ await check("关键业务口径完整", async () => {
   const html = await readFile(targetPath, "utf8");
   const visible = visibleHtmlText(html);
   const requiredFacts = [
-    "客服 Agent 一期需求会",
+    "客服 Agent 一期启动会",
     "项目已批准",
-    "一期主问题待确认",
+    "项目侧建议待客服确认",
+    "证据型客服助理",
+    "灰度前影子回放",
     "2026-08-04",
     "自动代发 = 0",
     "供应链不进入客服一期范围、预算和排期",
@@ -731,7 +733,7 @@ try {
       assert.equal(await executionCenterButton.evaluate((element) => element.tagName), "BUTTON");
       assert.equal(await executionCenterButton.getAttribute("href"), null);
       await executionCenterButton.click();
-      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
       assert.equal(new URL(page.url()).protocol, "file:");
       assert.equal(fileURLToPath(new URL(page.url())), portablePath);
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
@@ -743,7 +745,7 @@ try {
       );
 
       await page.reload({ waitUntil: "load" });
-      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
       assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
 
@@ -751,7 +753,7 @@ try {
       await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
       assert.equal(new URL(page.url()).searchParams.get("portable"), null);
       await page.goForward({ waitUntil: "load" });
-      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
 
       await page.locator("#source-drawer > summary").click();
@@ -775,7 +777,7 @@ try {
       assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND/);
 
       await page.locator("#open-execution-center").click();
-      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会执行中心");
+      await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
       assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
       assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
 

@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import {
   deriveProjectStatus,
   isChecked,
+  isMeetingLifecycleClosed,
+  meetingLifecycleState,
 } from "../../business-docs/08-工具/customer_project_status.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -113,7 +115,7 @@ function fullyAdvance(sources, ddev = "2026-08-14") {
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.0 / 台账 v3.2 / Scope v3.0 / 排期 v3.1"],
+    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
     ["G0-02～15", "Pass 14 / 14；Fail 0 / 14"],
     ["Scope 检查", "Pass 15 / 15；Fail 0 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
@@ -139,7 +141,7 @@ test("当前 2/29 真源动态导出七条状态轴与临时 B", async () => {
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
     approval: "公司批准 · 已批准",
-    "problem-fit": "问题适配 · 待核验",
+    "problem-fit": "问题适配 · PRECONFIRM · 待核验",
     external: "外部责任包 · 1 / 14",
     scope: "Scope · 1 / 15",
     resource: "资源基线 · 未选择",
@@ -148,6 +150,33 @@ test("当前 2/29 真源动态导出七条状态轴与临时 B", async () => {
   assert.equal(status.feePath, "B · 临时管控，未签");
   assert.equal(status.ddevReady, false);
   assert.equal(isChecked("[X]"), true);
+  assert.equal(isMeetingLifecycleClosed(status), false);
+});
+
+test("启动会生命周期对正向、否决、暂停和开发授权结论统一关闭", () => {
+  const openStatus = {
+    approvalReady: true,
+    problemFit: "PRECONFIRM · 待核验",
+    g0: "未签发",
+    feePathCode: "B",
+    development: "未开发",
+    ddevReady: false,
+  };
+  assert.equal(isMeetingLifecycleClosed(openStatus), false);
+  assert.equal(meetingLifecycleState(openStatus), "open");
+  assert.equal(
+    meetingLifecycleState({ ...openStatus, approvalReady: false }),
+    "not-eligible"
+  );
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, approvalReady: false }), false);
+  for (const problemFit of ["已核验", "已确认", "Pass", "Fail", "未通过"]) {
+    assert.equal(isMeetingLifecycleClosed({ ...openStatus, problemFit }), true, problemFit);
+    assert.equal(meetingLifecycleState({ ...openStatus, problemFit }), "closed", problemFit);
+  }
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, g0: "Fail" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, feePathCode: "C" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, development: "已暂停" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, ddevReady: true }), true);
 });
 
 test("批准汇总与 G0-02 明细不一致时拒绝构建", async () => {
@@ -421,7 +450,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.0 / 台账 v3.2 / Scope v3.0 / 排期 v3.1"],
+    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
     ["G0-02～15", "Pass 0 / 14；Fail 1 / 14"],
     ["Scope 检查", "Pass 1 / 15；Fail 14 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],

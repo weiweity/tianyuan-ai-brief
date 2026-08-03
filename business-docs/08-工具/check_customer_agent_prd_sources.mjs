@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deriveProjectStatus } from "./customer_project_status.mjs";
 import { assertMeetingAgendaConsistency } from "./customer_project_meeting.mjs";
+import { readAcceptanceContract } from "./customer_project_surface_model.mjs";
 import { resolveCustomerProjectWorkspace } from "./project_workspace.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -27,10 +28,10 @@ const sourceDefinitions = [
 ];
 
 const demandMeetingDirections = Object.freeze([
-  "知识 / 话术辅助",
-  "智能质检",
-  "反馈分析",
-  "聊天分析",
+  "证据型客服助理",
+  "商品话术",
+  "活动话术",
+  "灰度前影子回放",
 ]);
 const demandMeetingRules = Object.freeze([
   "真实客服任务",
@@ -267,6 +268,19 @@ function requireText(text, value, label = value) {
   if (!text.includes(value)) throw new Error(`PRD 契约缺失：${label}`);
 }
 
+function markedElement(html, attributePattern, label) {
+  const openingTag = new RegExp(
+    `<([a-z][\\w:-]*)\\b(?=[^>]*\\b${attributePattern})[^>]*>`,
+    "i"
+  ).exec(html);
+  if (!openingTag) throw new Error(`PRD 契约缺失：${label}`);
+  const closeTag = `</${openingTag[1]}>`;
+  const contentStart = (openingTag.index ?? 0) + openingTag[0].length;
+  const contentEnd = html.indexOf(closeTag, contentStart);
+  if (contentEnd < 0) throw new Error(`PRD 契约未闭合：${label}`);
+  return html.slice(openingTag.index, contentEnd + closeTag.length);
+}
+
 function required(value, label) {
   if (!value) throw new Error(`无法从真源解析：${label}`);
   return value;
@@ -357,12 +371,14 @@ function derivePrdFacts(sourceById, projectStatus) {
   const scheduleDdevIso = `${d0.slice(0, 4)}-${String(scheduleDdev[1]).padStart(2, "0")}-${String(scheduleDdev[2]).padStart(2, "0")}`;
   assertSame("Ddev 最早日", ddevEarliest, scheduleDdevIso);
 
-  const overallTop3 = parseInteger(scope, /总体正例 Top3 ≥\s*\*\*(\d+)%\*\*/, "总体 Top3 门槛");
-  const stratumTop3 = parseInteger(scope, /每个已冻结分层 Top3 ≥\s*\*\*(\d+)%\*\*/, "分层 Top3 门槛");
-  const stratumMinHits = parseInteger(scope, /每个已冻结分层 Top3[^\n]*且至少命中 (\d+) 条/, "分层 Top3 最小命中数");
-  const citationCorrect = parseInteger(scope, /总体及各分层引用 \/ 版本正确率 =\s*\*\*(\d+)%\*\*/, "引用正确率");
-  const negativeMinCases = parseInteger(scope, /至少 (\d+) 条负例必须覆盖/, "负例最小数");
-  const negativeMaxWrongAnswers = parseInteger(scope, /负例错误直答 =\s*\*\*(\d+)\*\*/, "负例错误直答门槛");
+  const {
+    overallTop3,
+    stratumTop3,
+    stratumMinHits,
+    citationCorrect,
+    negativeMinCases,
+    negativeMaxWrongAnswers,
+  } = readAcceptanceContract(charter, scope);
   const pilotMatch = scope.match(/≥(\d+) 人 × 连续 (\d+) 周 × 每人每周 ≥(\d+) 个去重真实任务/);
   if (!pilotMatch) throw new Error("无法从真源解析：试点人数 / 周期 / 任务数");
   const pilotMinPeople = Number(pilotMatch[1]);
@@ -373,15 +389,6 @@ function derivePrdFacts(sourceById, projectStatus) {
   assertSame("试点最小人数", pilotMinPeople, Number(charterPilot[1]));
   assertSame("试点周期", pilotWeeks, 2);
   assertSame("试点每人每周任务数", pilotTasksPerPersonWeek, Number(charterPilot[3]));
-
-  const charterOverallTop3 = parseInteger(charter, /Top3 命中率 ≥(\d+)%/, "章程总体 Top3 门槛");
-  const charterCitation = parseInteger(charter, /引用 \/ 版本正确率 = (\d+)%/, "章程引用正确率");
-  const charterNegative = charter.match(/不少于 (\d+) 条负例，错误直答 = (\d+)/);
-  if (!charterNegative) throw new Error("无法从真源解析：章程负例门槛");
-  assertSame("总体 Top3 门槛", overallTop3, charterOverallTop3);
-  assertSame("引用正确率", citationCorrect, charterCitation);
-  assertSame("负例最小数", negativeMinCases, Number(charterNegative[1]));
-  assertSame("负例错误直答门槛", negativeMaxWrongAnswers, Number(charterNegative[2]));
 
   const paidAuthorization = projectStatus.paidSpend === "新增付费授权 = 0" ? "0" : "approved-cap";
   return {
@@ -430,8 +437,8 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   );
   requirePattern(
     html,
-    /data-evidence-grade=["']hypothesis["'][^>]*>[\s\S]{0,300}一期主问题待确认/,
-    "一期主问题待确认必须标为 hypothesis"
+    /data-evidence-grade=["']hypothesis["'][^>]*>[\s\S]{0,300}项目侧建议待客服确认/,
+    "项目侧建议待客服确认必须标为 hypothesis"
   );
   requireText(html, "项目已批准", "已批准事实");
   requireText(html, "不等于一期功能或开发已经批准", "批准边界");
@@ -450,14 +457,24 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
       "公司正式批准凭证仍待归档"
     );
   }
-  requirePattern(
+  const demandMeetingBlock = markedElement(
     html,
-    new RegExp(`data-demand-meeting=["']${escapeRegExp(demandMeetingDate)}["'][^>]*>[\\s\\S]{0,900}知识 \/ 话术辅助[\\s\\S]{0,240}智能质检[\\s\\S]{0,240}反馈分析[\\s\\S]{0,240}聊天分析`),
-    `${demandMeetingDate} 需求会四个讨论起点`
+    `data-demand-meeting\\s*=\\s*["']${escapeRegExp(demandMeetingDate)}["']`,
+    `${demandMeetingDate} 启动会项目侧建议`
   );
-  requirePattern(html, /data-demand-meeting-rule(?:\s|>)/, "需求会规则段");
-  for (const direction of demandMeetingDirections) requireText(html, direction, `讨论方向 ${direction}`);
-  for (const rule of demandMeetingRules) requireText(html, rule, `需求会规则 ${rule}`);
+  const demandMeetingRuleBlock = markedElement(
+    html,
+    "data-demand-meeting-rule(?:\\s|>)",
+    "启动会规则段"
+  );
+  const demandMeetingVisibleText = visibleText(demandMeetingBlock);
+  const demandMeetingRuleVisibleText = visibleText(demandMeetingRuleBlock);
+  for (const direction of demandMeetingDirections) {
+    requireText(demandMeetingVisibleText, direction, `项目侧建议 ${direction}`);
+  }
+  for (const rule of demandMeetingRules) {
+    requireText(demandMeetingRuleVisibleText, rule, `启动会规则 ${rule}`);
+  }
   if (/data-force-rank/.test(html) || /独立预评分|强制排序/.test(visibleText(html))) {
     throw new Error("PRD 不得继续使用旧的强制排序 / 独立预评分叙事");
   }

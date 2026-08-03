@@ -146,16 +146,31 @@ export async function writeCanonicalSurfaceOutputIfChanged({
     throw new Error(`${label}输出越出客服项目根目录：${outputPath}`);
   }
 
-  const before = await readOutput(outputPath, { canonicalProjectDir, label, optional: true });
-  if (before.text === generated) return false;
-
   await mkdir(path.dirname(outputPath), { recursive: true });
-  const temporaryPath = path.join(
-    path.dirname(outputPath),
-    `.${path.basename(outputPath)}.update-${process.pid}-${randomUUID()}.tmp`
-  );
-  let handle;
+  const lockPath = path.join(path.dirname(outputPath), `.${path.basename(outputPath)}.write.lock`);
+  let lockHandle;
   try {
+    lockHandle = await open(lockPath, "wx", 0o600);
+    await lockHandle.writeFile(`${process.pid}\n`, "utf8");
+    await lockHandle.sync();
+  } catch (error) {
+    await lockHandle?.close().catch(() => {});
+    if (error?.code === "EEXIST") {
+      throw new Error(`${label}生成锁已被占用，拒绝并发覆盖：${lockPath}`);
+    }
+    throw error;
+  }
+
+  let handle;
+  let temporaryPath;
+  try {
+    const before = await readOutput(outputPath, { canonicalProjectDir, label, optional: true });
+    if (before.text === generated) return false;
+
+    temporaryPath = path.join(
+      path.dirname(outputPath),
+      `.${path.basename(outputPath)}.update-${process.pid}-${randomUUID()}.tmp`
+    );
     handle = await open(temporaryPath, "wx", before.mode || 0o644);
     await handle.chmod(before.mode || 0o644);
     await handle.writeFile(generated, "utf8");
@@ -177,6 +192,8 @@ export async function writeCanonicalSurfaceOutputIfChanged({
     return true;
   } finally {
     await handle?.close().catch(() => {});
-    await removeExactTemporary(temporaryPath).catch(() => {});
+    if (temporaryPath) await removeExactTemporary(temporaryPath).catch(() => {});
+    await lockHandle?.close().catch(() => {});
+    await removeExactTemporary(lockPath).catch(() => {});
   }
 }

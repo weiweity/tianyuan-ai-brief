@@ -214,13 +214,53 @@ export function isChecked(value) {
   return /\[[xX]\]/.test(String(value || ""));
 }
 
+const MEETING_OPEN_PROBLEM_STATES = new Set([
+  "待核验",
+  "PRECONFIRM · 待核验",
+  "进行中",
+]);
+
+const MEETING_CLOSED_DEVELOPMENT_STATES = new Set([
+  "暂停",
+  "已暂停",
+  "停止",
+  "已停止",
+]);
+
+export function meetingLifecycleState(projectStatus) {
+  if (!projectStatus || typeof projectStatus !== "object") {
+    throw new Error("启动会生命周期判断缺少项目状态");
+  }
+  if (projectStatus.approvalReady !== true) return "not-eligible";
+  const closed =
+    !MEETING_OPEN_PROBLEM_STATES.has(projectStatus.problemFit) ||
+    projectStatus.g0 === "Fail" ||
+    projectStatus.feePathCode === "C" ||
+    MEETING_CLOSED_DEVELOPMENT_STATES.has(projectStatus.development) ||
+    projectStatus.ddevReady === true;
+  return closed ? "closed" : "open";
+}
+
+export function isMeetingLifecycleClosed(projectStatus) {
+  return meetingLifecycleState(projectStatus) === "closed";
+}
+
 export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) {
   const statusRows = parseTable(getSection(ledger, "## 1. 当前状态"), "当前状态");
   const statusMap = Object.fromEntries(statusRows.map((row) => [row["项目项"], row["状态"]]));
   const allowedSummary = {
     "工作方向登记": ["已记录", "未记录", "Fail"],
     "公司正式批准": ["未完成", "进行中", "已完成", "已批准", "Pass", "Fail"],
-    "业务问题优先级": ["待核验", "进行中", "已核验", "已确认", "Pass", "Fail", "未通过"],
+    "业务问题优先级": [
+      "待核验",
+      "PRECONFIRM · 待核验",
+      "进行中",
+      "已核验",
+      "已确认",
+      "Pass",
+      "Fail",
+      "未通过",
+    ],
     "G0 签发": ["未签发", "待签发", "已签发", "Pass", "Fail"],
     "产品开发": ["未开始", "未开发", "暂停", "已暂停", "停止", "已停止", "开发中", "已开始", "进行中", "已完成"],
     "资源基线": ["未选择", "最小跨职能小队", "单人全栈 / FDE"],

@@ -20,6 +20,10 @@ import { fileURLToPath } from "node:url";
 
 import { assertMeetingAgendaConsistency } from "../../business-docs/08-工具/customer_project_meeting.mjs";
 import { deriveProjectStatus } from "../../business-docs/08-工具/customer_project_status.mjs";
+import {
+  readAcceptanceContract,
+  readMeetingProposal,
+} from "../../business-docs/08-工具/customer_project_surface_model.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(siteRoot, "..");
@@ -79,17 +83,17 @@ async function artifactState(paths) {
   );
 }
 
-test("需求会从真实任务做决定，不预设功能、不投票且双议程同构", async () => {
+test("启动会校准项目侧建议，不冒充客服决定且双议程同构", async () => {
   const [charter, cadence, ledger, onePager] = await Promise.all([
     readProject("00-项目章程.md"),
     readProject("06-启动会与周推进.md"),
     readProject("02-G0责任与证据台账.md"),
     readProject("80-参考/客服Agent一页立项卡.md"),
   ]);
-  for (const direction of ["知识 / 话术辅助", "智能质检", "反馈分析", "聊天分析"]) {
-    assert.match(`${charter}\n${cadence}`, new RegExp(direction.replace("/", "\\/")));
-  }
-  assert.match(cadence, /不做功能投票/);
+  assert.match(charter, /项目侧推荐“证据型客服助理 \+ 灰度前影子回放”/);
+  assert.match(charter, /08-04 由客服确认、修正或否决/);
+  assert.match(cadence, /项目侧推荐方案不是客服既定答案/);
+  assert.match(cadence, /不在本会与推荐方案做功能投票/);
   assert.match(cadence, /不让客服人员选择编程语言、数据库或 AI 框架/);
   assert.match(cadence, /OPEN（待补证）/);
   assert.match(cadence, /08-03 18:00 前完成会前资料包（按 T-24 入口门管理）/);
@@ -101,6 +105,8 @@ test("需求会从真实任务做决定，不预设功能、不投票且双议�
   assert.match(ledger, /DEC-003[^\n]+已废止/);
   assert.match(ledger, /DEC-009[^\n]+不预设一期答案、不做功能投票/);
   assert.match(ledger, /DEC-011[^\n]+总时长硬限制为 60 分钟/);
+  assert.match(ledger, /DEC-012[^\n]+证据型客服助理 \+ 灰度前影子回放[^\n]+PRECONFIRM/);
+  assert.match(ledger, /DEC-014[^\n]+2 新手 \+ 2 老手为候选[^\n]+不做显著性主张/);
   for (const [id, title] of [
     ["01", "一期主问题"],
     ["02", "主用户与场景"],
@@ -116,8 +122,12 @@ test("需求会从真实任务做决定，不预设功能、不投票且双议�
     assert.ok(ledger.includes(label), `02 台账缺少统一决定名称：${label}`);
     assert.ok(cadence.includes(label), `06 主持版缺少统一决定名称：${label}`);
   }
-  assert.equal((ledger.match(/^\| DEC-REQ-(?:0[1-9]) \| \| \| \| \| \|$/gm) || []).length, 9);
-  assert.match(onePager, /0～5 边界与分工[\s\S]+52～60 决定回读/);
+  assert.equal(
+    (ledger.match(/^\| DEC-REQ-(?:0[1-9]) \| (?:DEC|PRECONFIRM|OPEN|PARKING) \|/gm) || [])
+      .length,
+    9
+  );
+  assert.match(onePager, /0～5 启动目标[\s\S]+52～60 结果 \/ 下一步/);
   for (const text of [charter, cadence, onePager]) {
     assert.doesNotMatch(text, /话术库 MVP-A|独立预评分|强制排序/);
   }
@@ -137,6 +147,57 @@ test("需求会从真实任务做决定，不预设功能、不投票且双议�
     () => assertMeetingAgendaConsistency(brokenCoverage, matchingBrokenCadence),
     /必须完整覆盖 0～60 分钟/
   );
+});
+
+test("章程与 Scope 必须共同保持风险错误直答为零", async () => {
+  const [charter, scope] = await Promise.all([
+    readProject("00-项目章程.md"),
+    readProject("03-Scope与验收.md"),
+  ]);
+  assert.equal(readAcceptanceContract(charter, scope).negativeMaxWrongAnswers, 0);
+  const weakenedScope = scope.replace("负例错误直答 = **0**", "负例错误直答 = **1**");
+  assert.notEqual(weakenedScope, scope, "夹具必须实际放宽错误直答门槛");
+  assert.throws(
+    () => readAcceptanceContract(charter, weakenedScope),
+    /负例错误直答门槛（1 != 0）/
+  );
+});
+
+test("项目侧建议只从 4P 五个纯文本字段进入会议模型", async () => {
+  const ledger = await readProject("02-G0责任与证据台账.md");
+  assert.deepEqual(readMeetingProposal(ledger), {
+    name: "证据型客服助理",
+    phaseOneFocus: "商品话术与活动话术",
+    workingBoundary:
+      "展示证据，信息不足时澄清，有冲突、过期或无依据时升级；坐席人工确认，不自动发送",
+    shadowGate: "冻结历史问题影子回放通过后，再开放 3～5 名坐席",
+    meetingAction: "客服确认、修正或否决",
+  });
+
+  const markdownProposal = ledger.replace(
+    "| 建议名称 | 证据型客服助理 |",
+    "| 建议名称 | **证据型客服助理** |"
+  );
+  assert.equal(readMeetingProposal(markdownProposal).name, "证据型客服助理");
+  assert.doesNotMatch(readMeetingProposal(markdownProposal).name, /[*_`\[\]]/);
+
+  const internalTerm = ledger.replace(
+    "| 会中动作 | 客服确认、修正或否决 |",
+    "| 会中动作 | PRECONFIRM |"
+  );
+  assert.throws(() => readMeetingProposal(internalTerm), /包含内部状态码或技术术语/);
+
+  const sensitiveLink = ledger.replace(
+    "| 会中动作 | 客服确认、修正或否决 |",
+    "| 会中动作 | https://internal.example.com |"
+  );
+  assert.throws(() => readMeetingProposal(sensitiveLink), /包含明显敏感信息/);
+
+  const extraRow = ledger.replace(
+    "| 会中动作 | 客服确认、修正或否决 |",
+    "| 会中动作 | 客服确认、修正或否决 |\n| 内部备注 | 不得投影 |"
+  );
+  assert.throws(() => readMeetingProposal(extraRow), /必须且只能有 5 个可投影字段/);
 });
 
 test("终审机读证据必须与现行 2/29 真源同源，旧 0/29 不能再次冒充 10.0", async () => {
@@ -193,12 +254,12 @@ test("公开材料不得写入臆测的 HR / 金主身份", async () => {
 
 test("评测按平台场景分层，单一简单场景不能包办总分", async () => {
   const scope = await readProject("03-Scope与验收.md");
-  assert.match(scope, /平台 × 核心场景至少 2 条/);
+  assert.match(scope, /平台 × 核心意图至少 2 条/);
   assert.match(scope, /单一分层不得超过 40%/);
-  assert.match(scope, /无依据、过期 \/ 冲突、无权限 \/ 敏感、意图模糊需追问、超范围需转人工/);
+  assert.match(scope, /六类风险负例为信息不足、内容冲突 \/ 过期、跨平台、错 SKU、越权承诺、敏感信息/);
   assert.match(scope, /缺分层或只报总分不得验收/);
   assert.match(scope, /任一分层未达线即失败，不能用总体均值抵扣/);
-  assert.match(scope, /Scope 与验收 v3\.0/);
+  assert.match(scope, /Scope 与验收 v3\.3/);
 });
 
 test("执行中心回归内部推进，只向 canonical 09 提供会场入口", async () => {
@@ -207,14 +268,14 @@ test("执行中心回归内部推进，只向 canonical 09 提供会场入口", 
     readRepo("business-docs/08-工具/templates/customer-agent-hub.template.html"),
     readRepo("business-docs/08-工具/customer_project_status.mjs"),
   ]);
-  assert.match(generator, /项目已批准，8 月 4 日要把一期方向和未决项处理清楚/);
+  assert.match(generator, /项目侧已有一期建议，8 月 4 日由客服校准并处理未决项/);
   assert.match(generator, /真实任务 · 指标基线 · 权威来源 · 试点与人数/);
   assert.match(statusModule, /新增付费授权 = 0/);
   assert.doesNotMatch(generator, /外包推进节奏/);
   assert.doesNotMatch(template, /data\.prelaunchChecklist\.slice\(/);
   assert.match(template, /document\.querySelector\("#prelaunch-list"\),\s*data\.prelaunchChecklist/);
   assert.match(generator, /prelaunchChecklist\.map\(humanizeMeetingText\)\.slice\(0, 8\)/);
-  assert.match(generator, /客服 Agent 一期需求会会前准备/);
+  assert.match(generator, /客服 Agent 一期启动会会前准备/);
   assert.match(generator, /不是需求文档终审、开发前总检查通过或开发开工会/);
   assert.match(template, /项目批准/);
   assert.match(template, /data-meeting-link href="\.\/09-客服Agent需求会汇报\.html"/);
@@ -275,7 +336,13 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
   await Promise.all(
     projectFiles.map((file) => copyFile(path.join(projectRoot, file), path.join(fixtureProject, file)))
   );
-  for (const file of ["check_customer_agent_prd_sources.mjs", "customer_project_status.mjs", "customer_project_meeting.mjs", "project_workspace.mjs"]) {
+  for (const file of [
+    "check_customer_agent_prd_sources.mjs",
+    "customer_project_status.mjs",
+    "customer_project_meeting.mjs",
+    "customer_project_surface_model.mjs",
+    "project_workspace.mjs",
+  ]) {
     await copyFile(path.join(repoRoot, "business-docs/08-工具", file), path.join(fixtureTools, file));
   }
 
@@ -306,7 +373,7 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
     top3StratumMinPercent: 50,
     top3StratumMinHits: 1,
     citationCorrectPercent: 100,
-    negativeMinCases: 5,
+    negativeMinCases: 12,
     negativeMaxWrongAnswers: 0,
     pilotMinPeople: 3,
     pilotMaxPeople: 5,
@@ -320,6 +387,23 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
     selected: false,
     paidAuthorization: "0",
   });
+
+  const pristinePrd = await readFile(fixturePrdPath, "utf8");
+  const missingVisibleDirection = pristinePrd.replace(
+    "<span>商品话术</span>",
+    "<span>其他话术</span>"
+  );
+  assert.notEqual(missingVisibleDirection, pristinePrd, "夹具必须实际移除启动会区块中的商品话术");
+  assert.match(missingVisibleDirection, /商品话术/, "词语应仍存在于区块外，验证检查范围没有退化为全页搜索");
+  await writeFile(fixturePrdPath, missingVisibleDirection, "utf8");
+  const rejectedVisibleDirection = runUpdate();
+  assert.notEqual(rejectedVisibleDirection.status, 0, "可见启动会建议缺项时不得依赖内嵌真源重签");
+  assert.match(
+    `${rejectedVisibleDirection.stderr}\n${rejectedVisibleDirection.stdout}`,
+    /项目侧建议 商品话术/
+  );
+  assert.equal(await readFile(manifestPath, "utf8"), manifestBeforeDrift, "可见建议缺项不得重写清单");
+  await writeFile(fixturePrdPath, pristinePrd, "utf8");
 
   const fixtureLedgerPath = path.join(fixtureProject, "02-G0责任与证据台账.md");
   const ledger = await readFile(fixtureLedgerPath, "utf8");

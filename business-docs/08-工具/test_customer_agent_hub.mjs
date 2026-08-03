@@ -126,7 +126,7 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     manifest.sources,
     "Hub 真源身份与 manifest 不一致"
   );
-  assert.match(payload.metrics.find((item) => item.label === "知识辅助 Top3（条件项）")?.note || "", /分层 ≥50% 且至少命中 1 条/);
+  assert.match(payload.metrics.find((item) => item.label === "证据型助理 Top3（建议）")?.note || "", /分层 ≥50% 且至少命中 1 条/);
   assert.equal(payload.metrics.find((item) => item.label === "内部真实试点")?.value, "3–5 人 × 2 周");
   assert.ok(payload.portablePrd?.htmlBase64, "缺少便携 PRD");
   const portablePrdHtml = Buffer.from(payload.portablePrd.htmlBase64, "base64").toString("utf8");
@@ -157,12 +157,12 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   assert.equal(payload.status.scopePass, contracts.acceptance.scopePass);
   assert.equal(payload.status.scopeTotal, contracts.acceptance.scopeTotal);
   const metricByLabel = Object.fromEntries(payload.metrics.map((metric) => [metric.label, metric]));
-  assert.equal(Number(metricByLabel["知识辅助 Top3（条件项）"].value.match(/\d+/)[0]), contracts.acceptance.top3OverallMinPercent);
-  assert.match(metricByLabel["知识辅助 Top3（条件项）"].note, new RegExp(`分层 ≥${contracts.acceptance.top3StratumMinPercent}%`));
-  assert.match(metricByLabel["知识辅助 Top3（条件项）"].note, new RegExp(`至少命中 ${contracts.acceptance.top3StratumMinHits} 条`));
-  assert.equal(Number(metricByLabel["知识来源正确（条件项）"].value.match(/\d+/)[0]), contracts.acceptance.citationCorrectPercent);
-  assert.equal(Number(metricByLabel["知识错误直答（条件项）"].value), contracts.acceptance.negativeMaxWrongAnswers);
-  assert.match(metricByLabel["知识错误直答（条件项）"].note, new RegExp(`不少于 ${contracts.acceptance.negativeMinCases} 条`));
+  assert.equal(Number(metricByLabel["证据型助理 Top3（建议）"].value.match(/\d+/)[0]), contracts.acceptance.top3OverallMinPercent);
+  assert.match(metricByLabel["证据型助理 Top3（建议）"].note, new RegExp(`分层 ≥${contracts.acceptance.top3StratumMinPercent}%`));
+  assert.match(metricByLabel["证据型助理 Top3（建议）"].note, new RegExp(`至少命中 ${contracts.acceptance.top3StratumMinHits} 条`));
+  assert.equal(Number(metricByLabel["知识来源正确（建议）"].value.match(/\d+/)[0]), contracts.acceptance.citationCorrectPercent);
+  assert.equal(Number(metricByLabel["风险错误直答（建议）"].value), contracts.acceptance.negativeMaxWrongAnswers);
+  assert.match(metricByLabel["风险错误直答（建议）"].note, new RegExp(`不少于 ${contracts.acceptance.negativeMinCases} 条`));
   assert.equal(
     metricByLabel["内部真实试点"].value,
     `${contracts.acceptance.pilotMinPeople}–${contracts.acceptance.pilotMaxPeople} 人 × ${contracts.acceptance.pilotWeeks} 周`

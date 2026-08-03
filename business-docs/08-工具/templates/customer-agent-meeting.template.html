@@ -11,7 +11,6 @@
   <link rel="icon" href="__FAVICON_DATA_URI__" type="image/png" sizes="64x64">
   <link rel="apple-touch-icon" href="__APPLE_TOUCH_ICON_DATA_URI__" sizes="180x180">
   <title>天元 · 客服 Agent 一期启动会</title>
-  <script>document.documentElement.classList.add("js");</script>
   <style>
     :root {
       color-scheme: light;
@@ -46,7 +45,8 @@
       --shell: 1580px;
       --stage: var(--shell);
       --header-height: 76px;
-      --control-height: 76px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --control-height: calc(76px + var(--safe-bottom));
       --ease: cubic-bezier(.2, .8, .2, 1);
       --font-sans: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans CJK SC",
         "Noto Sans SC", "Microsoft YaHei", sans-serif;
@@ -624,6 +624,77 @@
       line-height: 1.4;
     }
 
+    .proposal-banner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 20px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 15px 18px;
+      border: 1px solid var(--brand-200);
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--brand-50), #fff);
+    }
+
+    .proposal-banner > div > span {
+      color: var(--brand-600);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .proposal-banner h3 {
+      margin: 2px 0 0;
+      color: var(--brand-900);
+      font-size: 25px;
+    }
+
+    .proposal-banner p {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      max-width: 280px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: right;
+    }
+
+    .proposal-route {
+      display: block;
+      margin-top: 5px;
+      color: var(--brand-700);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .proposal-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 14px;
+    }
+
+    .proposal-grid .topic-card {
+      min-height: 94px;
+      border-style: solid;
+    }
+
+    .proposal-question-row {
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .proposal-question-row .question-card {
+      min-height: 64px;
+      padding: 11px 13px;
+      font-size: 14px;
+    }
+
+    .proposal-question-row .question-card::before {
+      min-width: 54px;
+      font-size: 10px;
+    }
+
     .question-row {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -893,18 +964,25 @@
       position: relative;
       z-index: 30;
       height: var(--control-height);
-      border-top: 1px solid var(--line);
-      background: var(--surface);
+      padding: 2px 10px calc(6px + var(--safe-bottom));
+      background: transparent;
     }
 
     .controls-inner {
+      position: relative;
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       gap: 16px;
       align-items: center;
-      width: min(calc(100% - 20px), var(--shell));
+      width: min(100%, var(--shell));
       height: 100%;
       margin: 0 auto;
+      padding: 7px 14px;
+      border: 1px solid rgb(222 215 228 / 92%);
+      border-radius: 18px;
+      background: rgb(255 255 255 / 94%);
+      box-shadow: 0 8px 26px rgb(46 35 53 / 8%);
+      backdrop-filter: blur(18px);
     }
 
     .control-group {
@@ -1192,6 +1270,10 @@
         padding: 14px;
       }
 
+      .proposal-grid .topic-card {
+        min-height: 104px;
+      }
+
       .prompt-panel {
         padding: 16px 18px;
       }
@@ -1204,7 +1286,7 @@
     @media (max-width: 760px) {
       :root {
         --header-height: 76px;
-        --control-height: 72px;
+        --control-height: calc(72px + var(--safe-bottom));
       }
 
       body {
@@ -1316,6 +1398,17 @@
         grid-template-columns: 1fr;
       }
 
+      .proposal-banner {
+        grid-template-columns: 1fr;
+      }
+
+      .proposal-banner p {
+        grid-column: 1;
+        grid-row: auto;
+        max-width: none;
+        text-align: left;
+      }
+
       .topic-card {
         min-height: auto;
       }
@@ -1335,7 +1428,8 @@
 
       .controls-inner {
         grid-template-columns: 1fr auto;
-        width: calc(100% - 20px);
+        width: 100%;
+        padding-inline: 11px;
       }
 
       .button-label {
@@ -1480,11 +1574,11 @@
       </div>
       <div class="header-copy" aria-label="当前页面">
         <span class="header-title">客服 Agent 一期启动会</span>
-        <span class="header-subtitle">共同启动需求定义与项目协作</span>
+        <span class="header-subtitle">客服确认、修正或否决项目侧建议</span>
       </div>
       <div class="state-strip" aria-label="项目状态">
         <span class="state-pill" data-mobile-label="已批准" data-state-approval>项目已批准</span>
-        <span class="state-pill" data-mobile-label="待确认" data-state-direction>一期方向待确认</span>
+        <span class="state-pill" data-mobile-label="待确认" data-state-direction>一期建议待确认</span>
         <span class="state-pill" data-mobile-label="未开发" data-state-development>尚未开发</span>
       </div>
       <div class="header-meta">
@@ -1500,13 +1594,13 @@
           <span class="cover-mark">一期项目启动</span>
           <p class="slide-kicker">客服团队 · 业务与协作对齐</p>
           <h1 id="cover-title" data-pretext>客服 Agent<br>一期启动会</h1>
-          <p class="cover-goal" data-pretext>今天共同确认一期主问题、范围、责任与下一步。</p>
+          <p class="cover-goal" data-pretext>今天请客服确认、修正或否决一期建议，再明确责任与下一步。</p>
         </div>
         <aside class="cover-aside" aria-labelledby="cover-boundary-title">
           <h2 id="cover-boundary-title">本次启动目标</h2>
           <ol class="boundary-list">
-            <li>对齐一个一期主问题</li>
-            <li>明确范围、成功与试点条件</li>
+            <li>用真实任务校准会前建议</li>
+            <li>明确一期边界、成功与试点条件</li>
             <li>确认责任、未决事项与下一步</li>
           </ol>
           <p class="cover-exclusion"><strong>本次不决定：</strong>技术选型、开发开工与上线承诺。</p>
@@ -1518,7 +1612,7 @@
       <div class="slide-inner">
         <p class="slide-kicker">环节 1 / 8</p>
         <h2 id="boundary-title" data-agenda-topic="0" data-pretext>先对齐启动目标与参与方式</h2>
-        <p class="lead" data-agenda-decision="0" data-pretext>项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。</p>
+        <p class="lead" data-agenda-decision="0" data-pretext>项目已批准；项目侧已准备会前建议，今天由客服确认、修正或否决，并明确后续责任。</p>
         <div class="prompt-grid">
           <article class="prompt-panel">
             <h3>共同参与</h3>
@@ -1531,7 +1625,7 @@
           <article class="prompt-panel emphasis">
             <h3>共同规则</h3>
             <ul class="prompt-list">
-              <li>有事实支撑，现场形成决定</li>
+              <li>项目侧建议不是客服既定答案</li>
               <li>证据不足，写清负责人和确认位置</li>
               <li>超出一期范围，记录后单独处理</li>
             </ul>
@@ -1581,20 +1675,23 @@
     <section class="slide" data-slide-index="3" aria-labelledby="direction-title">
       <div class="slide-inner">
         <p class="slide-kicker">环节 3 / 8</p>
-        <h2 id="direction-title" data-agenda-topic="2" data-pretext>一起确定一期主问题</h2>
-        <p class="lead" data-agenda-decision="2" data-pretext>先用三问判断；下方常见表现不是选项，可改、可删，也可以提出其他真实问题。</p>
-        <div class="question-row" id="core-question-list" aria-label="选择一期主问题的三个判断">
-          <p class="question-card">结合刚才两个真实任务，哪一个最该成为一期唯一主问题？</p>
-          <p class="question-card">这个主问题的损失或卡点，能否拿出可核对的证据？</p>
-          <p class="question-card">能否在 3–5 名坐席的小范围试点中先验证改善？</p>
+        <h2 id="direction-title" data-agenda-topic="2" data-pretext>一起校准项目侧建议</h2>
+        <p class="lead" data-agenda-decision="2" data-pretext>对照真实任务校准项目侧建议；客服可以确认、修正或否决，证据不足就明确待补材料。</p>
+        <div class="proposal-banner" aria-label="项目侧会前建议">
+          <div><span>项目侧会前建议</span><h3 data-proposal="name">证据型客服助理</h3></div>
+          <p><strong>会中动作：</strong><span data-proposal="meetingAction">客服确认、修正或否决</span><span class="proposal-route">一期灰度验证 → 二期清洗蒸馏与稳定 → 三期 Agent；每一步都由前一期证据决定</span></p>
         </div>
-        <div class="topic-grid" aria-label="常见表现示例，不是选项，可修改、删除或补充">
-          <article class="topic-card"><span>常见表现 · 非选项</span><h3>找答案慢 / 容易找错</h3><p>需要回答：哪些任务依赖可靠内容，查找或核对哪里最慢。</p></article>
-          <article class="topic-card"><span>常见表现 · 非选项</span><h3>质检难发现 / 难复核</h3><p>需要回答：哪些质量问题高频、难发现或难复核。</p></article>
-          <article class="topic-card"><span>常见表现 · 非选项</span><h3>反馈分散 / 难汇总</h3><p>需要回答：哪些反馈长期分散，影响了什么业务结果。</p></article>
-          <article class="topic-card"><span>常见表现 · 非选项</span><h3>对话重点难提取</h3><p>需要回答：现有对话里，哪些关键信息最值得提取和验证。</p></article>
+        <div class="topic-grid proposal-grid" aria-label="项目侧建议边界">
+          <article class="topic-card"><span>一期切口</span><h3 data-proposal="phaseOneFocus">商品话术与活动话术</h3><p>先聚焦一个可以小范围验证的业务闭环。</p></article>
+          <article class="topic-card"><span>工作边界</span><h3>证据优先、人工确认</h3><p data-proposal="workingBoundary">展示证据，信息不足时澄清，有冲突、过期或无依据时升级；坐席人工确认，不自动发送</p></article>
+          <article class="topic-card"><span>灰度前门</span><h3>先做影子回放</h3><p data-proposal="shadowGate">冻结历史问题影子回放通过后，再开放 3–5 名坐席</p></article>
         </div>
-        <p class="callout" data-label="会中产出">一期唯一主问题；证据不足时，写清还要补什么、由谁补、在哪里确认。</p>
+        <div class="question-row proposal-question-row" id="core-question-list" aria-label="校准项目侧建议的三个判断">
+          <p class="question-card">这个建议是否对准当前最痛的问题？</p>
+          <p class="question-card">一期切口是否合适？</p>
+          <p class="question-card">工作边界和灰度前门还需要修正什么？</p>
+        </div>
+        <p class="callout" data-label="会中产出">客服对建议的确认、修正或否决结果；证据不足时，写清补什么、由谁补、在哪里确认。</p>
       </div>
     </section>
 
@@ -1602,22 +1699,22 @@
       <div class="slide-inner">
         <p class="slide-kicker">环节 4 / 8</p>
         <h2 id="scope-title" data-agenda-topic="3" data-pretext>一起明确一期先做到哪一步</h2>
-        <p class="lead" data-agenda-decision="3" data-pretext>基于刚才确定的一期主问题，确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。</p>
+        <p class="lead" data-agenda-decision="3" data-pretext>确认谁在什么场景使用、系统展示什么证据、何时澄清或升级，以及坐席如何人工确认。</p>
         <div class="prompt-grid">
           <article class="prompt-panel emphasis">
-            <h3>必须说清</h3>
+            <h3>项目侧建议闭环</h3>
             <ul class="prompt-list">
-              <li>哪类坐席，在什么平台，完成哪个任务</li>
-              <li>软件从哪里开始帮忙，到哪里停止</li>
-              <li>人工在什么位置确认、纠正或接管</li>
+              <li data-proposal="phaseOneFocus">商品话术与活动话术</li>
+              <li data-proposal="workingBoundary">展示证据，信息不足时澄清，有冲突、过期或无依据时升级；坐席人工确认，不自动发送</li>
+              <li data-proposal="shadowGate">冻结历史问题影子回放通过后，再开放 3–5 名坐席</li>
             </ul>
           </article>
           <article class="prompt-panel">
             <h3>一期边界</h3>
             <ul class="prompt-list">
-              <li>只服务一个主问题，不并行铺开多个问题</li>
-              <li>不自动向客户发送内容</li>
-              <li>不把尚未验证的效果或上线安排当作既定结论</li>
+              <li>坐席人工确认后自行发送，不自动发送</li>
+              <li>一期不做订单、物流、退款与售后系统深度集成</li>
+              <li>客服可以修正或否决，不把会前建议当作既定结论</li>
             </ul>
           </article>
         </div>
@@ -1633,18 +1730,19 @@
         <div class="prompt-grid">
           <article class="prompt-panel">
             <h3>成功方向</h3>
-            <div class="metric-line"><strong>效率</strong><span>处理时长、查找时间或重复操作是否下降</span></div>
-            <div class="metric-line"><strong>质量</strong><span>一次解决、正确引用、返工或投诉是否改善</span></div>
-            <div class="metric-line"><strong>使用</strong><span>坐席是否愿意持续使用，人工确认是否顺畅</span></div>
+            <div class="metric-line"><strong>效率</strong><span>获得可确认安全答案的时长是否下降</span></div>
+            <div class="metric-line"><strong>质量</strong><span>来源、平台、版本和有效期是否正确；过期话术使用为 0</span></div>
+            <div class="metric-line"><strong>使用</strong><span>同时看采纳、修改、拒绝、未命中与升级</span></div>
           </article>
           <article class="prompt-panel emphasis">
             <h3>停止信号</h3>
-            <div class="metric-line"><strong>安全</strong><span>出现不可接受的错误回答、越权或敏感信息暴露</span></div>
-            <div class="metric-line"><strong>业务</strong><span>真实任务没有改善，或者明显增加坐席负担</span></div>
-            <div class="metric-line"><strong>证据</strong><span>数据无法复核，或样本不足以支持继续判断</span></div>
+            <div class="metric-line"><strong>话术</strong><span>过期、错平台、错 SKU 或越权内容被确定性直答，立即停用</span></div>
+            <div class="metric-line"><strong>来源</strong><span>权威来源冲突却未升级，暂停相关场景；不能隔离则全部暂停</span></div>
+            <div class="metric-line"><strong>安全</strong><span>自动发送或敏感信息暴露任一次数必须为 0</span></div>
+            <div class="metric-line"><strong>业务</strong><span>真实任务无改善或增加坐席负担，回到原流程复核</span></div>
           </article>
         </div>
-        <p class="callout" data-label="会中产出">指标名称、数据出处与负责人；停止时谁上报、谁拍板、先停用并回到原流程，结果记入纪要与台账。</p>
+        <p class="callout" data-label="会中产出">一期是小样本探索性灰度：确认指标、分母、数据出处与负责人，不做统计显著性结论；同时说清谁上报、谁拍板、先停用并回到原流程，正式结果回写纪要与台账。</p>
       </div>
     </section>
 
@@ -1686,21 +1784,21 @@
           <article class="prompt-panel">
             <h3>试点坐席</h3>
             <ul class="prompt-list">
-              <li>选择 3–5 名代表性坐席，并准备替补</li>
-              <li>覆盖典型任务、不同熟练度和真实工作班次</li>
-              <li>说明如何退出试点、如何反馈问题</li>
+              <li>2 名新手 + 2 名老手只是首批候选，不是固定样本</li>
+              <li>先看平台、意图、班次、活动期与高影响情形覆盖</li>
+              <li>覆盖不足就增补或替换，总体优先控制在 3–5 人</li>
             </ul>
           </article>
           <article class="prompt-panel emphasis">
             <h3>使用环境</h3>
             <ul class="prompt-list">
-              <li>预计总人数与同时使用人数</li>
-              <li>高峰时段、主要平台与设备</li>
-              <li>网络限制、登录方式和必要安全要求</li>
+              <li>新手与老手分开报告，只比同类任务的前后变化</li>
+              <li>环比只作辅助趋势，不单独证明软件效果</li>
+              <li>同时确认平台、设备、网络、高峰与登录限制</li>
             </ul>
           </article>
         </div>
-        <p class="callout" data-label="用途">这些信息将作为后续试点准备与协作安排的共同依据。</p>
+        <p class="callout" data-label="用途">一期只验证受控可用性、质量与工作流，不用 3–5 人宣称统计显著性或规模收益。</p>
       </div>
     </section>
 
@@ -1711,9 +1809,9 @@
         <p class="lead" data-agenda-decision="7" data-pretext>只有结论能被全场复述，才选择“已确认”；其余事项写清负责人、补充内容、确认日期与位置。</p>
         <div class="decision-toolbar" aria-label="结果状态说明">
           <p class="decision-legend" id="decision-option-legend">
-            <strong>结论可复述后选择</strong><span>已确认</span><span>待共同确认</span><span>待补材料</span><span>本次暂不决定</span>
+            <strong>现场回读后选择</strong><span>已确认</span><span>待共同确认</span><span>待补材料</span><span>本次暂不决定</span>
           </p>
-          <span class="decision-progress" id="decision-progress" aria-live="polite">0 / 9 已处理</span>
+          <span class="decision-progress" id="decision-progress" aria-live="polite">0 / 9 已回读</span>
         </div>
         <div class="decision-grid" id="decision-list">
           <article class="decision-card" data-decision-index="0" data-result="pending"><span class="decision-number">01</span><span class="decision-title">一期主问题</span><span class="decision-control"><select class="decision-select" aria-label="一期主问题的启动结果"><option value="pending">请选择结果</option></select></span></article>
@@ -1726,7 +1824,7 @@
           <article class="decision-card" data-decision-index="7" data-result="pending"><span class="decision-number">08</span><span class="decision-title">使用环境与限制</span><span class="decision-control"><select class="decision-select" aria-label="使用环境与限制的启动结果"><option value="pending">请选择结果</option></select></span></article>
           <article class="decision-card" data-decision-index="8" data-result="pending"><span class="decision-number">09</span><span class="decision-title">责任与下一步</span><span class="decision-control"><select class="decision-select" aria-label="责任与下一步的启动结果"><option value="pending">请选择结果</option></select></span></article>
         </div>
-        <p class="callout" data-label="输出">一期结论、材料与权限清单、试点准备清单；正式结果以会后纪要为准。</p>
+        <p class="callout" data-label="输出">现场选择只用于回读，不是正式批准；一期结论、材料与权限清单、试点准备清单以会后纪要与 02 台账为准。</p>
       </div>
     </section>
   </main>
@@ -1784,13 +1882,13 @@
     <h1>客服 Agent 一期启动会</h1>
     <div class="print-state">
       <span data-state-approval>项目已批准</span>
-      <span data-state-direction>一期方向待确认</span>
+      <span data-state-direction>一期建议待确认</span>
       <span data-state-development>尚未开发</span>
     </div>
     <h2>启动议程</h2>
     <ol class="print-agenda" id="print-agenda">
       <li>启动目标与参与方式</li><li>两个真实任务</li>
-      <li>一期主问题</li><li>一期先做到哪一步</li>
+      <li>校准项目侧建议</li><li>一期先做到哪一步</li>
       <li>成功与停止条件</li><li>可靠内容依据</li>
       <li>试点与使用环境</li><li>启动结果与下一步</li>
     </ol>
@@ -1804,7 +1902,7 @@
     <ul class="print-outputs">
       <li>一期结论</li><li>材料与权限清单</li><li>试点准备清单</li>
     </ul>
-    <p class="print-footer">本页用于启动会展示和核对，不保存正式结论。确认结果会写回项目记录。</p>
+    <p class="print-footer">本页用于启动会展示和现场回读，不保存正式结论。正式结果以会后纪要与 02 台账为准。</p>
   </section>
 
   <script id="meeting-data" type="application/json">__MEETING_DATA__</script>
@@ -1855,7 +1953,7 @@
         : [];
       const decisionValueSet = new Set(["pending", ...decisionOptions.map((option) => option.value)]);
       const decisionLabelByValue = new Map([
-        ["pending", "未处理"],
+        ["pending", "未回读"],
         ...decisionOptions.map((option) => [option.value, option.label]),
       ]);
 
@@ -1924,6 +2022,23 @@
           setText(`[data-agenda-decision="${index}"]`, item.decision);
         });
 
+        const proposal = data.meeting?.proposal;
+        const proposalFields = [
+          "name",
+          "phaseOneFocus",
+          "workingBoundary",
+          "shadowGate",
+          "meetingAction",
+        ];
+        if (proposal && typeof proposal === "object") {
+          proposalFields.forEach((field) => {
+            const value = proposal[field];
+            if (typeof value === "string" && value.trim()) {
+              setText(`[data-proposal="${field}"]`, value);
+            }
+          });
+        }
+
         const questions = Array.isArray(data.meeting?.coreQuestions)
           ? data.meeting.coreQuestions.slice(0, 3)
           : [];
@@ -1983,7 +2098,7 @@
         const decisionLegend = document.querySelector("#decision-option-legend");
         if (decisionOptions.length === 4) {
           const legendTitle = document.createElement("strong");
-          legendTitle.textContent = "结论可复述后选择";
+          legendTitle.textContent = "现场回读后选择";
           decisionLegend.replaceChildren(
             legendTitle,
             ...decisionOptions.map((item) => {
@@ -2139,10 +2254,10 @@
           const printItem = document.querySelector(`[data-print-decision-index="${index}"]`);
           if (printItem) {
             const title = card.querySelector(".decision-title").textContent.trim();
-            printItem.textContent = `${title}：${decisionLabelByValue.get(result) || "未处理"}`;
+            printItem.textContent = `${title}：${decisionLabelByValue.get(result) || "未回读"}`;
           }
         });
-        document.querySelector("#decision-progress").textContent = `${completed} / 9 已处理`;
+        document.querySelector("#decision-progress").textContent = `${completed} / 9 已回读`;
       }
 
       previousButton.addEventListener("click", () => moveSlide(-1));
@@ -2168,7 +2283,7 @@
           renderDecisions();
           saveState();
           announce(
-            `${card.querySelector(".decision-title").textContent.trim()}：${decisionLabelByValue.get(result) || "未处理"}`
+            `${card.querySelector(".decision-title").textContent.trim()}：${decisionLabelByValue.get(result) || "未回读"}`
           );
         });
       });
@@ -2232,6 +2347,7 @@
       renderDecisions();
       renderSlide();
       renderFullscreenState();
+      document.documentElement.classList.add("js");
       wirePretext();
     })();
   </script>

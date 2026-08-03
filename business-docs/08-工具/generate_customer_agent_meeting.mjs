@@ -5,6 +5,11 @@ import { fileURLToPath } from "node:url";
 
 import { buildCustomerProjectSurfaceModel } from "./customer_project_surface_model.mjs";
 import {
+  assertSafeMeetingArtifact,
+  MEETING_SENSITIVE_TEXT_PATTERN,
+} from "./customer_project_meeting.mjs";
+import { isMeetingLifecycleClosed } from "./customer_project_status.mjs";
+import {
   extractPretextVendor,
   isWithin,
   loadCustomerProjectSources,
@@ -63,6 +68,23 @@ async function readBrandAsset(assetPath, label) {
   }
 }
 
+function sanitizeMeetingPretext(rawPretextVendor) {
+  const lowerIdentifiers = rawPretextVendor.match(/\bg0\b/g) ?? [];
+  const upperIdentifiers = rawPretextVendor.match(/\bG0\b/g) ?? [];
+  if (lowerIdentifiers.length !== 2 || upperIdentifiers.length !== 2) {
+    throw new Error(
+      `Pretext 中预期存在 2 个 g0 双向文本表引用和 2 个 G0 emoji 检测函数引用，当前为 ${lowerIdentifiers.length} / ${upperIdentifiers.length}`
+    );
+  }
+  const sanitized = rawPretextVendor
+    .replace(/\bg0\b/g, "bidiClassTable")
+    .replace(/\bG0\b/g, "containsEmojiText");
+  if (/\bG0\b/i.test(sanitized)) {
+    throw new Error("Pretext 会议安全命名未完全清除 G0 局部标识符");
+  }
+  return sanitized;
+}
+
 const initialSources = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
 const [
   template,
@@ -93,27 +115,16 @@ const [
     readFile(path.join(scriptDir, "customer_project_surface_io.mjs"), "utf8"),
     readFile(path.join(scriptDir, "customer_project_meeting.mjs"), "utf8"),
 ]);
-const rawPretextVendor = extractPretextVendor(prdHtml, `PRD：${prdPath}`);
-const pretextLowerG0Identifiers = rawPretextVendor.match(/\bg0\b/g) ?? [];
-const pretextUpperG0Identifiers = rawPretextVendor.match(/\bG0\b/g) ?? [];
-if (pretextLowerG0Identifiers.length !== 2 || pretextUpperG0Identifiers.length !== 2) {
-  throw new Error(
-    `Pretext 中预期存在 2 个 g0 双向文本表引用和 2 个 G0 emoji 检测函数引用，当前为 ${pretextLowerG0Identifiers.length} / ${pretextUpperG0Identifiers.length}`
-  );
-}
-const pretextVendor = rawPretextVendor
-  .replace(/\bg0\b/g, "bidiClassTable")
-  .replace(/\bG0\b/g, "containsEmojiText");
-if (/\bG0\b/i.test(pretextVendor)) {
-  throw new Error("Pretext 会议安全命名未完全清除 G0 局部标识符");
-}
+const pretextVendor = sanitizeMeetingPretext(
+  extractPretextVendor(prdHtml, `PRD：${prdPath}`)
+);
 const sharedSurface = buildCustomerProjectSurfaceModel(initialSources.byId);
 
 if (!sharedSurface.projectStatus.approvalReady) {
   throw new Error("项目批准尚未成立，拒绝生成“项目已批准”的需求会汇报");
 }
-if (sharedSurface.projectStatus.problemFitReady || sharedSurface.projectStatus.ddevReady) {
-  throw new Error("一期方向已确认或开发授权已成立；8 月 4 日需求会汇报生命周期已结束，拒绝改写会前状态");
+if (isMeetingLifecycleClosed(sharedSurface.projectStatus)) {
+  throw new Error("一期方向已形成结论、项目已暂停 / 停止或开发授权已成立；启动会汇报生命周期已结束，拒绝改写会前状态");
 }
 
 const releaseHash = sha256(
@@ -133,6 +144,57 @@ const releaseHash = sha256(
 );
 const releaseId = `meeting-v1-${releaseHash.slice(0, 12)}`;
 
+async function readCurrentBuildFingerprint() {
+  const currentSources = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
+  const [
+    currentTemplate,
+    currentPrd,
+    currentBrandLogo,
+    currentFavicon,
+    currentAppleTouchIcon,
+    currentGeneratorSource,
+    currentStatusModuleSource,
+    currentSurfaceModelSource,
+    currentSurfaceIoSource,
+    currentMeetingModuleSource,
+  ] = await Promise.all([
+    readRegularFileNoFollow(templatePath, {
+      allowedRoot: canonicalToolDir,
+      label: "需求会汇报模板",
+    }),
+    readRegularFileNoFollow(prdPath, {
+      allowedRoot: canonicalProjectDir,
+      label: "PRD ",
+    }),
+    readBrandAsset(brandLogoPath, "会议品牌 Logo"),
+    readBrandAsset(faviconPath, "会议标签页图标"),
+    readBrandAsset(appleTouchIconPath, "会议 Apple Touch 图标"),
+    readFile(scriptPath, "utf8"),
+    readFile(path.join(scriptDir, "customer_project_status.mjs"), "utf8"),
+    readFile(path.join(scriptDir, "customer_project_surface_model.mjs"), "utf8"),
+    readFile(path.join(scriptDir, "customer_project_surface_io.mjs"), "utf8"),
+    readFile(path.join(scriptDir, "customer_project_meeting.mjs"), "utf8"),
+  ]);
+  const currentPretext = sanitizeMeetingPretext(
+    extractPretextVendor(currentPrd, `PRD：${prdPath}`)
+  );
+  return sha256(
+    [
+      ...currentSources.entries.map((source) => source.text),
+      currentTemplate,
+      currentPretext,
+      sha256(currentBrandLogo),
+      sha256(currentFavicon),
+      sha256(currentAppleTouchIcon),
+      currentGeneratorSource,
+      currentStatusModuleSource,
+      currentSurfaceModelSource,
+      currentSurfaceIoSource,
+      currentMeetingModuleSource,
+    ].join("\n/* meeting-source-boundary */\n")
+  );
+}
+
 function meetingAudienceText(value) {
   return value
     .replace(/待补证\s*[（(]\s*OPEN\s*[）)]/gi, "待补证")
@@ -140,28 +202,6 @@ function meetingAudienceText(value) {
     .replace(/待补证(?:\s*待补证)+/g, "待补证")
     .replace(/技术栈/g, "技术方案");
 }
-
-const meetingAudienceTopics = [
-  "先对齐启动目标与参与方式",
-  "一起还原两个真实任务",
-  "一起确定一期主问题",
-  "一起明确一期先做到哪一步",
-  "一起确认成功与停止条件",
-  "一起确认可靠的内容依据",
-  "一起确认试点与真实使用环境",
-  "确认启动结果与下一步",
-];
-
-const meetingAudienceDecisions = [
-  "项目已批准；今天共同启动需求定义，确认一期业务问题与后续责任。",
-  "用一个高频任务和一个高影响任务对齐现状：谁在做、怎么做、哪里卡住、影响什么。",
-  "先用三问判断；下方常见表现不是选项，可改、可删，也可以提出其他真实问题。",
-  "基于刚才确定的一期主问题，确认谁在什么场景使用、软件帮到哪一步，以及人工如何确认。",
-  "确认指标名称、数据出处和负责人；没有现状基线，不填写目标值。",
-  "同一问题出现不同答案时，明确以什么为准、由谁维护、如何裁决。",
-  "确认试点人员、班次、设备、网络限制和使用高峰。",
-  "只有结论能被全场复述，才选择“已确认”；其余事项写清负责人、补充内容、确认日期与位置。",
-];
 
 const decisionOptionByStatus = Object.freeze({
   DEC: { value: "confirmed", label: "已确认" },
@@ -180,9 +220,9 @@ if (
   throw new Error("九项决定状态必须且只能按 DEC / PRECONFIRM / OPEN / PARKING 排列");
 }
 
-const meetingAgenda = sharedSurface.meeting.agenda.map(({ topic, decision }, index) => ({
-  topic: meetingAudienceTopics[index] ?? meetingAudienceText(topic),
-  decision: meetingAudienceDecisions[index] ?? meetingAudienceText(decision),
+const meetingAgenda = sharedSurface.meeting.agenda.map(({ topic, decision }) => ({
+  topic: meetingAudienceText(topic),
+  decision: meetingAudienceText(decision),
 }));
 const payload = {
   project: {
@@ -191,7 +231,7 @@ const payload = {
   },
   state: {
     approval: "项目已批准",
-    direction: "一期方向待确认",
+    direction: "一期建议待确认",
     development: "尚未开发",
   },
   meeting: {
@@ -215,10 +255,11 @@ const payload = {
       if (!option) throw new Error(`需求会结果状态没有会场映射：${status}`);
       return { ...option };
     }),
+    proposal: sharedSurface.meeting.proposal,
     coreQuestions: [
-      "结合刚才两个真实任务，哪一个最该成为一期唯一主问题？",
-      "这个主问题的损失或卡点，能否拿出可核对的证据？",
-      "能否在 3–5 名坐席的小范围试点中先验证改善？",
+      `“${sharedSurface.meeting.proposal.name}”是否对准当前最痛的问题？`,
+      `一期先做“${sharedSurface.meeting.proposal.phaseOneFocus}”是否合适？`,
+      "工作边界和灰度前门是否正确，还需要修正什么？",
     ],
     factCards: sharedSurface.meeting.factCards,
   },
@@ -240,7 +281,7 @@ assertExactKeys(payload.project, ["name", "code"], "project");
 assertExactKeys(payload.state, ["approval", "direction", "development"], "state");
 assertExactKeys(
   payload.meeting,
-  ["agenda", "decisions", "decisionOptions", "coreQuestions", "factCards"],
+  ["agenda", "decisions", "decisionOptions", "proposal", "coreQuestions", "factCards"],
   "meeting"
 );
 assertExactKeys(payload.release, ["id"], "release");
@@ -253,6 +294,11 @@ for (const [index, item] of payload.meeting.decisions.entries()) {
 for (const [index, item] of payload.meeting.decisionOptions.entries()) {
   assertExactKeys(item, ["value", "label"], `decisionOptions[${index}]`);
 }
+assertExactKeys(
+  payload.meeting.proposal,
+  ["name", "phaseOneFocus", "workingBoundary", "shadowGate", "meetingAction"],
+  "proposal"
+);
 for (const [index, item] of payload.meeting.factCards.entries()) {
   assertExactKeys(
     item,
@@ -260,6 +306,37 @@ for (const [index, item] of payload.meeting.factCards.entries()) {
     `factCards[${index}]`
   );
 }
+
+const INTERNAL_MEETING_STRING_PATTERN =
+  /\b(?:DEC|PARKING|FDE|G0|Ddev|RACI|EVD|ROLE|USR)\b|\b(?:EVD|ROLE|USR)[-_]|技术栈|技术框架|内部台账|证据代号|费用|风险/i;
+const MARKUP_MEETING_STRING_PATTERN =
+  /(?:^|\s)#{1,6}\s|(?:^|\s)(?:[-*+]\s|\d+\.\s)|[`*_~]|\[[^\]]*\]\([^)]*\)|<\/?[a-z][^>]*>/i;
+
+function assertMeetingStringTree(value, trail = "payload") {
+  if (typeof value === "string") {
+    if (INTERNAL_MEETING_STRING_PATTERN.test(value)) {
+      throw new Error(`${trail} 包含内部状态码、治理术语或禁区内容`);
+    }
+    if (trail !== "payload.release.id" && MEETING_SENSITIVE_TEXT_PATTERN.test(value)) {
+      throw new Error(`${trail} 包含可识别联系方式或外部地址`);
+    }
+    if (MARKUP_MEETING_STRING_PATTERN.test(value)) {
+      throw new Error(`${trail} 包含 Markdown 或 HTML`);
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertMeetingStringTree(item, `${trail}[${index}]`));
+    return;
+  }
+  if (value && typeof value === "object") {
+    Object.entries(value).forEach(([key, item]) =>
+      assertMeetingStringTree(item, `${trail}.${key}`)
+    );
+  }
+}
+
+assertMeetingStringTree(payload);
 
 const safePayload = safeJson(payload);
 for (const forbiddenKey of [
@@ -285,6 +362,17 @@ for (const forbiddenMeetingContent of ["费用", "风险"]) {
   if (safePayload.includes(forbiddenMeetingContent)) {
     throw new Error(`需求会 payload 包含内部禁区文本：${forbiddenMeetingContent}`);
   }
+}
+const proposalText = Object.values(payload.meeting.proposal).join("\n");
+if (
+  /\b(?:DEC|PRECONFIRM|OPEN|PARKING|FDE|G0|Ddev|RACI|EVD|ROLE|USR)\b|技术栈|技术框架/i.test(
+    proposalText
+  )
+) {
+  throw new Error("需求会 proposal 包含内部状态码或技术术语");
+}
+if (/[`*_~]|\[[^\]]*\]\([^)]*\)|<\/?[a-z][^>]*>/i.test(proposalText)) {
+  throw new Error("需求会 proposal 包含 Markdown 或 HTML");
 }
 for (const [index, item] of payload.meeting.agenda.entries()) {
   if (
@@ -328,16 +416,12 @@ if (
 ) {
   throw new Error("需求会汇报模板占位符替换不完整");
 }
-
-async function readCurrentSourceFingerprint() {
-  const current = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
-  return current.fingerprint;
-}
+assertSafeMeetingArtifact(generated);
 
 if (checkOnly) {
-  const currentSourceFingerprint = await readCurrentSourceFingerprint();
-  if (currentSourceFingerprint !== initialSources.fingerprint) {
-    throw new Error("客服项目真源在需求会汇报校验期间发生变化");
+  const currentBuildFingerprint = await readCurrentBuildFingerprint();
+  if (currentBuildFingerprint !== releaseHash) {
+    throw new Error("客服项目真源或会议构建依赖在汇报校验期间发生变化");
   }
   const current = await readCanonicalSurfaceOutput({
     outputPath: canonicalOutputPath,
@@ -359,8 +443,8 @@ if (checkOnly) {
     canonicalOutputPath,
     canonicalProjectDir,
     generated,
-    expectedSourceFingerprint: initialSources.fingerprint,
-    readSourceFingerprint: readCurrentSourceFingerprint,
+    expectedSourceFingerprint: releaseHash,
+    readSourceFingerprint: readCurrentBuildFingerprint,
     label: "需求会汇报",
   });
   console.log(

@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#f3f0f6">
   <link rel="icon" href="data:,">
-  <title>客服 Agent 一期 · 需求会执行中心</title>
+  <title>客服 Agent 一期 · 启动会执行中心</title>
   <style>
     :root {
       color-scheme: light;
@@ -1388,6 +1388,15 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .status-item {
+        padding-inline: 12px;
+      }
+
+      .status-value {
+        overflow-wrap: anywhere;
+        font-size: clamp(18px, 5vw, 20px);
+      }
+
       .status-item,
       .status-item:nth-child(3) {
         border-right: 1px solid var(--line);
@@ -1618,9 +1627,9 @@
 
   <header class="site-header" aria-label="页面导航">
     <div class="header-inner">
-      <a class="brand" href="#overview" aria-label="客服 Agent 一期需求会执行中心首页">
+      <a class="brand" href="#overview" aria-label="客服 Agent 一期启动会执行中心首页">
         天元
-        <small>客服 Agent 一期 · 需求会</small>
+        <small>客服 Agent 一期 · 启动会</small>
       </a>
 
       <nav class="top-nav" aria-label="执行中心章节">
@@ -1629,7 +1638,7 @@
         <a href="#gates">开发前检查</a>
         <a href="#schedule">排期</a>
         <a href="#acceptance">做与不做</a>
-        <a href="#meeting">需求会</a>
+        <a href="#meeting">启动会</a>
         <a href="#governance">人和费用</a>
       </nav>
 
@@ -1731,7 +1740,7 @@
         <p class="section-kicker">04 / 做与不做</p>
         <div class="section-intro">
           <h2 id="acceptance-title" data-pretext>一期只解决一个真实客服问题。</h2>
-          <p>8 月 4 日确认业务指标与停止条件；知识辅助相关数字只在该方向被选中时使用。</p>
+          <p>8 月 4 日校准业务指标与停止条件；项目侧建议相关数字仍需客服确认后冻结。</p>
         </div>
       </header>
 
@@ -1751,7 +1760,7 @@
 
     <section class="section-block" id="meeting" aria-labelledby="meeting-title">
       <header class="section-head">
-        <p class="section-kicker">05 / 需求会</p>
+        <p class="section-kicker">05 / 启动会</p>
         <div class="section-intro">
           <h2 id="meeting-title" data-pretext></h2>
           <p id="meeting-position"></p>
@@ -1899,7 +1908,7 @@ __PRETEXT_VENDOR__
         .replaceAll("\\", "/")
         .split("/")
         .filter(Boolean)
-        .slice(-2)
+        .slice(-3)
         .join("/");
     }
 
