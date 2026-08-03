@@ -739,7 +739,7 @@ async function runLegacyAudit(browser, viewport) {
     if (message.type() === "error") errors.push(`console: ${message.text()}`);
   });
   await page.goto(
-    `${origin}/business-docs/01-%E7%AB%8B%E9%A1%B9%E4%B8%BB%E7%BA%BF/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
+    `${origin}/business-docs/99-%E5%BD%92%E6%A1%A3/2026-07-31-%E7%AB%8B%E9%A1%B9%E9%98%B6%E6%AE%B5/print/AI%E8%B5%8B%E8%83%BD%E7%AB%8B%E9%A1%B9_%E9%87%91%E4%B8%BB%E4%B8%80%E9%A1%B5%E6%B1%87%E6%8A%A5.html`,
     { waitUntil: "networkidle" }
   );
   await page.waitForURL(/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
@@ -810,13 +810,13 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await chainPage.waitForLoadState("networkidle");
   await assertHealthyPage(
     chainPage,
-    "客服 Agent 一期 · 启动会执行中心",
-    /项目已批准.*不宣布开发开工/s,
+    "客服 Agent 一期 · 项目执行中心",
+    /需求基线已收口.*Ddev 不成立/s,
     "PRD → HTTP Hub"
   );
   assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "PRD → HTTP Hub");
   await chainPage.reload({ waitUntil: "networkidle" });
-  await assertHealthyPage(chainPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Hub reload");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "HTTP Hub reload");
   assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Hub reload");
 
   await chainPage.waitForFunction(() => document.querySelector("#return-to-prd"));
@@ -837,7 +837,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await chainPage.reload({ waitUntil: "networkidle" });
   await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP PRD reload");
   await chainPage.goBack({ waitUntil: "networkidle" });
-  await assertHealthyPage(chainPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Back 回 Hub");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "HTTP Back 回 Hub");
   assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Back 回 Hub");
   await chainPage.goForward({ waitUntil: "networkidle" });
   await assertHealthyPage(chainPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP Forward 回 PRD");
@@ -849,7 +849,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
     chainPage.locator("#open-execution-center").click(),
   ]);
   await chainPage.waitForLoadState("networkidle");
-  await assertHealthyPage(chainPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "Forward 后重点 Hub");
+  await assertHealthyPage(chainPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "Forward 后重点 Hub");
   assertCanonicalHttp(chainPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "Forward 后重点 Hub");
   await Promise.all([
     chainPage.waitForURL((url) =>
@@ -873,13 +873,13 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await hubPage.waitForLoadState("networkidle");
   await assertHealthyPage(
     hubPage,
-    "客服 Agent 一期 · 启动会执行中心",
-    /项目已批准.*不宣布开发开工/s,
+    "客服 Agent 一期 · 项目执行中心",
+    /需求基线已收口.*Ddev 不成立/s,
     "HTTP Hub"
   );
   assertCanonicalHttp(hubPage, "/business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html", "HTTP Hub 直达");
   await hubPage.reload({ waitUntil: "networkidle" });
-  await assertHealthyPage(hubPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP Hub 直达 reload");
+  await assertHealthyPage(hubPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "HTTP Hub 直达 reload");
 
   await hubPage.waitForFunction(() => document.querySelector("a[data-meeting-link]"));
   await Promise.all([
@@ -897,7 +897,7 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   );
   assertCanonicalHttp(hubPage, "/business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html", "Hub → HTTP Meeting");
   await hubPage.goBack({ waitUntil: "networkidle" });
-  await assertHealthyPage(hubPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "Meeting Back 回 Hub");
+  await assertHealthyPage(hubPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "Meeting Back 回 Hub");
 
   const meetingPage = await context.newPage();
   attachFailureAudit(meetingPage, "Meeting 直达链路");
@@ -937,8 +937,8 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   await poisonedPage.waitForLoadState("networkidle");
   await assertHealthyPage(
     poisonedPage,
-    "客服 Agent 一期 · 启动会执行中心",
-    /项目已批准.*不宣布开发开工/s,
+    "客服 Agent 一期 · 项目执行中心",
+    /需求基线已收口.*Ddev 不成立/s,
     "HTTP 污染查询仍进入 Hub"
   );
   assertCanonicalHttp(
@@ -947,12 +947,12 @@ async function runHistoricalCurrentNavigationAudit(browser) {
     "HTTP 污染查询后 Hub"
   );
   await poisonedPage.reload({ waitUntil: "networkidle" });
-  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP 污染链路 reload");
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "HTTP 污染链路 reload");
   await poisonedPage.goBack({ waitUntil: "networkidle" });
   await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 需求会项目说明", /项目已批准.*软件未开发/s, "HTTP 污染链路 Back");
   assert.equal(new URL(poisonedPage.url()).searchParams.get("portable"), "prd");
   await poisonedPage.goForward({ waitUntil: "networkidle" });
-  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 启动会执行中心", /项目已批准.*不宣布开发开工/s, "HTTP 污染链路 Forward");
+  await assertHealthyPage(poisonedPage, "客服 Agent 一期 · 项目执行中心", /需求基线已收口.*Ddev 不成立/s, "HTTP 污染链路 Forward");
   await poisonedPage.goBack({ waitUntil: "networkidle" });
   await poisonedPage.locator("#open-execution-center").click();
   await poisonedPage.waitForURL((url) =>
@@ -1053,7 +1053,7 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
   });
 
   const entryPath = useLegacyEntry
-    ? path.join(root, "../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html")
+    ? path.join(root, "../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html")
     : path.join(root, "../archive/2026-07-31-ai-project-brief/index.html");
   const entryUrl = `${pathToFileURL(entryPath).href}${
     useLegacyEntry ? "" : "?audit=file-direct"
@@ -1121,23 +1121,23 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
     await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
     assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND|无法访问您的文件/);
     await page.locator("#open-execution-center").click();
-    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 项目执行中心");
     assert.equal(await page.locator("a[data-meeting-link]").count(), 0, "便携 Hub 不得导航到相邻 09 文件");
     assert.match(await page.locator("body").innerText(), /请回到项目目录，打开 09-客服Agent需求会汇报\.html/);
     assert.equal(fileURLToPath(new URL(page.url())), projectPrdPath);
     assert.equal(new URL(page.url()).searchParams.get("portable"), "hub");
     await page.reload({ waitUntil: "load" });
-    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 项目执行中心");
     await page.goBack({ waitUntil: "load" });
     await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
     await page.goForward({ waitUntil: "load" });
-    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 项目执行中心");
     await page.locator("#return-to-prd").click();
     await page.waitForFunction(() => document.title === "客服 Agent 一期 · 需求会项目说明");
     assert.equal(new URL(page.url()).searchParams.has("portable"), false);
     await page.reload({ waitUntil: "load" });
     await page.locator("#open-execution-center").click();
-    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 启动会执行中心");
+    await page.waitForFunction(() => document.title === "客服 Agent 一期 · 项目执行中心");
     assert.equal(fileURLToPath(new URL(page.url())), projectPrdPath);
     assert.doesNotMatch(page.url(), /^(?:blob|chrome-error):/);
     assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND|无法访问您的文件/);
