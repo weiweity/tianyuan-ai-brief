@@ -20,7 +20,10 @@ import { fileURLToPath } from "node:url";
 
 import { assertMeetingAgendaConsistency } from "../../business-docs/08-工具/customer_project_meeting.mjs";
 import { deriveProjectStatus } from "../../business-docs/08-工具/customer_project_status.mjs";
-import { readMeetingProposal } from "../../business-docs/08-工具/customer_project_surface_model.mjs";
+import {
+  readAcceptanceContract,
+  readMeetingProposal,
+} from "../../business-docs/08-工具/customer_project_surface_model.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(siteRoot, "..");
@@ -124,7 +127,7 @@ test("启动会校准项目侧建议，不冒充客服决定且双议程同构",
       .length,
     9
   );
-  assert.match(onePager, /0～5 边界与分工[\s\S]+52～60 决定回读/);
+  assert.match(onePager, /0～5 启动目标[\s\S]+52～60 结果 \/ 下一步/);
   for (const text of [charter, cadence, onePager]) {
     assert.doesNotMatch(text, /话术库 MVP-A|独立预评分|强制排序/);
   }
@@ -143,6 +146,20 @@ test("启动会校准项目侧建议，不冒充客服决定且双议程同构",
   assert.throws(
     () => assertMeetingAgendaConsistency(brokenCoverage, matchingBrokenCadence),
     /必须完整覆盖 0～60 分钟/
+  );
+});
+
+test("章程与 Scope 必须共同保持风险错误直答为零", async () => {
+  const [charter, scope] = await Promise.all([
+    readProject("00-项目章程.md"),
+    readProject("03-Scope与验收.md"),
+  ]);
+  assert.equal(readAcceptanceContract(charter, scope).negativeMaxWrongAnswers, 0);
+  const weakenedScope = scope.replace("负例错误直答 = **0**", "负例错误直答 = **1**");
+  assert.notEqual(weakenedScope, scope, "夹具必须实际放宽错误直答门槛");
+  assert.throws(
+    () => readAcceptanceContract(charter, weakenedScope),
+    /负例错误直答门槛（1 != 0）/
   );
 });
 
@@ -370,6 +387,23 @@ test("PRD --update 必须先拒绝只改真源未改 PRD 的重签", async (t) =
     selected: false,
     paidAuthorization: "0",
   });
+
+  const pristinePrd = await readFile(fixturePrdPath, "utf8");
+  const missingVisibleDirection = pristinePrd.replace(
+    "<span>商品话术</span>",
+    "<span>其他话术</span>"
+  );
+  assert.notEqual(missingVisibleDirection, pristinePrd, "夹具必须实际移除启动会区块中的商品话术");
+  assert.match(missingVisibleDirection, /商品话术/, "词语应仍存在于区块外，验证检查范围没有退化为全页搜索");
+  await writeFile(fixturePrdPath, missingVisibleDirection, "utf8");
+  const rejectedVisibleDirection = runUpdate();
+  assert.notEqual(rejectedVisibleDirection.status, 0, "可见启动会建议缺项时不得依赖内嵌真源重签");
+  assert.match(
+    `${rejectedVisibleDirection.stderr}\n${rejectedVisibleDirection.stdout}`,
+    /项目侧建议 商品话术/
+  );
+  assert.equal(await readFile(manifestPath, "utf8"), manifestBeforeDrift, "可见建议缺项不得重写清单");
+  await writeFile(fixturePrdPath, pristinePrd, "utf8");
 
   const fixtureLedgerPath = path.join(fixtureProject, "02-G0责任与证据台账.md");
   const ledger = await readFile(fixtureLedgerPath, "utf8");

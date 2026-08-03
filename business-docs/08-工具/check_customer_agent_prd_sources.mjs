@@ -268,6 +268,19 @@ function requireText(text, value, label = value) {
   if (!text.includes(value)) throw new Error(`PRD 契约缺失：${label}`);
 }
 
+function markedElement(html, attributePattern, label) {
+  const openingTag = new RegExp(
+    `<([a-z][\\w:-]*)\\b(?=[^>]*\\b${attributePattern})[^>]*>`,
+    "i"
+  ).exec(html);
+  if (!openingTag) throw new Error(`PRD 契约缺失：${label}`);
+  const closeTag = `</${openingTag[1]}>`;
+  const contentStart = (openingTag.index ?? 0) + openingTag[0].length;
+  const contentEnd = html.indexOf(closeTag, contentStart);
+  if (contentEnd < 0) throw new Error(`PRD 契约未闭合：${label}`);
+  return html.slice(openingTag.index, contentEnd + closeTag.length);
+}
+
 function required(value, label) {
   if (!value) throw new Error(`无法从真源解析：${label}`);
   return value;
@@ -444,14 +457,24 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
       "公司正式批准凭证仍待归档"
     );
   }
-  requirePattern(
+  const demandMeetingBlock = markedElement(
     html,
-    new RegExp(`data-demand-meeting=["']${escapeRegExp(demandMeetingDate)}["']`),
+    `data-demand-meeting\\s*=\\s*["']${escapeRegExp(demandMeetingDate)}["']`,
     `${demandMeetingDate} 启动会项目侧建议`
   );
-  requirePattern(html, /data-demand-meeting-rule(?:\s|>)/, "需求会规则段");
-  for (const direction of demandMeetingDirections) requireText(html, direction, `项目侧建议 ${direction}`);
-  for (const rule of demandMeetingRules) requireText(html, rule, `需求会规则 ${rule}`);
+  const demandMeetingRuleBlock = markedElement(
+    html,
+    "data-demand-meeting-rule(?:\\s|>)",
+    "启动会规则段"
+  );
+  const demandMeetingVisibleText = visibleText(demandMeetingBlock);
+  const demandMeetingRuleVisibleText = visibleText(demandMeetingRuleBlock);
+  for (const direction of demandMeetingDirections) {
+    requireText(demandMeetingVisibleText, direction, `项目侧建议 ${direction}`);
+  }
+  for (const rule of demandMeetingRules) {
+    requireText(demandMeetingRuleVisibleText, rule, `启动会规则 ${rule}`);
+  }
   if (/data-force-rank/.test(html) || /独立预评分|强制排序/.test(visibleText(html))) {
     throw new Error("PRD 不得继续使用旧的强制排序 / 独立预评分叙事");
   }

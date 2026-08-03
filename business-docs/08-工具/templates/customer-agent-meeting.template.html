@@ -11,7 +11,6 @@
   <link rel="icon" href="__FAVICON_DATA_URI__" type="image/png" sizes="64x64">
   <link rel="apple-touch-icon" href="__APPLE_TOUCH_ICON_DATA_URI__" sizes="180x180">
   <title>天元 · 客服 Agent 一期启动会</title>
-  <script>document.documentElement.classList.add("js");</script>
   <style>
     :root {
       color-scheme: light;
@@ -660,6 +659,14 @@
       font-weight: 700;
       line-height: 1.45;
       text-align: right;
+    }
+
+    .proposal-route {
+      display: block;
+      margin-top: 5px;
+      color: var(--brand-700);
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .proposal-grid {
@@ -1672,7 +1679,7 @@
         <p class="lead" data-agenda-decision="2" data-pretext>对照真实任务校准项目侧建议；客服可以确认、修正或否决，证据不足就明确待补材料。</p>
         <div class="proposal-banner" aria-label="项目侧会前建议">
           <div><span>项目侧会前建议</span><h3 data-proposal="name">证据型客服助理</h3></div>
-          <p><strong>会中动作：</strong><span data-proposal="meetingAction">客服确认、修正或否决</span></p>
+          <p><strong>会中动作：</strong><span data-proposal="meetingAction">客服确认、修正或否决</span><span class="proposal-route">一期灰度验证 → 二期清洗蒸馏与稳定 → 三期 Agent；每一步都由前一期证据决定</span></p>
         </div>
         <div class="topic-grid proposal-grid" aria-label="项目侧建议边界">
           <article class="topic-card"><span>一期切口</span><h3 data-proposal="phaseOneFocus">商品话术与活动话术</h3><p>先聚焦一个可以小范围验证的业务闭环。</p></article>
@@ -1729,8 +1736,9 @@
           </article>
           <article class="prompt-panel emphasis">
             <h3>停止信号</h3>
-            <div class="metric-line"><strong>话术</strong><span>过期、错平台或无依据内容被直接使用，必须停止</span></div>
-            <div class="metric-line"><strong>安全</strong><span>自动发送、越权或敏感信息暴露任一次数必须为 0</span></div>
+            <div class="metric-line"><strong>话术</strong><span>过期、错平台、错 SKU 或越权内容被确定性直答，立即停用</span></div>
+            <div class="metric-line"><strong>来源</strong><span>权威来源冲突却未升级，暂停相关场景；不能隔离则全部暂停</span></div>
+            <div class="metric-line"><strong>安全</strong><span>自动发送或敏感信息暴露任一次数必须为 0</span></div>
             <div class="metric-line"><strong>业务</strong><span>真实任务无改善或增加坐席负担，回到原流程复核</span></div>
           </article>
         </div>
@@ -1801,9 +1809,9 @@
         <p class="lead" data-agenda-decision="7" data-pretext>只有结论能被全场复述，才选择“已确认”；其余事项写清负责人、补充内容、确认日期与位置。</p>
         <div class="decision-toolbar" aria-label="结果状态说明">
           <p class="decision-legend" id="decision-option-legend">
-            <strong>结论可复述后选择</strong><span>已确认</span><span>待共同确认</span><span>待补材料</span><span>本次暂不决定</span>
+            <strong>现场回读后选择</strong><span>已确认</span><span>待共同确认</span><span>待补材料</span><span>本次暂不决定</span>
           </p>
-          <span class="decision-progress" id="decision-progress" aria-live="polite">0 / 9 已处理</span>
+          <span class="decision-progress" id="decision-progress" aria-live="polite">0 / 9 已回读</span>
         </div>
         <div class="decision-grid" id="decision-list">
           <article class="decision-card" data-decision-index="0" data-result="pending"><span class="decision-number">01</span><span class="decision-title">一期主问题</span><span class="decision-control"><select class="decision-select" aria-label="一期主问题的启动结果"><option value="pending">请选择结果</option></select></span></article>
@@ -1816,7 +1824,7 @@
           <article class="decision-card" data-decision-index="7" data-result="pending"><span class="decision-number">08</span><span class="decision-title">使用环境与限制</span><span class="decision-control"><select class="decision-select" aria-label="使用环境与限制的启动结果"><option value="pending">请选择结果</option></select></span></article>
           <article class="decision-card" data-decision-index="8" data-result="pending"><span class="decision-number">09</span><span class="decision-title">责任与下一步</span><span class="decision-control"><select class="decision-select" aria-label="责任与下一步的启动结果"><option value="pending">请选择结果</option></select></span></article>
         </div>
-        <p class="callout" data-label="输出">一期结论、材料与权限清单、试点准备清单；正式结果以会后纪要为准。</p>
+        <p class="callout" data-label="输出">现场选择只用于回读，不是正式批准；一期结论、材料与权限清单、试点准备清单以会后纪要与 02 台账为准。</p>
       </div>
     </section>
   </main>
@@ -1894,7 +1902,7 @@
     <ul class="print-outputs">
       <li>一期结论</li><li>材料与权限清单</li><li>试点准备清单</li>
     </ul>
-    <p class="print-footer">本页用于启动会展示和核对，不保存正式结论。确认结果会写回项目记录。</p>
+    <p class="print-footer">本页用于启动会展示和现场回读，不保存正式结论。正式结果以会后纪要与 02 台账为准。</p>
   </section>
 
   <script id="meeting-data" type="application/json">__MEETING_DATA__</script>
@@ -1945,7 +1953,7 @@
         : [];
       const decisionValueSet = new Set(["pending", ...decisionOptions.map((option) => option.value)]);
       const decisionLabelByValue = new Map([
-        ["pending", "未处理"],
+        ["pending", "未回读"],
         ...decisionOptions.map((option) => [option.value, option.label]),
       ]);
 
@@ -2090,7 +2098,7 @@
         const decisionLegend = document.querySelector("#decision-option-legend");
         if (decisionOptions.length === 4) {
           const legendTitle = document.createElement("strong");
-          legendTitle.textContent = "结论可复述后选择";
+          legendTitle.textContent = "现场回读后选择";
           decisionLegend.replaceChildren(
             legendTitle,
             ...decisionOptions.map((item) => {
@@ -2246,10 +2254,10 @@
           const printItem = document.querySelector(`[data-print-decision-index="${index}"]`);
           if (printItem) {
             const title = card.querySelector(".decision-title").textContent.trim();
-            printItem.textContent = `${title}：${decisionLabelByValue.get(result) || "未处理"}`;
+            printItem.textContent = `${title}：${decisionLabelByValue.get(result) || "未回读"}`;
           }
         });
-        document.querySelector("#decision-progress").textContent = `${completed} / 9 已处理`;
+        document.querySelector("#decision-progress").textContent = `${completed} / 9 已回读`;
       }
 
       previousButton.addEventListener("click", () => moveSlide(-1));
@@ -2275,7 +2283,7 @@
           renderDecisions();
           saveState();
           announce(
-            `${card.querySelector(".decision-title").textContent.trim()}：${decisionLabelByValue.get(result) || "未处理"}`
+            `${card.querySelector(".decision-title").textContent.trim()}：${decisionLabelByValue.get(result) || "未回读"}`
           );
         });
       });
@@ -2339,6 +2347,7 @@
       renderDecisions();
       renderSlide();
       renderFullscreenState();
+      document.documentElement.classList.add("js");
       wirePretext();
     })();
   </script>

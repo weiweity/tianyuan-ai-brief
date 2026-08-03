@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import {
   deriveProjectStatus,
   isChecked,
+  isMeetingLifecycleClosed,
+  meetingLifecycleState,
 } from "../../business-docs/08-工具/customer_project_status.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -148,6 +150,33 @@ test("当前 2/29 真源动态导出七条状态轴与临时 B", async () => {
   assert.equal(status.feePath, "B · 临时管控，未签");
   assert.equal(status.ddevReady, false);
   assert.equal(isChecked("[X]"), true);
+  assert.equal(isMeetingLifecycleClosed(status), false);
+});
+
+test("启动会生命周期对正向、否决、暂停和开发授权结论统一关闭", () => {
+  const openStatus = {
+    approvalReady: true,
+    problemFit: "PRECONFIRM · 待核验",
+    g0: "未签发",
+    feePathCode: "B",
+    development: "未开发",
+    ddevReady: false,
+  };
+  assert.equal(isMeetingLifecycleClosed(openStatus), false);
+  assert.equal(meetingLifecycleState(openStatus), "open");
+  assert.equal(
+    meetingLifecycleState({ ...openStatus, approvalReady: false }),
+    "not-eligible"
+  );
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, approvalReady: false }), false);
+  for (const problemFit of ["已核验", "已确认", "Pass", "Fail", "未通过"]) {
+    assert.equal(isMeetingLifecycleClosed({ ...openStatus, problemFit }), true, problemFit);
+    assert.equal(meetingLifecycleState({ ...openStatus, problemFit }), "closed", problemFit);
+  }
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, g0: "Fail" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, feePathCode: "C" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, development: "已暂停" }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, ddevReady: true }), true);
 });
 
 test("批准汇总与 G0-02 明细不一致时拒绝构建", async () => {

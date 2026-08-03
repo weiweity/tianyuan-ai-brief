@@ -1,5 +1,12 @@
-import { assertMeetingAgendaConsistency } from "./customer_project_meeting.mjs";
+import {
+  assertMeetingAgendaConsistency,
+  FACT_CARD_FIELD_LIMITS,
+  MEETING_PROPOSAL_FIELD_LIMITS,
+  MEETING_SENSITIVE_TEXT_PATTERN,
+} from "./customer_project_meeting.mjs";
 import { deriveProjectStatus } from "./customer_project_status.mjs";
+
+export { FACT_CARD_FIELD_LIMITS, MEETING_PROPOSAL_FIELD_LIMITS };
 
 export function stripMarkdown(value) {
   return String(value ?? "")
@@ -166,9 +173,19 @@ export function readAcceptanceContract(charter, scope) {
     /六类风险各不少于\s*(\d+)\s*条/,
     "章程六类风险负例门槛"
   );
+  const charterNegativeMaxWrongAnswers = requiredInteger(
+    charter,
+    /风险错误直答\s*=\s*(\d+)/,
+    "章程负例错误直答门槛"
+  );
   assertContractSame("总体 Top3 门槛", overallTop3, charterOverallTop3);
   assertContractSame("来源 / 版本正确率", citationCorrect, charterCitation);
   assertContractSame("每类负例最小数", negativeCasesPerType, charterNegativePerType);
+  assertContractSame(
+    "负例错误直答门槛",
+    negativeMaxWrongAnswers,
+    charterNegativeMaxWrongAnswers
+  );
 
   return {
     overallTop3,
@@ -182,29 +199,6 @@ export function readAcceptanceContract(charter, scope) {
   };
 }
 
-const SENSITIVE_FACT_PATTERN = new RegExp(
-  [
-    "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}",
-    "(?:\\+?86[- ]?)?1[3-9](?:[- ]?\\d){9}",
-    "(?:https?:\\/\\/|www\\.)",
-    "[A-Z0-9-]+\\.(?:com|cn|net|org)(?:\\/|\\s|$)",
-    "\\b(?:EVD|ROLE|USR)[-_][A-Z0-9-]+\\b",
-    "\\b\\d{8,}\\b",
-    "\\b(?=[A-Z0-9-]{12,}\\b)(?=[A-Z0-9-]*\\d)[A-Z0-9-]+\\b",
-  ].join("|"),
-  "i"
-);
-
-export const FACT_CARD_FIELD_LIMITS = Object.freeze({
-  userType: 16,
-  platform: 20,
-  task: 36,
-  frequency: 24,
-  currentFlow: 60,
-  impact: 48,
-  status: 10,
-});
-
 const FACT_CARD_FIELD_LABELS = Object.freeze({
   userType: "主用户类别",
   platform: "平台",
@@ -213,14 +207,6 @@ const FACT_CARD_FIELD_LABELS = Object.freeze({
   currentFlow: "当前流程与问题",
   impact: "业务影响",
   status: "状态",
-});
-
-export const MEETING_PROPOSAL_FIELD_LIMITS = Object.freeze({
-  name: 24,
-  phaseOneFocus: 40,
-  workingBoundary: 96,
-  shadowGate: 64,
-  meetingAction: 28,
 });
 
 const MEETING_PROPOSAL_FIELDS = Object.freeze([
@@ -267,7 +253,7 @@ function readFactCards(ledger) {
           `事实卡 ${expectedIds[index]} 的 ${FACT_CARD_FIELD_LABELS[field] || field} 最多 ${limit} 个字符，已拒绝生成`
         );
       }
-      if (SENSITIVE_FACT_PATTERN.test(value)) {
+      if (MEETING_SENSITIVE_TEXT_PATTERN.test(value)) {
         throw new Error(`事实卡 ${expectedIds[index]} 的 ${field} 包含明显敏感信息，已拒绝生成`);
       }
     }
@@ -302,7 +288,7 @@ export function readMeetingProposal(ledger) {
         `项目侧推荐方案的“${expected.label}”最多 ${limit} 个字符，已拒绝生成`
       );
     }
-    if (SENSITIVE_FACT_PATTERN.test(value)) {
+    if (MEETING_SENSITIVE_TEXT_PATTERN.test(value)) {
       throw new Error(`项目侧推荐方案的“${expected.label}”包含明显敏感信息`);
     }
     if (MEETING_INTERNAL_TERM_PATTERN.test(value)) {

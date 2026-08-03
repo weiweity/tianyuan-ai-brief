@@ -7,6 +7,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   readdir,
   rm,
   stat,
@@ -20,6 +21,10 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createSafeResultsDir } from "../../sites/tests/support/safe-results-dir.mjs";
+import { buildCustomerProjectSurfaceModel } from "./customer_project_surface_model.mjs";
+import { assertSafeMeetingArtifact } from "./customer_project_meeting.mjs";
+import { loadCustomerProjectSources } from "./customer_project_surface_io.mjs";
+import { meetingLifecycleState } from "./customer_project_status.mjs";
 import {
   resolveCustomerProjectQaPaths,
   resolveCustomerProjectWorkspace,
@@ -31,6 +36,14 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
 const workspace = await resolveCustomerProjectWorkspace(import.meta.url);
 const { projectDir } = workspace;
+const canonicalProjectDir = await realpath(projectDir);
+const sourceSet = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
+const surfaceModel = buildCustomerProjectSurfaceModel(sourceSet.byId);
+const meetingLifecycle = meetingLifecycleState(surfaceModel.projectStatus);
+if (meetingLifecycle === "not-eligible") {
+  throw new Error("项目批准尚未成立，拒绝把“项目已批准”的 09 视为冻结历史快照");
+}
+const meetingLifecycleClosed = meetingLifecycle === "closed";
 const siteRoot = path.join(repoRoot, "sites");
 const requireFromSites = createRequire(path.join(siteRoot, "package.json"));
 const { chromium } = requireFromSites("playwright");
@@ -108,6 +121,15 @@ function parsePayload(html) {
   return JSON.parse(match[1]);
 }
 
+function withTamperedPayload(html, mutate) {
+  const payload = structuredClone(parsePayload(html));
+  mutate(payload);
+  return html.replace(
+    /(<script id="meeting-data" type="application\/json">)[\s\S]*?(<\/script>)/,
+    `$1${JSON.stringify(payload)}$2`
+  );
+}
+
 await check("模板占位符契约", async () => {
   const template = await readFile(templatePath, "utf8");
   const placeholders = [...template.matchAll(/__[A-Z][A-Z0-9_]*__/g)].map(
@@ -133,6 +155,12 @@ await check("模板占位符契约", async () => {
 });
 
 await check("生成物新鲜度 --check", async () => {
+  if (meetingLifecycleClosed) {
+    const frozenHtml = await readFile(targetPath, "utf8");
+    assert.match(frozenHtml, /GENERATED FILE — safe meeting view; DO NOT EDIT/);
+    assert.match(documentRelease(frozenHtml), /^meeting-v1-[a-f0-9]{12}$/);
+    return "启动会生命周期已结束；校验冻结历史快照，不重生成会前状态";
+  }
   const { stdout, stderr } = await execFileAsync(
     process.execPath,
     ["business-docs/08-工具/generate_customer_agent_meeting.mjs", "--check"],
@@ -145,6 +173,53 @@ await check("生成物新鲜度 --check", async () => {
 
 await check("安全数据白名单与会议契约", async () => {
   const html = await readFile(targetPath, "utf8");
+  assertSafeMeetingArtifact(html);
+  const piiTampered = html.replace('"platform":"OPEN"', '"platform":"demo@example.com"');
+  assert.notEqual(piiTampered, html, "PII 篡改夹具必须实际修改 payload");
+  assert.throws(
+    () => assertSafeMeetingArtifact(piiTampered),
+    /platform.*联系方式、外部地址或长资源标识/
+  );
+  const staticPiiTampered = html.replace("</body>", "<p>demo@example.com</p></body>");
+  assert.notEqual(staticPiiTampered, html, "静态 PII 篡改夹具必须实际修改 HTML");
+  assert.throws(
+    () => assertSafeMeetingArtifact(staticPiiTampered),
+    /页面静态内容包含联系方式、外部地址或长资源标识/
+  );
+  const staticDomainTampered = html.replace("</body>", "<p>internal.example.com</p></body>");
+  assert.notEqual(staticDomainTampered, html, "静态裸域篡改夹具必须实际修改 HTML");
+  assert.throws(
+    () => assertSafeMeetingArtifact(staticDomainTampered),
+    /页面静态内容包含联系方式、外部地址或长资源标识/
+  );
+  const schemaTampered = html.replace('"project":{', '"unexpected":"x","project":{');
+  assert.notEqual(schemaTampered, html, "schema 篡改夹具必须实际增加字段");
+  assert.throws(() => assertSafeMeetingArtifact(schemaTampered), /payload 字段越界/);
+  for (const unsafeTask of ["internal.example.com/path", "12345678", "ORDER-123456"]) {
+    const sensitiveTampered = withTamperedPayload(html, (candidate) => {
+      candidate.meeting.factCards[0].task = unsafeTask;
+    });
+    assert.throws(
+      () => assertSafeMeetingArtifact(sensitiveTampered),
+      /factCards\[0\]\.task.*联系方式、外部地址或长资源标识/,
+      unsafeTask
+    );
+  }
+  const oversizedTampered = withTamperedPayload(html, (candidate) => {
+    candidate.meeting.factCards[0].task = "客".repeat(FACT_CARD_FIELD_LIMITS.task + 1);
+  });
+  assert.throws(() => assertSafeMeetingArtifact(oversizedTampered), /task.*不超过 36 字符/);
+  const coreQuestionTypeTampered = withTamperedPayload(html, (candidate) => {
+    candidate.meeting.coreQuestions = "abc";
+  });
+  assert.throws(
+    () => assertSafeMeetingArtifact(coreQuestionTypeTampered),
+    /4 种结果状态与 3 个核心问题/
+  );
+  const optionTampered = withTamperedPayload(html, (candidate) => {
+    candidate.meeting.decisionOptions[0].value = "approved";
+  });
+  assert.throws(() => assertSafeMeetingArtifact(optionTampered), /4 种结果状态语义发生漂移/);
   const payload = parsePayload(html);
   assertExactKeys(payload, ["project", "state", "meeting", "release"], "payload");
   assertExactKeys(payload.project, ["name", "code"], "project");
@@ -275,6 +350,9 @@ await check("生成文件无内部内容与外部依赖", async () => {
 });
 
 await check("隔离工作区生成安全、幂等与并发保护", async () => {
+  if (meetingLifecycleClosed) {
+    return "启动会生命周期已结束；冻结快照继续做结构与泄漏 QA，不再重启会前生成器";
+  }
   const sandbox = await mkdtemp(path.join(os.tmpdir(), "customer-meeting-qa-"));
   const isolatedProject = path.join(sandbox, "customer-project");
   const isolatedOutput = path.join(isolatedProject, "09-客服Agent需求会汇报.html");
@@ -324,6 +402,14 @@ await check("隔离工作区生成安全、幂等与并发保护", async () => {
       execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv }),
       (error) => /FACT-01.*包含明显敏感信息/.test(`${error.stderr || ""}${error.stdout || ""}`)
     );
+    const internalFactRow = "| FACT-01 | 新手 | RACI | 商品话术查询 | 待核验 | 多表检索 | 回复等待 | OPEN |";
+    await writeFile(isolatedLedger, ledgerBaseline.replace(emptyFactRow, internalFactRow), "utf8");
+    await assert.rejects(
+      execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv }),
+      (error) => /factCards\[0\]\.platform.*内部状态码、治理术语或禁区内容/.test(
+        `${error.stderr || ""}${error.stdout || ""}`
+      )
+    );
     await writeFile(isolatedLedger, ledgerBaseline, "utf8");
 
     await execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv });
@@ -369,17 +455,19 @@ await check("隔离工作区生成安全、幂等与并发保护", async () => {
       .forEach((result) => {
         assert.match(
           `${result.reason?.stderr || ""}${result.reason?.stdout || ""}`,
-          /生成期间发生变化|拒绝覆盖/
+          /生成锁已被占用|生成期间发生变化|拒绝覆盖/
         );
       });
     await execFileAsync(process.execPath, [...generatorArgs, "--check"], {
       cwd: repoRoot,
       env: isolatedEnv,
     });
-    const leftovers = (await readdir(isolatedProject)).filter((file) =>
-      file.includes(".update-") && file.endsWith(".tmp")
+    const leftovers = (await readdir(isolatedProject)).filter(
+      (file) =>
+        (file.includes(".update-") && file.endsWith(".tmp")) ||
+        file.endsWith(".write.lock")
     );
-    assert.deepEqual(leftovers, [], `遗留原子临时文件：${leftovers.join("、")}`);
+    assert.deepEqual(leftovers, [], `遗留原子临时文件或生成锁：${leftovers.join("、")}`);
 
     await assert.rejects(
       execFileAsync(process.execPath, [...generatorArgs, "--output=../escape.html"], {
@@ -711,6 +799,8 @@ try {
       });
       assert.deepEqual(structure.topicKickers, ["一期切口", "工作边界", "灰度前门"]);
       assert.match(structure.successText, /过期话术使用为 0/);
+      assert.match(structure.successText, /错 SKU[\s\S]*确定性直答[\s\S]*立即停用/);
+      assert.match(structure.successText, /权威来源冲突却未升级[\s\S]*不能隔离则全部暂停/);
       assert.match(structure.successText, /自动发送[、。\s\S]*次数必须为 0/);
       assert.match(structure.successText, /不做统计显著性结论/);
       assert.match(structure.pilotText, /2 名新手 \+ 2 名老手只是首批候选/);
@@ -729,9 +819,9 @@ try {
         "本次暂不决定",
       ]);
       assert.deepEqual(structure.decisionLegend, structure.decisionOptionLabels.slice(1));
-      assert.equal(structure.decisionLegendTitle, "结论可复述后选择");
+      assert.equal(structure.decisionLegendTitle, "现场回读后选择");
       assert.equal(new Set(structure.decisionLegendDots).size, 4);
-      assert.equal(structure.decisionProgress, "0 / 9 已处理");
+      assert.equal(structure.decisionProgress, "0 / 9 已回读");
       assert.equal(structure.progressTrackVisible, true);
       assert.equal(structure.fullscreenIconCount, 1);
       assert.equal(structure.coverMark, "一期项目启动");
@@ -767,6 +857,12 @@ try {
       assert.match(meetingCallouts[1], /两个真实任务名称/);
       assert.match(meetingCallouts[4], /谁上报、谁拍板、先停用并回到原流程/);
       assert.match(meetingCallouts[4], /纪要与台账/);
+      assert.match(
+        await page.locator(".proposal-route").innerText(),
+        /一期灰度验证 → 二期清洗蒸馏与稳定 → 三期 Agent/
+      );
+      assert.match(meetingCallouts[7], /现场选择只用于回读，不是正式批准/);
+      assert.match(meetingCallouts[7], /会后纪要与 02 台账/);
       assert.deepEqual(
         await page.locator(".callout").evaluateAll((items) =>
           items.map((item) => getComputedStyle(item, "::before").content.replaceAll('"', ""))
@@ -836,7 +932,7 @@ try {
       assert.equal(
         visibleTexts.some(
           (value) =>
-            /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|标记回读|方案设计|知识 \/ 话术辅助|智能质检|反馈分析|聊天分析|待补证(?:\s*待补证)+/.test(
+            /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|方案设计|知识 \/ 话术辅助|智能质检|反馈分析|聊天分析|待补证(?:\s*待补证)+/.test(
               value
             )
         ),
@@ -1040,7 +1136,7 @@ try {
     assert.equal(await page.locator(".decision-select").first().inputValue(), "confirmed");
     assert.equal(await page.locator(".decision-card").first().getAttribute("data-result"), "confirmed");
     assert.equal(await page.locator(".decision-select").nth(1).inputValue(), "pending");
-    assert.equal(await page.locator("#decision-progress").innerText(), "1 / 9 已处理");
+    assert.equal(await page.locator("#decision-progress").innerText(), "1 / 9 已回读");
     assert.equal(await page.locator("#meeting-clock, #meeting-time, #timer-toggle").count(), 0);
     assertHealthy(health);
     await context.close();
@@ -1078,7 +1174,7 @@ try {
       await page.locator(".decision-card").nth(1).getAttribute("data-result"),
       "needs-evidence"
     );
-    assert.equal(await page.locator("#decision-progress").innerText(), "2 / 9 已处理");
+    assert.equal(await page.locator("#decision-progress").innerText(), "2 / 9 已回读");
 
     await page.locator("#more-menu summary").click();
     await page.locator('#more-menu summary[aria-expanded="true"]').waitFor();
@@ -1108,7 +1204,7 @@ try {
       ),
       true
     );
-    assert.equal(await page.locator("#decision-progress").innerText(), "0 / 9 已处理");
+    assert.equal(await page.locator("#decision-progress").innerText(), "0 / 9 已回读");
     assertHealthy(health);
     await context.close();
     return "9 项四态结果 · 刷新恢复 · 自定义二次确认";
@@ -1162,7 +1258,7 @@ try {
     for (let index = 1; index < 8; index += 1) await page.locator("#next-slide").click();
     await page.locator(".decision-select").first().selectOption("not-in-this-meeting");
     assert.equal(await page.locator(".decision-select").first().inputValue(), "not-in-this-meeting");
-    assert.equal(await page.locator("#decision-progress").innerText(), "1 / 9 已处理");
+    assert.equal(await page.locator("#decision-progress").innerText(), "1 / 9 已回读");
     assertHealthy(health);
     await context.close();
     return "导航与四态选择可用 · errors 0";
@@ -1191,7 +1287,7 @@ try {
     assert.match(fallback.text, /确认启动结果与下一步/);
     assert.doesNotMatch(
       fallback.text,
-      /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|回读|方案设计/
+      /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|方案设计/
     );
     assertHealthy(health);
     await context.close();
@@ -1232,13 +1328,13 @@ try {
     );
     const printText = await page.locator(".print-summary").innerText();
     assert.match(printText, /客服 Agent 一期启动会/);
-    assert.match(printText, /一期主问题：未处理/);
+    assert.match(printText, /一期主问题：未回读/);
     for (const output of ["一期结论", "材料与权限清单", "试点准备清单"]) {
       assert.match(printText, new RegExp(output));
     }
     assert.doesNotMatch(
       printText,
-      /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|回读|方案设计/
+      /\b(?:OPEN|PRECONFIRM|READY|FDE)\b|工程|客服人员|不让客服|业务输入|技术栈|技术方案|技术记录清单|需求确认会|需求会汇报|本环节请补|这里只标记|试点人口|最小闭环|方案设计/
     );
     const pdfPath = path.join(resultsDir, "客服Agent需求会摘要-A4.pdf");
     await page.pdf({

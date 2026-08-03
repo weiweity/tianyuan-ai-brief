@@ -2,14 +2,14 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "9e299ca3d132f67714084f9fd77af129c2369c77d128b20b3ef76c2f768c3284"
+    "sha256": "f09f27ed132a081a097cd69f534f27d34d016fc4c323c2912082fc4e4b6dfb5f"
   },
   "sources": [
     {
       "id": "charter",
       "file": "00-项目章程.md",
       "label": "项目章程",
-      "sha256": "a4378b7ba75250bb71111250b1852c638336f4637f60c1e1caa4f6a1a3530e74"
+      "sha256": "7597821bd711e589a52db524b7e4c021c4e963577430a6cb831f812d6c1804f6"
     },
     {
       "id": "schedule",
@@ -21,7 +21,7 @@
       "id": "ledger",
       "file": "02-G0责任与证据台账.md",
       "label": "G0 责任与证据台账",
-      "sha256": "0a9b6501e4a017064b0832eedc24a5ca7dcb8b9dd75c262857a350d714fbc8c6"
+      "sha256": "ac1b84f5dee922fe15dfa770c48b5df0a438b99b81897c05d701bc61877acd8f"
     },
     {
       "id": "scope",
@@ -45,10 +45,10 @@
       "id": "cadence",
       "file": "06-启动会与周推进.md",
       "label": "启动会与周推进",
-      "sha256": "57ca05086f447c72bc9fc0ae72ce7999f6fa91c98e98d3686996883e4daaeafc"
+      "sha256": "5d2fa97688915f72ca9c85aac9f65c8cbf8d4b695f424db57085b95e54a6ce28"
     }
   ],
-  "sourceHash": "643d3d784d275b7fa6d8fe11d0459822b11dca3232e21640c6d4a2cccbf3fa0c",
+  "sourceHash": "f982d32dc27a5d9da2e5379c783322458d30c9abf4ef00ef98e1c3d35a673d13",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",
@@ -72,7 +72,7 @@
         "灰度前影子回放"
       ],
       "decisionRule": "客服负责人根据真实工作、业务影响、数据条件和可验证性作出决定；不做功能投票",
-      "agendaSha256": "3127ed8cc3d116a8659094a9e213f51ae911e5055084f98a5ed384123670ba1c"
+      "agendaSha256": "3ee61fe8b7cb1a0821cbcfeb4d526c0ff37dcb5a073e3eaa2db54ee8e9f219f7"
     },
     "milestones": {
       "d0": "2026-08-04",

@@ -212,11 +212,11 @@ function locationTail(value) {
     .replaceAll("\\", "/")
     .split("/")
     .filter(Boolean)
-    .slice(-2)
+    .slice(-3)
     .join("/");
 }
 
-// 只使用“项目目录 / 文件名”，既能区分孤立拷贝，又不把开发机绝对路径写入生成物。
+// 只写入稳定的“工作区类别 / 项目目录 / 文件名”短指纹，不把开发机绝对路径带入生成物。
 const canonicalLocationFingerprint = locationFingerprint(
   locationTail(pathToFileURL(outputPath).pathname)
 );

@@ -214,6 +214,37 @@ export function isChecked(value) {
   return /\[[xX]\]/.test(String(value || ""));
 }
 
+const MEETING_OPEN_PROBLEM_STATES = new Set([
+  "待核验",
+  "PRECONFIRM · 待核验",
+  "进行中",
+]);
+
+const MEETING_CLOSED_DEVELOPMENT_STATES = new Set([
+  "暂停",
+  "已暂停",
+  "停止",
+  "已停止",
+]);
+
+export function meetingLifecycleState(projectStatus) {
+  if (!projectStatus || typeof projectStatus !== "object") {
+    throw new Error("启动会生命周期判断缺少项目状态");
+  }
+  if (projectStatus.approvalReady !== true) return "not-eligible";
+  const closed =
+    !MEETING_OPEN_PROBLEM_STATES.has(projectStatus.problemFit) ||
+    projectStatus.g0 === "Fail" ||
+    projectStatus.feePathCode === "C" ||
+    MEETING_CLOSED_DEVELOPMENT_STATES.has(projectStatus.development) ||
+    projectStatus.ddevReady === true;
+  return closed ? "closed" : "open";
+}
+
+export function isMeetingLifecycleClosed(projectStatus) {
+  return meetingLifecycleState(projectStatus) === "closed";
+}
+
 export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) {
   const statusRows = parseTable(getSection(ledger, "## 1. 当前状态"), "当前状态");
   const statusMap = Object.fromEntries(statusRows.map((row) => [row["项目项"], row["状态"]]));
