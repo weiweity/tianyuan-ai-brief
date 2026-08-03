@@ -390,6 +390,7 @@ const allEvidenceReady =
   projectStatus.scopePass === projectStatus.scopeTotal;
 const ddevReady = projectStatus.ddevReady;
 const awaitingDdev = projectStatus.g0Ready && !ddevReady;
+const designStage = projectStatus.stage === "设计阶段 / G0";
 const currentFeePath = projectStatus.feePathCode;
 const approvalFailed = projectStatus.approval === "Fail";
 const problemFitFailed = ["Fail", "未通过"].includes(projectStatus.problemFit);
@@ -448,6 +449,14 @@ if (ddevReady) {
     nextDate: shortDate(g0Target),
     nextTitle: "G0 整改复审",
     nextOutput: "阻塞行动项 · 复审证据 · 新结论",
+  };
+} else if (designStage) {
+  headline = {
+    title: "需求基线已收口，当前进入设计阶段。",
+    summary: `当前同步推进产品 / 交互、技术方案、数据 / 知识库与测试 / 灰度设计。待客服签发的平台、负责人、权威来源与基线继续作为 G0 补证项；跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
+    nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
+    nextTitle: nextOpenGate?.["责任包"] || "设计评审与 G0 补证",
+    nextOutput: nextOpenGate?.["完成证据"] || "设计包 · ADR · 评测与回退方案",
   };
 } else if (!projectStatus.problemFitReady) {
   headline = {
@@ -547,22 +556,28 @@ const payload = {
         ? "G0 已签，等待 Ddev 正式授权。"
       : projectPaused
         ? "按暂停或整改条件行动，不越过门禁。"
-        : "先把启动会资料和责任清单准备好。",
+        : designStage
+          ? "按设计包和 G0 缺口推进。"
+          : "先把启动会资料和责任清单准备好。",
     nowSummary: ddevReady
       ? "只做 Ddev 已授权范围；每次变更保留测试、回退与决定证据。"
       : awaitingDdev
         ? `不得早于 ${projectStatus.earliestDdev} 开发；Ddev 日期与授权证据 ID 未填写前继续保持未开发。`
       : projectPaused
         ? "只补解除阻塞所需证据；不得开发、付费调用、部署或承诺试点。"
-        : "只做能帮助需求确认和开发前总检查的工作，不提前创建产品代码。",
-    actionLabel: ddevReady || projectPaused ? "当前行动" : awaitingDdev ? "Ddev 签发前" : "8 月 4 日前",
+        : designStage
+          ? "可做原型、ADR、数据模型、API 草案、评测与回退设计；不可开始产品功能开发。"
+          : "只做能帮助需求确认和开发前总检查的工作，不提前创建产品代码。",
+    actionLabel: ddevReady || projectPaused || designStage ? "当前行动" : awaitingDdev ? "Ddev 签发前" : "8 月 4 日前",
     scheduleTitle: ddevReady
       ? `Ddev 已签；按${projectStatus.resourceBaseline}基线相对顺延，不把原日期当最新承诺。`
       : awaitingDdev
         ? "G0 已签，Ddev 未成立；不提前开工。"
       : projectPaused
         ? "当前处于暂停 / 整改，不进入 Ddev。"
-        : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
+        : designStage
+          ? `设计阶段与 G0 补证并行；${shortDate(g0Target)} 前只评审方案和授权条件，不倒推开工。`
+          : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
   },
   prelaunchChecklist: ddevReady
     ? allowedRows.map((row) => row["08-04 起可以做"]).filter(Boolean).slice(0, 8)
@@ -570,7 +585,9 @@ const payload = {
       ? ["核对 G0 签发结论与证据包哈希", "确认 Ddev 最早日期与授权证据 ID", "冻结授权 Scope、费用路径、环境和负责人", "Ddev 未填写前保持产品开发未开始"]
     : projectPaused
       ? ["记录失败或暂停原因", "具名补证 Owner 与截止日", "冻结开发、付费调用、部署和试点承诺", "达到解除条件后重新评审"]
-    : prelaunchChecklist.map(humanizeMeetingText).slice(0, 8),
+    : designStage
+      ? ["完成主流程、异常流程与低保真原型", "完成架构、权限、数据与回退 ADR", "冻结话术数据模型、评测集与埋点字典", "补齐平台、Owner、权威来源、基线与权限证据", "Ddev 未成立前保持产品开发未开始"]
+      : prelaunchChecklist.map(humanizeMeetingText).slice(0, 8),
   schedule: displaySchedule,
   gates: externalGates.map((row) => ({
     id: row.ID,
@@ -611,23 +628,29 @@ const payload = {
         ? "可以准备 Ddev，不能提前开工。"
       : projectPaused
         ? "可以开复审会，不能绕过暂停结论。"
-        : "可以开启动会，不能宣布开工。",
+        : designStage
+          ? "可以评审设计，不能宣布开工。"
+          : "可以开启动会，不能宣布开工。",
     positioning: ddevReady
       ? "这是 Ddev 后推进与证据复核会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
       : awaitingDdev
         ? "这是 G0 已签后的 Ddev 授权会；签发日期、授权证据 ID、范围与费用边界未落档前不得开发。"
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
-        : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
-    controlsLabel: ddevReady || awaitingDdev || projectPaused ? "当前行动角色筛选" : "会前准备角色筛选",
+        : designStage
+          ? "当前是设计与 G0 补证阶段：评审产品、交互、架构、数据、安全、测试和回退方案，不以方案文档代替 Ddev。"
+          : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
+    controlsLabel: ddevReady || awaitingDdev || projectPaused || designStage ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady
       ? "客服 Agent 当前推进清单"
       : awaitingDdev
         ? "客服 Agent Ddev 签发清单"
       : projectPaused
         ? "客服 Agent 暂停 / 整改复审清单"
-        : "客服 Agent 一期启动会会前准备",
-    copyButton: ddevReady || awaitingDdev || projectPaused ? "复制当前清单" : "复制会前清单",
+        : designStage
+          ? "客服 Agent 设计阶段清单"
+          : "客服 Agent 一期启动会会前准备",
+    copyButton: ddevReady || awaitingDdev || projectPaused || designStage ? "复制当前清单" : "复制会前清单",
     director: [
       "本期必须先解决的一个真实客服问题",
       "业务目标、当前基线、成功与停止条件",

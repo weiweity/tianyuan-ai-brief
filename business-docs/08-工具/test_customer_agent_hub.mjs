@@ -193,15 +193,16 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.equal(payload.status.direction, "已记录");
     assert.equal(payload.status.approval, "已批准");
     assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
-    assert.match(payload.headline.summary, /批准凭证已归档/);
-    assert.match(payload.headline.nextOutput, /真实任务 · 指标基线 · 权威来源 · 试点与人数/);
+    assert.match(payload.headline.title, /需求基线已收口.*设计阶段/);
+    assert.match(payload.headline.summary, /产品 \/ 交互.*Ddev 不成立/);
+    assert.match(payload.headline.nextOutput, /真实任务样本.*零新增软件对照/);
     assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
     assert.equal(payload.governance.fee.find((item) => item.current)?.selected, false);
     assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /临时管控（未签）/);
     assert.equal(payload.governance.roles.filter((item) => item.needsNaming).length, 13);
-    assert.equal(payload.prelaunchChecklist.length, 8);
+    assert.equal(payload.prelaunchChecklist.length, 5);
     assert.doesNotMatch(payload.headline.summary, /\b(?:Owner|Scope)\b/);
-    assert.doesNotMatch(payload.meeting.positioning, /\b(?:Owner|PRD|G0)\b/);
+    assert.doesNotMatch(payload.meeting.positioning, /\b(?:Owner|PRD)\b/);
     assert.doesNotMatch(payload.meeting.copyTitle, /\bPRD\b/);
     assert.equal(payload.governance.forbiddenTitle, "开发开工许可前禁止");
   }

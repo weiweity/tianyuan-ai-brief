@@ -283,7 +283,7 @@ test("执行中心回归内部推进，只向 canonical 09 提供会场入口", 
   assert.doesNotMatch(template, /id="agenda"|data\.meeting\.agenda|进入投影主持|52～60 决定回读/);
 });
 
-test("三视图导航只把 09 定义为会场主屏", async () => {
+test("生命周期导航将 09 保留为需求阶段快照，并把设计目录设为现行主线", async () => {
   const [rootReadme, dashboard, map, projectReadme, inventory, toolReadme, packageText, historicalIndex] = await Promise.all([
     readRepo("README.md"),
     readRepo("business-docs/00-项目驾驶舱.md"),
@@ -294,15 +294,13 @@ test("三视图导航只把 09 定义为会场主屏", async () => {
     readRepo("sites/package.json"),
     readRepo("archive/2026-07-31-ai-project-brief/index.html"),
   ]);
-  for (const document of [map, projectReadme, inventory]) {
+  for (const document of [projectReadme, inventory]) {
     assert.match(document, /09-客服Agent需求会汇报\.html/);
-    assert.match(document, /08[^\n]*(?:内部推进|内部执行)/);
-    assert.doesNotMatch(document, /08[^\n]*(?:生成视图（会场主屏）|当天唯一主屏|点进投影主持)/);
+    assert.match(document, /(?:需求|启动会)[^\n]*(?:已完成|快照)|(?:已完成|快照)[^\n]*(?:需求|启动会)/);
   }
-  for (const document of [rootReadme, dashboard]) {
-    assert.match(document, /开 08-04 启动会（唯一主屏）[^\n]*09-客服Agent需求会汇报\.html/);
-    assert.match(document, /被追问背景时快速过 PRD（备用）[^\n]*07-客服Agent立项PRD\.html/);
-    assert.doesNotMatch(document, /开立项会[^\n]*07-客服Agent立项PRD\.html/);
+  for (const document of [rootReadme, dashboard, map, projectReadme, inventory]) {
+    assert.match(document, /设计(?:阶段|进行中|主线)/);
+    assert.doesNotMatch(document, /开 08-04 启动会（唯一主屏）/);
   }
   assert.match(toolReadme, /现行三视图/);
   assert.match(toolReadme, /test_customer_agent_meeting\.mjs --round=ci/);

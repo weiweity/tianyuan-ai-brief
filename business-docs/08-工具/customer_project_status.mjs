@@ -365,7 +365,7 @@ export function deriveProjectStatus({ charter, schedule, ledger, scope, cost }) 
     throw new Error(`Ddev 日期不得早于章程最早日期 ${earliestDdev}`);
   }
   const stage = required(statusMap["项目阶段"], "项目阶段");
-  const preDdevStages = new Set(["启动前 / G0", "G0", "G0 中检", "G0 决策", "G0 已通过 / 待 Ddev"]);
+  const preDdevStages = new Set(["启动前 / G0", "G0", "设计阶段 / G0", "G0 中检", "G0 决策", "G0 已通过 / 待 Ddev"]);
   const postDdevStage = /^(?:Ddev \/ 开发期|开发期 \/ G1a|G1a|Pilot Ready|G1b|M4)$/;
   if (!preDdevStages.has(stage) && !postDdevStage.test(stage)) {
     throw new Error(`项目阶段不是受控状态：${stage}`);

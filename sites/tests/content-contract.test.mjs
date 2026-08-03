@@ -235,12 +235,12 @@ test("高风险前端能力保持独立模块且主控制器受体积门禁约�
 });
 
 test("历史打印入口是无业务副本的单一入口跳转", async () => {
-  const legacy = await read("../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html");
+  const legacy = await read("../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html");
   assert.match(legacy, /旧版打印入口已合并/);
   assert.match(legacy, /http-equiv="refresh"/);
-  assert.match(legacy, /\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
+  assert.match(legacy, /\.\.\/\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/index\.html\?from=legacy-print/);
   assert.match(legacy, /rel="canonical"/);
-  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/assets\/favicon\.png"/);
+  assert.match(legacy, /rel="icon" href="\.\.\/\.\.\/\.\.\/\.\.\/archive\/2026-07-31-ai-project-brief\/assets\/favicon\.png"/);
   assert.match(legacy, /robots" content="noindex"/);
   assert.doesNotMatch(legacy, /mermaid/);
   assert.doesNotMatch(legacy, /<script/);

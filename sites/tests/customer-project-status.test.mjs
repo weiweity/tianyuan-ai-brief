@@ -115,7 +115,7 @@ function fullyAdvance(sources, ddev = "2026-08-14") {
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
+    ["评审输入版本", "章程 v3.3 / 台账 v3.3 / Scope v3.3 / 排期 v3.3"],
     ["G0-02～15", "Pass 14 / 14；Fail 0 / 14"],
     ["Scope 检查", "Pass 15 / 15；Fail 0 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
@@ -450,7 +450,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.2 / 台账 v3.3 / Scope v3.3 / 排期 v3.2"],
+    ["评审输入版本", "章程 v3.3 / 台账 v3.3 / Scope v3.3 / 排期 v3.3"],
     ["G0-02～15", "Pass 0 / 14；Fail 1 / 14"],
     ["Scope 检查", "Pass 1 / 15；Fail 14 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],

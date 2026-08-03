@@ -86,7 +86,7 @@ npm run serve
 
 不要在 `2026-07-31-ai-project-brief/` 原地修改内容。若未来确需修复，必须建立新的日期版本、更新归档清单并单独评审；当前客服项目不得向本目录写状态。
 
-历史 HTML [`../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html`](../business-docs/01-立项主线/print/AI赋能立项_金主一页汇报.html) 只作兼容跳转，不是第二份业务正文。
+历史 HTML [`../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html`](../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html) 只作归档追溯，不是第二份业务正文。
 
 ---
 
