@@ -1,0 +1,97 @@
+@startuml CS-AI-C11-Waterfall
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "PingFang SC, Microsoft YaHei, sans-serif"
+skinparam shadowing false
+skinparam activityBackgroundColor #FFFFFF
+skinparam activityBorderColor #999999
+skinparam activityDiamondBackgroundColor #FAFAFA
+
+title 瀑布全生命周期（大厂默认关卡）\n目的：统一「现在走到哪、谁负责、产出什么」——不是只有写代码
+
+|需求分析|
+start
+:需求分析\n产出：PRD / 契约 / 范围;
+note right
+  **本项目状态：通过**
+  31 契约 · 25 PRD
+end note
+
+|架构设计|
+:架构设计\n产出：SSOT / ADR / C4 图 / NFR;
+note right
+  **本项目：通过 · PASS-WITH-CONDITIONS***
+  静态设计包已冻结
+  CR-002 自动事实增量已对齐
+  CR-003 49/50 仅训练预埋
+  CR-004 权威来源硬门静态合同已对齐
+  DEC-042 稳定Question/scope/taxonomy/risk/placeholder/quality/hash
+  Question hash含promoted_by_role；固定ASCII键+C排序（非通用JCS）
+  quality绑定population_manifest_hash，防同计数换行
+  semantic先退役留墓碑再删query；谱系不断链
+  完整snapshot+客户端[effective_from,effective_to)过滤
+  封闭最小public mapper；来源/租约denial与标准审计分流
+  人读架构·实现·测试设计已收口
+  25/26/31/37/39/33/40/41/43/46/47/48/49/50
+  2026-08-10 Codex交叉检查已冻结到90-评审（非规范证据）
+  当前 schema v1.12 reference DDL 本地 PG15 预检：PASS-WITH-LIMITATION
+  旧 c1e74c EVD：仅历史，不外推当前 schema
+  DEC-042 schema v1.12 / OpenAPI 1.11.0 静态合同：LOCKED
+  迁移/N/N-1/runtime/动态EVD：NOT_IMPLEMENTED
+  managed/backup/concurrency/production：NOT_CERTIFIED
+  *升级/并发/生产/真机仍未认证；本地预检不替代这些证据
+end note
+
+|实现设计|
+:实现设计\n产出：详细设计 / 接口明细 / 表迁移计划 / 任务拆解;
+note right
+  **本项目状态：通过 · 文档包 Ready**
+  2026-08-10 Codex冻结评审（90） · 46 开工包 · CR-002/003/004/DEC-042 增量
+  DEC-042 已拆 DEV-M0/M1 任务与退出负例
+  postfix约束已拆实现与负例；当前仍仅文档包
+  placeholder内存渲染/二次确认/零持久纳入 DEV-M3
+  **下一停留点：3→4 组织授权门（不计入八关）**
+  G0 未签发 · Ddev 未授权
+  13角色职责接受、G0-08绿地隔离、G0-10范围冻结、G0-11安全边界、G0-12部署运维、G0-13评测冻结与G0-15运行交接方案已归档
+  费用/WBS成本条件已签发 · 外部责任包 13/14 · Scope 14/15 · 不开代码
+end note
+
+|代码开发|
+:代码开发\n产出：API · 壳 · 迁移脚本;
+note right
+  **等待授权 · 未开始**
+  33/OpenAPI 静态合同已锁
+  迁移/生成类型/产品代码均未实现
+end note
+
+|单元测试|
+:单元测试\n产出：INV / 端口单测绿;
+note right
+  结构测试已有
+  运行时单测待开发关
+end note
+
+|系统测试|
+:系统测试\n产出：集成 / 压测 / 安全测试报告;
+note right
+  未开始
+  压测后才可宣称高并发
+end note
+
+|上线发布|
+:上线发布\n产出：灰度 / 发布记录 / 回滚预案;
+note right
+  未开始
+end note
+
+|生产运维|
+:生产运维\n产出：监控 / 告警 / 值班 / 容量复盘;
+stop
+
+legend right
+  大厂瀑布 **标准八关**（你问的流程 = 是）
+  需求分析 → 架构设计 → 实现设计 → 代码开发
+  → 单元测试 → 系统测试 → 上线发布 → 生产运维
+endlegend
+
+@enduml

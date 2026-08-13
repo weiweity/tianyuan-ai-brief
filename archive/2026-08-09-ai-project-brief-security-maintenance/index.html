@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-release="shell-v3-8bf32abe052c">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#EBE6EF"/>
+  <meta name="color-scheme" content="light"/>
+  <meta name="description" content="2026-07-31 收尾的 AI 赋能汇报历史快照；不是当前客服 Agent 项目 SSOT。"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <title>天元 · AI 赋能汇报（历史快照）</title>
+  <link rel="icon" href="./assets/favicon.png" type="image/png" sizes="64x64"/>
+  <link rel="icon" href="./assets/favicon-32.png" type="image/png" sizes="32x32"/>
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" sizes="180x180"/>
+  <!-- 壳：无业务文案。内容 data/content.json · 架构 ARCHITECTURE.md -->
+  <link rel="stylesheet" href="./css/app.css?v=shell-v3-8bf32abe052c"/>
+  <script defer src="./js/bootstrap.js?v=shell-v3-8bf32abe052c"></script>
+</head>
+<body>
+  <a class="skip-link" href="#stage">跳到正文</a>
+  <div id="app">
+    <!-- 上框：顶栏 + 进度 + Tab 粘成一体，中间不留缝 -->
+    <div class="chrome">
+      <header class="top">
+        <div class="logo-wrap">
+          <img id="logo-img" src="./assets/logo.png" alt="SHINE MAGE"/>
+          <div class="logo-edit-hint">点此换图</div>
+          <input id="logo-file" type="file" accept="image/*" hidden/>
+        </div>
+        <div class="top-mid">
+          <h1 id="doc-title">加载中…</h1>
+          <div class="sub" id="doc-sub"></div>
+        </div>
+        <div class="top-right" id="doc-role"></div>
+        <div class="toolbar" aria-label="工具">
+          <span id="status-pill">…</span>
+          <button type="button" id="btn-edit" title="E">编辑</button>
+          <button type="button" class="primary" id="btn-save" title="S · 保存并刷新页面内容">保存并更新</button>
+          <div class="tool-secondary">
+            <button type="button" id="btn-bind">绑定源码</button>
+            <button type="button" id="btn-export">导出</button>
+            <button type="button" id="btn-reload">重载</button>
+          </div>
+          <div class="toolbar-more-wrap">
+            <button type="button" id="btn-more" aria-label="更多" aria-expanded="false">⋯</button>
+            <div class="toolbar-menu" id="toolbar-menu" role="menu">
+              <button type="button" id="btn-bind-m" role="menuitem">绑定源码</button>
+              <button type="button" id="btn-export-m" role="menuitem">导出 JSON</button>
+              <button type="button" id="btn-reload-m" role="menuitem">重载源码</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <aside class="archive-guard" aria-label="历史快照，不是当前项目入口">
+        <div class="archive-guard-copy">
+          <strong>历史快照 · 非当前 SSOT</strong>
+          <span>2026-07-31 已收尾，仅供设计与交互参考</span>
+        </div>
+        <nav class="archive-guard-links" aria-label="当前客服 Agent 项目入口">
+          <a href="../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html">启动会主屏</a>
+          <a href="../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html">现行 PRD</a>
+          <a href="../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html">执行中心</a>
+        </nav>
+      </aside>
+      <div class="progress-bar" aria-hidden="true"><i id="progress-fill" style="width:14%"></i></div>
+      <div class="offline-notice" id="offline-notice" role="status" hidden>
+        本地离线快照 · 可正常演示；要获取远端最新内容，请运行 npm run serve
+      </div>
+      <div class="edit-banner" id="edit-banner">编辑模式 · 改完点「保存并更新」→ 自动写回并刷新本页（客户打开的链接约 30 秒内同步）</div>
+      <section class="tabs-row" aria-label="章节与页码导航">
+        <nav class="tabs" id="tabs" role="tablist" aria-label="章节"></nav>
+        <nav class="pager-dots" id="pager-dots" aria-label="页码"></nav>
+      </section>
+    </div>
+
+    <!-- 下框：内容舞台，flex 吃满剩余高度 -->
+    <div class="stage-wrap">
+      <nav class="edge-nav-group" aria-label="章节翻页">
+        <button type="button" class="edge-nav prev" id="nav-prev" aria-label="上一页">‹</button>
+        <button type="button" class="edge-nav next" id="nav-next" aria-label="下一页">›</button>
+      </nav>
+      <main class="stage" id="stage" tabindex="0" aria-live="polite">
+        <div class="loading-panel" id="boot-loading" aria-label="加载中">
+          <div class="skel skel-line w40"></div>
+          <div class="skel skel-line w80"></div>
+          <div class="skel skel-line w60"></div>
+          <div class="skel skel-line w80"></div>
+          <div class="skel skel-line" style="flex:1;min-height:120px"></div>
+        </div>
+      </main>
+      <section class="stage-meta" aria-label="翻页提示与页脚">
+        <span class="swipe-hint" id="swipe-hint"><span class="nav-hint-desktop">点击页签或 ← → 翻页</span><span class="nav-hint-touch">左右滑翻页</span> · <strong id="page-label">1 / 7</strong></span>
+        <footer class="footer">
+          <div class="footer-left" id="footer-left"></div>
+          <div class="hint footer-right" id="footer-right"></div>
+        </footer>
+      </section>
+    </div>
+  </div>
+
+  <button type="button" class="update-chip" id="update-chip" hidden>内容已更新 · 点击刷新</button>
+  <div class="toast" id="toast" role="status"></div>
+  <div id="diagram-lightbox" class="diagram-lightbox" hidden role="dialog" aria-modal="true" aria-label="流程图放大">
+    <button type="button" class="diagram-lightbox-close" id="diagram-lightbox-close" aria-label="关闭">关闭</button>
+    <div class="diagram-lightbox-stage" id="diagram-lightbox-stage"></div>
+  </div>
+</body>
+</html>

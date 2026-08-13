@@ -1,0 +1,25 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "PingFang SC"
+title 技术栈架构图 Layered Stack\nGitHub/社区画法：色带分层 · 徽章技术 · 自上而下依赖
+
+rectangle "L0 Clients\nWindows Electron · React · TS\n浮窗 · Dashboard（工单分析/话术优化待办）" as L0 #DBEAFE
+rectangle "L1 Edge\n生产全程 HTTPS /v1 · REST · TLS 必须" as L1 #E0E7FF
+rectangle "L2 API Host\nNode 24 LTS · TS · Fastify · 连接池\n幂等 · 16分片限流 · SQLSTATE" as L2 #D1FAE5
+rectangle "L3 Ports\nauth search* events* metrics workorders*\ncontent* announce policy redaction" as L3 #A7F3D0
+database "L4 Data Plane\nPostgreSQL15+ SoR + outbox · FTS\nwork_order_* ≠ iteration_task*\nObject/跨节点 RWX import 存储 Must" as L4 #FEF3C7
+rectangle "L5 Platform\nTypeScript Import Worker Must\n内容/工单分 capability · fenced finalize\nhealth/ready · 观测/恢复 · pnpm CI" as L5 #F3E8FF
+
+cloud "External\n飞书 · 接待台\nDeepSeek在线排序Opt / teacher另批" as E
+rectangle "Ban\n生产明文 HTTP · EOL Node\n多实例本地 upload · 内存 import queue\nDify主中台 · SQLite SoR · 改写 · 代发\n班牛写回 · 两类工单混域" as B #FEE2E2
+rectangle "Deferred / CR-003 49/50\nEmbedding离线影子 · local student\nreal/policy/synthetic分账 · 泄漏0" as D #F5F3FF
+
+L0 -down-> L1
+L1 -down-> L2
+L2 -down-> L3
+L3 -down-> L4
+L4 -down-> L5
+L2 -[#666,dashed]-> E
+L2 -[#666,dashed]-> B
+L2 -[#666,dashed]-> D
+@enduml

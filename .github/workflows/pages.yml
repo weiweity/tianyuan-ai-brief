@@ -5,8 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "archive/2026-07-31-ai-project-brief/**"
-      - "archive/archive-manifest.json"
+      - "archive/**"
       - "sites/**"
       - "business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html"
       - ".github/workflows/pages.yml"

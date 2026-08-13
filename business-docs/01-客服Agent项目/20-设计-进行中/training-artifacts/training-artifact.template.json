@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_id": "TEMPLATE-EMPTY-001",
+  "artifact_kind": "template",
+  "status": "empty",
+  "data_account": "synthetic",
+  "purpose": "retrieval",
+  "dataset_version": "empty-v0",
+  "created_at": "2026-08-08T00:00:00Z",
+  "source_cutoff_at": null,
+  "license_manifest": {
+    "embedding_backend": null,
+    "student_model": null
+  },
+  "budget_policy": {
+    "currency": "CNY",
+    "per_run_cap": 0,
+    "daily_cap": 0,
+    "batch_cap": 0,
+    "monthly_cap": 0,
+    "external_paid_calls_allowed": false
+  },
+  "approvals": {
+    "business_review": {
+      "status": "not_requested",
+      "review_id": null,
+      "reviewer_capability": null,
+      "reviewed_at": null
+    },
+    "data_security_review": {
+      "status": "not_requested",
+      "review_id": null,
+      "reviewer_capability": null,
+      "reviewed_at": null
+    },
+    "training_authorization_id": null,
+    "publish_authorization_id": null
+  },
+  "items": [],
+  "teacher_runs": [],
+  "deletion_manifest": {
+    "status": "not_applicable",
+    "entries": []
+  }
+}

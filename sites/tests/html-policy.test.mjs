@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { JSDOM } from "jsdom";
-import { createHtmlPolicy } from "../../archive/2026-07-31-ai-project-brief/js/modules/html-policy.js";
+import { createHtmlPolicy } from "../../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/html-policy.js";
 
 const dom = new JSDOM("<!doctype html><html><body></body></html>");
 const policy = createHtmlPolicy(dom.window);

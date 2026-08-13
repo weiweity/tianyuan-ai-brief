@@ -13,6 +13,20 @@ export const CUSTOMER_PROJECT_SOURCE_DEFINITIONS = Object.freeze([
   { id: "cadence", file: "06-启动会与周推进.md", label: "启动会与周推进" },
 ]);
 
+// 只参与受控状态推导，不进入现有 7 份对外嵌入真源或其展示计数。
+export const CUSTOMER_PROJECT_STATUS_SOURCE_DEFINITIONS = Object.freeze([
+  {
+    id: "architecture",
+    file: "20-设计-进行中/37-架构SSOT-v1.md",
+    label: "37 架构 SSOT",
+  },
+  {
+    id: "implementation",
+    file: "20-设计-进行中/46-实现设计-开工包.md",
+    label: "46 实现设计开工包",
+  },
+]);
+
 export function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -55,20 +69,32 @@ export async function readRegularFileNoFollow(filePath, { allowedRoot, label }) 
 }
 
 export async function loadCustomerProjectSources({ projectDir, canonicalProjectDir }) {
-  const entries = await Promise.all(
-    CUSTOMER_PROJECT_SOURCE_DEFINITIONS.map(async (source) => {
-      const sourcePath = path.join(projectDir, source.file);
-      const text = await readRegularFileNoFollow(sourcePath, {
-        allowedRoot: canonicalProjectDir,
-        label: `真源 ${source.file} `,
-      });
-      return { ...source, sourcePath, text, hash: sha256(text) };
-    })
-  );
+  const loadEntries = (definitions) =>
+    Promise.all(
+      definitions.map(async (source) => {
+        const sourcePath = path.join(projectDir, source.file);
+        const text = await readRegularFileNoFollow(sourcePath, {
+          allowedRoot: canonicalProjectDir,
+          label: `真源 ${source.file} `,
+        });
+        return { ...source, sourcePath, text, hash: sha256(text) };
+      })
+    );
+  const [entries, statusEntries] = await Promise.all([
+    loadEntries(CUSTOMER_PROJECT_SOURCE_DEFINITIONS),
+    loadEntries(CUSTOMER_PROJECT_STATUS_SOURCE_DEFINITIONS),
+  ]);
   return {
     entries,
-    byId: Object.fromEntries(entries.map((source) => [source.id, source.text])),
-    fingerprint: sha256(entries.map((source) => `${source.file}:${source.hash}`).join("\n")),
+    statusEntries,
+    byId: Object.fromEntries(
+      [...entries, ...statusEntries].map((source) => [source.id, source.text])
+    ),
+    fingerprint: sha256(
+      [...entries, ...statusEntries]
+        .map((source) => `${source.file}:${source.hash}`)
+        .join("\n")
+    ),
   };
 }
 

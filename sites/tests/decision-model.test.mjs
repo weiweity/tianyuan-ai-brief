@@ -7,7 +7,7 @@ import {
   evaluateCheckGate,
   sha256,
   verifyDecisionReceipt,
-} from "../../archive/2026-07-31-ai-project-brief/js/modules/decision-model.js";
+} from "../../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/decision-model.js";
 
 function decisionBlock() {
   return {

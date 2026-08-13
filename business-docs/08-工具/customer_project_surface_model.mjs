@@ -320,6 +320,8 @@ export function buildCustomerProjectSurfaceModel(sourceById) {
     ledger: sourceById.ledger,
     scope: sourceById.scope,
     cost: sourceById.cost,
+    architecture: sourceById.architecture,
+    implementation: sourceById.implementation,
   });
   const agenda = assertMeetingAgendaConsistency(sourceById.ledger, sourceById.cadence).map(
     (row) => ({

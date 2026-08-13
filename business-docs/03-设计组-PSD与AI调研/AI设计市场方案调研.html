@@ -1,0 +1,2637 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="设计组 PSD 与 AI 方案调研 · 交互汇报（Vercel 风格）">
+  <meta name="robots" content="noindex,nofollow">
+  <title>电商主图 &amp; 详情 · PSD × AI 调研</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.min.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff;
+      --bg-elevated: #fafafa;
+      --bg-hover: #f4f4f4;
+      --fg: #000;
+      --fg-secondary: #666;
+      --fg-tertiary: #888;
+      --border: #eaeaea;
+      --border-strong: #999;
+      --accent: #0070f3;
+      --accent-soft: rgba(0, 112, 243, .08);
+      --success: #0070f3;
+      --success-bg: rgba(0, 112, 243, .08);
+      --warn: #f5a623;
+      --warn-bg: rgba(245, 166, 35, .12);
+      --danger: #ee0000;
+      --danger-bg: rgba(238, 0, 0, .08);
+      --ok: #0a7a3e;
+      --ok-bg: rgba(10, 122, 62, .1);
+      --shadow: 0 0 0 1px rgba(0,0,0,.06), 0 8px 30px rgba(0,0,0,.04);
+      --shadow-lg: 0 0 0 1px rgba(0,0,0,.08), 0 16px 48px rgba(0,0,0,.08);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --nav-h: 56px;
+      --ease: cubic-bezier(.23, 1, .32, 1);
+      --font: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --max: 1080px;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #000;
+      --bg-elevated: #0a0a0a;
+      --bg-hover: #111;
+      --fg: #ededed;
+      --fg-secondary: #a1a1a1;
+      --fg-tertiary: #666;
+      --border: #333;
+      --border-strong: #666;
+      --accent: #3291ff;
+      --accent-soft: rgba(50, 145, 255, .12);
+      --success: #3291ff;
+      --success-bg: rgba(50, 145, 255, .12);
+      --warn: #f5a623;
+      --warn-bg: rgba(245, 166, 35, .14);
+      --danger: #ff6369;
+      --danger-bg: rgba(255, 99, 105, .12);
+      --ok: #3dd68c;
+      --ok-bg: rgba(61, 214, 140, .12);
+      --shadow: 0 0 0 1px rgba(255,255,255,.08), 0 8px 30px rgba(0,0,0,.4);
+      --shadow-lg: 0 0 0 1px rgba(255,255,255,.1), 0 16px 48px rgba(0,0,0,.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    button {
+      border: 0;
+      background: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    [hidden] { display: none !important; }
+
+    /* Nav */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      font-weight: 600;
+      letter-spacing: -.02em;
+    }
+    .brand-mark {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: var(--fg);
+      position: relative;
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1.5px solid var(--bg);
+      border-radius: 2px;
+    }
+    .brand small {
+      color: var(--fg-secondary);
+      font-weight: 400;
+      font-size: 12px;
+      margin-left: 2px;
+    }
+    .nav-scroll {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-scroll::-webkit-scrollbar { display: none; }
+    .nav-link {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--fg-secondary);
+      transition: color .15s var(--ease), background .15s var(--ease);
+    }
+    .nav-link:hover { color: var(--fg); background: var(--bg-hover); }
+    .nav-link.active {
+      color: var(--fg);
+      background: var(--bg-hover);
+      font-weight: 500;
+    }
+    .nav-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      color: var(--fg-secondary);
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .icon-btn:hover {
+      background: var(--bg-hover);
+      color: var(--fg);
+      border-color: var(--border-strong);
+    }
+
+    /* Layout */
+    main {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 32px 20px 120px;
+    }
+    section {
+      scroll-margin-top: calc(var(--nav-h) + 16px);
+      margin-bottom: 72px;
+      animation: rise .5s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--fg-secondary);
+      font-family: var(--mono);
+    }
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 650;
+      letter-spacing: -.04em;
+      line-height: 1.1;
+      text-wrap: balance;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 28px);
+      font-weight: 600;
+      letter-spacing: -.03em;
+      line-height: 1.2;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+    }
+    .lede {
+      max-width: 62ch;
+      margin: 0 0 28px;
+      font-size: 17px;
+      color: var(--fg-secondary);
+      line-height: 1.65;
+    }
+    .muted { color: var(--fg-secondary); }
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--fg-secondary);
+      background: var(--bg-elevated);
+    }
+    .chip.ok { border-color: color-mix(in srgb, var(--ok) 30%, var(--border)); color: var(--ok); background: var(--ok-bg); }
+    .chip.warn { border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); color: var(--warn); background: var(--warn-bg); }
+    .chip.info { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); color: var(--accent); background: var(--accent-soft); }
+
+    /* Cards */
+    .grid { display: grid; gap: 12px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 800px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg);
+      padding: 18px;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), transform .2s var(--ease);
+    }
+    .card:hover { border-color: var(--border-strong); }
+    .card.interactive {
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+    }
+    .card.interactive:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .card.interactive:active { transform: translateY(0); }
+    .card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+      background: var(--accent-soft);
+    }
+    .card-kicker {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--fg-tertiary);
+      margin-bottom: 8px;
+      letter-spacing: .02em;
+    }
+    .verdict {
+      padding: 20px 22px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      position: relative;
+      overflow: hidden;
+    }
+    .verdict::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--fg);
+    }
+    .verdict p { margin: 0; font-size: 16px; line-height: 1.65; }
+    .verdict strong { font-weight: 600; }
+
+    /* Diagnostic wizard (2-step funnel) */
+    .wiz {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .wiz-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .wiz-steps-ind {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--fg-secondary);
+      font-family: var(--mono);
+    }
+    .wiz-steps-ind .si {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wiz-steps-ind .si .n {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1px solid var(--border);
+      display: grid; place-items: center;
+      font-size: 10px; font-weight: 600;
+    }
+    .wiz-steps-ind .si.on .n {
+      background: var(--fg); color: var(--bg); border-color: var(--fg);
+    }
+    .wiz-steps-ind .si.done .n {
+      background: var(--ok); color: #fff; border-color: var(--ok);
+    }
+    .wiz-steps-ind .sep { opacity: .35; }
+    .wiz-body { padding: 18px 16px 20px; min-height: 280px; }
+    .wiz-q {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      margin: 0 0 6px;
+    }
+    .wiz-hint {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: var(--fg-secondary);
+    }
+    .wiz-opts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 640px) {
+      .wiz-opts { grid-template-columns: 1fr; }
+    }
+    .wiz-opt {
+      text-align: left;
+      padding: 14px 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .12s, background .15s;
+    }
+    .wiz-opt:hover {
+      border-color: var(--border-strong);
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .wiz-opt:active { transform: none; }
+    .wiz-opt .wo-k {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .04em;
+      color: var(--fg-tertiary);
+      margin-bottom: 6px;
+    }
+    .wiz-opt .wo-t {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      margin-bottom: 4px;
+    }
+    .wiz-opt .wo-d {
+      font-size: 12px;
+      color: var(--fg-secondary);
+      line-height: 1.45;
+    }
+    .wiz-result {
+      display: none;
+      animation: rise .3s var(--ease);
+    }
+    .wiz-result.show { display: block; }
+    .wiz-path {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .wiz-path .row {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .wiz-path .row.do {
+      background: var(--ok-bg);
+      border-color: color-mix(in srgb, var(--ok) 30%, var(--border));
+    }
+    .wiz-path .row.dont {
+      background: var(--danger-bg);
+      border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+    }
+    .wiz-path .lab {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .wiz-path .row.do .lab { color: var(--ok); }
+    .wiz-path .row.dont .lab { color: var(--danger); }
+    .wiz-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 14px;
+    }
+    .wiz-checks span {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--fg-secondary);
+    }
+    .wiz-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .wiz-meta {
+      font-size: 12px;
+      color: var(--fg-tertiary);
+      font-family: var(--mono);
+    }
+    .path-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .pill.good { border-color: color-mix(in srgb, var(--ok) 40%, var(--border)); background: var(--ok-bg); color: var(--ok); }
+    .pill.bad { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); background: var(--danger-bg); color: var(--danger); }
+
+    /* Scores */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .seg {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg-elevated);
+    }
+    .seg button {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--fg-secondary);
+      transition: background .15s, color .15s;
+    }
+    .seg button[aria-pressed="true"] {
+      background: var(--fg);
+      color: var(--bg);
+      font-weight: 500;
+    }
+    .score-list { display: grid; gap: 8px; }
+    .score-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 56px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      text-align: left;
+      transition: border-color .15s, background .15s;
+    }
+    .score-row:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+    .score-row[aria-expanded="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .score-name { font-weight: 500; font-size: 14px; letter-spacing: -.01em; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+    .score-bars { display: grid; gap: 4px; }
+    .bar-track {
+      height: 4px;
+      border-radius: 99px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--fg);
+      transition: width .7s var(--ease);
+    }
+    .score-row.hot .bar-fill { background: var(--accent); }
+    .use-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .use-chip {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .02em;
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--fg-tertiary);
+      background: var(--bg-elevated);
+    }
+    .use-chip.on-main {
+      color: var(--accent);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+      background: var(--accent-soft);
+    }
+    .use-chip.on-detail {
+      color: var(--ok);
+      border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+      background: var(--ok-bg);
+    }
+    .use-chip.off {
+      opacity: .45;
+      text-decoration: line-through;
+    }
+    .sop-mod-legend {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0 0;
+    }
+    @media (max-width: 720px) {
+      .sop-mod-legend { grid-template-columns: repeat(2, 1fr); }
+    }
+    .sop-mod-legend .mod {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      background: var(--bg);
+      font-size: 12px;
+    }
+    .sop-mod-legend .mod b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      letter-spacing: -.01em;
+    }
+    .sop-mod-legend .mod span { color: var(--fg-secondary); line-height: 1.4; }
+    .score-num {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: right;
+      letter-spacing: -.02em;
+    }
+    .score-detail {
+      grid-column: 1 / -1;
+      display: none;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--fg-secondary);
+    }
+    .score-row[aria-expanded="true"] .score-detail { display: block; }
+    .dims {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    @media (max-width: 640px) {
+      .score-row { grid-template-columns: 1fr 48px; }
+      .score-bars { grid-column: 1 / -1; order: 3; }
+      .dims { grid-template-columns: repeat(2, 1fr); }
+    }
+    .dim {
+      padding: 8px;
+      border-radius: 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .dim span { display: block; font-size: 11px; color: var(--fg-tertiary); }
+    .dim b { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+
+    /* Flow */
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    @media (max-width: 800px) { .flow { grid-template-columns: 1fr; } }
+    .flow-step {
+      position: relative;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+    }
+    .flow-step .n {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-tertiary);
+      margin-bottom: 6px;
+    }
+
+    /* SOP interactive flowchart */
+    .sop-shell {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      overflow: hidden;
+    }
+    .sop-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .sop-toolbar .left, .sop-toolbar .right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .sop-progress {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--fg-secondary);
+      min-width: 72px;
+    }
+    .flow-canvas {
+      position: relative;
+      padding: 28px 16px 20px;
+      overflow-x: auto;
+      min-height: 220px;
+    }
+    .flow-track {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      min-width: min(100%, 920px);
+      width: max-content;
+      margin: 0 auto;
+      padding-bottom: 8px;
+    }
+    .flow-node-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .flow-node {
+      width: 148px;
+      min-height: 112px;
+      padding: 12px 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .2s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease), background .15s;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .flow-node:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .flow-node.active {
+      border-color: var(--fg);
+      box-shadow: 0 0 0 1px var(--fg), var(--shadow);
+      background: var(--bg);
+    }
+    .flow-node.done {
+      border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+    }
+    .flow-node.done .fn-num {
+      background: var(--ok);
+      color: #fff;
+      border-color: var(--ok);
+    }
+    .flow-node.active .fn-num {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    .fn-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--fg-secondary);
+      flex-shrink: 0;
+    }
+    .fn-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .fn-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--fg-tertiary);
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .fn-tag.lock { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); background: var(--danger-bg); }
+    .fn-tag.ai { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); background: var(--accent-soft); }
+    .fn-tag.human { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, var(--border)); background: var(--ok-bg); }
+    .fn-tag.sys { color: var(--fg-secondary); }
+    .fn-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      line-height: 1.3;
+      color: var(--fg);
+    }
+    .fn-hint {
+      font-size: 11px;
+      color: var(--fg-tertiary);
+      line-height: 1.35;
+      margin-top: auto;
+    }
+    .flow-arrow {
+      width: 36px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: var(--fg-tertiary);
+    }
+    .flow-arrow::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      right: 10px;
+      height: 2px;
+      background: var(--border-strong);
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .flow-arrow::after {
+      content: "";
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--border-strong);
+      border-top: 2px solid var(--border-strong);
+      transform: translateY(-50%) rotate(45deg);
+    }
+    .flow-arrow.lit::before,
+    .flow-arrow.lit::after {
+      border-color: var(--fg);
+      background: var(--fg);
+    }
+    .flow-arrow.lit::after { background: transparent; }
+
+    .sop-detail {
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      padding: 18px 18px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px 20px;
+      align-items: start;
+      min-height: 120px;
+    }
+    @media (max-width: 640px) {
+      .sop-detail { grid-template-columns: 1fr; }
+      .flow-node { width: 132px; min-height: 104px; }
+    }
+    .sop-detail-kicker {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-tertiary);
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+    }
+    .sop-detail h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+    .sop-detail p {
+      margin: 0;
+      color: var(--fg-secondary);
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 56ch;
+    }
+    .sop-detail-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    @media (max-width: 640px) {
+      .sop-detail-meta { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+    }
+    .sop-rail {
+      height: 3px;
+      background: var(--border);
+      position: relative;
+    }
+    .sop-rail > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--fg);
+      transition: width .35s var(--ease);
+    }
+    .layer-legend {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    @media (max-width: 720px) {
+      .layer-legend { grid-template-columns: 1fr; }
+    }
+    .layer-legend .flow-step {
+      cursor: default;
+    }
+    .step-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .step-tabs button {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--fg-secondary);
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .step-tabs button[aria-selected="true"] {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+      font-weight: 500;
+    }
+    .step-tabs button:hover:not([aria-selected="true"]) {
+      background: var(--bg-hover);
+      color: var(--fg);
+    }
+
+    /* Decision */
+    .decision {
+      display: grid;
+      gap: 12px;
+    }
+    .q-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      background: var(--bg);
+    }
+    .q-card h3 { margin-bottom: 4px; }
+    .q-opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .q-opt {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      transition: all .15s var(--ease);
+    }
+    .q-opt:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .q-opt[aria-pressed="true"] {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    .decision-summary {
+      margin-top: 8px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border);
+      background: var(--bg-elevated);
+      font-size: 13px;
+      color: var(--fg-secondary);
+      min-height: 52px;
+    }
+    .decision-summary.ready {
+      border-style: solid;
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--fg);
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background .15s, border-color .15s, color .15s, transform .1s;
+    }
+    .btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+    .btn:active { transform: scale(.98); }
+    .btn-primary {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    .btn-primary:hover { opacity: .9; background: var(--fg); }
+    .btn-ghost { border-color: transparent; color: var(--fg-secondary); }
+    .btn-ghost:hover { color: var(--fg); background: var(--bg-hover); }
+
+    /* Myths */
+    .toggle-list { display: grid; gap: 8px; }
+    .myth {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .myth-head {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      text-align: left;
+    }
+    .myth-head:hover { background: var(--bg-hover); }
+    .tag {
+      flex-shrink: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--mono);
+    }
+    .tag.myth-t { background: var(--danger-bg); color: var(--danger); }
+    .tag.truth-t { background: var(--ok-bg); color: var(--ok); }
+    .myth-body {
+      display: none;
+      padding: 0 16px 14px 16px;
+      font-size: 13px;
+      color: var(--fg-secondary);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin: 0 16px 14px;
+    }
+    .myth.open .myth-body { display: block; }
+
+    /* Actions table-like */
+    .action-item {
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .15s, background .15s;
+    }
+    .action-item:hover { background: var(--bg-elevated); }
+    .prio {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+    .prio.p0 { background: var(--fg); color: var(--bg); }
+    .prio.p1 { background: var(--bg-hover); border: 1px solid var(--border); color: var(--fg); }
+    .prio.p2 { color: var(--fg-tertiary); border: 1px dashed var(--border); }
+    .check {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: all .15s;
+      margin-top: 2px;
+    }
+    .action-item.done .check {
+      background: var(--fg);
+      border-color: var(--fg);
+      color: var(--bg);
+    }
+    .action-item.done { opacity: .65; }
+    @media (max-width: 640px) {
+      .action-item { grid-template-columns: 1fr auto; }
+      .prio { grid-column: 1 / -1; }
+    }
+
+    /* Command palette */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 12vh 16px 16px;
+    }
+    .overlay.open { display: flex; }
+    .palette {
+      width: min(560px, 100%);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: rise .2s var(--ease);
+    }
+    .palette input {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      background: transparent;
+      outline: none;
+      font-size: 15px;
+    }
+    .palette-list {
+      max-height: 320px;
+      overflow: auto;
+      padding: 6px;
+    }
+    .palette-item {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .palette-item:hover,
+    .palette-item.active { background: var(--bg-hover); }
+    .palette-item kbd {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--fg-tertiary);
+    }
+    .palette-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--fg-tertiary);
+      font-size: 13px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 80;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--fg);
+      color: var(--bg);
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s var(--ease);
+      box-shadow: var(--shadow-lg);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Footer help */
+    .kbd-hint {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 40;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      color: var(--fg-secondary);
+    }
+    .kbd-hint kbd {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    @media (max-width: 720px) {
+      .kbd-hint { display: none; }
+      .brand small { display: none; }
+    }
+
+    /* Progress bar */
+    .read-progress {
+      position: fixed;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      height: 2px;
+      z-index: 49;
+      background: transparent;
+    }
+    .read-progress > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--fg);
+      transition: width .1s linear;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+    .compare-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 640px) { .compare-cols { grid-template-columns: 1fr; } }
+    .compare-cols .card h3 { font-size: 13px; color: var(--fg-secondary); font-weight: 500; margin-bottom: 10px; }
+    .compare-cols ul { margin: 0; padding-left: 18px; color: var(--fg-secondary); font-size: 13px; }
+    .compare-cols li { margin-bottom: 6px; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <a class="sr-only" href="#main">跳到正文</a>
+
+  <header class="topnav" role="banner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>主图 · 详情</span>
+      <small>PSD × AI</small>
+    </div>
+    <nav class="nav-scroll" aria-label="章节">
+      <button type="button" class="nav-link active" data-nav="hero">总览</button>
+      <button type="button" class="nav-link" data-nav="pain">痛点</button>
+      <button type="button" class="nav-link" data-nav="wizard">路径诊断</button>
+      <button type="button" class="nav-link" data-nav="figma">Figma?</button>
+      <button type="button" class="nav-link" data-nav="scores">路径打分</button>
+      <button type="button" class="nav-link" data-nav="sop">SOP</button>
+      <button type="button" class="nav-link" data-nav="myths">共识/夸大</button>
+      <button type="button" class="nav-link" data-nav="actions">行动</button>
+      <button type="button" class="nav-link" data-nav="decide">拍板</button>
+    </nav>
+    <div class="nav-actions">
+      <a href="./research-story.html" style="height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;font-weight:500;color:var(--fg-secondary);display:inline-flex;align-items:center;text-decoration:none" title="调研过程">过程说明</a>
+      <button type="button" class="icon-btn" id="btn-search" title="搜索 (⌘K)" aria-label="打开搜索">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="btn-theme" title="切换主题" aria-label="切换明暗主题">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="read-progress" aria-hidden="true"><i id="progress-bar"></i></div>
+
+  <main id="main">
+    <!-- HERO -->
+    <section id="hero">
+      <div class="eyebrow"><span class="dot"></span> 电商设计端口 · 主图 / 详情 · 非立项</div>
+      <h1>主图 &amp; 详情页<br>PSD × AI 怎么落地</h1>
+      <p class="lede">
+        面向<strong style="color:var(--fg)">电商设计</strong>日常：主图套版、场景/白底、多 SKU、详情长图模块。
+        经 Grok + Codex 交叉验证：没有「AI 读懂任意 PSD 一句话无损改稿」的成熟产品；
+        可落的是 <strong style="color:var(--fg)">主图/详情母版 + AI 只出商品场景素材 + 人审</strong>。
+      </p>
+      <div class="meta-row">
+        <span class="chip info">2026-08-07</span>
+        <span class="chip ok">交叉验证 PASS</span>
+        <span class="chip">主图 + 详情为主</span>
+        <span class="chip warn">FDE 不主 R</span>
+        <span class="chip">大陆优先</span>
+      </div>
+      <div class="verdict">
+        <p>
+          <strong>一句话结论：</strong>
+          主图/详情产线不要赌「语义 AI 改 PSD」；建设
+          <strong>分层母版（主图框 + 详情模块）+ AI 抠图/场景/氛围 + 智能对象或变量批量 + 人工门禁</strong>。
+          Firefly 生成式能力<strong>不对中国大陆用户提供</strong>，大陆出图 SOP 必须改写。
+        </p>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" data-go="wizard">开始路径诊断 →</button>
+        <button type="button" class="btn" data-go="scores">看路径打分</button>
+        <button type="button" class="btn btn-ghost" data-go="decide">直接去拍板</button>
+      </div>
+    </section>
+
+    <!-- PAIN -->
+    <section id="pain">
+      <div class="eyebrow"><span class="dot"></span> 01 · 电商设计痛点</div>
+      <h2>主图 / 详情页卡在哪</h2>
+      <p class="lede">本页以<strong style="color:var(--fg)">电商设计端口</strong>为主（7/22 访谈）。核心不是「再买一个会画的 AI」，而是主图与详情工程可控、可批量、可验收。</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <div class="card-kicker">主图 MAIN IMAGE</div>
+          <h3>主图产线</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>工作量占比高，强依赖 PSD；文件大、传得慢、协作难</li>
+            <li>多 SKU / 多尺寸 / 促销改价，套版重复劳动多</li>
+            <li>AI 改字「抽卡」、字体乱、卖点格子溢出，不适合直接交付</li>
+            <li>白底→场景、换背景可用 AI，但商品本体/包装字必须人控</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="card-kicker">详情 DETAIL PAGE</div>
+          <h3>详情长图</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>模块多、PSD 更重；历史脏图层难维护</li>
+            <li>卖点/参数/功效文案禁 AI 瞎编，只能人写人审</li>
+            <li>适合「模块母版 + 替换商品图/场景块」，而非整页重生</li>
+            <li>旧详情升级：旧稿当参考，重建干净母版再批量</li>
+          </ul>
+        </article>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-kicker">访谈共识 · 电商侧</div>
+        <p class="muted" style="margin:0;font-size:14px">
+          设计先收口痛点与母版方案 → 评工具/费用 → 小 Demo（建议：<strong style="color:var(--fg)">1 个品类主图母版 + 20 SKU</strong> 或 <strong style="color:var(--fg)">详情 3–5 个模块</strong>）→ 再要资源。
+          运营改字改价可并行讨论，但与 PS 工程源解耦（稿定/Buzz 类），不拿运营模板当最终主图工程。
+          <span style="opacity:.75">（品牌侧另有创意/视频链路，本页不展开主 R。）</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- WIZARD: 2-step diagnostic -->
+    <section id="wizard">
+      <div class="eyebrow"><span class="dot"></span> 02 · 路径诊断</div>
+      <h2>两步判断你该走哪条产线</h2>
+      <p class="lede">先选作业对象，再选具体任务；结论、红线与下一步 SOP 在同一面板给出，避免卡片与结果割裂。</p>
+
+      <div class="wiz" id="wiz">
+        <div class="wiz-bar">
+          <div class="wiz-steps-ind" aria-hidden="true">
+            <span class="si on" id="wiz-si-1"><span class="n">1</span> 对象</span>
+            <span class="sep">—</span>
+            <span class="si" id="wiz-si-2"><span class="n">2</span> 任务</span>
+            <span class="sep">—</span>
+            <span class="si" id="wiz-si-3"><span class="n">3</span> 方案</span>
+          </div>
+          <button type="button" class="btn btn-ghost" id="wiz-back" hidden>← 上一步</button>
+        </div>
+        <div class="wiz-body">
+          <div id="wiz-panel" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- FIGMA BOUNDARY (Codex PASS-WITH-CONDITIONS 2026-08-07) -->
+    <section id="figma">
+      <div class="eyebrow"><span class="dot"></span> 岔路 · Figma 与主图/详情</div>
+      <h2>主图/详情要靠 Figma 吗？</h2>
+      <p class="lede">
+        Codex 交叉核验总判定 <strong style="color:var(--fg)">PASS-WITH-CONDITIONS</strong>：
+        若核心是「主图/详情复杂 PSD 工程 + AI 语义改稿」，Figma <strong style="color:var(--fg)">不是主图产线主解法</strong>；
+        但若低估 Buzz / Figma AI / Weave，会把边界写窄。以下为可进汇报的终版口径。
+      </p>
+      <div class="meta-row">
+        <span class="chip ok">方向成立</span>
+        <span class="chip warn">须修：不能只说「协作+部分套版」</span>
+        <span class="chip info">2026-08-07 Codex</span>
+      </div>
+
+      <div class="verdict" style="margin-bottom:16px">
+        <p>
+          <strong>一句话：</strong>
+          Figma <strong>不能原生接管复杂 PSD</strong>（官方导入清单不含 PSD）；历史工程要扁平导入或<strong>重建</strong>为 Figma/Buzz 模板。
+          重建后它不只是协作工具——Buzz 可做受控模板 + CSV 批量 + 审批；Figma AI / Weave 可换背景、扩图、产品拍摄等。
+          但 <strong>AI 改图 ≠ 理解 PSD 工程语义</strong>，商品/包装字/Logo <strong>不能免审</strong>。
+        </p>
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:16px">
+        <article class="card">
+          <div class="card-kicker">CAN</div>
+          <h3>Figma 适合做什么</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>实时协作、评论、版本历史、组件 / 变量 / 团队库</li>
+            <li><strong style="color:var(--fg)">Buzz</strong>：品牌模板、受控字段、CSV/XLSX 图文批量、多物料导出</li>
+            <li>企业套餐下 Buzz <strong style="color:var(--fg)">正式审批</strong>（可配未审批禁止导出）</li>
+            <li>Figma AI / Weave：提示词改图、换背景、擦除、扩图、提分辨率、产品拍摄、部分材质</li>
+            <li>新建的标准化数字营销 / 促销物料（不必从历史 PSD 迁）</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="card-kicker">CANNOT / KEEP PS</div>
+          <h3>仍应留在 Photoshop</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>复杂 PSD、智能对象、精细蒙版、Actions / Data Sets</li>
+            <li>像素级精修、存量主图/详情工程主档</li>
+            <li>CMYK / 专色印前（Figma 原生仅 sRGB / Display P3）</li>
+            <li>超长高分辨率 / 单图最长边 &gt;4096 会被缩小，需专项验证</li>
+            <li>指望「上 Figma = 不用 PS / AI 自动免审出图」</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid" id="figma-bullets" style="margin-bottom:16px"></div>
+
+      <div class="compare-cols">
+        <div class="card">
+          <h3>建议姿态（设计组）</h3>
+          <ul>
+            <li><strong style="color:var(--fg)">按资产类型双轨</strong>：存量复杂 PSD → PS 母版；新建标准化数字物料 → 可试点 Figma/Buzz</li>
+            <li>运营自助可选 Buzz / 稿定 / Canva，<strong style="color:var(--fg)">不必全员迁 Figma</strong></li>
+            <li>试点指标：字段映射、文案溢出、多尺寸、商品保真、导出色域、返工率、审批耗时</li>
+            <li>试点达标前：不承诺全库迁移、不停 PS、不承诺 AI 免审</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>仍不确定（诚实披露）</h3>
+          <ul>
+            <li>公司内复杂 PSD vs 纯数字模板占比（决定主工具）</li>
+            <li>Weave「production-quality」无独立电商基准</li>
+            <li>Buzz / Weave 仍有 Beta 属性，套餐与 SLA 可能变</li>
+            <li>第三方 PSD→Figma 损失率需 PoC</li>
+            <li>大陆区域可用性 / 合规 / 采购条件需单独验证</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" data-go="wizard" id="btn-figma-scenario">用路径诊断选「迁 Figma」</button>
+        <button type="button" class="btn" data-go="scores">回路径打分</button>
+      </div>
+      <p class="muted" style="margin:12px 0 0;font-size:12px">
+        证据源：Figma Help（导入清单 / Buzz / AI / 色彩 / 图像限制）+ Adobe Smart Objects / Data Sets + Codex 2026-08-07 核验。
+        原稿见仓外公司受控纪要目录。
+      </p>
+    </section>
+
+    <!-- SCORES -->
+    <section id="scores">
+      <div class="eyebrow"><span class="dot"></span> 03 · 共识打分</div>
+      <h2>路径怎么排？</h2>
+      <p class="lede">按主图 / 详情适用筛选与排序。点行看四维与适用标签；综合分为研究判断，非厂商榜。</p>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="排序">
+          <button type="button" data-sort="score" aria-pressed="true">按综合分</button>
+          <button type="button" data-sort="fidelity" aria-pressed="false">按图层保真</button>
+          <button type="button" data-sort="name" aria-pressed="false">按名称</button>
+        </div>
+        <div class="seg" role="group" aria-label="投产筛选">
+          <button type="button" data-filter="all" aria-pressed="true">全部</button>
+          <button type="button" data-filter="ship" aria-pressed="false">可投产 ≥7</button>
+          <button type="button" data-filter="watch" aria-pressed="false">观察 &lt;7</button>
+        </div>
+        <div class="seg" role="group" aria-label="主图详情适用">
+          <button type="button" data-use="all" aria-pressed="true">主图+详情</button>
+          <button type="button" data-use="main" aria-pressed="false">主图适用</button>
+          <button type="button" data-use="detail" aria-pressed="false">详情适用</button>
+        </div>
+        <span class="chip" id="score-count"></span>
+      </div>
+      <div class="score-list" id="score-list"></div>
+    </section>
+
+    <!-- SOP interactive flowchart -->
+    <section id="sop">
+      <div class="eyebrow"><span class="dot"></span> 04 · 标准作业</div>
+      <h2>三套 SOP · 交互流程图</h2>
+      <p class="lede">三套电商作业流：主图单张、主图批量、详情四模块（头图→卖点→参数→场景）。点节点或「上一步 / 下一步」走通；可贴组内 wiki。</p>
+      <div class="step-tabs" role="tablist" aria-label="SOP 类型">
+        <button type="button" role="tab" data-sop="single" aria-selected="true">主图 · 改一张</button>
+        <button type="button" role="tab" data-sop="batch" aria-selected="false">主图 · 多 SKU</button>
+        <button type="button" role="tab" data-sop="rebuild" aria-selected="false">详情 · 四模块</button>
+      </div>
+      <div class="sop-mod-legend" id="sop-mod-legend" hidden>
+        <div class="mod"><b>① 头图</b><span>商品主视觉 + 标题；智能对象商品位</span></div>
+        <div class="mod"><b>② 卖点</b><span>卖点卡/图标；文案人写人审</span></div>
+        <div class="mod"><b>③ 参数</b><span>规格表；禁 AI 编造数字</span></div>
+        <div class="mod"><b>④ 场景</b><span>使用场景；AI 素材 + 商品贴回</span></div>
+      </div>
+
+      <div class="sop-shell" id="sop-shell">
+        <div class="sop-toolbar">
+          <div class="left">
+            <span class="sop-progress" id="sop-progress">1 / 6</span>
+            <span class="chip" id="sop-type-chip">局部改一张</span>
+          </div>
+          <div class="right">
+            <button type="button" class="btn" id="sop-prev" aria-label="上一步">← 上一步</button>
+            <button type="button" class="btn btn-primary" id="sop-next" aria-label="下一步">下一步 →</button>
+            <button type="button" class="btn btn-ghost" id="sop-play" aria-label="自动播放">自动播放</button>
+            <button type="button" class="btn btn-ghost" id="sop-reset" aria-label="重置">重置</button>
+          </div>
+        </div>
+        <div class="sop-rail" aria-hidden="true"><i id="sop-rail"></i></div>
+        <div class="flow-canvas" id="sop-canvas" role="list" aria-label="流程图节点"></div>
+        <div class="sop-detail" id="sop-detail" aria-live="polite">
+          <div>
+            <div class="sop-detail-kicker" id="sop-detail-kicker">STEP 01</div>
+            <h3 id="sop-detail-title">—</h3>
+            <p id="sop-detail-desc">—</p>
+          </div>
+          <div class="sop-detail-meta">
+            <span class="chip" id="sop-detail-tag">—</span>
+            <span class="muted" style="font-size:12px" id="sop-detail-tip">点击节点或按 → 前进</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="layer-legend" aria-label="图层分工">
+        <div class="flow-step">
+          <div class="n">LAYER A · 事实层</div>
+          <h3>锁定 · 禁 AI 覆盖</h3>
+          <p class="muted" style="margin:0;font-size:13px">主图商品/包装字/价；详情参数与功效文案</p>
+        </div>
+        <div class="flow-step">
+          <div class="n">LAYER B · 可调层</div>
+          <h3>人工精修</h3>
+          <p class="muted" style="margin:0;font-size:13px">蒙版、阴影、调色、模块衔接与排版</p>
+        </div>
+        <div class="flow-step">
+          <div class="n">LAYER C · AI 层</div>
+          <h3>新建 · 不覆盖事实</h3>
+          <p class="muted" style="margin:0;font-size:13px">主图背景/白底场景；详情场景模块素材</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MYTHS -->
+    <section id="myths">
+      <div class="eyebrow"><span class="dot"></span> 05 · 边界</div>
+      <h2>行业共识 vs 营销夸大</h2>
+      <p class="lede">先立话术边界，再定行动。点开每条看解释；立项与培训只允许用「共识」侧。</p>
+      <div class="compare-cols" style="margin-bottom:16px">
+        <div class="card">
+          <h3>✓ 可写进对内培训</h3>
+          <ul>
+            <li>AI 适合抠图 / 背景 / 场景 / 局部扩图</li>
+            <li>可编辑母版仍由 PS 掌控</li>
+            <li>批量靠模板与结构化数据</li>
+            <li>商品 / Logo / 价 / 法务必须人审</li>
+            <li>「导出 PSD」≠ 理解原工程语义</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>✗ 禁止写进立项预期</h3>
+          <ul>
+            <li>AI 完整理解任意 PSD 意图</li>
+            <li>一键改稿且智能对象全部无损</li>
+            <li>Magic Layers = 恢复原始图层</li>
+            <li>commercially safe = 零侵权</li>
+            <li>Agent 控 PS = 无人值守交付</li>
+          </ul>
+        </div>
+      </div>
+      <div class="toggle-list" id="myth-list"></div>
+    </section>
+
+    <!-- ACTIONS -->
+    <section id="actions">
+      <div class="eyebrow"><span class="dot"></span> 06 · 行动建议</div>
+      <h2>建议开启 / 明确不做</h2>
+      <p class="lede">在共识口径下勾选推进项；进度存本机。不做清单请展开看原因。</p>
+      <h3 style="margin-top:8px">建议开启（设计主 R）</h3>
+      <div class="grid" id="action-list" style="margin:12px 0 24px"></div>
+      <h3>明确不做</h3>
+      <div class="toggle-list" id="dont-list" style="margin-top:12px"></div>
+    </section>
+
+    <!-- DECIDE -->
+    <section id="decide">
+      <div class="eyebrow"><span class="dot"></span> 07 · 请负责人拍板</div>
+      <h2>三件会后书面回</h2>
+      <p class="lede">点选选项，底部自动汇总。可复制摘要发飞书。数据仅存本机浏览器。</p>
+      <div class="decision" id="decision-board"></div>
+      <div class="decision-summary" id="decision-summary">尚未选择。完成三题后可复制摘要。</div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="btn-copy-summary">复制拍板摘要</button>
+        <button type="button" class="btn" id="btn-reset-decision">清空选择</button>
+        <button type="button" class="btn btn-ghost" id="btn-print">打印 / 导出 PDF</button>
+      </div>
+      <div class="divider"></div>
+      <div class="verdict">
+        <p>
+          <strong>组合层备案口径：</strong>
+          电商设计主图/详情 PSD×AI 调研已完成交叉验证（2026-08-07）。
+          结论支持主图/详情母版化提效，不支持新开 FDE 主项目。
+          状态：需求池参考 · 未排期 · 不占客服 / 供应链资源。
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div class="kbd-hint" aria-hidden="true">
+    <kbd>⌘</kbd><kbd>K</kbd> 搜索
+    <span style="opacity:.4">·</span>
+    <kbd>T</kbd> 主题
+  </div>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="命令面板">
+    <div class="palette">
+      <input type="search" id="palette-input" placeholder="跳转到章节、场景、路径…" autocomplete="off">
+      <div class="palette-list" id="palette-list"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+  (() => {
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const store = {
+      get(k, d) {
+        try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }
+        catch { return d; }
+      },
+      set(k, v) {
+        try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+      }
+    };
+
+    /* ---------- Theme ---------- */
+    const root = document.documentElement;
+    const savedTheme = store.get("design-ai-theme", null);
+    const preferDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = savedTheme || (preferDark ? "dark" : "light");
+    $("#btn-theme").addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      store.set("design-ai-theme", root.dataset.theme);
+      toast(root.dataset.theme === "dark" ? "已切换暗色" : "已切换亮色");
+    });
+
+    /* ---------- Toast ---------- */
+    let toastTimer;
+    function toast(msg) {
+      const el = $("#toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+    }
+
+    /* ---------- Nav ---------- */
+    const sections = ["hero","pain","wizard","figma","scores","sop","myths","actions","decide"];
+    function go(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    $$("[data-nav]").forEach(btn => btn.addEventListener("click", () => go(btn.dataset.nav)));
+    $$("[data-go]").forEach(btn => btn.addEventListener("click", () => go(btn.dataset.go)));
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const id = e.target.id;
+        $$("[data-nav]").forEach(b => b.classList.toggle("active", b.dataset.nav === id));
+      });
+    }, { rootMargin: "-40% 0px -50% 0px", threshold: 0 });
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+
+    window.addEventListener("scroll", () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      $("#progress-bar").style.width = pct + "%";
+    }, { passive: true });
+
+    /* ---------- Scenarios ---------- */
+    /* ---------- Path diagnostic wizard (2-step) ---------- */
+    const scenarios = {
+      single: {
+        id: "single",
+        title: "改一张主图 PSD",
+        recommend: "PS 开主图母版 → AI 出背景/场景 → 智能对象贴回 → 人审商品与字",
+        avoid: "指望 Firefly（大陆不可用）；一句话改整张主图含包装字",
+        score: "大陆 AI 素材回填 9.0",
+        tips: ["锁商品/Logo/价", "AI 只新建背景层", "平台尺寸另导出"],
+        sop: "single",
+        useFilter: "main",
+        nextHint: "打开「主图 · 改一张」SOP 逐步走"
+      },
+      batch: {
+        id: "batch",
+        title: "主图多 SKU 批量",
+        recommend: "主图母版 + 智能对象商品位 + 变量/动作批量导出",
+        avoid: "每 SKU 重新提示词整图生成；无命名规范",
+        score: "模板母版 9.8（最高）",
+        tips: ["一品类一母版", "SKU 事实表", "价与法务 100% 人审"],
+        sop: "batch",
+        useFilter: "main",
+        nextHint: "打开「主图 · 多 SKU」SOP"
+      },
+      rebuild: {
+        id: "rebuild",
+        title: "详情页改版 / 四模块",
+        recommend: "模块母版：头图 → 卖点 → 参数 → 场景；AI 只补场景块",
+        avoid: "整页 AI 重生当终稿；AI 写功效/参数数字",
+        score: "详情模块流",
+        tips: ["旧稿当证据", "参数禁 AI 编数", "文案人写人审"],
+        sop: "rebuild",
+        useFilter: "detail",
+        nextHint: "打开「详情 · 四模块」SOP"
+      },
+      ops: {
+        id: "ops",
+        title: "运营改主图字/价",
+        recommend: "稿定 / Canva / Buzz 运营模板（与主图 PS 工程解耦）",
+        avoid: "运营模板当最终工程源；跳过设计抽检",
+        score: "稿定/Buzz 类 7.8",
+        tips: ["只开放字段", "主视觉骨架锁定", "上线前抽检"],
+        sop: null,
+        useFilter: "main",
+        nextHint: "对照打分表「稿定/Buzz」条目"
+      },
+      nops: {
+        id: "nops",
+        title: "无 PS 应急改主图",
+        recommend: "Photopea 开 PSD；窄范围可试 Codia，再回 PS 抽检",
+        avoid: "复杂智能对象直接交平台；跳过回 PS",
+        score: "Photopea 8.5",
+        tips: ["仅应急", "回 PS 验收", "Codia 限试点"],
+        sop: "single",
+        useFilter: "main",
+        nextHint: "应急后仍建议走主图 SOP 归档"
+      },
+      figma: {
+        id: "figma",
+        title: "主图/详情要不要迁 Figma",
+        recommend: "存量主图/详情工程留 PS；仅新建促销物料可试点 Buzz",
+        avoid: "全库迁移、停用 PS、AI 免审上架",
+        score: "Codex PASS-WITH-CONDITIONS",
+        tips: ["无原生 PSD 导入", "Buzz 可活动套版", "详情长图慎迁"],
+        sop: null,
+        useFilter: null,
+        go: "figma",
+        nextHint: "阅读 Figma 边界章节"
+      }
+    };
+
+    const wizTree = {
+      step1: {
+        q: "你现在主要在做什么？",
+        hint: "先定对象，第二步再收窄任务。",
+        opts: [
+          { id: "main", k: "A", t: "主图", d: "店铺主图、白底/场景、多 SKU 框" },
+          { id: "detail", k: "B", t: "详情页", d: "长图模块：头图/卖点/参数/场景" },
+          { id: "ops", k: "C", t: "运营改字改价", d: "活动期改卖点条、价格，少提需设计" },
+          { id: "tool", k: "D", t: "工具 / 协作", d: "无 PS 应急，或纠结要不要迁 Figma" }
+        ]
+      },
+      step2: {
+        main: {
+          q: "主图具体是哪种任务？",
+          hint: "选最贴近本周真实作业的一项。",
+          opts: [
+            { id: "single", k: "A1", t: "改一张已有主图", d: "换场景、去杂、调氛围" },
+            { id: "batch", k: "A2", t: "多 SKU 批量出主图", d: "同框换商品/色/价" },
+            { id: "nops", k: "A3", t: "没装 PS，应急改一版", d: "外勤或临时环境" }
+          ]
+        },
+        detail: {
+          q: "详情页具体是哪种任务？",
+          hint: "详情以模块母版为主，不要整页 AI 重生。",
+          opts: [
+            { id: "rebuild", k: "B1", t: "改版 / 重做详情长图", d: "脏 PSD 或只有平图，要建模块母版" }
+          ]
+        },
+        ops: {
+          q: "运营侧怎么协作？",
+          hint: "与主图 PS 工程解耦，避免运营改坏工程源。",
+          opts: [
+            { id: "ops", k: "C1", t: "运营自助改卖点/价", d: "活动期高频小改" }
+          ]
+        },
+        tool: {
+          q: "卡在工具还是协作？",
+          hint: "工具问题单独答，不替代母版产线。",
+          opts: [
+            { id: "nops", k: "D1", t: "无 PS 应急", d: "临时开文件" },
+            { id: "figma", k: "D2", t: "要不要迁 Figma", d: "历史 PSD 重、协作慢" }
+          ]
+        }
+      }
+    };
+
+    let wizStep = 1; // 1 | 2 | 3
+    let wizBranch = store.get("design-ai-wiz-branch", null);
+    let wizResultId = store.get("design-ai-scenario", null);
+
+    function setWizIndicators() {
+      const s1 = $("#wiz-si-1"), s2 = $("#wiz-si-2"), s3 = $("#wiz-si-3");
+      [s1, s2, s3].forEach(el => el && el.classList.remove("on", "done"));
+      if (wizStep === 1) { s1.classList.add("on"); }
+      if (wizStep === 2) { s1.classList.add("done"); s2.classList.add("on"); }
+      if (wizStep === 3) { s1.classList.add("done"); s2.classList.add("done"); s3.classList.add("on"); }
+      const back = $("#wiz-back");
+      if (back) back.hidden = wizStep === 1;
+    }
+
+    function renderWizOpts(opts, onPick) {
+      const grid = document.createElement("div");
+      grid.className = "wiz-opts";
+      opts.forEach(o => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "wiz-opt";
+        b.innerHTML = `<div class="wo-k">${o.k}</div><div class="wo-t">${o.t}</div><div class="wo-d">${o.d}</div>`;
+        b.addEventListener("click", () => onPick(o.id));
+        grid.appendChild(b);
+      });
+      return grid;
+    }
+
+
+    function applySopType(type) {
+      go("sop");
+      // sopData / sopType / renderSop 在同 IIFE 后部声明；点击时已初始化
+      setTimeout(() => {
+        if (typeof sopData === "undefined" || !sopData[type]) return;
+        if (typeof stopSopPlay === "function") stopSopPlay();
+        sopType = type;
+        sopIndex = 0;
+        if (typeof renderSop === "function") renderSop();
+        toast("已打开：" + sopData[type].label);
+      }, 50);
+    }
+
+    function applyUseFilter(use) {
+      if (!use) return;
+      useKey = use;
+      $$("[data-use]").forEach(b => b.setAttribute("aria-pressed", b.dataset.use === use ? "true" : "false"));
+      if (typeof renderScores === "function") renderScores();
+    }
+
+    function renderWizResult(id) {
+      const s = scenarios[id];
+      if (!s) return;
+      wizStep = 3;
+      wizResultId = id;
+      store.set("design-ai-scenario", id);
+      setWizIndicators();
+      const panel = $("#wiz-panel");
+      panel.innerHTML = `
+        <div class="wiz-result show">
+          <div class="wiz-q">推荐方案 · ${s.title}</div>
+          <p class="wiz-hint">同一面板内：该怎么做、别踩什么坑、下一步去哪。</p>
+          <div class="wiz-path">
+            <div class="row do"><span class="lab">该做</span><span>${s.recommend}</span></div>
+            <div class="row dont"><span class="lab">别做</span><span>${s.avoid}</span></div>
+          </div>
+          <div class="wiz-checks">${s.tips.map(x => `<span>${x}</span>`).join("")}</div>
+          <div class="wiz-footer">
+            <span class="wiz-meta">参考 · ${s.score}</span>
+            <div class="btn-row" style="margin:0">
+              ${s.sop ? `<button type="button" class="btn btn-primary" id="wiz-go-sop">${s.nextHint || "打开对应 SOP"}</button>` : ""}
+              ${s.go === "figma" ? `<button type="button" class="btn btn-primary" id="wiz-go-figma">看 Figma 边界</button>` : ""}
+              ${s.useFilter ? `<button type="button" class="btn" id="wiz-go-scores">打分表 · ${s.useFilter === "main" ? "主图" : "详情"}</button>` : `<button type="button" class="btn" id="wiz-go-scores">对照打分表</button>`}
+              <button type="button" class="btn btn-ghost" id="wiz-restart">重新诊断</button>
+            </div>
+          </div>
+        </div>
+      `;
+      const gs = $("#wiz-go-sop");
+      if (gs) gs.addEventListener("click", () => applySopType(s.sop));
+      const gf = $("#wiz-go-figma");
+      if (gf) gf.addEventListener("click", () => go("figma"));
+      const gsc = $("#wiz-go-scores");
+      if (gsc) gsc.addEventListener("click", () => {
+        if (s.useFilter) applyUseFilter(s.useFilter);
+        go("scores");
+      });
+      $("#wiz-restart").addEventListener("click", () => {
+        wizStep = 1;
+        wizBranch = null;
+        wizResultId = null;
+        store.set("design-ai-wiz-branch", null);
+        renderWiz();
+      });
+    }
+
+    function renderWiz() {
+      const panel = $("#wiz-panel");
+      if (!panel) return;
+      setWizIndicators();
+
+      if (wizStep === 3 && wizResultId && scenarios[wizResultId]) {
+        renderWizResult(wizResultId);
+        return;
+      }
+
+      if (wizStep === 1) {
+        const st = wizTree.step1;
+        panel.innerHTML = "";
+        const q = document.createElement("div");
+        q.className = "wiz-q";
+        q.textContent = st.q;
+        const h = document.createElement("p");
+        h.className = "wiz-hint";
+        h.textContent = st.hint;
+        panel.appendChild(q);
+        panel.appendChild(h);
+        panel.appendChild(renderWizOpts(st.opts, (id) => {
+          wizBranch = id;
+          store.set("design-ai-wiz-branch", id);
+          // auto-skip step2 if only one option? still show for clarity except we can go step2
+          wizStep = 2;
+          renderWiz();
+        }));
+        return;
+      }
+
+      if (wizStep === 2) {
+        const st = wizTree.step2[wizBranch] || wizTree.step2.main;
+        panel.innerHTML = "";
+        const q = document.createElement("div");
+        q.className = "wiz-q";
+        q.textContent = st.q;
+        const h = document.createElement("p");
+        h.className = "wiz-hint";
+        h.textContent = st.hint;
+        panel.appendChild(q);
+        panel.appendChild(h);
+        // if only one option, still show but also allow single click
+        panel.appendChild(renderWizOpts(st.opts, (id) => {
+          renderWizResult(id);
+        }));
+        // 仅一项时：保留展示，同时提供「确认」避免二次选择割裂感
+        if (st.opts.length === 1) {
+          const sole = st.opts[0];
+          const bar = document.createElement("div");
+          bar.className = "btn-row";
+          bar.style.marginTop = "14px";
+          bar.innerHTML = `<button type="button" class="btn btn-primary" id="wiz-sole-next">确认：${sole.t} →</button>`;
+          panel.appendChild(bar);
+          bar.querySelector("button").addEventListener("click", () => renderWizResult(sole.id));
+        }
+        return;
+      }
+    }
+
+    $("#wiz-back").addEventListener("click", () => {
+      if (wizStep === 3) {
+        wizStep = 2;
+        wizResultId = null;
+        renderWiz();
+        return;
+      }
+      if (wizStep === 2) {
+        wizStep = 1;
+        wizBranch = null;
+        renderWiz();
+      }
+    });
+
+    // resume
+    if (wizResultId && scenarios[wizResultId]) {
+      wizStep = 3;
+    } else if (wizBranch) {
+      wizStep = 2;
+    }
+    renderWiz();
+
+    /* ---------- Figma bullets ---------- */
+    const figmaBullets = [
+      "Figma 官方导入清单不含 PSD，不具备原生保留复杂 PSD 分层结构的迁移能力。",
+      "PSD 扁平导入或第三方转换后，不能默认保留智能对象、调整层、动作、数据集、蒙版及可编辑文字等工程语义。",
+      "强项：实时协作、评论、版本历史、组件、变量、团队库。",
+      "Buzz 可承接品牌模板、受控字段、CSV/XLSX 批量生成与多物料导出——不要再写成「只能部分套版」。",
+      "Buzz 正式审批 / 未审批禁导出依赖企业套餐与管理员配置，普通评论 ≠ 发布门禁。",
+      "Figma AI 与 Weave 支持改图、换背景、扩图、产品拍摄等；≠ 语义理解 PSD，商品身份须人审。",
+      "复杂 PSD、智能对象、精细蒙版、Actions/Data Sets、像素精修、印前 → 更适合 Photoshop。",
+      "原生色域 sRGB/Display P3；单图最长边 >4096 会缩小；CMYK / 超长高分需专项验证。",
+      "运营自助可选 Buzz / Canva / 稿定，不以全员迁 Figma 为前置。",
+      "试点覆盖：字段映射、文案溢出、多尺寸、商品保真、导出尺寸与色彩、返工率、审批耗时。",
+      "试点达标前：不承诺历史全库迁移、停用 PS、或 AI 自动免审出图。"
+    ];
+    const fb = document.getElementById("figma-bullets");
+    if (fb) {
+      figmaBullets.forEach((text, i) => {
+        const el = document.createElement("div");
+        el.className = "action-item";
+        el.style.cursor = "default";
+        el.innerHTML = `<span class="prio p1">${String(i+1).padStart(2,"0")}</span>
+          <div style="font-size:13px;line-height:1.55;grid-column:span 1">${text}</div>
+          <span></span>`;
+        // fix grid - action-item expects 3 cols; simplify
+        el.style.display = "grid";
+        el.style.gridTemplateColumns = "48px 1fr";
+        el.innerHTML = `<span class="prio p1">${String(i+1).padStart(2,"0")}</span>
+          <div style="font-size:13px;line-height:1.55;color:var(--fg-secondary)">${text}</div>`;
+        fb.appendChild(el);
+      });
+    }
+    const bfs = document.getElementById("btn-figma-scenario");
+    if (bfs) bfs.addEventListener("click", () => {
+      go("wizard");
+      wizBranch = "tool";
+      store.set("design-ai-wiz-branch", "tool");
+      wizStep = 2;
+      if (typeof renderWiz === "function") setTimeout(() => renderWiz(), 100);
+    });
+
+    /* ---------- Scores ---------- */
+    const paths = [
+      { name: "模板 PSD + 智能对象 + Variables/Actions", score: 9.8, feasible: 9, fidelity: 10, ecom: 10, mature: 10, note: "主图多 SKU、详情模块批量替换的黄金主线。AI 只做上游商品/场景素材。", tag: "ship", hot: true, use: ["main","detail"] },
+      { name: "PS + AI 素材回填（大陆非 Firefly）", score: 9.0, feasible: 9, fidelity: 9, ecom: 9, mature: 9, note: "单张主图换场景/白底、详情场景块补图的大陆默认路径。", tag: "ship", hot: true, use: ["main","detail"] },
+      { name: "PS + Firefly（仅海外可用区）", score: 8.8, feasible: 8.5, fidelity: 8.5, ecom: 9, mature: 9, note: "Generative Fill 新层改主图/详情局部；大陆官方不可用。", tag: "ship", use: ["main","detail"] },
+      { name: "PS + Firefly（中国大陆）", score: 2.0, feasible: 1.5, fidelity: 8.5, ecom: 9, mature: 9, note: "Adobe 明确不对大陆提供生成式功能——主图/详情 SOP 勿写。", tag: "watch", use: ["main","detail"] },
+      { name: "Photoshop API / UXP / Actions", score: 8.5, feasible: 8, fidelity: 9, ecom: 10, mature: 8, note: "工作室级主图批量导出、详情切片流水线。", tag: "ship", use: ["main","detail"] },
+      { name: "Photopea", score: 8.5, feasible: 9, fidelity: 8, ecom: 8.5, mature: 9, note: "应急开主图/详情 PSD；非产线母版。", tag: "ship", use: ["main","detail"] },
+      { name: "稿定模板 / 批量套版", score: 7.8, feasible: 8.5, fidelity: 4, ecom: 9, mature: 8, note: "运营改主图卖点条/价；不宜当详情长图工程源。", tag: "ship", use: ["main"] },
+      { name: "Canva / Buzz 类模板", score: 7.2, feasible: 9, fidelity: 3, ecom: 8, mature: 9, note: "活动主图套版、促销物料；详情长图与复杂 PSD 不匹配。", tag: "ship", use: ["main"] },
+      { name: "Photoroom 类", score: 7.0, feasible: 8.5, fidelity: 1, ecom: 9, mature: 8.5, note: "主图上游抠图/白底/场景；输出平面图再回 PS。", tag: "ship", use: ["main","detail"] },
+      { name: "Codia PSD Online", score: 6.2, feasible: 7, fidelity: 6, ecom: 8, mature: 4.5, note: "轻量主图应急；复杂详情智能对象勿依赖。", tag: "watch", use: ["main"] },
+      { name: "Pic Copilot 类", score: 6.0, feasible: 7.5, fidelity: 1, ecom: 8.5, mature: 7, note: "电商平面素材；无主图/详情分层工程。", tag: "watch", use: ["main"] },
+      { name: "Agent 遥控 PS", score: 4.0, feasible: 4, fidelity: 5, ecom: 5, mature: 3, note: "实验；不可作主图/详情无人值守产线。", tag: "watch", use: ["main","detail"] },
+      { name: "Seede 当「改已有 PSD」", score: 4.0, feasible: 3, fidelity: 2.5, ecom: 7.5, mature: 3.5, note: "新详情草稿或可试用；非改原主图工程。", tag: "watch", use: ["detail"] },
+      { name: "「语义 AI 一键改任意 PSD」", score: 0.5, feasible: 0.5, fidelity: 1, ecom: 3, mature: 1, note: "主图/详情均不存在成熟产品。", tag: "watch", use: [] }
+    ];
+
+    let sortKey = "score";
+    let filterKey = "all";
+    let useKey = "all";
+    const scoreList = $("#score-list");
+
+    function useChipsHtml(use) {
+      const u = use || [];
+      const main = u.includes("main");
+      const detail = u.includes("detail");
+      if (!u.length) {
+        return `<div class="use-chips"><span class="use-chip off">主图</span><span class="use-chip off">详情</span><span class="use-chip">均不适用</span></div>`;
+      }
+      return `<div class="use-chips">
+        <span class="use-chip ${main ? "on-main" : "off"}">主图</span>
+        <span class="use-chip ${detail ? "on-detail" : "off"}">详情</span>
+      </div>`;
+    }
+
+    function renderScores() {
+      let list = [...paths];
+      if (filterKey === "ship") list = list.filter(p => p.tag === "ship");
+      if (filterKey === "watch") list = list.filter(p => p.tag === "watch");
+      if (useKey === "main") list = list.filter(p => (p.use || []).includes("main"));
+      if (useKey === "detail") list = list.filter(p => (p.use || []).includes("detail"));
+      list.sort((a, b) => {
+        if (sortKey === "name") return a.name.localeCompare(b.name, "zh");
+        if (sortKey === "fidelity") return b.fidelity - a.fidelity;
+        return b.score - a.score;
+      });
+      const useLabel = useKey === "main" ? "· 主图" : useKey === "detail" ? "· 详情" : "";
+      $("#score-count").textContent = `${list.length} 条路径 ${useLabel}`;
+      scoreList.innerHTML = "";
+      list.forEach((p) => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "score-row" + (p.hot ? " hot" : "");
+        row.setAttribute("aria-expanded", "false");
+        const use = p.use || [];
+        row.innerHTML = `
+          <div class="score-name">${p.name}${useChipsHtml(use)}</div>
+          <div class="score-bars" aria-hidden="true">
+            <div class="bar-track"><div class="bar-fill" data-w="${p.score * 10}"></div></div>
+          </div>
+          <div class="score-num">${p.score.toFixed(1)}</div>
+          <div class="score-detail">
+            <div>${p.note}</div>
+            <div class="dims">
+              <div class="dim"><span>可行性</span><b>${p.feasible}</b></div>
+              <div class="dim"><span>图层保真</span><b>${p.fidelity}</b></div>
+              <div class="dim"><span>电商适用</span><b>${p.ecom}</b></div>
+              <div class="dim"><span>成熟度</span><b>${p.mature}</b></div>
+            </div>
+            <div class="use-chips" style="margin-top:10px">
+              <span class="use-chip ${use.includes("main") ? "on-main" : "off"}">主图 ${use.includes("main") ? "适用" : "不适用"}</span>
+              <span class="use-chip ${use.includes("detail") ? "on-detail" : "off"}">详情 ${use.includes("detail") ? "适用" : "不适用"}</span>
+            </div>
+          </div>
+        `;
+        row.addEventListener("click", () => {
+          const open = row.getAttribute("aria-expanded") === "true";
+          $$(".score-row").forEach(r => r.setAttribute("aria-expanded", "false"));
+          row.setAttribute("aria-expanded", open ? "false" : "true");
+        });
+        scoreList.appendChild(row);
+        requestAnimationFrame(() => {
+          const fill = row.querySelector(".bar-fill");
+          if (fill) fill.style.width = fill.dataset.w + "%";
+        });
+      });
+    }
+    renderScores();
+
+    $$("[data-sort]").forEach(btn => btn.addEventListener("click", () => {
+      sortKey = btn.dataset.sort;
+      $$("[data-sort]").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+      renderScores();
+    }));
+    $$("[data-filter]").forEach(btn => btn.addEventListener("click", () => {
+      filterKey = btn.dataset.filter;
+      $$("[data-filter]").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+      renderScores();
+    }));
+    $$("[data-use]").forEach(btn => btn.addEventListener("click", () => {
+      useKey = btn.dataset.use;
+      $$("[data-use]").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+      renderScores();
+      toast(useKey === "main" ? "仅看主图适用" : useKey === "detail" ? "仅看详情适用" : "主图+详情");
+    }));
+
+    /* ---------- SOP interactive flowchart ---------- */
+    const sopData = {
+      single: {
+        label: "主图 · 改一张",
+        steps: [
+          { t: "保存主图版本", d: "主图 PSD + 线上尺寸导出基线，避免不可逆。先复制再动刀。", tag: "sys", tagLabel: "系统", hint: "防不可逆" },
+          { t: "图层三分类", d: "事实层锁定 · 可调层人工 · AI 层新建不覆盖。三类边界写清。", tag: "lock", tagLabel: "锁定", hint: "事实 / 可调 / AI" },
+          { t: "AI 只出素材", d: "大陆用国产/跨境工具出背景氛围，以智能对象贴回，不直接改商品层。", tag: "ai", tagLabel: "AI", hint: "素材回填" },
+          { t: "禁止重绘商品本体", d: "包装小字、Logo、材质、高光、色号全部禁 AI。红线不可破。", tag: "lock", tagLabel: "红线", hint: "商品身份" },
+          { t: "100% 人审", d: "轮廓、颜色、文字、Logo、阴影、倒影、边缘——逐项过。", tag: "human", tagLabel: "人审", hint: "发布门禁" },
+          { t: "导出主图交付", d: "分层 PSD + 平台尺寸成品（如 800 方图等）+ AI 修改记录，可追溯。", tag: "sys", tagLabel: "交付", hint: "可追溯" }
+        ]
+      },
+      batch: {
+        label: "主图 · 多 SKU",
+        steps: [
+          { t: "建主图母版", d: "商品智能对象、卖点/价格位、促销、Logo、法务、背景分名；一品类一主图框。", tag: "sys", tagLabel: "母版", hint: "一次建好" },
+          { t: "SKU 事实表", d: "sku_id、商品图、标题、价格、颜色、促销、语言、法务、输出名——表驱动。", tag: "sys", tagLabel: "数据", hint: "CSV / 表" },
+          { t: "AI 只做上游", d: "抠图、背景、场景、初步阴影；原商品图永久保留，不进终稿直改。", tag: "ai", tagLabel: "AI", hint: "上游工厂" },
+          { t: "变量 / 动作", d: "Variables/Data Sets；复杂用智能对象替换 + Actions/UXP 跑批量。", tag: "sys", tagLabel: "自动化", hint: "确定性" },
+          { t: "边界样先跑", d: "透明、毛发、玻璃、反光、白货、长文案、多语言、多尺寸 20–50 个。", tag: "human", tagLabel: "试跑", hint: "找边界" },
+          { t: "门禁", d: "自动查尺寸/命名；价格/Logo/商品色/法务 100% 人工核验后导出。", tag: "human", tagLabel: "门禁", hint: "人在环" }
+        ]
+      },
+      rebuild: {
+        label: "详情 · 模块流",
+        steps: [
+          { t: "旧稿只当证据", d: "详情长图历史 PSD 或导出平图只作参考，不继承脏图层当母版。", tag: "sys", tagLabel: "原则", hint: "不继承脏层" },
+          { t: "拆四模块地图", d: "固定顺序：①头图 ②卖点 ③参数 ④场景。每块独立图层组/智能对象，可单独替换。", tag: "sys", tagLabel: "结构", hint: "头图→卖点→参数→场景" },
+          { t: "① 头图模块", d: "商品主视觉 + 标题区。商品位=智能对象；标题/卖点短句可变量。AI 只可做背景，不改包装字。", tag: "lock", tagLabel: "头图", hint: "主视觉" },
+          { t: "② 卖点模块", d: "3–5 条卖点卡片/图标区。文案人写人审；AI 可出图标氛围，禁编功效承诺。", tag: "human", tagLabel: "卖点", hint: "文案人审" },
+          { t: "③ 参数模块", d: "规格表/成分/尺寸。只接受事实表导入或人工录入，禁止 AI 生成参数数字。", tag: "lock", tagLabel: "参数", hint: "禁 AI 编数" },
+          { t: "④ 场景模块", d: "使用场景/对比/氛围长图块。AI 适合出场景素材，商品抠图贴回，光影人工收。", tag: "ai", tagLabel: "场景", hint: "AI 场景" },
+          { t: "串联 + 门禁", d: "四模块拼成长图；检查衔接、字号、安全区、平台宽度；价/法务/功效 100% 人审。", tag: "human", tagLabel: "门禁", hint: "整页验收" },
+          { t: "输出详情母版", d: "干净 PSD：四组命名统一，进批量替换商品图/SKU 色；旧脏文件归档停用。", tag: "sys", tagLabel: "出口", hint: "接批量" }
+        ]
+      }
+    };
+
+    let sopType = store.get("design-ai-sop-type", "single");
+    if (!sopData[sopType]) sopType = "single";
+    let sopIndex = store.get("design-ai-sop-index", 0) | 0;
+    let sopPlayTimer = null;
+
+    function sopSteps() {
+      return sopData[sopType].steps;
+    }
+
+    function stopSopPlay() {
+      if (sopPlayTimer) {
+        clearInterval(sopPlayTimer);
+        sopPlayTimer = null;
+      }
+      const btn = $("#sop-play");
+      if (btn) btn.textContent = "自动播放";
+    }
+
+    function renderSop() {
+      const steps = sopSteps();
+      if (sopIndex >= steps.length) sopIndex = steps.length - 1;
+      if (sopIndex < 0) sopIndex = 0;
+      store.set("design-ai-sop-type", sopType);
+      store.set("design-ai-sop-index", sopIndex);
+
+      $$("[data-sop]").forEach(b => b.setAttribute("aria-selected", b.dataset.sop === sopType ? "true" : "false"));
+      const chip = $("#sop-type-chip");
+      if (chip) chip.textContent = sopData[sopType].label;
+      const modLeg = $("#sop-mod-legend");
+      if (modLeg) modLeg.hidden = sopType !== "rebuild";
+      $("#sop-progress").textContent = `${sopIndex + 1} / ${steps.length}`;
+      $("#sop-rail").style.width = ((sopIndex + 1) / steps.length * 100) + "%";
+      $("#sop-prev").disabled = sopIndex <= 0;
+      $("#sop-next").textContent = sopIndex >= steps.length - 1 ? "完成 ✓" : "下一步 →";
+
+      const canvas = $("#sop-canvas");
+      canvas.innerHTML = "";
+      const track = document.createElement("div");
+      track.className = "flow-track";
+
+      steps.forEach((s, i) => {
+        const wrap = document.createElement("div");
+        wrap.className = "flow-node-wrap";
+
+        const node = document.createElement("button");
+        node.type = "button";
+        node.className = "flow-node" + (i === sopIndex ? " active" : "") + (i < sopIndex ? " done" : "");
+        node.setAttribute("role", "listitem");
+        node.setAttribute("aria-current", i === sopIndex ? "step" : "false");
+        node.innerHTML = `
+          <div class="fn-top">
+            <span class="fn-num">${i < sopIndex ? "✓" : (i + 1)}</span>
+            <span class="fn-tag ${s.tag}">${s.tagLabel}</span>
+          </div>
+          <div class="fn-title">${s.t}</div>
+          <div class="fn-hint">${s.hint || ""}</div>
+        `;
+        node.addEventListener("click", () => {
+          stopSopPlay();
+          sopIndex = i;
+          renderSop();
+        });
+        wrap.appendChild(node);
+
+        if (i < steps.length - 1) {
+          const arrow = document.createElement("div");
+          arrow.className = "flow-arrow" + (i < sopIndex ? " lit" : "");
+          arrow.setAttribute("aria-hidden", "true");
+          wrap.appendChild(arrow);
+        }
+
+        track.appendChild(wrap);
+      });
+      canvas.appendChild(track);
+
+      // scroll active into view horizontally
+      const active = canvas.querySelector(".flow-node.active");
+      if (active) {
+        const canvasRect = canvas.getBoundingClientRect();
+        const nodeRect = active.getBoundingClientRect();
+        if (nodeRect.left < canvasRect.left + 24 || nodeRect.right > canvasRect.right - 24) {
+          active.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        }
+      }
+
+      const cur = steps[sopIndex];
+      $("#sop-detail-kicker").textContent = `STEP ${String(sopIndex + 1).padStart(2, "0")} · ${sopData[sopType].label.toUpperCase()}`;
+      $("#sop-detail-title").textContent = cur.t;
+      $("#sop-detail-desc").textContent = cur.d;
+      const tagEl = $("#sop-detail-tag");
+      tagEl.textContent = cur.tagLabel;
+      tagEl.className = "chip " + (cur.tag === "ai" ? "info" : cur.tag === "human" ? "ok" : cur.tag === "lock" ? "warn" : "");
+      $("#sop-detail-tip").textContent =
+        sopIndex >= steps.length - 1
+          ? "已走完全程 · 可切换其他 SOP 类型"
+          : "点击节点或按 → / 空格前进 · ← 后退";
+    }
+
+    function sopNext() {
+      const steps = sopSteps();
+      if (sopIndex < steps.length - 1) {
+        sopIndex += 1;
+        renderSop();
+      } else {
+        stopSopPlay();
+        toast("本套 SOP 已走完");
+      }
+    }
+    function sopPrev() {
+      if (sopIndex > 0) {
+        sopIndex -= 1;
+        renderSop();
+      }
+    }
+
+    $("#sop-next").addEventListener("click", () => { stopSopPlay(); sopNext(); });
+    $("#sop-prev").addEventListener("click", () => { stopSopPlay(); sopPrev(); });
+    $("#sop-reset").addEventListener("click", () => {
+      stopSopPlay();
+      sopIndex = 0;
+      renderSop();
+      toast("已重置到第一步");
+    });
+    $("#sop-play").addEventListener("click", () => {
+      if (sopPlayTimer) {
+        stopSopPlay();
+        toast("已暂停");
+        return;
+      }
+      $("#sop-play").textContent = "暂停";
+      if (sopIndex >= sopSteps().length - 1) sopIndex = 0;
+      renderSop();
+      sopPlayTimer = setInterval(() => {
+        if (sopIndex >= sopSteps().length - 1) {
+          stopSopPlay();
+          toast("自动播放结束");
+          return;
+        }
+        sopIndex += 1;
+        renderSop();
+      }, 1600);
+    });
+
+    $$("[data-sop]").forEach(btn => btn.addEventListener("click", () => {
+      stopSopPlay();
+      sopType = btn.dataset.sop;
+      sopIndex = 0;
+      renderSop();
+      toast("切换：" + sopData[sopType].label);
+    }));
+
+    // keyboard when sop in view
+    addEventListener("keydown", (e) => {
+      if (/input|textarea/i.test(e.target.tagName)) return;
+      const sec = document.getElementById("sop");
+      if (!sec) return;
+      const r = sec.getBoundingClientRect();
+      const inView = r.top < innerHeight * 0.7 && r.bottom > innerHeight * 0.25;
+      if (!inView) return;
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        stopSopPlay();
+        sopNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        stopSopPlay();
+        sopPrev();
+      }
+    });
+
+    renderSop();
+
+    /* ---------- Actions ---------- */
+    const actions = [
+      { id: "da1", prio: "P0", title: "1 个品类主图母版", desc: "商品智能对象位 + 卖点/价/Logo 分名 + 禁 AI 区；规范 1 页" },
+      { id: "da2", prio: "P0", title: "主图质检 checklist", desc: "商品外形/色、价、Logo、法务、平台尺寸；抽检 10 张" },
+      { id: "da3", prio: "P0", title: "AI 场景/白底回填流程", desc: "工具名单 + 智能对象贴回步骤；禁改包装字" },
+      { id: "da4", prio: "P0", title: "详情 3–5 个模块母版", desc: "头图/卖点/参数/场景分块命名；文案人写" },
+      { id: "db1", prio: "P1", title: "运营改主图字/价模板", desc: "稿定/Buzz，与主图 PS 解耦；活动期减提需" },
+      { id: "db2", prio: "P1", title: "主图/详情 PSD 缩略检索", desc: "云盘缩略图，降 15–20 分钟找文件成本" },
+      { id: "db4", prio: "P1", title: "代表主图 PSD 应急试点", desc: "Photopea/Codia 各 10 份，只验应急不替母版" },
+      { id: "dc1", prio: "P2", title: "Agent 控 PS 观察", desc: "非主图产线主路径，不排期" }
+    ];
+    const doneSet = new Set(store.get("design-ai-actions", []));
+    const actionList = $("#action-list");
+    function renderActions() {
+      actionList.innerHTML = "";
+      actions.forEach(a => {
+        const done = doneSet.has(a.id);
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "action-item" + (done ? " done" : "");
+        el.innerHTML = `
+          <span class="prio ${a.prio.toLowerCase()}">${a.prio}</span>
+          <div>
+            <div style="font-weight:500;margin-bottom:4px">${a.title}</div>
+            <div class="muted" style="font-size:13px">${a.desc}</div>
+          </div>
+          <span class="check" aria-hidden="true">${done ? "✓" : ""}</span>
+        `;
+        el.setAttribute("aria-pressed", done ? "true" : "false");
+        el.addEventListener("click", () => {
+          if (doneSet.has(a.id)) doneSet.delete(a.id); else doneSet.add(a.id);
+          store.set("design-ai-actions", [...doneSet]);
+          renderActions();
+          toast(doneSet.has(a.id) ? "已勾选" : "已取消");
+        });
+        actionList.appendChild(el);
+      });
+    }
+    renderActions();
+
+    const donts = [
+      { t: "语义级「一句话改任意 PSD」", d: "无成熟产品；风险与 ROI 差。" },
+      { t: "大陆默认依赖 Firefly", d: "Adobe 官方不对中国大陆用户提供生成式功能。" },
+      { t: "AI 批量直接改价 / 法务字交付", d: "错价与合规风险。" },
+      { t: "AI 生成丝印 / 包装小字当终稿", d: "访谈与业内均否定。" },
+      { t: "FDE 主 R 整包设计 AI 套版系统", d: "组合层已收敛：不主责。" },
+      { t: "全库历史脏 PSD 强行 AI 改造", d: "应重建母版。" },
+      { t: "未脱敏客户素材批量上公有云", d: "数据与授权风险。" }
+    ];
+    const dontList = $("#dont-list");
+    donts.forEach((x, i) => {
+      const el = document.createElement("div");
+      el.className = "myth";
+      el.innerHTML = `
+        <button type="button" class="myth-head">
+          <span class="tag myth-t">DON'T</span>
+          <span style="flex:1;font-weight:500;font-size:14px">${x.t}</span>
+        </button>
+        <div class="myth-body">${x.d}</div>
+      `;
+      el.querySelector(".myth-head").addEventListener("click", () => {
+        el.classList.toggle("open");
+      });
+      dontList.appendChild(el);
+    });
+
+    /* ---------- Myths detail ---------- */
+    const myths = [
+      { kind: "truth", t: "导出 PSD ≠ 理解原 PSD 语义", d: "很多工具把自有对象包装成新 PSD，并不等于编辑你们历史工程图层。" },
+      { kind: "myth", t: "Magic Layers 恢复了原始图层", d: "实际是重新分割与推测，被遮挡像素与智能对象语义往往丢失。" },
+      { kind: "myth", t: "Agent 能控 PS = 可无人值守交付", d: "公开基准困难任务成功率约一成多；现阶段只适合有人监督的宏操作。" },
+      { kind: "truth", t: "Firefly 大陆不可用是硬约束", d: "Adobe 官方 FAQ / 产品页均写明 Not available for users in China。" },
+      { kind: "myth", t: "CTR +54% 等营销数字可直接引用", d: "缺可复核样本与对照组时，不写入对内决策材料。" }
+    ];
+    const mythList = $("#myth-list");
+    myths.forEach(m => {
+      const el = document.createElement("div");
+      el.className = "myth";
+      el.innerHTML = `
+        <button type="button" class="myth-head">
+          <span class="tag ${m.kind === "myth" ? "myth-t" : "truth-t"}">${m.kind === "myth" ? "夸大" : "共识"}</span>
+          <span style="flex:1;font-weight:500;font-size:14px">${m.t}</span>
+        </button>
+        <div class="myth-body">${m.d}</div>
+      `;
+      el.querySelector(".myth-head").addEventListener("click", () => el.classList.toggle("open"));
+      mythList.appendChild(el);
+    });
+
+    /* ---------- Decisions ---------- */
+    const questions = [
+      {
+        id: "q1",
+        title: "主图/详情是否采纳「母版 + AI 场景素材 + 人审」为默认口径？",
+        opts: [
+          { k: "yes", label: "采纳" },
+          { k: "partial", label: "部分采纳，再议范围" },
+          { k: "no", label: "不采纳" },
+          { k: "later", label: "会后再定" }
+        ]
+      },
+      {
+        id: "q2",
+        title: "是否启动 1 个品类「主图母版 + 20 SKU」试点（设计主 R）？",
+        opts: [
+          { k: "yes", label: "启动" },
+          { k: "need_owner", label: "启动，但先定 Owner" },
+          { k: "no", label: "暂不启动" },
+          { k: "later", label: "会后再定" }
+        ]
+      },
+      {
+        id: "q3",
+        title: "运营改主图卖点/价是否单独立项（与主图 PS 工程解耦）？",
+        opts: [
+          { k: "yes", label: "单独立项讨论" },
+          { k: "bundle", label: "并入母版试点" },
+          { k: "no", label: "暂缓" },
+          { k: "later", label: "会后再定" }
+        ]
+      }
+    ];
+    const answers = store.get("design-ai-decisions", {});
+    const board = $("#decision-board");
+    function renderDecisions() {
+      board.innerHTML = "";
+      questions.forEach((q, idx) => {
+        const card = document.createElement("div");
+        card.className = "q-card";
+        card.innerHTML = `
+          <div class="card-kicker">Q${idx + 1}</div>
+          <h3>${q.title}</h3>
+          <div class="q-opts"></div>
+        `;
+        const opts = card.querySelector(".q-opts");
+        q.opts.forEach(o => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "q-opt";
+          b.textContent = o.label;
+          b.setAttribute("aria-pressed", answers[q.id] === o.k ? "true" : "false");
+          b.addEventListener("click", () => {
+            answers[q.id] = o.k;
+            store.set("design-ai-decisions", answers);
+            renderDecisions();
+            updateSummary();
+            toast("已记录 Q" + (idx + 1));
+          });
+          opts.appendChild(b);
+        });
+        board.appendChild(card);
+      });
+      updateSummary();
+    }
+    function labelOf(qid, k) {
+      const q = questions.find(x => x.id === qid);
+      return q?.opts.find(o => o.k === k)?.label || "未选";
+    }
+    function updateSummary() {
+      const el = $("#decision-summary");
+      const keys = questions.map(q => q.id);
+      const filled = keys.filter(k => answers[k]);
+      if (!filled.length) {
+        el.className = "decision-summary";
+        el.textContent = "尚未选择。完成三题后可复制摘要。";
+        return;
+      }
+      el.className = "decision-summary" + (filled.length === 3 ? " ready" : "");
+      el.innerHTML = `
+        <div style="font-weight:600;margin-bottom:8px;color:var(--fg)">拍板摘要 · ${filled.length}/3</div>
+        <div>1. 默认口径：<strong>${labelOf("q1", answers.q1)}</strong></div>
+        <div>2. 品类母版试点：<strong>${labelOf("q2", answers.q2)}</strong></div>
+        <div>3. 运营改字议题：<strong>${labelOf("q3", answers.q3)}</strong></div>
+        <div style="margin-top:8px;opacity:.75">来源：设计组 PSD×AI 调研交互页 · 2026-08-07 · 非立项决议</div>
+      `;
+    }
+    renderDecisions();
+
+    $("#btn-copy-summary").addEventListener("click", async () => {
+      const text = [
+        "【设计组 PSD×AI 拍板摘要】",
+        `1. 默认口径：${labelOf("q1", answers.q1)}`,
+        `2. 品类母版试点：${labelOf("q2", answers.q2)}`,
+        `3. 运营改字议题：${labelOf("q3", answers.q3)}`,
+        "— 2026-08-07 调研反馈 · 非立项"
+      ].join("\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("摘要已复制");
+      } catch {
+        toast("复制失败，请手动选择");
+      }
+    });
+    $("#btn-reset-decision").addEventListener("click", () => {
+      Object.keys(answers).forEach(k => delete answers[k]);
+      store.set("design-ai-decisions", {});
+      renderDecisions();
+      toast("已清空拍板");
+    });
+    $("#btn-print").addEventListener("click", () => window.print());
+
+    /* ---------- Command palette ---------- */
+    const paletteItems = [
+      ...sections.map(id => ({
+        id,
+        label: ({
+          hero: "总览",
+          pain: "痛点",
+          wizard: "路径诊断",
+          figma: "Figma 边界",
+          scores: "路径打分",
+          sop: "SOP",
+          actions: "行动",
+          myths: "共识/夸大",
+          decide: "拍板"
+        })[id],
+        run: () => go(id)
+      })),
+      ...Object.values(scenarios).map(s => ({
+        id: "sc-" + s.id,
+        label: "诊断 · " + s.title,
+        run: () => {
+          go("wizard");
+          wizResultId = s.id;
+          wizStep = 3;
+          if (typeof renderWizResult === "function") renderWizResult(s.id);
+        }
+      })),
+      { id: "theme", label: "切换明暗主题", run: () => $("#btn-theme").click() }
+    ];
+    const overlay = $("#overlay");
+    const paletteInput = $("#palette-input");
+    const paletteList = $("#palette-list");
+    let paletteActive = 0;
+    let paletteFiltered = paletteItems;
+
+    function openPalette() {
+      overlay.classList.add("open");
+      paletteInput.value = "";
+      paletteActive = 0;
+      renderPalette();
+      setTimeout(() => paletteInput.focus(), 10);
+    }
+    function closePalette() {
+      overlay.classList.remove("open");
+    }
+    function renderPalette() {
+      const q = paletteInput.value.trim().toLowerCase();
+      paletteFiltered = paletteItems.filter(i => !q || i.label.toLowerCase().includes(q));
+      if (!paletteFiltered.length) {
+        paletteList.innerHTML = `<div class="palette-empty">无匹配</div>`;
+        return;
+      }
+      paletteList.innerHTML = paletteFiltered.map((i, idx) => `
+        <button type="button" class="palette-item ${idx === paletteActive ? "active" : ""}" data-idx="${idx}">
+          <span>${i.label}</span>
+          <kbd>↵</kbd>
+        </button>
+      `).join("");
+      paletteList.querySelectorAll(".palette-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = paletteFiltered[+btn.dataset.idx];
+          closePalette();
+          item.run();
+        });
+      });
+    }
+    $("#btn-search").addEventListener("click", openPalette);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closePalette(); });
+    paletteInput.addEventListener("input", () => { paletteActive = 0; renderPalette(); });
+    paletteInput.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        paletteActive = Math.min(paletteActive + 1, paletteFiltered.length - 1);
+        renderPalette();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        paletteActive = Math.max(paletteActive - 1, 0);
+        renderPalette();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const item = paletteFiltered[paletteActive];
+        if (item) { closePalette(); item.run(); }
+      } else if (e.key === "Escape") {
+        closePalette();
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (overlay.classList.contains("open")) closePalette();
+        else openPalette();
+      }
+      if (e.key === "Escape" && overlay.classList.contains("open")) closePalette();
+      if (!meta && e.key.toLowerCase() === "t" && !/input|textarea/i.test(e.target.tagName)) {
+        $("#btn-theme").click();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

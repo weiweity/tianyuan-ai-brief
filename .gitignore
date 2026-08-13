@@ -1,6 +1,5 @@
 .DS_Store
 **/.DS_Store
-business-docs/05-供应链布局/print-pdf/*.html
 *.log
 .gstack/
 .codegraph/
@@ -9,11 +8,17 @@ SESSION-MEMORY.md
 node_modules/
 **/node_modules/
 **/__pycache__/
+**/.pytest_cache/
 *.py[cod]
+business-docs/01-客服Agent项目/20-设计-进行中/tests/codex_nfr_rescore_raw.txt
+business-docs/01-客服Agent项目/20-设计-进行中/tests/codex_nfr_rescore_r2.txt
+business-docs/01-客服Agent项目/20-设计-进行中/架构交互图-CS-AI-C11.html
+business-docs/01-客服Agent项目/20-设计-进行中/assets/
 test-results/
 **/test-results/
 playwright-report/
 /output/
+/outputs/customer-service-*/
 /sites/dist/
 tmp/
 **/tmp/

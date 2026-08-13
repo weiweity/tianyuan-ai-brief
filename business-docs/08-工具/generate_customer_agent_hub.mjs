@@ -294,11 +294,11 @@ const scheduleRows = parseTable(
   "G0 日历"
 );
 const deliveryScheduleRows = parseTable(
-  getSection(sourceById.schedule, "### 4.1 最小跨职能小队"),
+  getSection(sourceById.schedule, "### 4.1 备选 · 最小跨职能小队（当前未选）"),
   "Ddev 后交付基线"
 );
 const soloDeliveryScheduleRows = parseTable(
-  getSection(sourceById.schedule, "### 4.2 单人全栈 / FDE 基线"),
+  getSection(sourceById.schedule, "### 4.2 已选 · 单人全栈 / FDE 基线"),
   "单人全栈 / FDE 基线"
 );
 const prelaunchChecklist = parseChecklist(
@@ -315,6 +315,19 @@ const roleRows = parseTable(
 if (roleRows.length !== 13) {
   throw new Error(`RACI 具名区应为 13 个角色，当前解析到 ${roleRows.length} 个`);
 }
+const roleIsAccepted = (row) =>
+  Boolean(
+    row["人员代号"] &&
+      row["代理人代号"] &&
+      row["接受职责证据 ID"] &&
+      row["生效日期"] &&
+      ["已接受", "Pass"].includes(row["状态"])
+  );
+const acceptedRoleCount = roleRows.filter(roleIsAccepted).length;
+const roleAcceptanceSummary =
+  acceptedRoleCount === roleRows.length
+    ? `${roleRows.length} 个角色的职责接受已归档`
+    : `${acceptedRoleCount}/${roleRows.length} 个角色已接受职责，其余仍待受控确认`;
 const functionRows = parseTable(
   getSection(sourceById.delivery, "## 3. 各职能交付物"),
   "各职能交付物"
@@ -409,6 +422,15 @@ const governanceBoundaries = ddevReady
 const nextOpenGate = externalGates
   .filter((row) => row["状态"] !== "Pass")
   .sort((left, right) => left["截止"].localeCompare(right["截止"]))[0];
+const nextOpenGateDate = nextOpenGate
+  ? `${nextOpenGate["截止"]}${nextOpenGate["状态"].startsWith("逾期") ? " · 已逾期" : ""}`
+  : shortDate(g0Target);
+const openGateSummary = nextOpenGate
+  ? `当前未关闭的 G0 责任包为 ${nextOpenGate.ID}「${nextOpenGate["责任包"]}」`
+  : "当前无未关闭的 G0 责任包";
+const openGateAction = nextOpenGate
+  ? `${nextOpenGate.ID}「${nextOpenGate["责任包"]}」`
+  : "未关闭的 G0 责任包";
 let headline;
 if (ddevReady) {
   headline = {
@@ -430,7 +452,7 @@ if (ddevReady) {
   headline = {
     title: "公司批准未通过，停止进入开发门禁。",
     summary: "可整理失败原因与补证行动，不得继续声称已立项、已批准或已授权开发。",
-    nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
+    nextDate: nextOpenGateDate,
     nextTitle: "批准条件复审",
     nextOutput: "失败原因 · 补证 Owner · 复审日期",
   };
@@ -438,7 +460,7 @@ if (ddevReady) {
   headline = {
     title: "问题适配未通过，必须重定首期范围。",
     summary: "回到真实客服任务重新确认一期主问题，不为匹配现有页面保留任何预设功能。",
-    nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
+    nextDate: nextOpenGateDate,
     nextTitle: "范围重定向",
     nextOutput: "CR / DEC · 新优先级 · 新 Scope",
   };
@@ -452,11 +474,11 @@ if (ddevReady) {
   };
 } else if (designStage) {
   headline = {
-    title: "需求基线已收口，当前进入设计阶段。",
-    summary: `当前同步推进产品 / 交互、技术方案、数据 / 知识库与测试 / 灰度设计。待客服签发的平台、负责人、权威来源与基线继续作为 G0 补证项；跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
-    nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
-    nextTitle: nextOpenGate?.["责任包"] || "设计评审与 G0 补证",
-    nextOutput: nextOpenGate?.["完成证据"] || "设计包 · ADR · 评测与回退方案",
+    title: "需求分析关已通过；架构设计关 PASS-WITH-CONDITIONS，实现设计关 Pass · 文档包 Ready。",
+    summary: `技术设计第 1～3 关已收口；${roleAcceptanceSummary}。当前仍停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，代码开发未开始。${openGateSummary}，须按该责任包的完成证据收口；真实数据逐批审核和运行负例仍走后续独立门。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
+    nextDate: nextOpenGateDate,
+    nextTitle: nextOpenGate?.["责任包"] || "组织授权门 / G0 补证",
+    nextOutput: nextOpenGate?.["完成证据"] || "未关闭 G0 责任包与 Scope 检查证据",
   };
 } else if (!projectStatus.problemFitReady) {
   headline = {
@@ -470,7 +492,7 @@ if (ddevReady) {
   headline = {
           title: "问题适配已核验，继续补齐 G0 证据。",
           summary: `当前外部责任包 ${projectStatus.externalPass}/${projectStatus.externalTotal}、Scope ${projectStatus.scopePass}/${projectStatus.scopeTotal}；任一未全量通过，Ddev 均不成立。`,
-          nextDate: nextOpenGate?.["截止"] || shortDate(g0Target),
+          nextDate: nextOpenGateDate,
           nextTitle: nextOpenGate?.["责任包"] || "G0 证据补齐",
           nextOutput: nextOpenGate?.["完成证据"] || "可核验外部证据",
         };
@@ -557,7 +579,7 @@ const payload = {
       : projectPaused
         ? "按暂停或整改条件行动，不越过门禁。"
         : designStage
-          ? "按设计包和 G0 缺口推进。"
+          ? "按组织授权门与 G0 缺口推进。"
           : "先把启动会资料和责任清单准备好。",
     nowSummary: ddevReady
       ? "只做 Ddev 已授权范围；每次变更保留测试、回退与决定证据。"
@@ -566,7 +588,7 @@ const payload = {
       : projectPaused
         ? "只补解除阻塞所需证据；不得开发、付费调用、部署或承诺试点。"
         : designStage
-          ? "可做原型、ADR、数据模型、API 草案、评测与回退设计；不可开始产品功能开发。"
+          ? "实现设计关已通过；可维护现行合同、原型、评测与回退设计并补授权证据，不可开始产品功能开发。"
           : "只做能帮助需求确认和开发前总检查的工作，不提前创建产品代码。",
     actionLabel: ddevReady || projectPaused || designStage ? "当前行动" : awaitingDdev ? "Ddev 签发前" : "8 月 4 日前",
     scheduleTitle: ddevReady
@@ -576,7 +598,7 @@ const payload = {
       : projectPaused
         ? "当前处于暂停 / 整改，不进入 Ddev。"
         : designStage
-          ? `设计阶段与 G0 补证并行；${shortDate(g0Target)} 前只评审方案和授权条件，不倒推开工。`
+          ? `实现设计关已通过；当前补组织授权与 G0 证据，${shortDate(g0Target)} 前不倒推开工。`
           : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
   },
   prelaunchChecklist: ddevReady
@@ -586,7 +608,7 @@ const payload = {
     : projectPaused
       ? ["记录失败或暂停原因", "具名补证 Owner 与截止日", "冻结开发、付费调用、部署和试点承诺", "达到解除条件后重新评审"]
     : designStage
-      ? ["完成主流程、异常流程与低保真原型", "完成架构、权限、数据与回退 ADR", "冻结话术数据模型、评测集与埋点字典", "补齐平台、Owner、权威来源、基线与权限证据", "Ddev 未成立前保持产品开发未开始"]
+      ? ["维持实现设计基线与 CR 变更链无漂移", "核对 13 角色职责接受包与专项批准分账", `补齐 ${openGateAction} 与未关闭 Scope 检查的完成证据；真实数据逐批审核与运行安全负例按后续门单独取证`, "签发 G0 与 Ddev 时记录日期、范围和证据 ID", "Ddev 未成立前保持产品开发未开始"]
       : prelaunchChecklist.map(humanizeMeetingText).slice(0, 8),
   schedule: displaySchedule,
   gates: externalGates.map((row) => ({
@@ -629,7 +651,7 @@ const payload = {
       : projectPaused
         ? "可以开复审会，不能绕过暂停结论。"
         : designStage
-          ? "可以评审设计，不能宣布开工。"
+          ? "可以推进组织授权补证，不能宣布代码开工。"
           : "可以开启动会，不能宣布开工。",
     positioning: ddevReady
       ? "这是 Ddev 后推进与证据复核会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
@@ -638,7 +660,7 @@ const payload = {
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
         : designStage
-          ? "当前是设计与 G0 补证阶段：评审产品、交互、架构、数据、安全、测试和回退方案，不以方案文档代替 Ddev。"
+          ? `技术设计第 1～3 关已收口；${roleAcceptanceSummary}，当前仍是独立的第 3→4 关组织授权门。${openGateSummary}，只按其完成证据与未关闭 Scope 检查补证；真实数据逐批审核和运行负例按后续门取证，不以职责接受或文档通过代替开发授权。`
           : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
     controlsLabel: ddevReady || awaitingDdev || projectPaused || designStage ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady
@@ -648,7 +670,7 @@ const payload = {
       : projectPaused
         ? "客服 Agent 暂停 / 整改复审清单"
         : designStage
-          ? "客服 Agent 设计阶段清单"
+          ? "客服 Agent 组织授权门清单"
           : "客服 Agent 一期启动会会前准备",
     copyButton: ddevReady || awaitingDdev || projectPaused || designStage ? "复制当前清单" : "复制会前清单",
     director: [
@@ -703,6 +725,7 @@ const payload = {
       proxy: row["代理人代号"] || "待分配",
       status: row["状态"],
       needsNaming: !row["人员代号"],
+      needsAcceptance: !roleIsAccepted(row),
     })),
     functions: functionRows.map((row) => ({
       name: row["职能"],

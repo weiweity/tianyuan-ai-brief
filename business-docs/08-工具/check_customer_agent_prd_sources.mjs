@@ -27,6 +27,19 @@ const sourceDefinitions = [
   { id: "cadence", file: "06-启动会与周推进.md", label: "启动会与周推进" },
 ];
 
+const statusSourceDefinitions = [
+  {
+    id: "architecture",
+    file: "20-设计-进行中/37-架构SSOT-v1.md",
+    label: "37 架构 SSOT",
+  },
+  {
+    id: "implementation",
+    file: "20-设计-进行中/46-实现设计-开工包.md",
+    label: "46 实现设计开工包",
+  },
+];
+
 const demandMeetingDirections = Object.freeze([
   "证据型客服助理",
   "商品话术",
@@ -260,6 +273,174 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function escapeHtmlText(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(value) {
+  return escapeHtmlText(value).replace(/"/g, "&quot;");
+}
+
+function setHtmlAttribute(openTag, name, value) {
+  const encoded = escapeHtmlAttribute(value);
+  const pattern = new RegExp(`\\s${escapeRegExp(name)}=(["'])[^"']*\\1`, "i");
+  if (pattern.test(openTag)) return openTag.replace(pattern, ` ${name}="${encoded}"`);
+  return openTag.replace(/>$/, ` ${name}="${encoded}">`);
+}
+
+function deriveStatusAxisClasses(projectStatus) {
+  const confirmedByAxis = {
+    direction: projectStatus.direction === "已记录",
+    approval: projectStatus.approvalReady === true,
+    "problem-fit": projectStatus.problemFitReady === true,
+    external: projectStatus.externalPass === projectStatus.externalTotal,
+    scope: projectStatus.scopePass === projectStatus.scopeTotal,
+    resource: projectStatus.resourceBaseline !== "未选择",
+    ddev: projectStatus.ddevReady === true,
+  };
+  return Object.fromEntries(
+    Object.keys(projectStatus.statusAxes).map((axis) => {
+      if (!(axis in confirmedByAxis)) throw new Error(`PRD 状态轴缺少视觉规则：${axis}`);
+      return [axis, confirmedByAxis[axis] ? "confirmed" : "pending"];
+    })
+  );
+}
+
+function setStatusAxisClass(openTag, expectedClass) {
+  const classMatch = openTag.match(/\sclass=(["'])([^"']*)\1/i);
+  const classes = String(classMatch?.[2] || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((className) => !["confirmed", "pending"].includes(className));
+  classes.push(expectedClass);
+  return setHtmlAttribute(openTag, "class", classes.join(" "));
+}
+
+function synchronizeStatusAxes(html, projectStatus) {
+  let synchronized = html;
+  const statusAxisClasses = deriveStatusAxisClasses(projectStatus);
+  for (const [axis, copy] of Object.entries(projectStatus.statusAxes)) {
+    const pattern = new RegExp(
+      `(<([a-z][\\w:-]*)\\b[^>]*\\bdata-status-axis=["']${escapeRegExp(axis)}["'][^>]*>)([^<]*)(</\\2>)`,
+      "i"
+    );
+    const match = synchronized.match(pattern);
+    if (!match) throw new Error(`PRD 缺少状态轴：${axis}`);
+    let openTag = setStatusAxisClass(match[1], statusAxisClasses[axis]);
+    if (axis === "resource") {
+      openTag = setHtmlAttribute(openTag, "data-value", projectStatus.resourceBaseline);
+    } else if (axis === "scope") {
+      openTag = setHtmlAttribute(openTag, "data-pass", projectStatus.scopePass);
+      openTag = setHtmlAttribute(openTag, "data-total", projectStatus.scopeTotal);
+    }
+    synchronized = synchronized.replace(pattern, `${openTag}${escapeHtmlText(copy)}${match[4]}`);
+  }
+  return synchronized;
+}
+
+function replaceUnique(source, pattern, replacement, label) {
+  if (pattern.global) throw new Error(`内部错误：${label} 的替换规则不得预设 global`);
+  const matches = [...source.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))];
+  if (matches.length !== 1) {
+    throw new Error(`PRD ${label}必须唯一，实际 ${matches.length} 处`);
+  }
+  return source.replace(pattern, replacement);
+}
+
+function synchronizeDdevSummary(html, projectStatus) {
+  const ddevPattern =
+    /(<([a-z][\w:-]*)\b[^>]*\bdata-contract\s*=\s*(["'])ddev\3[^>]*>)([\s\S]*?)(<\/\2>)/gi;
+  const ddevMatches = [...html.matchAll(ddevPattern)];
+  if (ddevMatches.length !== 1) {
+    throw new Error(`PRD data-contract=ddev 必须唯一，实际 ${ddevMatches.length} 处`);
+  }
+
+  const [current, currentOpenTag, , , currentContent, closeTag] = ddevMatches[0];
+  const completed = projectStatus.externalPass + projectStatus.scopePass;
+  const total = projectStatus.externalTotal + projectStatus.scopeTotal;
+  let openTag = currentOpenTag;
+  for (const [name, value] of [
+    ["data-external-pass", projectStatus.externalPass],
+    ["data-external-total", projectStatus.externalTotal],
+    ["data-scope-pass", projectStatus.scopePass],
+    ["data-scope-total", projectStatus.scopeTotal],
+    ["data-pass", completed],
+    ["data-total", total],
+  ]) {
+    openTag = setHtmlAttribute(openTag, name, value);
+  }
+
+  let content = replaceUnique(
+    currentContent,
+    /外部责任包\s*\d+\s*\/\s*\d+/i,
+    `外部责任包 ${projectStatus.externalPass} / ${projectStatus.externalTotal}`,
+    "Ddev 外部责任包摘要"
+  );
+  content = replaceUnique(
+    content,
+    /Scope 检查\s*\d+\s*\/\s*\d+/i,
+    `Scope 检查 ${projectStatus.scopePass} / ${projectStatus.scopeTotal}`,
+    "Ddev Scope 检查摘要"
+  );
+  if (/编码从下一个可用工作日开始。?/i.test(content)) {
+    content = replaceUnique(
+      content,
+      /编码从下一个可用工作日开始。?/i,
+      "Ddev 生效当日即可进入 DEV-M0。",
+      "Ddev 生效当日开工口径"
+    );
+  } else if (!/Ddev 生效当日即可进入 DEV-M0。?/i.test(content)) {
+    throw new Error("PRD Ddev 开工口径既非可迁移旧文案，也非当日进入 DEV-M0 新文案");
+  }
+
+  let synchronized = html.replace(current, `${openTag}${content}${closeTag}`);
+  synchronized = replaceUnique(
+    synchronized,
+    /(<strong\b[^>]*>\s*当前只完成\s*)\d+\s*\/\s*\d+(\s*项准备\s*<\/strong>)/i,
+    `$1${completed} / ${total}$2`,
+    "Ddev 当前完成总计"
+  );
+  return replaceUnique(
+    synchronized,
+    /(<h3\b[^>]*>\s*已经确认\s*·\s*)\d+\s*\/\s*\d+(\s*<\/h3>)/i,
+    `$1${completed} / ${total}$2`,
+    "Ddev 已确认总计"
+  );
+}
+
+function synchronizeDdevStartCopy(html) {
+  return html
+    .replaceAll("仅开发前总检查全部通过后；编码从下一工作日开始", "仅开发前总检查全部通过且 Ddev 正式生效后；生效当日即可进入 DEV-M0")
+    .replaceAll("仍按实际检查；编码从下一工作日开始", "仍按实际检查与 Ddev 签发；生效当日即可进入 DEV-M0");
+}
+
+function synchronizeFeeSummary(html, projectStatus) {
+  const feePattern =
+    /(<details\b[^>]*\bdata-contract\s*=\s*(["'])fee\2[^>]*>)([\s\S]*?)(<\/details>)/gi;
+  const matches = [...html.matchAll(feePattern)];
+  if (matches.length !== 1) {
+    throw new Error(`PRD data-contract=fee 必须唯一，实际 ${matches.length} 处`);
+  }
+  const [current, currentOpenTag, , currentContent, closeTag] = matches[0];
+  let openTag = setHtmlAttribute(currentOpenTag, "data-path-code", projectStatus.feePathCode);
+  openTag = setHtmlAttribute(openTag, "data-selected", projectStatus.feeSelected);
+  openTag = setHtmlAttribute(
+    openTag,
+    "data-paid-authorization",
+    projectStatus.paidSpend === "新增付费授权 = 0" ? "0" : "approved-cap"
+  );
+  const content = replaceUnique(
+    currentContent,
+    /(<p>\s*<strong>当前费用：<\/strong>)[\s\S]*?(<\/p>)/i,
+    `$1${escapeHtmlText(projectStatus.feePath)}；${escapeHtmlText(projectStatus.paidSpend)}。$2`,
+    "费用路径摘要"
+  );
+  return html.replace(current, `${openTag}${content}${closeTag}`);
+}
+
 function requirePattern(text, pattern, label) {
   if (!pattern.test(text)) throw new Error(`PRD 契约缺失：${label}`);
 }
@@ -407,8 +588,12 @@ function derivePrdFacts(sourceById, projectStatus) {
     pilotMaxPeople: Number(charterPilot[2]),
     pilotWeeks,
     pilotTasksPerPersonWeek,
+    externalPass: projectStatus.externalPass,
+    externalTotal: projectStatus.externalTotal,
     scopePass: projectStatus.scopePass,
     scopeTotal: projectStatus.scopeTotal,
+    completedGateCount: projectStatus.externalPass + projectStatus.scopePass,
+    totalGateCount: projectStatus.externalTotal + projectStatus.scopeTotal,
     resourceBaseline: projectStatus.resourceBaseline,
     feePathCode: projectStatus.feePathCode,
     feePath: projectStatus.feePath,
@@ -420,6 +605,7 @@ function derivePrdFacts(sourceById, projectStatus) {
 
 function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   const { statusAxes } = projectStatus;
+  const statusAxisClasses = deriveStatusAxisClasses(projectStatus);
   for (const [axis, copy] of Object.entries(statusAxes)) {
     requirePattern(
       html,
@@ -428,6 +614,29 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
       ),
       `状态轴 ${axis} = ${copy}`
     );
+    const openingTags = [
+      ...html.matchAll(
+        new RegExp(
+          `<[a-z][\\w:-]*\\b(?=[^>]*\\bdata-status-axis=["']${escapeRegExp(axis)}["'])[^>]*>`,
+          "gi"
+        )
+      ),
+    ].map((match) => match[0]);
+    if (openingTags.length !== 1) {
+      throw new Error(`PRD 状态轴 ${axis} 必须唯一，实际 ${openingTags.length} 个`);
+    }
+    const classNames = new Set(
+      String(parseAttributes(openingTags[0]).class || "")
+        .split(/\s+/)
+        .filter(Boolean)
+    );
+    const expectedClass = statusAxisClasses[axis];
+    const unexpectedClass = expectedClass === "confirmed" ? "pending" : "confirmed";
+    if (!classNames.has(expectedClass) || classNames.has(unexpectedClass)) {
+      throw new Error(
+        `PRD 状态轴 ${axis} 视觉状态应为 ${expectedClass}，实际为 ${[...classNames].join(" ") || "缺失"}`
+      );
+    }
   }
 
   requirePattern(
@@ -490,8 +699,38 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   requireDataContract(
     contracts,
     "ddev",
-    { "data-earliest": facts.ddevEarliest, "data-state": facts.ddevState },
-    [`最早 ${facts.ddevEarliest.slice(5)}`, `Ddev ${facts.ddevState}`]
+    {
+      "data-earliest": facts.ddevEarliest,
+      "data-state": facts.ddevState,
+      "data-external-pass": facts.externalPass,
+      "data-external-total": facts.externalTotal,
+      "data-scope-pass": facts.scopePass,
+      "data-scope-total": facts.scopeTotal,
+      "data-pass": facts.completedGateCount,
+      "data-total": facts.totalGateCount,
+    },
+    [
+      `外部责任包 ${facts.externalPass} / ${facts.externalTotal}`,
+      `Scope 检查 ${facts.scopePass} / ${facts.scopeTotal}`,
+      `最早 ${facts.ddevEarliest.slice(5)}`,
+      `Ddev ${facts.ddevState}`,
+    ]
+  );
+  requirePattern(
+    html,
+    new RegExp(
+      `<strong\\b[^>]*>\\s*当前只完成\\s*${facts.completedGateCount}\\s*\\/\\s*${facts.totalGateCount}\\s*项准备\\s*<\\/strong>`,
+      "i"
+    ),
+    `Ddev 当前完成总计 ${facts.completedGateCount} / ${facts.totalGateCount}`
+  );
+  requirePattern(
+    html,
+    new RegExp(
+      `<h3\\b[^>]*>\\s*已经确认\\s*·\\s*${facts.completedGateCount}\\s*\\/\\s*${facts.totalGateCount}\\s*<\\/h3>`,
+      "i"
+    ),
+    `Ddev 已确认总计 ${facts.completedGateCount} / ${facts.totalGateCount}`
   );
   requireDataContract(
     contracts,
@@ -556,8 +795,10 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   );
 }
 
-function buildManifest(html, sources) {
-  const sourceById = Object.fromEntries(sources.map((source) => [source.id, source.text]));
+function buildManifest(html, sources, statusSources) {
+  const sourceById = Object.fromEntries(
+    [...sources, ...statusSources].map((source) => [source.id, source.text])
+  );
   const meetingAgenda = assertMeetingAgendaConsistency(sourceById.ledger, sourceById.cadence);
   const projectStatus = deriveProjectStatus({
     charter: sourceById.charter,
@@ -565,6 +806,8 @@ function buildManifest(html, sources) {
     ledger: sourceById.ledger,
     scope: sourceById.scope,
     cost: sourceById.cost,
+    architecture: sourceById.architecture,
+    implementation: sourceById.implementation,
   });
   const facts = derivePrdFacts(sourceById, projectStatus);
   const demandMeetingDate = facts.d0;
@@ -641,19 +884,52 @@ if (checkOnly === update) {
       };
     })
   );
+  const statusSourceSnapshots = await Promise.all(
+    statusSourceDefinitions.map(async (source) => {
+      const sourcePath = path.join(projectDir, source.file);
+      const snapshot = await readWorkspaceFile(sourcePath, `状态真源 ${source.file} `);
+      return {
+        ...source,
+        sourcePath,
+        text: snapshot.text,
+        mode: snapshot.mode,
+        sha256: sha256(snapshot.text),
+      };
+    })
+  );
+  const sourceById = Object.fromEntries(
+    [...sourceSnapshots, ...statusSourceSnapshots].map((source) => [source.id, source.text])
+  );
+  const projectStatus = deriveProjectStatus({
+    charter: sourceById.charter,
+    schedule: sourceById.schedule,
+    ledger: sourceById.ledger,
+    scope: sourceById.scope,
+    cost: sourceById.cost,
+    architecture: sourceById.architecture,
+    implementation: sourceById.implementation,
+  });
+  const statusSynchronizedPrd = synchronizeStatusAxes(prdSnapshot.text, projectStatus);
+  const ddevSynchronizedPrd = synchronizeDdevSummary(statusSynchronizedPrd, projectStatus);
+  const startCopySynchronizedPrd = synchronizeDdevStartCopy(ddevSynchronizedPrd);
+  const contractSynchronizedPrd = synchronizeFeeSummary(startCopySynchronizedPrd, projectStatus);
   const portable = computePortableHtml(
-    prdSnapshot.text,
+    contractSynchronizedPrd,
     hubSnapshot.text,
     sourceSnapshots
   );
-  const manifestHtml = checkOnly ? prdSnapshot.text : portable.html;
+  const manifestHtml = portable.html;
 
   // buildManifest 包含所有真源推导和 PRD 内容契约验证；它完成前不会写文件。
-  const expected = `${JSON.stringify(buildManifest(manifestHtml, sourceSnapshots), null, 2)}\n`;
+  const expected = `${JSON.stringify(
+    buildManifest(manifestHtml, sourceSnapshots, statusSourceSnapshots),
+    null,
+    2
+  )}\n`;
   if (checkOnly) {
-    if (portable.current !== portable.expected) {
+    if (prdSnapshot.text !== portable.html) {
       throw new Error(
-        "PRD 单文件交付包已过期：请先生成执行中心，再运行 check_customer_agent_prd_sources.mjs --update"
+        "PRD 状态轴、Ddev 摘要或单文件交付包已过期：请先生成执行中心，再运行 check_customer_agent_prd_sources.mjs --update"
       );
     }
     if (manifestSnapshot.text !== expected) {
@@ -671,6 +947,11 @@ if (checkOnly === update) {
       ...sourceSnapshots.map((source) => ({
         filePath: source.sourcePath,
         label: `真源 ${source.file} `,
+        before: source.text,
+      })),
+      ...statusSourceSnapshots.map((source) => ({
+        filePath: source.sourcePath,
+        label: `状态真源 ${source.file} `,
         before: source.text,
       })),
       { filePath: manifestPath, label: "PRD 真源清单 ", before: manifestSnapshot.text },

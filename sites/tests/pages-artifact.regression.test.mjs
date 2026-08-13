@@ -12,10 +12,15 @@ import {
   stagePagesArtifact,
   validateArtifactLinks,
 } from "../scripts/build-pages-artifact.mjs";
+import {
+  BASE_ARCHIVE_ROOT,
+  BASE_MANIFEST_PATH,
+  SECURITY_ARCHIVE_ROOT,
+} from "../scripts/build-security-maintenance-archive.mjs";
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(siteRoot, "..");
-const archiveRoot = path.join(repoRoot, "archive/2026-07-31-ai-project-brief");
+const archiveRoot = SECURITY_ARCHIVE_ROOT;
 const privateProjectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
 const privateProjectFiles = [
   "README.md",
@@ -109,10 +114,20 @@ test("Pages artifact 发布历史 Web 与脱敏启动会，PRD / Hub 仍降级",
 });
 
 test("7 月 31 日历史站点与归档清单完全一致", async () => {
-  const result = await assertArchivedSiteFrozen();
+  const result = await assertArchivedSiteFrozen({
+    archiveSitePath: BASE_ARCHIVE_ROOT,
+    manifestPath: BASE_MANIFEST_PATH,
+  });
   assert.equal(result.files.length, 29);
   assert.equal(result.entrySha256, "2cabb4ffdf323d4668d4dc9932080b0662c2d7137aed16e3aaa4779c7831f720");
   assert.equal(result.treeSha256, "b6a18b2ef16b335f0f9224e776b6a36299be5fb73fbbe7330ddb188282cef418");
+});
+
+test("Pages 默认发布 8 月 9 日安全维护快照", async () => {
+  const result = await assertArchivedSiteFrozen();
+  assert.equal(result.files.length, 30);
+  assert.equal(result.entrySha256, "3054840a85e506341c4229b7fbb9cc814756ef86b49ab97e53ff6db7aecc2a43");
+  assert.equal(result.treeSha256, "f3183f1cc9a2a5fbf881c962ef2ecfd0af73cc7ea77842b2797b2da199d555a2");
 });
 
 test("发布副本降级指向仓库外的 Markdown 链接，保留公开 Web 内部链接", async () => {
@@ -185,10 +200,9 @@ test("canonical replace 遇到 dist symlink 时拒绝，仓库外目录不删除
   await assert.rejects(stat(path.join(external, "pages")), { code: "ENOENT" });
 });
 
-test("Pages 由归档站点、发布工具或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
+test("Pages 由任一归档、发布工具或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
   const workflow = await readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8");
-  assert.match(workflow, /archive\/2026-07-31-ai-project-brief\/\*\*/);
-  assert.match(workflow, /archive\/archive-manifest\.json/);
+  assert.match(workflow, /archive\/\*\*/);
   assert.match(workflow, /sites\/\*\*/);
   assert.match(workflow, /business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
   assert.doesNotMatch(workflow, /customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);

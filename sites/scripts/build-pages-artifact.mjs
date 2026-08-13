@@ -20,8 +20,14 @@ import { fileURLToPath } from "node:url";
 const scriptPath = fileURLToPath(import.meta.url);
 const siteRoot = path.resolve(path.dirname(scriptPath), "..");
 const repoRoot = path.resolve(siteRoot, "..");
-const ARCHIVED_SITE_ROOT = path.join(repoRoot, "archive/2026-07-31-ai-project-brief");
-const ARCHIVE_MANIFEST_PATH = path.join(repoRoot, "archive/archive-manifest.json");
+const ARCHIVED_SITE_ROOT = path.join(
+  repoRoot,
+  "archive/2026-08-09-ai-project-brief-security-maintenance"
+);
+const ARCHIVE_MANIFEST_PATH = path.join(
+  repoRoot,
+  "archive/2026-08-09-ai-project-brief-security-maintenance.manifest.json"
+);
 const LOCAL_PRD_HREF = "../../business-docs/01-客服Agent项目/07-客服Agent立项PRD.html";
 const LOCAL_HUB_HREF = "../../business-docs/01-客服Agent项目/08-客服Agent立项执行中心.html";
 const LOCAL_MEETING_HREF = "../../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html";
@@ -225,13 +231,13 @@ export async function assertArchivedSiteFrozen({
   const entrySha256 = sha256(await readFile(path.join(archiveRoot, "index.html")));
   if (
     manifest.schemaVersion !== 1 ||
-    manifest.status !== "archived" ||
+    !["archived", "archived-security-maintenance"].includes(manifest.status) ||
     manifest.fileCount !== files.length ||
     manifest.treeSha256 !== treeSha256 ||
     manifest.entrySha256 !== entrySha256
   ) {
     throw new Error(
-      `7 月 31 日归档站点发生未授权变化：files ${files.length}/${manifest.fileCount} · tree ${treeSha256}/${manifest.treeSha256} · entry ${entrySha256}/${manifest.entrySha256}`
+      `${path.basename(archiveRoot)} 归档站点发生未授权变化：files ${files.length}/${manifest.fileCount} · tree ${treeSha256}/${manifest.treeSha256} · entry ${entrySha256}/${manifest.entrySha256}`
     );
   }
   return { files, treeSha256, entrySha256 };

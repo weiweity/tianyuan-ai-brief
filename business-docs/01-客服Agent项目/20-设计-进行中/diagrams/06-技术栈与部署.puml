@@ -1,0 +1,70 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "PingFang SC"
+title 技术栈全景 L0-L16（部署向）\n目的：大厂分层清单 · Must/Opt/Def/Ban · 见文档 43
+
+legend left
+  |= 标记 |= 含义 |
+  | Must | 一期必须 |
+  | Opt | 可选/可 Mock |
+  | Def | 二期+ |
+  | Ban | 禁止 |
+endlegend
+
+package "L0-L1 客户端" #E8F1FF {
+  rectangle "L0 入口\nWindows Electron 浮窗+Dashboard\n工单分析 + 话术优化待办\nMust" as L0
+  rectangle "L1 壳\nElectron+TS+React\n可选 SQLite 缓存非SoR" as L1
+}
+
+package "L2-L5 接入与应用" #E6F7F2 {
+  rectangle "L2 生产全程 HTTPS REST /v1\n内网不豁免 TLS" as L2
+  rectangle "L3 Node 24 LTS\nTS + Fastify API\n版本锁定" as L3
+  rectangle "L4 九端口\nauth search* events* metrics\nworkorders* content*\nannounce policy redaction" as L4
+  rectangle "L5 不变量 INV-*\n禁改写 有效期\nwork_order_* ≠ iteration_task*" as L5
+}
+
+package "L6-L9 数据" #FFF6E5 {
+  rectangle "L6 pg 驱动\n33 schema 迁移" as L6
+  database "L7 PostgreSQL 15+\nSoR ★ Must" as L7
+  rectangle "L8 PG FTS\nOpt 本地缓存\nDef 向量" as L8
+  folder "L9 共享 import 存储 Must\nObject / 跨节点 RWX\nfilesystem 仅 single_host 共卷" as L9
+}
+
+package "L10-L13 异步与外部" #FFF0E8 {
+  rectangle "L10 持久 Outbox Must\nTypeScript Import Worker Must\n内容/工单分 capability\nclaim/heartbeat/fenced finalize" as L10
+  rectangle "L11 dev/demo mock\nPilot/production 飞书 OAuth\nENV 密钥" as L11
+  cloud "L12 飞书/接待台/DeepSeek Opt\n班牛仅文件导出，无写回" as L12
+  cloud "L13 AI 在线仅排序 Opt\nCR-003离线：Embedding shadow + local student\nDeepSeek teacher另批 · GLM distill Ban\nBan 改写/代发" as L13
+}
+
+package "L14-L16 平台工程" #F0F9FF {
+  rectangle "L14 受控 profile\nsingle_host: API+worker 共卷\nmulti_instance: object/RWX" as L14
+  rectangle "L15 health + business ready\noutbox/client-sync 观测\nPG+存储+重放恢复" as L15
+  rectangle "L16 pnpm CI 合同测\nElectron 安全 + 签名\nEXPLAIN/LOAD 门" as L16
+}
+
+L0 -down-> L1
+L1 -[#000]-> L2 : 同步
+L2 -down-> L3
+L3 -down-> L4
+L4 -down-> L5
+L4 -[#000]-> L6
+L6 -[#000]-> L7
+L4 -[#000]-> L9
+L4 -[#000]-> L10 : import Must
+L4 -[#666,dashed]-> L11
+L4 -[#666,dashed]-> L12
+L4 -[#666,dashed]-> L13
+L3 -down-> L14
+L14 -down-> L15
+L15 -down-> L16
+
+note right of L7
+  Ban: SQLite 作跨用户 SoR
+  Ban: Dify/RAGFlow 主中台
+  Ban: 生产明文 HTTP
+  Ban: 多实例节点本地 upload
+  Ban: 班牛自动写回 / 两类工单混域
+  Ban: runtime→train 自动链 / 未许可teacher / G1a泄漏
+end note
+@enduml
