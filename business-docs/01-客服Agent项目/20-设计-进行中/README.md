@@ -30,7 +30,7 @@ python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-�
 |------|------|
 | 需求 | **Pass** |
 | **架构** | **PASS-WITH-CONDITIONS（含 CR-002、CR-003、CR-004、DEC-042 与扩展治理静态增量；不等于 G0、Ddev 或运行就绪）** |
-| PG15 设计前置验证 | **PASS-WITH-LIMITATION（current schema v1.12 reference DDL local preflight only）**：本机隔离 PostgreSQL 15.18 已对 SHA-256 `ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f` 完成 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、幂等与原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260810T055834+0800-ED5F9822`。immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 **NOT_CERTIFIED / NOT_IMPLEMENTED**；本地证据目录被 Git ignore，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15` |
+| PG15 设计前置验证 | **PASS-WITH-LIMITATION（current schema v1.12 reference DDL local preflight only）**：本机隔离 PostgreSQL 15.18 已对 ENG-T1 修正后的 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 完成 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、幂等与原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 **NOT_CERTIFIED / NOT_IMPLEMENTED**；本地证据目录被 Git ignore，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15` |
 | **实现设计** | **Pass · 文档包 Ready（技术设计已收口；不等于开发授权）** |
 | **组织授权门（不计入八关）** | **Current · G0 未签 / Ddev 未授权；费用路径及 G0-14 WBS / 容量 / 成本条件已归档；外部责任包 13/14、Scope 14/15，仅 G0-09 / Scope #9 开放** |
 | 代码开发 / 单元测试 / 系统测试 / 发布 / 运维 | **Not started** |

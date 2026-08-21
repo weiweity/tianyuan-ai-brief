@@ -150,12 +150,13 @@ const denialAuditFunction = sql.match(
 assert.ok(denialAuditTable && denialAuditFunction, "independent source denial audit contract missing");
 assert.match(denialAuditTable, /denial_key\s+TEXT PRIMARY KEY/);
 assert.match(denialAuditTable, /actor_subject_hash/);
+assert.match(denialAuditTable, /'announce_ack'/);
 assert.doesNotMatch(denialAuditTable, /query_text|internal_url|stack_trace/);
 assert.match(denialAuditFunction, /ON CONFLICT \(denial_key\) DO NOTHING/);
 assert.match(denialAuditFunction, /IDEMPOTENCY_BODY_MISMATCH/);
 assert.match(sql, /after the denied business transaction[\s\S]*?fresh transaction\/connection/);
 assert.doesNotMatch(sql, /GRANT EXECUTE ON FUNCTION public\.record_source_denial_audit\([^;]*TO app_/);
-assert.match(sql, /record_runtime_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_import','search','announce_current','announce_snapshot'\)/);
+assert.match(sql, /record_runtime_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_import','search','announce_current','announce_snapshot','announce_ack'\)/);
 assert.match(sql, /record_admin_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_publish','content_rollback','source_suspend'\)/);
 assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.record_runtime_source_denial_audit\([^;]*TO app_runtime/);
 assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.record_admin_source_denial_audit\([^;]*TO app_content_admin/);
@@ -742,7 +743,7 @@ assert.match(openapi, /runtimeFunction: record_runtime_source_denial_audit/);
 assert.match(openapi, /adminFunction: record_admin_source_denial_audit/);
 assert.equal(
   (openapi.match(/function: record_runtime_source_denial_audit/g) ?? []).length,
-  4,
+  5,
   "runtime denial wrapper endpoint mapping drifted",
 );
 assert.equal(
@@ -753,6 +754,7 @@ assert.equal(
 assert.doesNotMatch(openapi, new RegExp("source_version_id" + "_hash"));
 assert.match(openapi, /allowed-fields:[\s\S]*?- source_version_id[\s\S]*?- source_binding_hash/);
 assert.match(openapi, /operationId: searchScripts[\s\S]*?x-source-denial-audit-required: true/);
+assert.match(openapi, /\/v1\/announce\/ack:[\s\S]*?operation: announce_ack[\s\S]*?function: record_runtime_source_denial_audit[\s\S]*?x-source-denial-audit-required: true/);
 assert.match(openapi, /source_binding_hash/);
 assert.match(openapi, /source_version_id/);
 assert.match(openapi, /x-search-telemetry-transaction:[\s\S]*?rollbackOn: \[SOURCE_GATE_NOT_READY\]/);
@@ -767,8 +769,8 @@ assert.match(openapi, /name: X-Snapshot-Lease[\s\S]*?required: true/);
 assert.match(openapi, /ACK[\s\S]*?不得 UPDATE `snapshot_offline_leases`[\s\S]*?不得续期/);
 assert.match(openapi, /reason: OFFLINE_LEASE_EXPIRED/);
 assert.match(openapi, /never-write-reasons:[\s\S]*?- CONTENT_CONTRACT_INVALID[\s\S]*?- GOVERNANCE_HASH_MISMATCH[\s\S]*?- QUALITY_GATE_NOT_PASSED/);
-assert.match(openapi, /source-denial-audits-write: forbidden/);
-assert.match(openapi, /x-source-denial-audit-required: false/);
+assert.match(openapi, /source-denial-audits-write: required/);
+assert.match(openapi, /x-source-denial-audit-required: true/);
 
 // Mutation tests prove the guards reject concrete unsafe regressions, instead of only matching the
 // current happy-path text. Keep mutations local and deterministic so a guard cannot pass vacuously.
@@ -1115,15 +1117,15 @@ expectRejectedMutation(
 );
 
 const hasWorkloadBoundDenialAudit = (candidate) =>
-  /record_runtime_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_import','search','announce_current','announce_snapshot'\)/.test(candidate) &&
+  /record_runtime_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_import','search','announce_current','announce_snapshot','announce_ack'\)/.test(candidate) &&
   /record_admin_source_denial_audit\([\s\S]*?p_operation NOT IN \('content_publish','content_rollback','source_suspend'\)/.test(candidate) &&
   !/GRANT EXECUTE ON FUNCTION public\.record_source_denial_audit\([^;]*TO app_/.test(candidate);
 expectRejectedMutation(
   "runtime claims publish denial",
   sql,
   sql.replace(
-    "('content_import','search','announce_current','announce_snapshot')",
-    "('content_import','content_publish','search','announce_current','announce_snapshot')",
+    "('content_import','search','announce_current','announce_snapshot','announce_ack')",
+    "('content_import','content_publish','search','announce_current','announce_snapshot','announce_ack')",
   ),
   hasWorkloadBoundDenialAudit,
 );

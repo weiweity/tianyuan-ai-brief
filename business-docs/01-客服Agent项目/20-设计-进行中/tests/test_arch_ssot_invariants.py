@@ -43,10 +43,10 @@ IMPORT_ISSUE_CODES = {
 }
 
 SCHEMA_VERSION = "schema.v1.12"
-SCHEMA_SHA256 = "ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f"
+SCHEMA_SHA256 = "47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801"
 OPENAPI_VERSION = "1.11.0"
-OPENAPI_SHA256 = "0dba20e22a7bba5a5bf93ad7383e42be97b0da3f7b5953860ae226823af016be"
-GRAMMAR_SHA256 = "30d4aff357f567bced786d89c684c13b990ba878cc79aebb328a2c3d46b695a1"
+OPENAPI_SHA256 = "06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4"
+GRAMMAR_SHA256 = "b0465b4e0af917eab4064339a4fda292c767db075ea8138f97ebf5156a16680f"
 GRAMMAR_SQL_STATEMENTS = 513
 GRAMMAR_FUNCTION_BODIES = 89
 GRAMMAR_DEC042_GUARDS = 20
@@ -836,6 +836,17 @@ def test_cr_002_search_copy_machine_contract_invariants() -> None:
     assert "CLIENT_ACTION_TIMEOUT_MS" in terminal
     assert "不表示已发送、正确或客户已接受" in terminal
 
+    for schema_start, schema_end in (
+        ("    AdoptedEventRequest:", "    NonAdoptedEventRequest:"),
+        ("    NonAdoptedEventRequest:", "    AdoptionEventResponse:"),
+        ("    EscalationRequest:", "    EscalationResponse:"),
+    ):
+        request_schema = _between(spec, schema_start, schema_end)
+        assert "type: object" in request_schema
+        assert "additionalProperties: false" in request_schema, (
+            f"public request schema must reject unknown/sensitive fields: {schema_start.strip()}"
+        )
+
     for route in (
         "/v1/events/escalate",
         "/v1/notices/current",
@@ -980,7 +991,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     assert "**v1.3-cr004**" in dashboard
     assert "产品契约 v1.6" in product
     assert "当前 v1.16" in ssot
-    assert "**v1.15 DEC-042" in contract
+    assert "**v1.16 ENG-T1" in contract
     assert "NFR 冻结包 v1.13" in nfr
     assert "2026-08-13 · v1.20" in implementation
     assert SCHEMA_VERSION in raw_ddl
@@ -1078,9 +1089,11 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert field in denial_table
     for forbidden in ("query_text", "internal_url", "stack_trace"):
         assert forbidden not in denial_table
+    assert "'announce_ack'" in denial_table
     denial_fn = _sql_function(ddl, "record_source_denial_audit")
     assert "ON CONFLICT (denial_key) DO NOTHING" in denial_fn
     assert "IDEMPOTENCY_BODY_MISMATCH" in denial_fn
+    assert "'announce_ack'" in denial_fn
     denial_contract = _between(spec, "  x-source-denial-audit:", "  x-offline-snapshot-lease:")
     for phrase in ("transaction: independent-after-rollback", "commitBeforeHttpResponse: true", "forbiddenFields", "record_source_denial_audit"):
         assert phrase in denial_contract
@@ -1089,7 +1102,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     # and every public endpoint must point at the wrapper for its own workload role.
     runtime_denial_fn = _sql_function(ddl, "record_runtime_source_denial_audit")
     admin_denial_fn = _sql_function(ddl, "record_admin_source_denial_audit")
-    assert "p_operation NOT IN ('content_import','search','announce_current','announce_snapshot')" in runtime_denial_fn
+    assert "p_operation NOT IN ('content_import','search','announce_current','announce_snapshot','announce_ack')" in runtime_denial_fn
     assert "p_operation NOT IN ('content_publish','content_rollback','source_suspend')" in admin_denial_fn
     assert "RETURN public.record_source_denial_audit(" in runtime_denial_fn
     assert "RETURN public.record_source_denial_audit(" in admin_denial_fn
@@ -1127,6 +1140,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         ("  /v1/content/import:", "  /v1/content/import/{import_batch_id}:", "content_import"),
         ("  /v1/announce/current:", "  /v1/announce/snapshot:", "announce_current"),
         ("  /v1/announce/snapshot:", "  /v1/announce/ack:", "announce_snapshot"),
+        ("  /v1/announce/ack:", "  /v1/policy:", "announce_ack"),
     ):
         route = _between(spec, route_start, route_end)
         assert f"operation: {operation}" in route
@@ -1205,6 +1219,14 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_route
     assert "ack_client_release(client_id,user_id,release_id,release_seq," in ack_route
     assert "offline_lease_token)" in ack_route
+    for phrase in (
+        "operation: announce_ack",
+        "storage: source_denial_audits",
+        "function: record_runtime_source_denial_audit",
+        "source-denial-audits-write: required",
+        "x-source-denial-audit-required: true",
+    ):
+        assert phrase in ack_route
     announce_contract = _between(contract, "## 6. Port: `announce` + 客户端同步", "## 7. Port: `policy` / `redaction`")
     for phrase in (
         "read_current_announcement_with_lease(client_id,user_id,ttl_seconds)",
@@ -1975,7 +1997,7 @@ def test_waterfall_gate_status() -> None:
         SCHEMA_SHA256,
         "本机隔离 PostgreSQL 15.18",
         "PASS-WITH-LIMITATION",
-        "EVD-PG15-LOCAL-PREFLIGHT-20260810T055834+0800-ED5F9822",
+        "EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795",
     )
     _assert_same_line(
         t,
@@ -2200,7 +2222,7 @@ def test_waterfall_gate_status() -> None:
         "本机隔离 PG15.18",
         "静态设计预检",
         "PASS-WITH-LIMITATION",
-        "EVD-PG15-LOCAL-PREFLIGHT-20260810T055834+0800-ED5F9822",
+        "EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795",
         "不得写成 migration/runtime 证据",
     )
     assert "Ddev 证据存在" in ready and "- [ ] Ddev 证据存在" in ready
@@ -2500,7 +2522,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
         "OpenAPI 1.11.0",
         OPENAPI_SHA256,
         "PASS-WITH-LIMITATION",
-        "EVD-PG15-LOCAL-PREFLIGHT-20260810T055834+0800-ED5F9822",
+        "EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795",
     )
     _assert_same_line(t, "旧 c1e74c EVD", "仅为历史证据", "不能外推到当前 schema")
     _assert_same_line(

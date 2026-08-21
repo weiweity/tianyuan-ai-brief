@@ -10,17 +10,18 @@
 > **CR-002 增量：** [`47-CR-002搜索复制证据闭环.md`](47-CR-002搜索复制证据闭环.md)；只扩展既有 search / events / Dashboard，不替换本文，不影响 CR-001 `work_order_*`。
 > **CR-003 预埋：** [`49-CR-003一期训练预埋与多教师蒸馏.md`](49-CR-003一期训练预埋与多教师蒸馏.md) / [`50-CR-003测试计划.md`](50-CR-003测试计划.md) / [`training-artifacts/`](training-artifacts/)；一期只冻结离线合同、空模板与纯合成 fixture，不新增 public 训练 API，不授权真实数据、teacher、训练或付费。
 > **CR-004 来源治理：** 每个 release 恰好绑定售前/活动/售后/产品四域不可变来源版本；canonical/current 由 `content_current` + release bindings 唯一推导；来源暂停永久只追加，全链 fail-closed；人读合同与 33/OpenAPI 静态机器合同由同一 CR-004 changeset 对齐，迁移、生成类型、服务端/客户端代码与动态运行证据仍未实现。
-> **DEC-042 内容资产治理：** 稳定 Question 身份/版本、显式平台与商品范围、版本化 intent taxonomy、风险审核、受控占位符、受限治理快照 hash 与分层质量门的人读合同，已与 schema v1.12（SHA-256 `ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f`）/ OpenAPI 1.11.0（SHA-256 `0dba20e22a7bba5a5bf93ad7383e42be97b0da3f7b5953860ae226823af016be`）静态机器合同同批对齐；迁移、生成类型、代码与动态证据仍待 Ddev 后实现，不改变 G0、项目 Scope 或 Ddev 状态。
+> **ENG-T1 合同修正：** `announce_ack` 的来源门/离线租约拒绝与 current/snapshot 一致，主事务回滚后必须经 runtime wrapper 独立幂等提交最小 source denial audit；adoption/escalation 公共请求为 closed schema。该修正只闭合静态合同冲突，不授权 runtime、Ddev、部署或 Pilot。
+> **DEC-042 内容资产治理：** 稳定 Question 身份/版本、显式平台与商品范围、版本化 intent taxonomy、风险审核、受控占位符、受限治理快照 hash 与分层质量门的人读合同，已与 schema v1.12（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）静态机器合同同批对齐；迁移、生成类型、代码与动态证据仍待 Ddev 后实现，不改变 G0、项目 Scope 或 Ddev 状态。
 
 ---
 
 ### 证据等级：为什么叫“静态设计通过”
 
-“静态”修饰的是**架构关的证据等级**，不是架构完成度，也不表示架构关只能停在文档。当前 SSOT、API、DDL、NFR、架构图与关卡语义已经一致，所以**架构设计关已通过；实现设计关也已完成文档级收口**。当前下一关是独立的组织授权门，不是代码开发。2026-08-07 的本机 PostgreSQL 15.18 结果仅覆盖旧 schema 快照。2026-08-10 已对当前 `schema.v1.12` clean-install reference DDL 按 SHA-256 `ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f` 重跑本地隔离 PostgreSQL 15.18 预检，结果为 `PASS-WITH-LIMITATION`。该结果只证明 reference DDL 前置形状，不能写成迁移、应用运行态、托管库或生产态通过。
+“静态”修饰的是**架构关的证据等级**，不是架构完成度，也不表示架构关只能停在文档。当前 SSOT、API、DDL、NFR、架构图与关卡语义已经一致，所以**架构设计关已通过；实现设计关也已完成文档级收口**。当前下一关是独立的组织授权门，不是代码开发。2026-08-07 与 2026-08-10 的本机 PostgreSQL 15.18 结果只覆盖各自旧 hash。2026-08-21 已对 ENG-T1 修正后的当前 `schema.v1.12` clean-install reference DDL 按 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 重跑本地隔离 PostgreSQL 15.18 预检，结果为 `PASS-WITH-LIMITATION`，证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。该结果只证明 reference DDL 前置形状与 ACK wrapper 合同，不能写成迁移、应用运行态、托管库或生产态通过。
 
 | 已经通过 | 仍须在后续关卡补证 |
 |----------|--------------------|
-| 架构边界、九端口、数据模型、状态机、NFR 目标、图文与静态合同门禁；当前 `schema.v1.12` clean-install reference DDL（SHA-256 `ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f`）已在本机隔离 PG15.18 通过 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、完整幂等重跑与 COMMIT 前故障原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260810T055834+0800-ED5F9822`，旧 SHA 结果仅作历史追溯 | **仍待补证：** immutable migration / N/N-1 / application runtime / managed PostgreSQL / backup-restore / concurrency-deadlock / production；真飞书 OAuth/RBAC；API/worker/E2E；压测与故障注入；RPO/RTO；Windows Electron 真机与生产安全。这些仍 `NOT_CERTIFIED / NOT_IMPLEMENTED` |
+| 架构边界、九端口、数据模型、状态机、NFR 目标、图文与静态合同门禁；当前 `schema.v1.12` clean-install reference DDL（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）已在本机隔离 PG15.18 通过 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、完整幂等重跑与 COMMIT 前故障原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`，旧 SHA 结果仅作历史追溯 | **仍待补证：** immutable migration / N/N-1 / application runtime / managed PostgreSQL / backup-restore / concurrency-deadlock / production；真飞书 OAuth/RBAC；API/worker/E2E；压测与故障注入；RPO/RTO；Windows Electron 真机与生产安全。这些仍 `NOT_CERTIFIED / NOT_IMPLEMENTED` |
 
 因此当前结论是：**Architecture Design = PASS-WITH-CONDITIONS；Implementation Design = Pass · Document Package Ready；Organization Gate / G0 / Ddev = NOT AUTHORIZED；Code Development = NOT STARTED；Current Schema v1.12 Reference DDL Local PG15 Preflight = PASS-WITH-LIMITATION；Immutable Migration / N/N-1 / Application Runtime / Managed PG / Backup-Restore / Concurrency-Deadlock / Production = NOT_CERTIFIED / NOT_IMPLEMENTED；Runtime / Production Readiness = NO-GO。** 预检证据保存在本地 Git ignored 目录，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15`。Ddev 未授权前不得用当前结论启动业务编码、部署、试点或付费调用。
 

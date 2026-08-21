@@ -119,9 +119,9 @@ try {
     );
     assert.match(
       evidenceText,
-      /ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f/
+      /47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801/
     );
-    assert.match(evidenceText, /0dba20e22a7bba5a5bf93ad7383e42be97b0da3f7b5953860ae226823af016be/);
+    assert.match(evidenceText, /06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4/);
     assert.match(evidenceText, /513 statements/);
     assert.match(evidenceText, /89 function bodies/);
     assert.match(evidenceText, /20 guards/);

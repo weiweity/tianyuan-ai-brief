@@ -1,12 +1,12 @@
 # 39 · API 合同与发布状态机 v1
 
-> **状态：** DESIGN ALIGNED · PENDING G0 / Ddev · 2026-08-10 · **v1.15 DEC-042 postfix 安全收口**\
+> **状态：** DESIGN ALIGNED · PENDING G0 / Ddev · 2026-08-21 · **v1.16 ENG-T1 合同冲突修正**\
 > **权威：** 服从 [`37-架构SSOT-v1.md`](37-架构SSOT-v1.md) · NFR [`41`](41-NFR扩展并发与防改崩.md)\
 > **机器合同：** [`openapi.v1.yaml`](openapi.v1.yaml) 是 HTTP 路径、schema、状态码与 error enum 的优先真源；本文是人读语义、事务、权限与不变量补充\
 > **范围：** 一期最小端口语义 + 发布状态机；不得再将本文声称为“等价 OpenAPI”\
 > **实现语言：** TypeScript / Node Application API\
 > **CR-004 机器边界：** 本文人读事务/失败语义与 33/`openapi.v1.yaml` 静态机器合同由同一 CR-004 changeset 对齐；迁移、生成类型、服务端/客户端代码与动态运行证据仍未实现。因此四域来源绑定、永久暂停、拒绝审计与离线租约不得被描述为运行时已拦截。
-> **DEC-042 边界：** 稳定 Question 身份/版本、显式 scope、taxonomy、风险审核、占位符与质量门的人读事务合同，已与 schema v1.12（SHA-256 `ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f`）/ OpenAPI 1.11.0（SHA-256 `0dba20e22a7bba5a5bf93ad7383e42be97b0da3f7b5953860ae226823af016be`）静态机器合同同批对齐；迁移、生成类型、服务端/客户端代码和动态测试仍未实现。对应路由不得仅凭静态合同宣称可用，G0 / Scope / Ddev 不变。
+> **DEC-042 边界 / ENG-T1 修正：** 稳定 Question 身份/版本、显式 scope、taxonomy、风险审核、占位符与质量门的人读事务合同，以及 ACK 来源/租约拒绝独立审计与 public request closed schema，已与 schema v1.12（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）静态机器合同同批对齐；迁移、生成类型、服务端/客户端代码和动态测试仍未实现。对应路由不得仅凭静态合同宣称可用，G0 / Scope / Ddev 不变。
 
 `37` 决定产品红线；`openapi.v1.yaml` 决定线上 wire shape；本文决定机器 schema 难以表达的顺序、事务和强制语义。三者冲突时停止对应路由，同一 PR 修正后才可继续；禁止在运行时实现中自行选一份。
 
@@ -741,3 +741,4 @@ published ──► superseded（被更新的 current 取代）
 | **v1.13** | **2026-08-10** | 冻结 DEC-042 人读内容治理合同并与 schema v1.10 / OpenAPI 1.9.0 静态机器合同同批对齐：稳定 Question 身份/版本、显式平台与商品范围及 search product context、版本化 taxonomy、高风险最小枚举与双审、受控占位符、JCS 治理 hash 和分层质量门；运行实现/动态证据待 Ddev 后完成，G0 / Scope / Ddev 不变 |
 | **v1.14** | **2026-08-10** | 对齐 DEC-042 静态机器事务边界：运行检索唯一调用 `search_recommendable_scripts`；Question 增 origin key version 与不可变复合版本；normalized row 不接审核/质量结论，内容审核与质量 plan/evidence 分别经受限 append-only 函数写入，finalizer 解析固定角色与双审异人；public wire 不扩审核主体 ID，运行/迁移/动态证据仍待 Ddev |
 | **v1.15** | **2026-08-10** | Postfix 安全收口：总体 manifest 身份绑定、fixed ASCII-key JCS、from_log 来源资产单向退役、完整 snapshot + 客户端半开有效期、source denial reason 分账及 public closed mapper；Gate / G0 / Scope / Ddev 不变 |
+| **v1.16** | **2026-08-21** | ENG-T1 修正：`announce_ack` 的来源门/离线租约拒绝纳入 runtime source-denial wrapper 与独立幂等审计；adoption/escalation 公共请求封闭未知字段；重算双哈希并重跑静态门与本机隔离 PG15 预检。只闭合合同冲突，不授权 runtime、G0、Ddev、部署或 Pilot |

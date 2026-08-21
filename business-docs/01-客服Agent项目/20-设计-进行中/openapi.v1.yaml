@@ -51,6 +51,7 @@ info:
       - search
       - announce_current
       - announce_snapshot
+      - announce_ack
       - source_suspend
     applies-to-reasons:
       - SOURCE_NOT_REGISTERED
@@ -89,7 +90,7 @@ info:
       先回滚被拒业务事务，再用新连接/新事务调用对应 workload 包装函数并 commit，最后才返回
       HTTP denial。禁止在注定回滚的主事务中写审计；同 denial_key 异体必须 409。
       `record_source_denial_audit` 仅是内部存储 writer，不授予应用角色；
-      content_import/search/current/snapshot 只能调用 `record_runtime_source_denial_audit`，
+      content_import/search/current/snapshot/ack 只能调用 `record_runtime_source_denial_audit`，
       publish/rollback/source_suspend 只能调用 `record_admin_source_denial_audit`。
       仅当 operation 与 reason 同时命中上述 SQL 白名单，且端点
       `x-rejection-audit.applies-to-reasons` 显式包含该 reason 时，
@@ -1719,20 +1720,25 @@ paths:
         last_seen_release_seq；client_id 被另一用户占用时返回 403。ACK 必须验证当次
         token 与 client/user/release/source_binding_hash 及 expires_at，记录 token hash；
         路由只调用 `ack_client_release(client_id,user_id,release_id,release_seq,
-        offline_lease_token)`；不得 UPDATE `snapshot_offline_leases`，不得续期。
+        offline_lease_token)`；不得 UPDATE `snapshot_offline_leases`，不得续期。来源门或
+        离线租约拒绝必须先回滚 ACK 业务事务，再用独立幂等短事务调用
+        `record_runtime_source_denial_audit` 并 commit，最后才返回 HTTP denial；ACK 的
+        其他内容错误只走标准受控 error audit。
       x-error-reasons:
         '403': [OFFLINE_LEASE_INVALID, OFFLINE_LEASE_EXPIRED, OFFLINE_LEASE_BINDING_MISMATCH, SOURCE_GATE_NOT_READY]
       x-rejection-audit:
         operation: announce_ack
-        storage: standard-controlled-error-audit
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
         applies-to-reasons:
           - OFFLINE_LEASE_INVALID
           - OFFLINE_LEASE_EXPIRED
           - OFFLINE_LEASE_BINDING_MISMATCH
           - SOURCE_GATE_NOT_READY
-        source-denial-audits-write: forbidden
-        rationale: announce_ack 不在内部 record_source_denial_audit 及两个 workload 包装函数的 SQL operation 白名单中。
-      x-source-denial-audit-required: false
+        source-denial-audits-write: required
+        excluded-reasons-standard-audit: all-non-source-or-lease-reasons
+        rationale: 仅来源门或离线租约 reason 写最小 source denial audit；其他 ACK 错误继续走标准受控 error audit。
+      x-source-denial-audit-required: true
       parameters:
         - $ref: '#/components/parameters/OptionalIdempotencyKey'
       requestBody:
@@ -3270,6 +3276,7 @@ components:
           timeout: '#/components/schemas/NonAdoptedEventRequest'
     AdoptedEventRequest:
       type: object
+      additionalProperties: false
       required: [query_id, outcome, chosen_rank, chosen_script_id, push_method]
       properties:
         query_id:
@@ -3289,6 +3296,7 @@ components:
           enum: [clipboard, autofill]
     NonAdoptedEventRequest:
       type: object
+      additionalProperties: false
       required: [query_id, outcome, chosen_rank, chosen_script_id, push_method]
       properties:
         query_id:
@@ -3317,6 +3325,7 @@ components:
       enum: [open_feishu, copy_contact, other]
     EscalationRequest:
       type: object
+      additionalProperties: false
       required: [query_id, action]
       properties:
         query_id:

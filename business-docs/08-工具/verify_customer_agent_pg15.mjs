@@ -19,8 +19,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const EXPECTED_SCHEMA_SHA256 =
-  "ed5f982248e38aead3b23a7ce235cedf7e7e15266df9fade146e932de648fd7f";
-const VERIFIER_VERSION = "1.1.0";
+  "47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801";
+const VERIFIER_VERSION = "1.2.0";
 const REQUIRED_SCHEMA_COMMENT_FRAGMENTS = [
   "reference DDL local-preflight status is recorded only by external EVD (not this DDL)",
   "immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED",
@@ -86,6 +86,8 @@ const REQUIRED_FUNCTIONS = [
   "validate_snapshot_offline_lease",
   "read_snapshot_page",
   "record_source_denial_audit",
+  "record_runtime_source_denial_audit",
+  "record_admin_source_denial_audit",
   "record_content_review_decision",
   "freeze_content_quality_review_plan",
   "record_content_quality_review_evidence",
@@ -579,6 +581,37 @@ async function main() {
       throw new Error("ACL 副作用/最小读边界校验失败。");
     }
 
+    const announceAckDenialKey = `sda_${"a".repeat(64)}`;
+    const announceAckActorHash = "b".repeat(64);
+    const announceAckDiagnosticId = `diag_${"c".repeat(32)}`;
+    const announceAckAuditCall = `SELECT public.record_runtime_source_denial_audit(
+      ${shellQuoteSql(announceAckDenialKey)},'announce_ack','OFFLINE_LEASE_INVALID',
+      ${shellQuoteSql(announceAckActorHash)},'hmac-v1','agent',NULL,NULL,NULL,
+      ${shellQuoteSql(announceAckDiagnosticId)}
+    );`;
+    await runSql(`BEGIN; SET ROLE app_runtime; ${announceAckAuditCall} COMMIT;`);
+    await runSql(`BEGIN; SET ROLE app_runtime; ${announceAckAuditCall} COMMIT;`);
+    const announceAckAuditRows = Number(
+      await queryScalar(
+        `SELECT count(*) FROM public.source_denial_audits
+          WHERE denial_key=${shellQuoteSql(announceAckDenialKey)}
+            AND operation='announce_ack'
+            AND reason_code='OFFLINE_LEASE_INVALID';`,
+      ),
+    );
+    if (announceAckAuditRows !== 1) {
+      throw new Error("announce_ack 来源/租约拒绝审计未通过 runtime wrapper 幂等持久化。");
+    }
+    const announceAckAuditMismatch = await expectSqlState(
+      "announce-ack-denial-audit-idempotency-body-mismatch",
+      `BEGIN; SET ROLE app_runtime; SELECT public.record_runtime_source_denial_audit(
+        ${shellQuoteSql(announceAckDenialKey)},'announce_ack','OFFLINE_LEASE_EXPIRED',
+        ${shellQuoteSql(announceAckActorHash)},'hmac-v1','agent',NULL,NULL,NULL,
+        ${shellQuoteSql(announceAckDiagnosticId)}
+      ); COMMIT;`,
+      "ZA003",
+    );
+
     const constraintTests = await Promise.all([
       expectSqlState(
         "invalid-app-user-role",
@@ -682,6 +715,8 @@ async function main() {
       membershipCount,
       aclTests,
       aclSideEffects,
+      announceAckAuditRows,
+      announceAckAuditMismatch,
       constraintTests,
       sentinelRows,
       dangerousFlags,
@@ -713,6 +748,7 @@ async function main() {
   const roundName = `round-local-${stamp}-${randomBytes(3).toString("hex")}`;
   const finalDir = path.join(evidenceRoot, roundName);
   const stagingDir = `${finalDir}.partial`;
+  await mkdir(evidenceRoot, { recursive: true, mode: 0o700 });
   await mkdir(stagingDir, { recursive: false, mode: 0o700 });
 
   const checks = [
@@ -724,6 +760,7 @@ async function main() {
     { id: "object-extension-inventory", status: "PASS" },
     { id: "capability-role-safety", status: "PASS" },
     { id: "acl-negative-paths", status: "PASS", cases: successfulReport.aclTests.length },
+    { id: "announce-ack-source-denial-wrapper", status: "PASS", cases: 3 },
     { id: "constraint-negative-paths", status: "PASS", cases: successfulReport.constraintTests.length },
     { id: "idempotent-rerun", status: "PASS" },
     { id: "atomic-rollback", status: "PASS" },
@@ -862,6 +899,8 @@ async function main() {
         `runtime_raw_release_items_read=${successfulReport.aclSideEffects.raw_release_items_read}`,
         `runtime_backing_view_read=${successfulReport.aclSideEffects.backing_view_read}`,
         `runtime_controlled_search_execute=${successfulReport.aclSideEffects.controlled_search_execute}`,
+        `announce_ack_denial_audit_rows=${successfulReport.announceAckAuditRows}`,
+        `announce_ack_denial_audit_mismatch=${successfulReport.announceAckAuditMismatch.observed_sqlstate}`,
         "",
       ].join("\n"),
     ],

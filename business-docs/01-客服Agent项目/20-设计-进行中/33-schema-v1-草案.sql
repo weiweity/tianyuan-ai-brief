@@ -2365,7 +2365,7 @@ CREATE TABLE IF NOT EXISTS source_denial_audits (
   denial_key          TEXT PRIMARY KEY CHECK (denial_key ~ '^sda_[0-9a-f]{64}$'),
   operation           TEXT NOT NULL CHECK (operation IN (
     'content_import','content_publish','content_rollback','search',
-    'announce_current','announce_snapshot','source_suspend'
+    'announce_current','announce_snapshot','announce_ack','source_suspend'
   )),
   reason_code         TEXT NOT NULL CHECK (reason_code IN (
     'SOURCE_NOT_REGISTERED','SOURCE_NOT_ELIGIBLE','SOURCE_SUSPENDED',
@@ -3174,7 +3174,7 @@ BEGIN
   IF p_denial_key IS NULL OR p_denial_key !~ '^sda_[0-9a-f]{64}$'
      OR p_operation IS NULL OR p_operation NOT IN (
        'content_import','content_publish','content_rollback','search',
-       'announce_current','announce_snapshot','source_suspend'
+       'announce_current','announce_snapshot','announce_ack','source_suspend'
      )
      OR p_reason_code IS NULL OR p_reason_code NOT IN (
        'SOURCE_NOT_REGISTERED','SOURCE_NOT_ELIGIBLE','SOURCE_SUSPENDED',
@@ -3240,7 +3240,7 @@ SECURITY DEFINER
 SET search_path = pg_catalog, public, pg_temp
 AS $$
 BEGIN
-  IF p_operation NOT IN ('content_import','search','announce_current','announce_snapshot') THEN
+  IF p_operation NOT IN ('content_import','search','announce_current','announce_snapshot','announce_ack') THEN
     RAISE EXCEPTION USING ERRCODE = 'ZA005', MESSAGE = 'runtime source-denial operation is not permitted', DETAIL = 'FORBIDDEN';
   END IF;
   RETURN public.record_source_denial_audit(
