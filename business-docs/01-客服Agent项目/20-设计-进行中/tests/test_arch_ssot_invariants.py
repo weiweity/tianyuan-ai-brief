@@ -230,7 +230,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.62" in ledger
+    assert "v3.63" in ledger
     _assert_same_line(
         ledger,
         "DEC-050",
@@ -253,9 +253,10 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     _assert_same_line(ledger, "G0-15", "**Pass**", "EVD-G0-15-RUN-HANDOVER-20260812")
     _assert_same_line(ledger, "G0-06", "**Pass**", "EVD-CONTENT-GOVERNANCE-APPROVAL-20260809")
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.62 · 2026-08-13")
+    assert footer.startswith("*G0 责任与证据台账 v3.63 · 2026-08-21")
     assert footer.endswith("*")
     for token in (
+        "DEC-051",
         "DEC-050",
         "DEC-049",
         "NOT_CREATED",
@@ -359,7 +360,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     assert "G0-14 · 单人 FDE 可签 WBS 草案" in schedule
     assert "Ddev → DEV-M0 → M1 → M2 → M3 → M4 → G1a → Pilot Ready → 连续两周 Pilot → G1b / M4" in schedule
     assert "每周最多安排 **4 个净工程日**" in schedule
-    assert "全栈交付计划 v2.9" in delivery
+    assert "全栈交付计划 v2.10" in delivery
     assert "G0-15 · 已批准的运行交接方案" in delivery
     assert "EVD-G0-15-RUN-HANDOVER-20260812" in delivery
     assert "真实告警接入、备份恢复、回退和试点演练属于 Ddev 后退出证据" in delivery
@@ -993,7 +994,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     assert "当前 v1.16" in ssot
     assert "**v1.16 ENG-T1" in contract
     assert "NFR 冻结包 v1.13" in nfr
-    assert "2026-08-13 · v1.20" in implementation
+    assert "2026-08-21 · v1.21" in implementation
     assert SCHEMA_VERSION in raw_ddl
     assert f"version: {OPENAPI_VERSION}" in spec
     for name, text in {
@@ -1252,7 +1253,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # Static contract selection does not close organizational gates or manufacture runtime evidence.
-    assert "v3.62" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger
+    assert "v3.63" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger and "DEC-051" in ledger
     g009_line = next(line for line in ledger.splitlines() if line.startswith("| G0-09 |"))
     for token in (
         "**进行中**",
@@ -2066,7 +2067,7 @@ def test_waterfall_gate_status() -> None:
         "48 v0.5",
         "50 v0.4",
     )
-    _assert_same_line(t46, "日期", "2026-08-13", "v1.20")
+    _assert_same_line(t46, "日期", "2026-08-21", "v1.21")
     _assert_same_line(
         t46,
         "Ddev 前**静态安全启动矩阵**",
@@ -2228,10 +2229,60 @@ def test_waterfall_gate_status() -> None:
     assert "Ddev 证据存在" in ready and "- [ ] Ddev 证据存在" in ready
     assert "DEC-042 的迁移/生成类型/服务端/客户端与动态负例" not in ready
     done_m0 = _between(t46, "### Done for DEV-M0", "### Done for each DEV milestone")
-    _assert_same_line(done_m0, "- [ ]", "Ddev 通过后", "customer-service-agent/", "未从早期学习项目复制")
+    _assert_same_line(
+        done_m0,
+        "- [ ]",
+        "Ddev 通过后",
+        "独立产品仓 `customer-agent-prototype`",
+        "保留 Git 历史",
+        "未从早期学习项目复制",
+    )
+    _assert_same_line(done_m0, "- [ ]", "contract_set_id", "来源 Git SHA", "OpenAPI / DDL 双哈希")
     _assert_same_line(done_m0, "- [ ]", "不可变 migration", "TypeScript 类型", "重生成零差异")
     _assert_same_line(done_m0, "- [ ]", "真 PG15", "N-only", "N-1 → N")
     _assert_same_line(done_m0, "- [ ]", "DEC-042", "runtime", "动态负例", "未以静态 parser 结果冒充")
+
+    handoff = _between(t46, "### 3.1 双仓合同交接协议", "## 4. 九端口映射")
+    for token in (
+        '"schema": "customer-agent-contract-set/v1"',
+        '"source_git_sha": "<40-hex-source-commit>"',
+        '"source_path": "business-docs/01-客服Agent项目/20-设计-进行中/openapi.v1.yaml"',
+        '"file": "openapi.v1.yaml"',
+        '"bytes": 174476',
+        '"source_path": "business-docs/01-客服Agent项目/20-设计-进行中/33-schema-v1-草案.sql"',
+        '"file": "schema-v1.12.sql"',
+        '"bytes": 346632',
+        "export_customer_agent_contract_set.mjs",
+        "完整 40 位",
+        "不读当前工作树",
+        "拒绝覆盖",
+    ):
+        assert token in handoff
+    for anchor in ("机器合同已锁定为", "实际产物必须精确匹配"):
+        anchor_lines = [line for line in t46.splitlines() if anchor in line]
+        assert anchor_lines, f"missing implementation hash anchor: {anchor}"
+        for line in anchor_lines:
+            assert SCHEMA_SHA256 in line and OPENAPI_SHA256 in line, line
+    assert len(_read("openapi.v1.yaml").encode("utf-8")) == 174476
+    assert len(_read("33-schema-v1-草案.sql").encode("utf-8")) == 346632
+
+    contract_set_tool = (
+        DESIGN.parent.parent / "08-工具" / "export_customer_agent_contract_set.mjs"
+    ).read_text(encoding="utf-8")
+    for token in (
+        "完整 40 位 commit SHA",
+        "cat-file",
+        "O_NOFOLLOW",
+        "check-ignore",
+        "REUSED",
+        "CREATED",
+        "ddev_authorized: false",
+        "product_consumed: false",
+    ):
+        assert token in contract_set_tool
+    package_json = (DESIGN.parents[2] / "sites" / "package.json").read_text(encoding="utf-8")
+    assert '"export:customer-agent-contract-set"' in package_json
+    assert '"test:customer-agent-contract-set"' in package_json
 
     ledger = (DESIGN.parent / "02-G0责任与证据台账.md").read_text(encoding="utf-8")
     ddev_record = _between(ledger, "### DEC-DDEV-01 · 一期开发授权记录", "\n---")
@@ -2465,7 +2516,7 @@ def test_current_contracts_live_in_normative_sources_not_historical_review() -> 
 
 
 def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
-    """The single-file board must remain a 7-panel, keyboard-operable offline artifact."""
+    """The single-file board must remain an 8-panel, keyboard-operable offline artifact."""
     t = _read("架构图-PlantUML浏览器.html")
     assert "架构设计：通过 · PASS-WITH-CONDITIONS（含 CR-002、CR-003、CR-004、DEC-042 与扩展治理静态增量）" in t
     _assert_same_line(t, "CR-002 增量", "自动事实", "离线三维抽样")
@@ -2559,18 +2610,22 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     ):
         assert stale_outcome_copy not in t, f"board revives removed forced outcome reporting: {stale_outcome_copy}"
     _assert_same_line(t, "离线三维抽样", "修改程度", "是否发送", "话术适用性")
+    _assert_same_line(t, "Dashboard → metrics", "检索复制流水", "话术优化待办")
+    _assert_same_line(t, "Dashboard → events", "状态变更", "浮窗写入")
+    assert "Dashboard → workorders / content / events" not in t
     expected = [
-        ("ctx", "1 系统上下文"),
-        ("ctr", "2 容器与端口"),
-        ("seq", "3 发布/检索时序"),
-        ("wf", "4 瀑布八关"),
-        ("views", "5 四视角"),
-        ("stack", "6 技术栈与部署"),
-        ("stackarch", "7 技术栈架构图"),
+        ("p1", "1 1期开发框架"),
+        ("ctx", "2 系统上下文"),
+        ("ctr", "3 容器与端口"),
+        ("seq", "4 发布/检索时序"),
+        ("wf", "5 瀑布八关"),
+        ("views", "6 四视角"),
+        ("stack", "7 技术栈与部署"),
+        ("stackarch", "8 技术栈架构图"),
     ]
 
     tab_tags = re.findall(r'<button\b[^>]*\bclass="tab"[^>]*>.*?</button>', t, flags=re.S)
-    assert len(tab_tags) == 7, f"expected 7 tabs, got {len(tab_tags)}"
+    assert len(tab_tags) == 8, f"expected 8 tabs, got {len(tab_tags)}"
     parsed_tabs: list[tuple[str, str]] = []
     for index, tag in enumerate(tab_tags):
         attrs = _html_attrs(tag)
@@ -2597,7 +2652,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     )
 
     panel_tags = re.findall(r'<section\b[^>]*\bclass="panel"[^>]*>', t)
-    assert len(panel_tags) == 7, f"expected 7 tabpanels, got {len(panel_tags)}"
+    assert len(panel_tags) == 8, f"expected 8 tabpanels, got {len(panel_tags)}"
     for index, tag in enumerate(panel_tags):
         attrs = _html_attrs(tag)
         tab_id = expected[index][0]
@@ -2643,8 +2698,18 @@ def test_architecture_docs_and_diagram_sources_stay_aligned() -> None:
     d02 = _read("diagrams/02-运行容器与端口.puml")
     d03 = _read("diagrams/03-发布与检索时序.puml")
     d04 = _read("diagrams/04-瀑布全生命周期.puml")
+    d08 = _read("diagrams/08-1期开发框架.puml")
 
     assert "架构图-PlantUML浏览器.html" in t40 and "diagrams/" in t40
+    assert "08-1期开发框架" in t40
+    _assert_same_line(d08, "1期开发框架", "双闭环", "人在环", "禁代发")
+    _assert_same_line(d08, "浮窗", "Top3", "复制剪贴板")
+    _assert_same_line(d08, "工单分析", "话术优化待办")
+    _assert_same_line(d08, "workorders", "批准 CSV/XLSX", "无写回")
+    _assert_same_line(d08, "Dash", "Metrics", "指标/流水/待办读取")
+    _assert_same_line(d08, "Dash", "Events", "话术待办状态变更")
+    assert "Dash -[#000000]-> Events : 流水/复核" not in d08
+    assert "不新增第十端口" in d08
     _assert_same_line(t40, "Owner->>API", "publish", "coach 只预览/修正")
     _assert_same_line(t40, "202", "validating", "import_batch_id")
     _assert_same_line(t40, "回滚", "owner", "新 release_seq", "audit")

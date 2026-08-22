@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "",
+  "domains": [
+    {"domain":"presale","source_ref":"","source_version_id":"","snapshot_evd":"","acl_evd":"","total_rows":null,"importable_rows":null,"quarantined_rows":null,"quality_evd":"","final_approver_role":"ROLE-CONTENT-LEAD","overall_approval_evd":"","readiness":"INCOMPLETE"},
+    {"domain":"campaign","source_ref":"SRC-04A9A86874258A6A","source_version_id":"srcv_76b9165b2fe31908","snapshot_evd":"EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812","acl_evd":"","total_rows":null,"importable_rows":null,"quarantined_rows":null,"quality_evd":"","final_approver_role":"ROLE-CONTENT-LEAD","overall_approval_evd":"","readiness":"INCOMPLETE"},
+    {"domain":"aftersale","source_ref":"","source_version_id":"","snapshot_evd":"","acl_evd":"","total_rows":null,"importable_rows":null,"quarantined_rows":null,"quality_evd":"","final_approver_role":"ROLE-CONTENT-LEAD","overall_approval_evd":"","readiness":"INCOMPLETE"},
+    {"domain":"product","source_ref":"SRC-60D6B23861F4FBF5","source_version_id":"srcv_88af65aa70c894aa","snapshot_evd":"EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812","acl_evd":"EVD-FEISHU-ACL-PRODUCT-20260810","total_rows":null,"importable_rows":null,"quarantined_rows":null,"quality_evd":"","final_approver_role":"ROLE-CONTENT-LEAD","overall_approval_evd":"","readiness":"INCOMPLETE"}
+  ]
+}

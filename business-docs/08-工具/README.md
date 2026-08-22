@@ -14,6 +14,11 @@
 | `test_customer_agent_hub.mjs` | 执行中心五视口、筛选、复制、打印、深色与无障碍验收 |
 | `test_customer_agent_meeting.mjs` | 启动会主屏的泄漏门禁、五视口、交互、离线、打印与无障碍验收 |
 | `verify_customer_agent_pg15.mjs` | 在临时 PostgreSQL 15 cluster 中预检当前 reference DDL；只用 Unix socket、禁用 TCP，结束时删除 PGDATA/WAL，结果写入已忽略的 `output/` |
+| `export_customer_agent_contract_set.mjs` | 只从调用方指定的完整 40 位来源 commit 读取 OpenAPI / DDL 与规范锚点，校验双哈希后在 ignored `output/` 原子生成只读、不可覆盖的版本化合同集；不读脏工作树、不写产品仓 |
+| `verify_customer_agent_g009_intake.mjs` | 校验 G0-09 四域接收清单的公开安全投影；允许预填态盘点，最终用 `--require-ready` 拒绝缺域、证据错配、质量分母错误和敏感值 |
+| `inspect_customer_agent_source.py` | 只读检查售前/售后 `.xlsx/.csv`：输出文件指纹、匿名工作表统计、受控字段候选和敏感命中计数，不复制正文、不写数据库 |
+| `prepare_customer_agent_g009_workpack.py` | 将安全模板与售前/售后技术报告组装为仓外待签工作包；技术行数与正式质量/EVD严格分账，不自动推进 READY |
+| `run_customer_agent_g009_intake.py` | 一键编排售前/售后只读检查与待签工作包；内存完成检查后再原子写出，失败不留半成品，仓内只能写 ignored `output/` |
 | `prepare_customer_agent_publish_manifest.mjs` | 为 `DEC-PUBLISH-01` 双采样完整工作树，校验迁移配对、生成链、敏感路径、断链与未暂存边界，并在 ignored `output/` 生成绑定 HEAD/origin 的 exact-file 候选；获批并由人工精确暂存后还可核对 index blob/mode；绝不执行 Git 写操作 |
 | `project_workspace.mjs` | 强制公开模板 / 仓外私有工作区二选一；私有模式须有标记且不得位于公开仓内 |
 | `prepare_private_customer_project.mjs` | 在公开仓外创建不覆盖的私有副本，供 A 路径和真实状态使用 |
@@ -73,6 +78,48 @@ node business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci
 # 显式人工运行的 PG15 设计前置预检；不在 test:all 中自动执行
 npm --prefix sites run preflight:customer-agent-pg15
 
+# 来源 commit 固定后先只读检查；必须显式给完整 SHA 和当前双哈希
+CONTRACT_SOURCE_SHA='<40位来源commit>'
+npm --prefix sites run export:customer-agent-contract-set -- \
+  --check \
+  --source-git-sha="$CONTRACT_SOURCE_SHA" \
+  --expect-openapi-sha256='<64位OpenAPI哈希>' \
+  --expect-database-sha256='<64位DDL哈希>'
+
+# 检查通过后才可写入 ignored output/；不会复制到产品仓、暂存或提交
+npm --prefix sites run export:customer-agent-contract-set -- \
+  --write \
+  --source-git-sha="$CONTRACT_SOURCE_SHA" \
+  --expect-openapi-sha256='<64位OpenAPI哈希>' \
+  --expect-database-sha256='<64位DDL哈希>'
+
+# 四域资料到达后复制安全模板到仓外受控区；默认只盘点缺口
+cp business-docs/08-工具/templates/customer-agent-g009-intake.template.json /受控路径/g009-intake.json
+npm --prefix sites run preflight:customer-agent-g009 -- --manifest=/受控路径/g009-intake.json
+
+# Content Lead 最终签发前使用严格模式；未达到四域 READY 时返回 exit 2
+npm --prefix sites run preflight:customer-agent-g009 -- --manifest=/受控路径/g009-intake.json --require-ready
+
+# 售前/售后文件到达时先做技术接收；输出目录必须位于已忽略的 output/
+python3 business-docs/08-工具/inspect_customer_agent_source.py --self-test
+python3 business-docs/08-工具/inspect_customer_agent_source.py \
+  --domain presale \
+  --input '/受控路径/售前话术.xlsx' \
+  --output-dir 'output/customer-agent-g009-intake/presale-YYYYMMDD'
+
+# 两域文件检查完成后生成待签工作包；不会自动填证据或修改台账
+python3 business-docs/08-工具/prepare_customer_agent_g009_workpack.py \
+  --template business-docs/08-工具/templates/customer-agent-g009-intake.template.json \
+  --presale-report output/customer-agent-g009-intake/presale-YYYYMMDD/technical_prefill.json \
+  --aftersale-report output/customer-agent-g009-intake/aftersale-YYYYMMDD/technical_prefill.json \
+  --output-dir output/customer-agent-g009-intake/workpack-YYYYMMDD
+
+# 推荐的一键入口：可先只给一个域，后续用新目录重新生成两域完整工作包
+npm --prefix sites run intake:customer-agent-g009 -- \
+  --presale-file '/受控路径/售前话术.xlsx' \
+  --aftersale-file '/受控路径/售后话术.xlsx' \
+  --output-dir output/customer-agent-g009-intake/workpack-YYYYMMDD
+
 # DEC-PUBLISH-01 人工审批前生成只读候选；输出不是批准，不会暂存
 npm --prefix sites run prepare:customer-agent-publish-manifest
 
@@ -83,6 +130,8 @@ node business-docs/08-工具/prepare_customer_agent_publish_manifest.mjs --verif
 `verify_customer_agent_pg15.mjs` 只认证它所锁定 SHA 的 clean-install reference DDL 本机隔离预检。它不连接现有数据库，不保存密码、连接串、PGDATA、WAL 或 dump，也不能代替 migration、N/N-1、runtime、托管 PG、备份恢复、生产证据或 G0/Scope/Ddev 签发。Windows 本机需在 WSL/Linux 中执行，不得为了跨平台改成 TCP 连接既有服务。
 
 `prepare_customer_agent_publish_manifest.mjs` 默认拒绝已有 staged 变更、未解决冲突、单边历史迁移、缺失 07/08 或 PUML/SVG/HTML 配对、符号链接、私密/ignored 路径和高置信凭据。它把完整非忽略工作树的 M/A/D、原始字节 SHA-256、Git file mode、Base HEAD、branch 与脱敏 origin 绑定成 bundle SHA；候选只写入 ignored `output/customer-agent-publish-gate/`。README 与 `approvals.template.json` 会同时投影 `customer-agent` / `design-research` / `security-maintenance-archive` / `shared-repository` / `supply-chain` 五个评审分组及路径数。Product / Security / Tech 三方必须在受控系统用 `EVD-*` 分别确认同一个 bundle SHA 并批准全部分组；不允许对同一 bundle 做局部批准，若分组范围不对必须先调整工作树并重新生成。确认前和任一漂移后都不得 stage、commit 或 push，且始终禁止 `git add .`。三方批准后也只能按 `stage-manifest.tsv` 人工精确暂存，再用 `--verify-staged=<bundle>` 核对 index 路径、状态、blob、mode、零剩余 unstaged/untracked 与生成稳定点；该复核仍不会执行 Git 写操作，也不能替代当下有效的 commit/push 授权。
+
+`export_customer_agent_contract_set.mjs` 要求来源是完整 40 位 commit SHA，并要求调用方同时给出 OpenAPI / DDL 预期 SHA-256。它用 Git blob 读取固定提交，不读取当前工作树；除校验机器文件本身外，还会检查 37 / 39 的当前双哈希声明，以及 46 中“机器合同已锁定为”“实际产物必须精确匹配”锚点。任一规范锚点仍引用旧哈希即 fail-closed。`--write` 只在已忽略的 `output/customer-agent-contract-sets/<contract_set_id>/` 创建 `contract-set.json`、OpenAPI 与 DDL 三个只读文件；既有同 ID 内容或目录模式变化时拒绝覆盖。该产物只证明正式仓某个 commit 的合同快照可复现，不代表产品仓已消费，不签发 G0 / Scope / Ddev，也不允许生成 migration、运行时或部署。
 
 ## 真实表格接入（G0-03 / G0-13）
 
@@ -119,6 +168,8 @@ G0-09 不逐字段向用户反复确认。四域资料准备完后，在公司�
 - 冲突或未修项的隔离 / 裁决结论，以及 Content Lead 对四域整体清单的最终批准。
 
 归档前先做一次脱敏预览；公开仓只接收随机代号、脱敏聚合数与最终 `EVD-*`，不接收飞书 URL / token / 标题、真实 revision、导出文件、原始 SHA、成员清单或内容正文。只有四行全部齐全且 Content Lead 已签发时，才允许用同一证据变更关闭 G0-09 与 Scope #9；上述建议 ID 本身不是证据，也不会预先推进状态。
+
+`templates/customer-agent-g009-intake.template.json` 只预填仓内已有的公开安全代号和收据，售前、售后仍保持 `INCOMPLETE`。预检器不会读取话术正文、修改 `02/03`、生成 EVD 或推进 G0；它只验证四域恰好各一行、代号格式、单一证据、质量分母守恒、Content Lead 角色和敏感值边界。只有受控清单通过 `--require-ready`，且真实附件和批准可核验后，才进入 G0-09 / Scope #9 的人工原子更新。
 
 ## 运行交接一次性取证（G0-15）
 

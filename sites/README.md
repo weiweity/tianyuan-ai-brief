@@ -30,7 +30,7 @@ npm run test:all
 npm run serve
 ```
 
-Linux CI 如需同时补系统依赖，使用 `npx playwright install --with-deps chromium`。`npm run test:all` 包含基础测试、四视口 UI/Axe、架构图看板、业务真源、Redocly OpenAPI、固定 `@libpg-query/parser@17.6.10` 的 SQL/函数体 grammar gate、37 项架构合同、7 图同步与依赖审计。
+Linux CI 如需同时补系统依赖，使用 `npx playwright install --with-deps chromium`。`npm run test:all` 包含基础测试、四视口 UI/Axe、架构图看板、业务真源、Redocly OpenAPI、固定 `@libpg-query/parser@17.6.10` 的 SQL/函数体 grammar gate、37 项架构合同、8 图同步与依赖审计。
 
 日常迭代不必每次运行整套浏览器和依赖审计。按本次逻辑改动选择最小可证明门禁；长期脏工作树中不要根据全部 `git status` 自动升级，否则旧改动会让每次文案修订都误跑全量：
 
@@ -39,7 +39,7 @@ Linux CI 如需同时补系统依赖，使用 `npx playwright install --with-dep
 | 纯 Markdown 措辞、索引、历史说明 | `npm run test:docs:fast` | 空白与 diff 结构，不证明状态或页面 |
 | 客服 `00`–`06`、状态解析、生成源清单 | `npm run test:customer-contracts` | 状态/合同与 `07/08/09` 稳定点；真源有意变化时先运行 `npm run sync:business-surfaces` |
 | 公开/私有边界、代号、EVD、URL/token 规则 | `npm run test:customer-boundary` | 脱敏与仓外私有工作区边界 |
-| `20-设计-进行中/` 人读设计或图 | `npm run test:design-contracts` | Python 架构不变量与 7 图一致性；改图源时先运行 `npm run sync:arch-diagrams` |
+| `20-设计-进行中/` 人读设计或图 | `npm run test:design-contracts` | Python 架构不变量与 8 图一致性；改图源时先运行 `npm run sync:arch-diagrams` |
 | schema / OpenAPI | `npm run test:machine-contracts` | SQL grammar 与 OpenAPI lint，不证明真 PG/runtime |
 | 阶段收口、发布候选、PR/部署前 | `npm run test:release` | 等价完整 `test:all`，包含 UI、业务 QA、依赖审计及所有静态合同 |
 

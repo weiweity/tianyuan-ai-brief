@@ -1,0 +1,76 @@
+@startuml
+skinparam shadowing false
+skinparam defaultFontName "PingFang SC"
+skinparam packageStyle rectangle
+title 1期开发框架\n目的：把一期功能写在架构上 · 双闭环 · 人在环 · 禁代发 · 不新增端口
+
+actor "坐席" as Agent
+actor "话术师" as Coach
+actor "负责人" as Owner
+
+package "Windows Electron 双表面" #E8F1FF {
+  rectangle "浮窗 agent\nA1 粘贴/热键客户问法\nA2 Top3 已发布原文（不改字）\nA3 主CTA复制剪贴板\nA4 占位符仅内存填值+二次确认\nA5 澄清 / 拒答 / 升级\nA6 平台须人工确认" as Float
+  rectangle "Dashboard coach/owner\nB1 概览与工具指标\nB2 检索复制流水（根问题/操作双账）\nB3 离线三维抽样复核\nB4 工单分析（导出文件只读）\nB5 话术优化待办\nB6 内容导入/发布/回滚\nB7 公告与离线租约" as Dash
+}
+
+package "中心能力 · 复用既有九端口" #E6F7F2 {
+  rectangle "auth\n飞书 OAuth + RBAC\nMock 仅开发/演示" as Auth
+  rectangle "search 红线\n中文 bigram\n有效期强制过滤\n不改写库内原文" as Search
+  rectangle "events 红线\n自动事实：复制/无命中\n放弃/升级/重选" as Events
+  rectangle "workorders 红线\n批准 CSV/XLSX\n预检映射聚合下钻\n脱敏导出 · 无写回" as WO
+  rectangle "content + announce 红线\nImport→Publish→Announce\n四域来源硬门\n短租约到期停检索" as Content
+  rectangle "metrics 红线\n只读指标 / 流水 / 待办\n根问题 · 操作双账" as Metrics
+  rectangle "policy / redaction\n开关 · 脱敏" as Aux
+}
+
+package "数据权威" #FFF6E5 {
+  database "PostgreSQL SoR\n话术 + 自动事实 + 工单 + 待办\nwork_order_* ≠ iteration_task*" as PG
+  folder "导入原稿对象存储" as OBJ
+}
+
+cloud "飞书\n登录 / 话术表" as FS
+cloud "千牛 / 抖音\n人工粘贴发送\n不读聊天正文" as Chat
+cloud "班牛导出文件\n无 API 写回" as BanNiu
+
+rectangle "一期只预埋不运行\n训练合同 / 空模板 / 合成夹具\n不真训 · 不调教师 · 不发模型" as Train #F3E8FF
+rectangle "一期不做\n自动代发 / 读聊天 / 班牛写回\n完整 Agent / 真实训练\nmacOS iOS Android / 完整CMS" as Ban #FEE2E2
+
+Agent -[#000000]-> Float : 同步 UI
+Coach -[#000000]-> Dash : 同步 UI
+Owner -[#000000]-> Dash : 同步 UI
+
+Float -[#000000]-> Auth
+Float -[#000000]-> Search : 问法→Top3
+Float -[#000000]-> Events : 复制/放弃/升级
+Dash -[#000000]-> Auth
+Dash -[#000000]-> Metrics : 指标/流水/待办读取
+Dash -[#000000]-> Events : 话术待办状态变更
+Dash -[#000000]-> WO : 工单分析
+Dash -[#000000]-> Content : 导入发布
+Dash -[#000000]-> Aux
+
+Search -[#000000]-> PG
+Events -[#000000]-> PG
+WO -[#000000]-> PG
+WO -[#000000]-> OBJ
+Content -[#000000]-> PG
+Content -[#000000]-> OBJ
+Aux -[#000000]-> PG
+
+Auth -[#000000]-> FS : 生产 OAuth Must
+Coach ..> FS : 编辑台非生效源
+Agent ..> Chat : 人工粘贴发送
+Coach ..> BanNiu : 人工导出
+BanNiu ..> Dash : 批准文件导入
+PG ..> Train : 仅获批候选引用
+Float ..> Ban : 红线
+
+legend right
+  实线 = 一期必须打通
+  虚线 = 人工协作或后置预埋
+  闭环1 = 话术推荐：问法→Top3→复制→自动事实
+  闭环2 = 工单分析：导入→聚合→下钻→脱敏导出
+  人在环：系统只给候选，坐席自己发送
+  不新增第十端口或平行搜索平台
+endlegend
+@enduml

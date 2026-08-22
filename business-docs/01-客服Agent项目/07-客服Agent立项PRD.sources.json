@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "34d4a11413feef2f516b6c1f3c7f3a50374b5c691ec3f6a2106d88f598f9879e"
+    "sha256": "ac482ffe436a3e92961f0809aa988261237293c46905deeb31d7126c7aab2d12"
   },
   "sources": [
     {
@@ -21,7 +21,7 @@
       "id": "ledger",
       "file": "02-G0责任与证据台账.md",
       "label": "G0 责任与证据台账",
-      "sha256": "fc7e9152270a494a8e99451ffc28ce1be2d6b85c4e80cc82eb7a68eabb00493d"
+      "sha256": "02f4a410d8de79b06fea98f76c53ca584e6d90b44330add38b6d5fa7d3d43bc4"
     },
     {
       "id": "scope",
@@ -39,7 +39,7 @@
       "id": "delivery",
       "file": "05-全栈交付计划.md",
       "label": "全栈交付计划",
-      "sha256": "e0d0989ca31276bfdc95f17eaab07fa022e91873f9d45007e6d7fa349e17baca"
+      "sha256": "90be0a3259e87d601b2f2b144c26e9efd489c80a5d6dee6420cfc7c12dd836e6"
     },
     {
       "id": "cadence",
@@ -48,7 +48,7 @@
       "sha256": "67e9a41c9239cc7a647280b826cd6b7af777481ca65a61ce1ad4d2fbee92d3b3"
     }
   ],
-  "sourceHash": "c2f5b54bacc87ab0618cafc7bb30c568a1e1a37e20dd536954917b8e6c9f028b",
+  "sourceHash": "98b987e6fc8c7cc4e07f79ce4a5344f4f7f1f4bb4d1dc553b588d5bca686c820",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",

@@ -11,7 +11,7 @@
 > **DEC-042 内容资产治理：** `25 / 26 / 31 / 37 / 40 / 46 / 48 / 50 + 33 / OpenAPI` 已冻结稳定 Question 身份/不可变版本与 origin HMAC key version、显式 platform/product scope、版本化 taxonomy、固定角色异人双审、受控 `search_recommendable_scripts`、审核决定与质量 plan/evidence 信任边界、placeholder 客户端内存渲染/二次确认/零持久，以及 postfix 约束：Question hash 纳入 `promoted_by_role`；固定 ASCII 键集按 `COLLATE "C"` 排序的受限治理 hash（非通用 JCS）；`population_manifest_hash` 防同计数换行；semantic asset 先退役留墓碑再删来源 query；完整不可变 snapshot 由客户端按 `[effective_from,effective_to)` 过滤；封闭最小 public mapper 与“来源/租约 denial、内容/质量/hash 标准审计”分流。**人读与静态机器合同已锁，迁移、生成类型、服务端/客户端代码与动态证据尚未实现**\
 > **扩展治理：** `37 §3.1` 变更分级 · `39 §0.3` 签名客户端 N/N-1 · `41 §1.3 E` 只读 PlatformAdapter · `46 §6.1.1` 迁移兼容矩阵；**不新增端口、路由或表，不代表运行验证已完成**\
 > **架构图 + 瀑布关卡：** [`40-架构图与关卡状态.md`](40-架构图与关卡状态.md)\
-> **架构图看板（推荐打开）：** [`架构图-PlantUML浏览器.html`](架构图-PlantUML浏览器.html) · 源码 [`diagrams/`](diagrams/)\
+> **架构图看板（推荐打开）：** [`架构图-PlantUML浏览器.html`](架构图-PlantUML浏览器.html) · 首图 **1期开发框架** · 源码 [`diagrams/`](diagrams/)\
 > **技术栈全景 L0–L16：** [`43-技术栈全景清单-部署向.md`](43-技术栈全景清单-部署向.md)\
 > **NFR 四硬要求：** [`41-NFR扩展并发与防改崩.md`](41-NFR扩展并发与防改崩.md)\
 > **API：** [`39`](39-API合同与发布状态机-v1.md) · **OpenAPI 机器合同：** [`openapi.v1.yaml`](openapi.v1.yaml) · **DDL：** [`33`](33-schema-v1-草案.sql) Postgres\

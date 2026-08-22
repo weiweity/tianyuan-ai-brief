@@ -323,7 +323,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.62 · 2026-08-13/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.63 · 2026-08-21/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/
@@ -533,7 +533,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   assert.match(ledger, /全程记录必须只追加、不得修改或删除/);
 });
 
-test("Ddev 为空时产品目录保持未创建，绿地签发不冒充其他 G0 Pass", async () => {
+test("Ddev 为空时双仓职责保持隔离，绿地签发不冒充其他 G0 Pass", async () => {
   const [ledger, scope, delivery, implementation] = await Promise.all([
     readProject("02-G0责任与证据台账.md"),
     readProject("03-Scope与验收.md"),
@@ -594,6 +594,7 @@ test("Ddev 为空时产品目录保持未创建，绿地签发不冒充其他 G0
     /阶段边界[^\n]+Ddev 后 \/ Pilot Ready 前[^\n]+不计入 G0-11 \/ G0-15[^\n]+G0 前只签策略、方案、Owner、目标与证据入口/
   );
   assert.match(ledger, /\| 最终结论 \| \[x\] 绿地隔离通过[^\n]+`EVD-G0-08-GREENFIELD-ISOLATION-20260810`[^\n]+只关闭 G0-08 \/ Scope #8/);
+  assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+现有 v3 合成原型[^\n]+不计正式 DEV-M0/);
   assert.match(ledger, /\| 外部责任包 \| \*\*13\/14 Pass\*\* \|/);
   assert.match(ledger, /\| Scope 检查 \| \*\*14\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*空\*\* \|/);
@@ -618,16 +619,36 @@ test("Ddev 为空时产品目录保持未创建，绿地签发不冒充其他 G0
   assert.match(delivery, /项目负责人 \/ Tech Owner[\s\S]+客服业务 Owner \/ Product Owner[\s\S]+IT \/ 安全责任人[\s\S]+IT 服务 \/ 运维责任人[\s\S]+QA 负责人/);
   assert.match(delivery, /真实告警接入、备份恢复、回退和试点演练属于 Ddev 后退出证据/);
 
-  assert.match(delivery, /开发开工许可（Ddev）成立后，再新建独立产品目录：[\s\S]+customer-service-agent\//);
+  assert.match(delivery, /独立产品实施仓已经存在[\s\S]+customer-agent-prototype\/[\s\S]+不是本项目记录仓的子目录/);
   await assert.rejects(
     lstat(path.join(repoRoot, "customer-service-agent")),
     (error) => error?.code === "ENOENT",
-    "Ddev 为空时不得提前创建产品 runtime 目录"
+    "项目记录仓不得创建旧 customer-service-agent 产品 runtime 目录"
   );
 
   const ready = implementation.split("### Ready for DEV-M0")[1]?.split("### Done for DEV-M0")[0] ?? "";
   const doneM0 = implementation.split("### Done for DEV-M0")[1]?.split("### Done for each DEV milestone")[0] ?? "";
-  assert.match(implementation, /2026-08-13 · v1\.20/);
+  assert.match(implementation, /2026-08-21 · v1\.21/);
+  assert.match(implementation, /两个独立 Git 仓不存在“跨仓原子提交”/);
+  assert.match(implementation, /contract_set_id[\s\S]+source_git_sha[\s\S]+openapi[\s\S]+database/);
+  assert.match(implementation, /export_customer_agent_contract_set\.mjs[\s\S]+完整 40 位[\s\S]+不读当前工作树[\s\S]+拒绝覆盖/);
+  for (const anchor of ["机器合同已锁定为", "实际产物必须精确匹配"]) {
+    const lines = implementation.split(/\r?\n/).filter((line) => line.includes(anchor));
+    assert.ok(lines.length > 0, `missing implementation hash anchor: ${anchor}`);
+    for (const line of lines) {
+      assert.match(line, /47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801/);
+      assert.match(line, /06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4/);
+    }
+  }
+  const contractSetTool = await readRepo("business-docs/08-工具/export_customer_agent_contract_set.mjs");
+  assert.match(contractSetTool, /完整 40 位 commit SHA/);
+  assert.match(contractSetTool, /O_NOFOLLOW/);
+  assert.match(contractSetTool, /check-ignore/);
+  assert.match(contractSetTool, /ddev_authorized: false/);
+  assert.match(contractSetTool, /product_consumed: false/);
+  const packageJson = JSON.parse(await readRepo("sites/package.json"));
+  assert.match(packageJson.scripts["export:customer-agent-contract-set"], /export_customer_agent_contract_set\.mjs/);
+  assert.match(packageJson.scripts["test:customer-agent-contract-set"], /customer-agent-contract-set\.test\.mjs/);
   assert.match(ready, /\[x\] OpenAPI 路径与单向生成方向已冻结/);
   assert.match(ready, /\[x\] CR-004[^\n]+静态机器合同已[^\n]+对齐/);
   assert.match(ready, /Ddev 前[^\n]+reference DDL[^\n]+静态设计预检/);
@@ -638,7 +659,8 @@ test("Ddev 为空时产品目录保持未创建，绿地签发不冒充其他 G0
   assert.match(ready, /\[ \] Ddev 证据存在/);
   assert.match(ready, /不证明 runtime[^\n]+真 OAuth[^\n]+备份恢复[^\n]+Pilot/);
   assert.doesNotMatch(ready, /DEC-042 的迁移\/生成类型\/服务端\/客户端与动态负例/);
-  assert.match(doneM0, /Ddev 通过后[^\n]+customer-service-agent\//);
+  assert.match(doneM0, /Ddev 通过后[^\n]+独立产品仓 `customer-agent-prototype`[^\n]+保留 Git 历史/);
+  assert.match(doneM0, /contract_set_id[^\n]+来源 Git SHA[^\n]+OpenAPI \/ DDL 双哈希/);
   assert.match(doneM0, /不可变 migration[^\n]+TypeScript 类型/);
   assert.match(doneM0, /N-only[^\n]+N-1 → N/);
   assert.match(doneM0, /DEC-042[^\n]+runtime[^\n]+动态负例/);

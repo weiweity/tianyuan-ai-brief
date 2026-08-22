@@ -226,7 +226,7 @@ function signDdev(ledger, ddev) {
   for (const [label, value] of [
     ["结论", "PASS"],
     ["G0 依据", "G0-02～15：Pass 14 / 14；Scope：Pass 15 / 15；证据包 EVD-G0-PACK-20260814"],
-    ["冻结输入清单", "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814"],
+    ["冻结输入清单", "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814"],
     ["允许环境与数据", "development / test；合成数据或经批准的脱敏数据；EVD-DDEV-DATA-20260814"],
     ["费用边界", "B；0 新增付费；下次决策日 2026-08-31；EVD-DDEV-FEE-20260814"],
     ["生效时间 / 复核日", `${ddev} / 2026-08-20`],
@@ -252,7 +252,7 @@ function fullyAdvance(sources, ddev = "2026-08-14", { authorizeDdev = true } = {
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.26 / 台账 v3.62 / Scope v4.36 / 排期 v3.20"],
+    ["评审输入版本", "章程 v3.26 / 台账 v3.63 / Scope v4.36 / 排期 v3.20"],
     ["G0-02～15", "Pass 14 / 14；Fail 0 / 14"],
     ["Scope 检查", "Pass 15 / 15；Fail 0 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
@@ -760,32 +760,32 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     ],
     [
       "冻结输入清单",
-      "01 排期 v3.20 / 03 Scope v4.19 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      "01 排期 v3.20 / 03 Scope v4.19 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
       /DEC-DDEV-01 冻结输入 03 版本 v4\.19 与当前真源 v4\.36 不一致/,
     ],
     [
       "冻结输入清单",
-      "01 排期 v3.16 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      "01 排期 v3.16 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
       /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.20 不一致/,
     ],
     [
       "冻结输入清单",
-      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.6 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.6 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
       /DEC-DDEV-01 冻结输入 04 版本 v3\.6 与当前真源 v3\.9 不一致/,
     ],
     [
       "冻结输入清单",
-      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.15 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.15 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
       /DEC-DDEV-01 冻结输入 37 版本 v1\.15 与当前真源 v1\.16 不一致/,
     ],
     [
       "冻结输入清单",
-      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.19；EVD-DDEV-INPUTS-20260814",
-      /DEC-DDEV-01 冻结输入 46 版本 v1\.19 与当前真源 v1\.20 不一致/,
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 46 版本 v1\.20 与当前真源 v1\.21 不一致/,
     ],
     [
       "冻结输入清单",
-      "010 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      "010 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
       /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.20 不一致/,
     ],
     [
@@ -1154,7 +1154,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.26 / 台账 v3.62 / Scope v4.36 / 排期 v3.20"],
+    ["评审输入版本", "章程 v3.26 / 台账 v3.63 / Scope v4.36 / 排期 v3.20"],
     ["G0-02～15", "Pass 12 / 14；Fail 1 / 14"],
     ["Scope 检查", "Pass 13 / 15；Fail 2 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],

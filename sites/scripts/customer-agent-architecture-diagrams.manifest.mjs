@@ -1,4 +1,5 @@
 export const architectureDiagrams = [
+  { id: "p1", baseName: "08-1期开发框架" },
   { id: "ctx", baseName: "01-系统上下文" },
   { id: "ctr", baseName: "02-运行容器与端口" },
   { id: "seq", baseName: "03-发布与检索时序" },
