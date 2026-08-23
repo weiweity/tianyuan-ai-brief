@@ -94,6 +94,11 @@ await check("生成物新鲜度 --check", async () => {
 
 await check("HTML 文件存在且为只读生成视图", async () => {
   const html = await readFile(targetPath, "utf8");
+  const generatorSource = await readFile(path.join(scriptDir, "generate_customer_agent_hub.mjs"), "utf8");
+  const templateSource = await readFile(
+    path.join(scriptDir, "templates/customer-agent-hub.template.html"),
+    "utf8"
+  );
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const payloadMatch = html.match(
     /<script id="hub-data" type="application\/json">([\s\S]*?)<\/script>/
@@ -111,6 +116,19 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   assert.doesNotMatch(html, /<pre\b[^>]*\bid="source-dialog-content"/i);
   assert.doesNotMatch(html, /\.innerHTML\s*=/, "结构化阅读器不得写入 raw innerHTML");
   assert.doesNotMatch(html, /sourceDialogContent\.textContent\s*=\s*source\.content/);
+  assert.match(generatorSource, /row\["接受职责证据 ID"\]/, "角色接受不得只凭具名判断");
+  assert.match(generatorSource, /row\["生效日期"\]/, "角色接受必须校验生效日期");
+  assert.match(generatorSource, /needsAcceptance:\s*!roleIsAccepted\(row\)/, "Hub 必须独立投影待接受状态");
+  assert.match(
+    templateSource,
+    /data\.governance\.roles\.filter\(\(item\) => item\.needsAcceptance\)\.length/,
+    "角色摘要必须按职责接受状态计数，不能把已具名误当已接受"
+  );
+  assert.doesNotMatch(
+    templateSource,
+    /data\.governance\.roles\.filter\(\(item\) => item\.needsNaming\)\.length/,
+    "角色摘要不得回退为仅按是否具名计数"
+  );
   assert.equal(payload.governance.fee.filter((item) => item.current).length, 1);
   assert.equal(
     payload.governance.fee.filter((item) => item.selected).length,
@@ -186,21 +204,113 @@ await check("HTML 文件存在且为只读生成视图", async () => {
   }
   if (mode === "public-template") {
     assert.match(html, /项目已批准/);
-    assert.equal(payload.status.externalPass, 1);
+    assert.equal(payload.status.externalPass, 13);
     assert.equal(payload.status.externalTotal, 14);
-    assert.equal(payload.status.scopePass, 1);
+    assert.equal(payload.status.scopePass, 14);
     assert.equal(payload.status.scopeTotal, 15);
     assert.equal(payload.status.direction, "已记录");
     assert.equal(payload.status.approval, "已批准");
     assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
-    assert.match(payload.headline.title, /需求基线已收口.*设计阶段/);
-    assert.match(payload.headline.summary, /产品 \/ 交互.*Ddev 不成立/);
-    assert.match(payload.headline.nextOutput, /真实任务样本.*零新增软件对照/);
+    assert.match(payload.headline.title, /需求分析关已通过.*PASS-WITH-CONDITIONS.*实现设计关 Pass.*文档包 Ready/);
+    assert.match(payload.headline.summary, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*G0 \/ Ddev 均未授权.*代码开发未开始.*Ddev 不成立/);
+    assert.match(payload.headline.summary, /当前未关闭的 G0 责任包为 G0-09/);
+    assert.doesNotMatch(payload.headline.summary, /待签发的业务基线|费用与部署运行方案/);
+    assert.match(payload.headline.nowTitle, /组织授权门与 G0 缺口/);
+    assert.match(payload.headline.nowSummary, /实现设计关已通过.*不可开始产品功能开发/);
+    assert.match(payload.headline.scheduleTitle, /实现设计关已通过.*组织授权与 G0 证据/);
+    assert.match(payload.meeting.title, /组织授权补证.*不能宣布代码开工/);
+    assert.match(payload.meeting.positioning, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*不以职责接受或文档通过代替开发授权/);
+    assert.match(payload.meeting.positioning, /当前未关闭的 G0 责任包为 G0-09/);
+    assert.doesNotMatch(payload.meeting.positioning, /只补业务基线|费用、部署运行/);
+    assert.equal(payload.meeting.copyTitle, "客服 Agent 组织授权门清单");
+    const nextOpenGate = payload.gates
+      .filter((gate) => gate.status !== "Pass")
+      .sort((left, right) => left.due.localeCompare(right.due))[0];
+    assert.ok(nextOpenGate, "公开模板必须保留至少一个未关闭 G0 门禁");
+    assert.equal(payload.headline.nextTitle, nextOpenGate.title);
+    assert.equal(payload.headline.nextOutput, nextOpenGate.evidence);
+    assert.match(payload.headline.nextOutput, /待补|待写|待确认|EVD|证据/);
     assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
-    assert.equal(payload.governance.fee.find((item) => item.current)?.selected, false);
-    assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /临时管控（未签）/);
-    assert.equal(payload.governance.roles.filter((item) => item.needsNaming).length, 13);
+    assert.equal(payload.governance.fee.find((item) => item.current)?.selected, true);
+    assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /当前路径/);
+    assert.equal(
+      payload.governance.roles.every(
+        (item) => item.needsNaming === (item.name === "待具名")
+      ),
+      true,
+      "needsNaming 必须只由人员代号是否为空决定"
+    );
+    assert.equal(
+      payload.governance.roles.every(
+        (item) => item.needsAcceptance === !(item.status === "已接受" || item.status === "Pass")
+      ),
+      true,
+      "当前完整 RACI 中 needsAcceptance 必须由接受状态收敛为 false"
+    );
+    assert.equal(
+      payload.governance.roles.every(
+        (item) => item.name === "待具名" || /^(?:ROLE|USR)-[A-Z0-9-]+$/.test(item.name)
+      ),
+      true,
+      "公开角色只能使用 ROLE-* / USR-* 代号或待具名"
+    );
+    assert.equal(payload.governance.roles.length, 13, "公开模板必须投影完整 13 角色");
+    assert.equal(payload.governance.roles.filter((item) => item.needsNaming).length, 0, "13 角色均已接受后不得再显示待具名");
+    assert.equal(payload.governance.roles.filter((item) => item.needsAcceptance).length, 0, "13 角色均已接受后不得再显示待接受职责");
+    assert.equal(payload.governance.roles.filter((item) => item.status === "已接受" || item.status === "Pass").length, 13);
+    assert.equal(payload.gates.find((gate) => gate.id === "G0-06")?.status, "Pass");
+    assert.equal(
+      payload.gates.find((gate) => gate.id === "G0-06")?.evidence,
+      "EVD-CONTENT-GOVERNANCE-APPROVAL-20260809"
+    );
+    assert.equal(payload.scopeChecks.find((item) => String(item.id) === "7")?.status, "Pass");
+    assert.equal(
+      payload.scopeChecks.find((item) => String(item.id) === "7")?.evidence,
+      "EVD-CONTENT-GOVERNANCE-APPROVAL-20260809"
+    );
+    assert.equal(payload.gates.find((gate) => gate.id === "G0-08")?.status, "Pass");
+    assert.equal(
+      payload.gates.find((gate) => gate.id === "G0-08")?.evidence,
+      "EVD-G0-08-GREENFIELD-ISOLATION-20260810"
+    );
+    assert.equal(payload.scopeChecks.find((item) => String(item.id) === "8")?.status, "Pass");
+    assert.equal(
+      payload.scopeChecks.find((item) => String(item.id) === "8")?.evidence,
+      "EVD-G0-08-GREENFIELD-ISOLATION-20260810"
+    );
+    assert.equal(payload.gates.find((gate) => gate.id === "G0-10")?.status, "Pass");
+    assert.equal(
+      payload.gates.find((gate) => gate.id === "G0-10")?.evidence,
+      "EVD-G0-10-PRD-SCOPE-FREEZE-20260810"
+    );
+    assert.equal(payload.scopeChecks.find((item) => String(item.id) === "10")?.status, "Pass");
+    assert.equal(
+      payload.scopeChecks.find((item) => String(item.id) === "10")?.evidence,
+      "EVD-G0-10-PRD-SCOPE-FREEZE-20260810"
+    );
+    assert.equal(payload.gates.find((gate) => gate.id === "G0-11")?.status, "Pass");
+    assert.equal(
+      payload.gates.find((gate) => gate.id === "G0-11")?.evidence,
+      "EVD-G0-11-SECURITY-BOUNDARY-20260810"
+    );
+    assert.equal(payload.scopeChecks.find((item) => String(item.id) === "12")?.status, "Pass");
+    assert.equal(
+      payload.scopeChecks.find((item) => String(item.id) === "12")?.evidence,
+      "EVD-G0-11-SECURITY-BOUNDARY-20260810"
+    );
+    assert.equal(payload.gates.find((gate) => gate.id === "G0-12")?.status, "Pass");
+    assert.equal(
+      payload.gates.find((gate) => gate.id === "G0-12")?.evidence,
+      "EVD-G0-12-OPS-DEPLOYMENT-20260810"
+    );
+    assert.equal(payload.scopeChecks.find((item) => String(item.id) === "13")?.status, "Pass");
+    assert.equal(
+      payload.scopeChecks.find((item) => String(item.id) === "13")?.evidence,
+      "EVD-G0-12-OPS-DEPLOYMENT-20260810"
+    );
     assert.equal(payload.prelaunchChecklist.length, 5);
+    assert.match(payload.prelaunchChecklist[2], /G0-09/);
+    assert.doesNotMatch(payload.prelaunchChecklist[2], /业务基线、权威来源、费用、部署运行/);
     assert.doesNotMatch(payload.headline.summary, /\b(?:Owner|Scope)\b/);
     assert.doesNotMatch(payload.meeting.positioning, /\b(?:Owner|PRD)\b/);
     assert.doesNotMatch(payload.meeting.copyTitle, /\bPRD\b/);
@@ -250,9 +360,9 @@ const serverAddress = staticServer.address();
 assert.ok(serverAddress && typeof serverAddress !== "string");
 const httpBase = `http://127.0.0.1:${serverAddress.port}/`;
 const httpHubUrl = new URL(encodeURIComponent("08-客服Agent立项执行中心.html"), httpBase).href;
-const browser = await chromium.launch(browserLaunchOptions);
-
+let browser;
 try {
+  browser = await chromium.launch(browserLaunchOptions);
   for (const viewport of viewports) {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
@@ -814,13 +924,15 @@ try {
         assert.equal(await page.locator("#prelaunch-list > li").count(), payload.prelaunchChecklist.length);
         assert.match(await page.locator("#metric-grid").innerText(), /分层 ≥50% 且至少命中 1 条/);
         assert.match(await page.locator("#metric-grid").innerText(), /3–5 人 × 2 周/);
-        const unnamedCount = payload.governance.roles.filter((item) => item.needsNaming).length;
-        assert.equal(await page.locator("#role-summary").innerText(), `${unnamedCount} 个角色待具名`);
+        const pendingCount = payload.governance.roles.filter((item) => item.needsAcceptance).length;
+        const acceptedCount = payload.governance.roles.filter((item) => item.status === "已接受" || item.status === "Pass").length;
+        assert.equal(pendingCount, 0);
+        assert.equal(await page.locator("#role-summary").innerText(), `${acceptedCount} 个角色已接受职责`);
         const currentFee = page.locator(`[data-fee-id="${payload.governance.fee.find((item) => item.current).id}"]`);
         assert.equal(await currentFee.getAttribute("data-current"), "true");
         assert.equal(await currentFee.getAttribute("data-selected"), String(payload.status.feeSelected));
-        if (mode === "public-template") assert.match(await currentFee.innerText(), /临时管控（未签）/);
-        return `${payload.prelaunchChecklist.length} 项 · ${unnamedCount} 角色待具名 · 指标分层`;
+        if (mode === "public-template") assert.match(await currentFee.innerText(), /当前路径/);
+        return `${payload.prelaunchChecklist.length} 项 · ${acceptedCount} 角色已接受职责 · 指标分层`;
       });
 
       await check("业务拍板 / BP 协同与经理 / 坐席角色筛选及深链", async () => {
@@ -1055,10 +1167,13 @@ try {
     }
   });
 } finally {
-  await browser.close();
-  await new Promise((resolve, reject) =>
-    staticServer.close((error) => (error ? reject(error) : resolve()))
-  );
+  try {
+    if (browser) await browser.close();
+  } finally {
+    await new Promise((resolve, reject) =>
+      staticServer.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
 }
 
 results.finishedAt = new Date().toISOString();

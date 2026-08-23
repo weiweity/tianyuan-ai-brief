@@ -12,7 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const archiveRoot = path.resolve(root, "../archive/2026-07-31-ai-project-brief");
+const archiveRoot = path.resolve(root, "../archive/2026-08-09-ai-project-brief-security-maintenance");
 const cssPath = path.join(archiveRoot, "css/app.css");
 
 async function readCss() {

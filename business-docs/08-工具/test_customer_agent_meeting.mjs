@@ -100,6 +100,16 @@ function countMatches(value, pattern) {
   return [...value.matchAll(pattern)].length;
 }
 
+function replaceFactRow(text, factId, replacement) {
+  const lines = text.split(/\r?\n/);
+  const indexes = lines
+    .map((line, index) => (line.startsWith(`| ${factId} |`) ? index : -1))
+    .filter((index) => index >= 0);
+  assert.equal(indexes.length, 1, `${factId} 行必须唯一`);
+  lines[indexes[0]] = replacement;
+  return lines.join("\n");
+}
+
 function assertExactKeys(value, keys, label) {
   assert.deepEqual(Object.keys(value || {}).sort(), [...keys].sort(), `${label} 字段越界`);
 }
@@ -174,7 +184,9 @@ await check("生成物新鲜度 --check", async () => {
 await check("安全数据白名单与会议契约", async () => {
   const html = await readFile(targetPath, "utf8");
   assertSafeMeetingArtifact(html);
-  const piiTampered = html.replace('"platform":"OPEN"', '"platform":"demo@example.com"');
+  const piiTampered = withTamperedPayload(html, (candidate) => {
+    candidate.meeting.factCards[0].platform = "demo@example.com";
+  });
   assert.notEqual(piiTampered, html, "PII 篡改夹具必须实际修改 payload");
   assert.throws(
     () => assertSafeMeetingArtifact(piiTampered),
@@ -338,12 +350,16 @@ await check("生成文件无内部内容与外部依赖", async () => {
     /data-agenda-time/,
     /class="time-chip"/,
     /8 月 4 日/,
-    /2026-08-04/,
     /60:00/,
     /开始计时|暂停计时|全场剩余/,
   ]) {
     assert.doesNotMatch(html, removedTimeUi);
   }
+  assert.equal(
+    html.match(/2026-08-04/g)?.length,
+    2,
+    "冻结页面只允许在页眉与封面显示 D0 历史日期"
+  );
   const fileStat = await stat(targetPath);
   assert.ok(fileStat.size < 700_000, `HTML 体积 ${fileStat.size} bytes`);
   return `${fileStat.size} bytes · 0 外链`;
@@ -389,21 +405,22 @@ await check("隔离工作区生成安全、幂等与并发保护", async () => {
 
     const isolatedLedger = path.join(isolatedProject, "02-G0责任与证据台账.md");
     const ledgerBaseline = await readFile(isolatedLedger, "utf8");
-    const emptyFactRow = "| FACT-01 | | | | | | | OPEN |";
     const oversizedFactRow = `| FACT-01 | | | ${"客".repeat(FACT_CARD_FIELD_LIMITS.task + 1)} | | | | OPEN |`;
-    await writeFile(isolatedLedger, ledgerBaseline.replace(emptyFactRow, oversizedFactRow), "utf8");
+    await writeFile(isolatedLedger, replaceFactRow(ledgerBaseline, "FACT-01", oversizedFactRow), "utf8");
     await assert.rejects(
       execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv }),
       (error) => /FACT-01.*任务.*最多 36 个字符/.test(`${error.stderr || ""}${error.stdout || ""}`)
     );
-    const sensitiveFactRow = "| FACT-01 | | | 13800138000 | | | | OPEN |";
-    await writeFile(isolatedLedger, ledgerBaseline.replace(emptyFactRow, sensitiveFactRow), "utf8");
+    // 运行时拼接合成测试向量：仍覆盖连续 11 位手机号拦截，同时避免源码携带可误认的真实号码。
+    const syntheticPhone = ["138", "0013", "8000"].join("");
+    const sensitiveFactRow = `| FACT-01 | | | ${syntheticPhone} | | | | OPEN |`;
+    await writeFile(isolatedLedger, replaceFactRow(ledgerBaseline, "FACT-01", sensitiveFactRow), "utf8");
     await assert.rejects(
       execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv }),
       (error) => /FACT-01.*包含明显敏感信息/.test(`${error.stderr || ""}${error.stdout || ""}`)
     );
     const internalFactRow = "| FACT-01 | 新手 | RACI | 商品话术查询 | 待核验 | 多表检索 | 回复等待 | OPEN |";
-    await writeFile(isolatedLedger, ledgerBaseline.replace(emptyFactRow, internalFactRow), "utf8");
+    await writeFile(isolatedLedger, replaceFactRow(ledgerBaseline, "FACT-01", internalFactRow), "utf8");
     await assert.rejects(
       execFileAsync(process.execPath, generatorArgs, { cwd: repoRoot, env: isolatedEnv }),
       (error) => /factCards\[0\]\.platform.*内部状态码、治理术语或禁区内容/.test(
@@ -638,12 +655,38 @@ try {
         visibleFactFields: [...document.querySelectorAll("[data-fact-card] .fact-fields")].filter(
           (item) => item.checkVisibility()
         ).length,
+        unhiddenFactFields: [...document.querySelectorAll("[data-fact-card] .fact-fields")].filter(
+          (item) => !item.hidden
+        ).length,
         renderedFactChecklists: [
           ...document.querySelectorAll("[data-fact-card] .fact-checklist"),
         ].filter((item) => !item.hidden).length,
+        expectedFactCardEmptyStates: (() => {
+          const cards = JSON.parse(
+            document.querySelector("#meeting-data").textContent
+          ).meeting.factCards;
+          const fields = [
+            "userType",
+            "platform",
+            "task",
+            "frequency",
+            "currentFlow",
+            "impact",
+          ];
+          return Array.from({ length: 2 }, (_, index) => {
+            const card = cards[index] || {};
+            return fields.every((field) => {
+              const value = card[field];
+              return !(typeof value === "string" && value.trim()) || value.trim() === "OPEN";
+            });
+          });
+        })(),
         factChecklistLabels: [
-          ...document.querySelectorAll("[data-fact-card] .fact-checklist li"),
-        ].map((item) => item.textContent.trim()),
+          ...document.querySelectorAll("[data-fact-card] .fact-checklist"),
+        ]
+          .filter((item) => !item.hidden)
+          .flatMap((item) => [...item.querySelectorAll("li")])
+          .map((item) => item.textContent.trim()),
         payloadOpenCount: Object.values(
           JSON.parse(document.querySelector("#meeting-data").textContent).meeting.factCards
         )
@@ -718,7 +761,7 @@ try {
       });
       assert.equal(structure.favicon, "data:image/png;base64,");
       assert.equal(structure.appleTouchIcon, "data:image/png;base64,");
-      assert.equal(structure.headerTitle, "客服 Agent 一期启动会");
+      assert.equal(structure.headerTitle, "客服 Agent 一期启动会 · 历史视图");
       assert.equal(structure.headerTitleVisible, viewport.width > 760);
       assert.equal(structure.headerSubtitleVisible, viewport.width > 760);
       if (viewport.width > 760) assert.ok(structure.headerSubtitleFont >= 11);
@@ -824,11 +867,11 @@ try {
       assert.equal(structure.decisionProgress, "0 / 9 已回读");
       assert.equal(structure.progressTrackVisible, true);
       assert.equal(structure.fullscreenIconCount, 1);
-      assert.equal(structure.coverMark, "一期项目启动");
+      assert.equal(structure.coverMark, "2026-08-04 D0 会议历史视图");
       assert.equal(structure.coverKicker, "客服团队 · 业务与协作对齐");
       assert.equal(
         structure.coverGoal,
-        "今天请客服确认、修正或否决一期建议，再明确责任与下一步。"
+        "本页用于回看当日会议结构与决定；当前状态以 02、03 与 20 设计 README 为准。"
       );
       assert.match(structure.coverExclusion, /技术选型、开发开工与上线承诺/);
       assert.equal(structure.goalListTag, "OL");
@@ -844,12 +887,15 @@ try {
         "缺失事实应保留内部 OPEN 状态，并只向参会者显示中文"
       );
       assert.equal(structure.factLabels.some((value) => /OPEN|PRECONFIRM|READY/.test(value)), false);
-      assert.equal(structure.emptyFactCards, 2);
-      assert.equal(structure.visibleFactFields, 0);
-      assert.equal(structure.renderedFactChecklists, 2);
+      const expectedEmptyFactCards = structure.expectedFactCardEmptyStates.filter(Boolean).length;
+      const expectedFilledFactCards = structure.expectedFactCardEmptyStates.length - expectedEmptyFactCards;
+      assert.equal(structure.emptyFactCards, expectedEmptyFactCards);
+      assert.equal(structure.visibleFactFields, 0, "事实卡 slide 未激活时字段不可见");
+      assert.equal(structure.unhiddenFactFields, expectedFilledFactCards);
+      assert.equal(structure.renderedFactChecklists, expectedEmptyFactCards);
       assert.deepEqual(
         structure.factChecklistLabels,
-        Array(2)
+        Array(expectedEmptyFactCards)
           .fill(["真实任务名称", "主用户", "平台", "频次 / 样本", "主要卡点", "业务影响"])
           .flat()
       );

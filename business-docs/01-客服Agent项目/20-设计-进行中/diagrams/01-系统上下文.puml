@@ -1,0 +1,45 @@
+@startuml
+skinparam shadowing false
+skinparam monochrome false
+title 系统上下文图 C4 Context\n目的：对齐谁用系统、系统边界、外部依赖
+
+actor "坐席" as Agent
+actor "话术师" as Coach
+actor "负责人" as Owner
+
+rectangle "客服Agent系统边界" {
+  [Windows Electron壳\n浮窗+Dashboard\n搜索/复制/自动事实\n工单分析 + 话术优化待办] as Shell
+  [Application API\n九端口（含 workorders）\nCR-002 复用 search/events] as API
+  database "PostgreSQL\n权威SoR\n根问题 ≠ 搜索操作\nwork_order_* ≠ iteration_task*" as PG
+}
+
+cloud "飞书" as Feishu
+cloud "千牛抖音接待端\n不读取聊天正文" as Chat
+cloud "班牛/业务工单系统\n仅批准 CSV/XLSX 导出" as WorkOrderSource
+cloud "DeepSeek\n在线排序默认关\n离线teacher另批" as DS
+rectangle "CR-003离线预埋\n49/50 · 当前NO-GO\nEmbedding shadow + local student" as OfflineLab
+
+Agent -[#000000]-> Shell : 同步 UI
+Coach -[#000000]-> Shell : 同步 UI
+Owner -[#000000]-> Shell : 同步 UI
+Shell -[#000000]-> API : 搜索+复制+无命中/放弃/升级\n同步 HTTPS /v1
+API -[#000000]-> PG : 权威内容+证据事件\n同步 SQL
+
+API -[#000000]-> Feishu : 同步 OAuth（production Must）
+Coach ..> Feishu : 编辑台非生效源
+Agent ..> Chat : 人工粘贴/发送\n系统不可观测
+Coach ..> WorkOrderSource : 人工导出
+WorkOrderSource ..> Shell : 批准文件导入\n无 API 写回
+API -[#666666,dashed]-> DS : 异步HTTP 超时降级
+PG -[#666666,dashed]-> OfflineLab : 仅获批候选引用\n禁止 runtime→train 自动链
+OfflineLab -[#666666,dashed]-> DS : teacher 仅许可+预算获批
+
+legend right
+  实线 = 同步调用
+  虚线 = 异步或可选；production 飞书 OAuth 为实线 Must
+  CR-002 = 产品内自动事实，不是聊天记录
+  修改/发送/正确性 = Pilot 应用外三维抽样
+  CR-003 49/50 = 训练离线预埋，不扩大真实数据授权
+  禁止全局剪贴板监听；平台以人工确认为准
+endlegend
+@enduml

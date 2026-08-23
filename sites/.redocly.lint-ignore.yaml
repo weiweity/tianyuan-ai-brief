@@ -1,0 +1,7 @@
+# Redocly 的 no-unused-components 不追踪 vendor extension 内的 $ref。
+# ContentImportRowContract 由 FileImportRequest / FeishuImportRequest 的
+# x-normalized-row-schema 引用，用于 worker 到 SQL finalizer 的内部规范化行合同；
+# 这里仅对这一精确组件豁免，其他未使用组件仍继续报警。
+../business-docs/01-客服Agent项目/20-设计-进行中/openapi.v1.yaml:
+  no-unused-components:
+    - '#/components/schemas/ContentImportRowContract'

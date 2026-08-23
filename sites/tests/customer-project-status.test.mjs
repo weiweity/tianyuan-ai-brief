@@ -13,14 +13,44 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const projectRoot = path.join(repoRoot, "business-docs/01-客服Agent项目");
+const g009ClosureEvidence = "EVD-G0-09-AUTHORITY-SOURCES-20260814";
+const g009ClosureHeading = "### G0-09 机器可核验关闭收据（公开安全投影）";
+const g009ClosureColumns = [
+  "domain",
+  "source_ref",
+  "source_version_id",
+  "snapshot_evd",
+  "acl_evd",
+  "total_rows",
+  "importable_rows",
+  "quarantined_rows",
+  "quality_evd",
+  "final_approver_role",
+  "overall_approval_evd",
+  "readiness",
+];
+const readyG009ClosureRows = [
+  ["presale", "SRC-A1B2C3D4E5F60101", "srcv_a1b2c3d4e5f60101", "EVD-G0-09-SNAPSHOT-PRESALE-20260814", "EVD-G0-09-ACL-PRESALE-20260814", "100", "96", "4", "EVD-G0-09-QUALITY-PRESALE-20260814", "ROLE-CONTENT-LEAD", g009ClosureEvidence, "READY"],
+  ["campaign", "SRC-A1B2C3D4E5F60102", "srcv_a1b2c3d4e5f60102", "EVD-G0-09-SNAPSHOT-CAMPAIGN-20260814", "EVD-G0-09-ACL-CAMPAIGN-20260814", "67", "66", "1", "EVD-G0-09-QUALITY-CAMPAIGN-20260814", "ROLE-CONTENT-LEAD", g009ClosureEvidence, "READY"],
+  ["aftersale", "SRC-A1B2C3D4E5F60103", "srcv_a1b2c3d4e5f60103", "EVD-G0-09-SNAPSHOT-AFTERSALE-20260814", "EVD-G0-09-ACL-AFTERSALE-20260814", "80", "72", "8", "EVD-G0-09-QUALITY-AFTERSALE-20260814", "ROLE-CONTENT-LEAD", g009ClosureEvidence, "READY"],
+  ["product", "SRC-A1B2C3D4E5F60104", "srcv_a1b2c3d4e5f60104", "EVD-G0-09-SNAPSHOT-PRODUCT-20260814", "EVD-G0-09-ACL-PRODUCT-20260814", "632", "631", "1", "EVD-G0-09-QUALITY-PRODUCT-20260814", "ROLE-CONTENT-LEAD", g009ClosureEvidence, "READY"],
+].map((values) => Object.fromEntries(g009ClosureColumns.map((column, index) => [column, values[index]])));
 
 async function currentSources() {
-  const [charter, schedule, ledger, scope, cost] = await Promise.all(
-    ["00-项目章程.md", "01-总排期与阶段门禁.md", "02-G0责任与证据台账.md", "03-Scope与验收.md", "04-费用与成本控制.md"].map(
+  const [charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all(
+    [
+      "00-项目章程.md",
+      "01-总排期与阶段门禁.md",
+      "02-G0责任与证据台账.md",
+      "03-Scope与验收.md",
+      "04-费用与成本控制.md",
+      "20-设计-进行中/37-架构SSOT-v1.md",
+      "20-设计-进行中/46-实现设计-开工包.md",
+    ].map(
       (file) => readFile(path.join(projectRoot, file), "utf8")
     )
   );
-  return { charter, schedule, ledger, scope, cost };
+  return { charter, schedule, ledger, scope, cost, architecture, implementation };
 }
 
 function replaceStatus(ledger, label, value) {
@@ -60,7 +90,13 @@ function passAllExternal(ledger) {
       if (!/^\| G0-(?:0[2-9]|1[0-5]) \|/.test(line)) return line;
       const cells = line.split("|");
       cells[6] = " **Pass** ";
-      cells[7] = ` EVD-${cells[1].trim()} `;
+      cells[7] = cells[1].trim() === "G0-03"
+        ? " EVD-G0-03-BUSINESS-BASELINE-20260812 "
+        : cells[1].trim() === "G0-09"
+          ? ` ${g009ClosureEvidence} `
+          : cells[1].trim() === "G0-12"
+            ? " EVD-G0-12-OPS-DEPLOYMENT-20260810 "
+            : ` EVD-${cells[1].trim()} `;
       return cells.join("|");
     })
     .join("\n");
@@ -73,10 +109,45 @@ function passAllScope(scope) {
       if (!/^\| (?:[1-9]|1[0-5]) \|/.test(line)) return line;
       const cells = line.split("|");
       cells[4] = " [X] ";
-      cells[5] = ` EVD-SCOPE-${cells[1].trim().padStart(2, "0")} `;
+      cells[5] = ["5", "6"].includes(cells[1].trim())
+        ? " EVD-G0-03-BUSINESS-BASELINE-20260812 "
+        : cells[1].trim() === "9"
+          ? ` ${g009ClosureEvidence} `
+          : cells[1].trim() === "13"
+            ? " EVD-G0-12-OPS-DEPLOYMENT-20260810 "
+            : ` EVD-SCOPE-${cells[1].trim().padStart(2, "0")} `;
       return cells.join("|");
     })
     .join("\n");
+}
+
+function replaceScopeCheck(scope, scopeId, checked, evidence = "") {
+  return scope
+    .split("\n")
+    .map((line) => {
+      if (!line.startsWith(`| ${scopeId} |`)) return line;
+      const cells = line.split("|");
+      cells[4] = checked ? " [X] " : " [ ] ";
+      if (evidence) cells[5] = ` ${evidence} `;
+      return cells.join("|");
+    })
+    .join("\n");
+}
+
+function replaceG009ClosureRows(ledger, rows) {
+  const lines = ledger.split("\n");
+  const headingIndex = lines.findIndex((line) => line.trim() === g009ClosureHeading);
+  assert.ok(headingIndex >= 0, "测试夹具缺少 G0-09 机器可核验关闭收据");
+  const tableStart = lines.findIndex((line, index) => index > headingIndex && line.trim().startsWith("|"));
+  assert.ok(tableStart > headingIndex, "G0-09 关闭收据缺少表格");
+  let tableEnd = tableStart;
+  while (tableEnd < lines.length && lines[tableEnd].trim().startsWith("|")) tableEnd += 1;
+  const table = [
+    `| ${g009ClosureColumns.join(" | ")} |`,
+    `| ${g009ClosureColumns.map(() => "---").join(" | ")} |`,
+    ...rows.map((row) => `| ${g009ClosureColumns.map((column) => row[column]).join(" | ")} |`),
+  ];
+  return [...lines.slice(0, tableStart), ...table, ...lines.slice(tableEnd)].join("\n");
 }
 
 function fillCoreRaci(ledger) {
@@ -95,13 +166,79 @@ function fillCoreRaci(ledger) {
     cells[3] = ` ROLE-${token}-PROXY `;
     cells[4] = ` EVD-RACI-${token} `;
     cells[5] = " 已接受 ";
+    cells[6] = " 2026-08-10 ";
     return cells.join("|");
   }).join("\n");
   return before + section;
 }
 
-function fullyAdvance(sources, ddev = "2026-08-14") {
+function replaceRaciFields(ledger, role, updates) {
+  const columnIndex = {
+    "人员代号": 2,
+    "代理人代号": 3,
+    "接受职责证据 ID": 4,
+    "状态": 5,
+    "生效日期": 6,
+    "固定职责": 7,
+    "职责分离": 8,
+  };
+  const marker = "## 5. RACI 具名区";
+  const start = ledger.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 RACI 具名区");
+  const before = ledger.slice(0, start);
+  const section = ledger.slice(start).split("\n").map((line) => {
+    const cells = line.split("|");
+    if (cells[1]?.trim() !== role) return line;
+    for (const [field, value] of Object.entries(updates)) {
+      assert.ok(field in columnIndex, `未知 RACI 字段：${field}`);
+      cells[columnIndex[field]] = ` ${value} `;
+    }
+    return cells.join("|");
+  }).join("\n");
+  return before + section;
+}
+
+function replaceDdevDecisionRow(ledger, label, value) {
+  const marker = "### DEC-DDEV-01 · 一期开发授权记录";
+  const start = ledger.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 DEC-DDEV-01 开发授权记录");
+  return ledger.slice(0, start) + ledger.slice(start).replace(
+    new RegExp(`^(\\| ${label.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")} \\|) [^|]*(\\|)`, "m"),
+    `$1 ${value} $2`
+  );
+}
+
+function selectOnlyFeePath(cost, path) {
+  return cost.replace(
+    /^- \[[ xX]\] \*\*([ABC])\b/gm,
+    (_, candidate) => `- [${candidate === path ? "X" : " "}] **${candidate}`
+  );
+}
+
+function signDdev(ledger, ddev) {
+  const marker = "### DEC-DDEV-01 · 一期开发授权记录";
+  const start = ledger.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 DEC-DDEV-01 开发授权记录");
+  ledger = ledger.slice(0, start) + ledger.slice(start).replace(
+    /^> \*\*当前状态：\*\*[^\n]*$/m,
+    "> **当前状态：** `PASS` · **AUTHORIZED**。"
+  );
+  for (const [label, value] of [
+    ["结论", "PASS"],
+    ["G0 依据", "G0-02～15：Pass 14 / 14；Scope：Pass 15 / 15；证据包 EVD-G0-PACK-20260814"],
+    ["冻结输入清单", "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814"],
+    ["允许环境与数据", "development / test；合成数据或经批准的脱敏数据；EVD-DDEV-DATA-20260814"],
+    ["费用边界", "B；0 新增付费；下次决策日 2026-08-31；EVD-DDEV-FEE-20260814"],
+    ["生效时间 / 复核日", `${ddev} / 2026-08-20`],
+    ["最终签发角色", "业务：ROLE-R02 / EVD-DDEV-SIGN-BUSINESS；IT / 安全：ROLE-R05 / EVD-DDEV-SIGN-SECURITY；预算：ROLE-R04 / EVD-DDEV-SIGN-BUDGET；项目：ROLE-R01 / EVD-DDEV-SIGN-PROJECT"],
+    ["授权证据", "EVD-DDEV-AUTH-20260814"],
+  ]) ledger = replaceDdevDecisionRow(ledger, label, value);
+  return ledger;
+}
+
+function fullyAdvance(sources, ddev = "2026-08-14", { authorizeDdev = true } = {}) {
   sources.ledger = passAllExternal(sources.ledger);
+  sources.ledger = replaceG009ClosureRows(sources.ledger, readyG009ClosureRows);
   sources.ledger = fillCoreRaci(sources.ledger);
   for (const [label, value] of [
     ["公司正式批准", "已完成"],
@@ -115,7 +252,7 @@ function fullyAdvance(sources, ddev = "2026-08-14") {
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.3 / 台账 v3.3 / Scope v3.3 / 排期 v3.3"],
+    ["评审输入版本", "章程 v3.26 / 台账 v3.63 / Scope v4.36 / 排期 v3.20"],
     ["G0-02～15", "Pass 14 / 14；Fail 0 / 14"],
     ["Scope 检查", "Pass 15 / 15；Fail 0 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
@@ -127,35 +264,414 @@ function fullyAdvance(sources, ddev = "2026-08-14") {
     ["证据包 ID", "EVD-G0-PACK-20260814"],
     ["Ddev", ddev],
   ]) sources.ledger = replaceSignRow(sources.ledger, label, value);
+  if (authorizeDdev) sources.ledger = signDdev(sources.ledger, ddev);
   sources.scope = passAllScope(sources.scope);
-  sources.cost = sources.cost
-    .replace("- [ ] **B 费用后置：** 走公司 IT / 数字化统一采购", "- [X] **B 费用后置：** 走公司 IT / 数字化统一采购")
-    .replace("| 预算 / 费用责任人（仅 1 人） | |", "| 预算 / 费用责任人（仅 1 人） | ROLE-BUDGET-OWNER / EVD-BUDGET |")
-    .replace("| 费用科目 / 采购路径 | |", "| 费用科目 / 采购路径 | IT 统一采购 / EVD-PROCUREMENT |")
-    .replace("| B 下次费用决策日 | |", "| B 下次费用决策日 | 2026-08-20 |");
   return sources;
 }
 
-test("当前 2/29 真源动态导出七条状态轴与临时 B", async () => {
+test("当前 27/29 真源动态导出七条状态轴与正式 B", async () => {
   const status = deriveProjectStatus(await currentSources());
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
     approval: "公司批准 · 已批准",
-    "problem-fit": "问题适配 · PRECONFIRM · 待核验",
-    external: "外部责任包 · 1 / 14",
-    scope: "Scope · 1 / 15",
-    resource: "资源基线 · 未选择",
+    "problem-fit": "问题适配 · 已核验",
+    external: "外部责任包 · 13 / 14",
+    scope: "Scope · 14 / 15",
+    resource: "资源基线 · 单人全栈 / FDE",
     ddev: "Ddev · 未成立",
   });
-  assert.equal(status.feePath, "B · 临时管控，未签");
+  assert.equal(status.feePath, "B · 费用后置");
   assert.equal(status.ddevReady, false);
   assert.equal(isChecked("[X]"), true);
-  assert.equal(isMeetingLifecycleClosed(status), false);
+  assert.equal(status.d0Completed, true);
+  assert.equal(isMeetingLifecycleClosed(status), true);
+});
+
+test("RACI 职责接受、G0 与 Scope 必须按对应证据原子推进", async () => {
+  const approvalScopeBehind = await currentSources();
+  approvalScopeBehind.scope = replaceScopeCheck(approvalScopeBehind.scope, "1", false);
+  approvalScopeBehind.ledger = replaceStatus(approvalScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(approvalScopeBehind),
+    /G0-02 与 Scope #1 必须在同一证据变更中同步通过/
+  );
+
+  const businessScopeBehind = await currentSources();
+  businessScopeBehind.scope = replaceScopeCheck(businessScopeBehind.scope, "2", false);
+  businessScopeBehind.ledger = replaceStatus(businessScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(businessScopeBehind),
+    /G0-04 与 Scope #2 必须在同一职责接受证据中同步通过/
+  );
+
+  const businessGateBehind = await currentSources();
+  businessGateBehind.ledger = replaceGateStatus(businessGateBehind.ledger, "G0-04", "待办");
+  businessGateBehind.ledger = replaceStatus(businessGateBehind.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(businessGateBehind),
+    /G0-04 与 Scope #2 必须在同一职责接受证据中同步通过/
+  );
+
+  const accountabilityScopeBehind = await currentSources();
+  accountabilityScopeBehind.scope = replaceScopeCheck(accountabilityScopeBehind.scope, "4", false);
+  accountabilityScopeBehind.ledger = replaceStatus(accountabilityScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(accountabilityScopeBehind),
+    /Scope #4 必须与预算、IT \/ 安全、IT 服务 \/ 运维三类责任人的职责接受状态同步/
+  );
+
+  const contentGateBehind = await currentSources();
+  contentGateBehind.ledger = replaceGateStatus(contentGateBehind.ledger, "G0-05", "待办");
+  contentGateBehind.ledger = replaceStatus(contentGateBehind.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(contentGateBehind),
+    /G0-05 与 Scope #3 必须在同一证据变更中同步通过/
+  );
+
+  const governanceScopeBehind = await currentSources();
+  governanceScopeBehind.scope = replaceScopeCheck(governanceScopeBehind.scope, "7", false);
+  governanceScopeBehind.ledger = replaceStatus(governanceScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(governanceScopeBehind),
+    /G0-06 与 Scope #7 必须在同一证据变更中同步通过/
+  );
+
+  const accountabilityRoleBehind = await currentSources();
+  accountabilityRoleBehind.ledger = replaceRaciFields(accountabilityRoleBehind.ledger, "IT 服务 / 运维责任人", {
+    "人员代号": "",
+    "代理人代号": "",
+    "接受职责证据 ID": "",
+    "状态": "待填",
+    "生效日期": "",
+  });
+  assert.throws(
+    () => deriveProjectStatus(accountabilityRoleBehind),
+    /Scope #4 必须与预算、IT \/ 安全、IT 服务 \/ 运维三类责任人的职责接受状态同步/
+  );
+
+  const baselineGateAhead = await currentSources();
+  baselineGateAhead.ledger = replaceGateStatus(baselineGateAhead.ledger, "G0-03", "待办", "");
+  baselineGateAhead.ledger = replaceStatus(baselineGateAhead.ledger, "业务问题优先级", "待核验");
+  baselineGateAhead.ledger = replaceStatus(baselineGateAhead.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(baselineGateAhead),
+    /G0-03 与 Scope #5\/#6 必须在同一证据变更中同步通过/
+  );
+
+  const baselineScopeAhead = await currentSources();
+  baselineScopeAhead.scope = replaceScopeCheck(baselineScopeAhead.scope, "5", false, "");
+  baselineScopeAhead.ledger = replaceStatus(baselineScopeAhead.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(baselineScopeAhead),
+    /G0-03 与 Scope #5\/#6 必须在同一证据变更中同步通过/
+  );
+
+  const feeScopeAhead = await currentSources();
+  feeScopeAhead.scope = replaceScopeCheck(feeScopeAhead.scope, "11", false, "");
+  feeScopeAhead.ledger = replaceStatus(feeScopeAhead.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(feeScopeAhead),
+    /Scope #11 只有在 G0-07 与正式 A \/ B 费用路径同步通过/
+  );
+
+  const greenfieldScopeBehind = await currentSources();
+  greenfieldScopeBehind.scope = replaceScopeCheck(greenfieldScopeBehind.scope, "8", false);
+  greenfieldScopeBehind.ledger = replaceStatus(greenfieldScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(greenfieldScopeBehind),
+    /G0-08 与 Scope #8 必须在同一证据变更中同步通过/
+  );
+
+  const sourcesGateAhead = await currentSources();
+  sourcesGateAhead.ledger = replaceGateStatus(
+    sourcesGateAhead.ledger,
+    "G0-09",
+    "Pass",
+    "EVD-G0-09-AUTHORITY-SOURCES-20260810"
+  );
+  sourcesGateAhead.ledger = replaceStatus(sourcesGateAhead.ledger, "外部责任包", "14/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(sourcesGateAhead),
+    /G0-09 与 Scope #9 必须在同一证据变更中同步通过/
+  );
+
+  const sourcesScopeAhead = await currentSources();
+  sourcesScopeAhead.scope = replaceScopeCheck(
+    sourcesScopeAhead.scope,
+    "9",
+    true,
+    "EVD-G0-09-AUTHORITY-SOURCES-20260810"
+  );
+  sourcesScopeAhead.ledger = replaceStatus(sourcesScopeAhead.ledger, "Scope 检查", "15/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(sourcesScopeAhead),
+    /G0-09 与 Scope #9 必须在同一证据变更中同步通过/
+  );
+
+  const mismatchedSourceEvidence = await currentSources();
+  mismatchedSourceEvidence.ledger = replaceG009ClosureRows(
+    mismatchedSourceEvidence.ledger,
+    readyG009ClosureRows
+  );
+  mismatchedSourceEvidence.ledger = replaceGateStatus(
+    mismatchedSourceEvidence.ledger,
+    "G0-09",
+    "Pass",
+    g009ClosureEvidence
+  );
+  mismatchedSourceEvidence.scope = replaceScopeCheck(
+    mismatchedSourceEvidence.scope,
+    "9",
+    true,
+    "EVD-G0-09-AUTHORITY-SOURCES-20260815"
+  );
+  mismatchedSourceEvidence.ledger = replaceStatus(mismatchedSourceEvidence.ledger, "外部责任包", "14/14 Pass");
+  mismatchedSourceEvidence.ledger = replaceStatus(mismatchedSourceEvidence.ledger, "Scope 检查", "15/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(mismatchedSourceEvidence),
+    /G0-09 与 Scope #9 Pass 时必须使用同一精确关闭证据/
+  );
+
+  const genericSourceEvidence = await currentSources();
+  genericSourceEvidence.ledger = replaceG009ClosureRows(
+    genericSourceEvidence.ledger,
+    readyG009ClosureRows.map((row) => ({ ...row, overall_approval_evd: "EVD-G0-09-GENERIC" }))
+  );
+  genericSourceEvidence.ledger = replaceGateStatus(
+    genericSourceEvidence.ledger,
+    "G0-09",
+    "Pass",
+    "EVD-G0-09-GENERIC"
+  );
+  genericSourceEvidence.scope = replaceScopeCheck(
+    genericSourceEvidence.scope,
+    "9",
+    true,
+    "EVD-G0-09-GENERIC"
+  );
+  genericSourceEvidence.ledger = replaceStatus(genericSourceEvidence.ledger, "外部责任包", "14/14 Pass");
+  genericSourceEvidence.ledger = replaceStatus(genericSourceEvidence.ledger, "Scope 检查", "15/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(genericSourceEvidence),
+    /G0-09 Pass 时必须使用单一 EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD 证据/
+  );
+
+  const invalidSourceEvidenceDate = await currentSources();
+  invalidSourceEvidenceDate.ledger = replaceG009ClosureRows(
+    invalidSourceEvidenceDate.ledger,
+    readyG009ClosureRows.map((row) => ({
+      ...row,
+      overall_approval_evd: "EVD-G0-09-AUTHORITY-SOURCES-20260231",
+    }))
+  );
+  invalidSourceEvidenceDate.ledger = replaceGateStatus(
+    invalidSourceEvidenceDate.ledger,
+    "G0-09",
+    "Pass",
+    "EVD-G0-09-AUTHORITY-SOURCES-20260231"
+  );
+  invalidSourceEvidenceDate.scope = replaceScopeCheck(
+    invalidSourceEvidenceDate.scope,
+    "9",
+    true,
+    "EVD-G0-09-AUTHORITY-SOURCES-20260231"
+  );
+  invalidSourceEvidenceDate.ledger = replaceStatus(invalidSourceEvidenceDate.ledger, "外部责任包", "14/14 Pass");
+  invalidSourceEvidenceDate.ledger = replaceStatus(invalidSourceEvidenceDate.ledger, "Scope 检查", "15/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(invalidSourceEvidenceDate),
+    /G0-09 Pass 时必须使用单一 EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD 证据/
+  );
+
+  const missingSourceDomain = await currentSources();
+  missingSourceDomain.ledger = replaceG009ClosureRows(
+    missingSourceDomain.ledger,
+    readyG009ClosureRows.slice(0, 3)
+  );
+  assert.throws(
+    () => deriveProjectStatus(missingSourceDomain),
+    /G0-09 关闭收据必须恰好包含四个内容域/
+  );
+
+  const missingReadyField = fullyAdvance(await currentSources());
+  missingReadyField.ledger = replaceG009ClosureRows(
+    missingReadyField.ledger,
+    readyG009ClosureRows.map((row) => row.domain === "campaign" ? { ...row, snapshot_evd: "待补" } : row)
+  );
+  assert.throws(
+    () => deriveProjectStatus(missingReadyField),
+    /campaign snapshot_evd 必须是单一 EVD-\* ID/
+  );
+
+  const inconsistentSourceCounts = fullyAdvance(await currentSources());
+  inconsistentSourceCounts.ledger = replaceG009ClosureRows(
+    inconsistentSourceCounts.ledger,
+    readyG009ClosureRows.map((row) => row.domain === "presale" ? { ...row, total_rows: "101" } : row)
+  );
+  assert.throws(
+    () => deriveProjectStatus(inconsistentSourceCounts),
+    /presale 计数必须满足 total_rows = importable_rows \+ quarantined_rows/
+  );
+
+  const incompleteSourceReceipt = fullyAdvance(await currentSources());
+  incompleteSourceReceipt.ledger = replaceG009ClosureRows(
+    incompleteSourceReceipt.ledger,
+    readyG009ClosureRows.map((row) => row.domain === "aftersale" ? { ...row, readiness: "INCOMPLETE" } : row)
+  );
+  assert.throws(
+    () => deriveProjectStatus(incompleteSourceReceipt),
+    /G0-09 Pass 时四域关闭收据必须全部 READY；aftersale 仍为 INCOMPLETE/
+  );
+
+  const preconfirmSourceReceipt = await currentSources();
+  preconfirmSourceReceipt.ledger = replaceG009ClosureRows(
+    preconfirmSourceReceipt.ledger,
+    readyG009ClosureRows.map((row) => row.domain === "product" ? { ...row, readiness: "PRECONFIRM" } : row)
+  );
+  assert.throws(
+    () => deriveProjectStatus(preconfirmSourceReceipt),
+    /product readiness 必须是 INCOMPLETE 或 READY/
+  );
+
+  const gateBehind = await currentSources();
+  gateBehind.ledger = replaceGateStatus(gateBehind.ledger, "G0-10", "进行中");
+  gateBehind.ledger = replaceStatus(gateBehind.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(gateBehind),
+    /G0-10 与 Scope #10 必须在同一证据变更中同步通过/
+  );
+
+  const securityGateBehind = await currentSources();
+  securityGateBehind.ledger = replaceGateStatus(
+    securityGateBehind.ledger,
+    "G0-11",
+    "进行中",
+    "安全边界已批准但本夹具故意撤销门禁状态"
+  );
+  securityGateBehind.ledger = replaceStatus(securityGateBehind.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(securityGateBehind),
+    /G0-11 与 Scope #12 必须在同一证据变更中同步通过/
+  );
+
+  const securityScopeBehind = await currentSources();
+  securityScopeBehind.scope = replaceScopeCheck(
+    securityScopeBehind.scope,
+    "12",
+    false,
+    ""
+  );
+  securityScopeBehind.ledger = replaceStatus(securityScopeBehind.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(securityScopeBehind),
+    /G0-11 与 Scope #12 必须在同一证据变更中同步通过/
+  );
+
+  const operationsGateEvidenceDrift = await currentSources();
+  operationsGateEvidenceDrift.ledger = replaceGateStatus(
+    operationsGateEvidenceDrift.ledger,
+    "G0-12",
+    "Pass",
+    "EVD-G0-12-OTHER"
+  );
+  assert.throws(
+    () => deriveProjectStatus(operationsGateEvidenceDrift),
+    /G0-12 与 Scope #13 必须使用同一精确证据/
+  );
+
+  const operationsScopeEvidenceDrift = await currentSources();
+  operationsScopeEvidenceDrift.scope = replaceScopeCheck(
+    operationsScopeEvidenceDrift.scope,
+    "13",
+    true,
+    "EVD-G0-12-OTHER"
+  );
+  assert.throws(
+    () => deriveProjectStatus(operationsScopeEvidenceDrift),
+    /G0-12 与 Scope #13 必须使用同一精确证据/
+  );
+
+  const evaluationGateAhead = await currentSources();
+  evaluationGateAhead.ledger = replaceGateStatus(
+    evaluationGateAhead.ledger,
+    "G0-13",
+    "Pass",
+    "EVD-G0-13-EVALUATION-FREEZE-20260812"
+  );
+  evaluationGateAhead.ledger = replaceStatus(evaluationGateAhead.ledger, "外部责任包", "13/14 Pass");
+  evaluationGateAhead.scope = replaceScopeCheck(evaluationGateAhead.scope, "14", false);
+  evaluationGateAhead.ledger = replaceStatus(evaluationGateAhead.ledger, "Scope 检查", "13/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(evaluationGateAhead),
+    /G0-13 与 Scope #14 必须在同一证据变更中同步通过/
+  );
+
+  const evaluationScopeAhead = await currentSources();
+  evaluationScopeAhead.scope = replaceScopeCheck(
+    evaluationScopeAhead.scope,
+    "14",
+    true,
+    "EVD-G0-13-EVALUATION-FREEZE-20260812"
+  );
+  evaluationScopeAhead.ledger = replaceStatus(evaluationScopeAhead.ledger, "Scope 检查", "14/15 Pass");
+  evaluationScopeAhead.ledger = replaceGateStatus(evaluationScopeAhead.ledger, "G0-13", "待办", "");
+  evaluationScopeAhead.ledger = replaceStatus(evaluationScopeAhead.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(evaluationScopeAhead),
+    /G0-13 与 Scope #14 必须在同一证据变更中同步通过/
+  );
+
+  const deliveryScopeAhead = await currentSources();
+  deliveryScopeAhead.ledger = replaceGateStatus(deliveryScopeAhead.ledger, "G0-14", "进行中", "EVD-G0-14-PENDING");
+  deliveryScopeAhead.ledger = replaceStatus(deliveryScopeAhead.ledger, "外部责任包", "12/14 Pass");
+  assert.throws(
+    () => deriveProjectStatus(deliveryScopeAhead),
+    /Scope #15 只有在 G0-14 与 G0-15 均 Pass 时才能同步通过/
+  );
+});
+
+test("G0-14/15 即使方案齐全，也必须由项目负责人接受职责后才能 Pass", async () => {
+  const sources = await currentSources();
+  sources.ledger = replaceRaciFields(sources.ledger, "项目负责人", {
+    "人员代号": "",
+    "代理人代号": "",
+    "接受职责证据 ID": "",
+    "状态": "待填",
+    "生效日期": "",
+  });
+  sources.ledger = replaceGateStatus(sources.ledger, "G0-14", "Pass", "EVD-G0-14");
+  sources.ledger = replaceGateStatus(sources.ledger, "G0-15", "Pass", "EVD-G0-15");
+  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "13/14 Pass");
+  sources.scope = replaceScopeCheck(sources.scope, "15", true, "EVD-SCOPE-15");
+  sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "14/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(sources),
+    /G0 角色 项目负责人 必须填写人员与代理人代号/
+  );
+
+  const missingQa = await currentSources();
+  missingQa.ledger = replaceRaciFields(missingQa.ledger, "QA 负责人", {
+    "人员代号": "",
+    "代理人代号": "",
+    "接受职责证据 ID": "",
+    "状态": "待填",
+    "生效日期": "",
+  });
+  missingQa.ledger = replaceGateStatus(missingQa.ledger, "G0-14", "Pass", "EVD-G0-14-WBS");
+  missingQa.ledger = replaceGateStatus(missingQa.ledger, "G0-15", "Pass", "EVD-G0-15-HANDOFF");
+  missingQa.ledger = replaceStatus(missingQa.ledger, "外部责任包", "13/14 Pass");
+  missingQa.scope = replaceScopeCheck(missingQa.scope, "15", true, "EVD-G0-14-WBS / EVD-G0-15-HANDOFF");
+  missingQa.ledger = replaceStatus(missingQa.ledger, "Scope 检查", "14/15 Pass");
+  assert.throws(
+    () => deriveProjectStatus(missingQa),
+    /G0 角色 QA 负责人 必须填写人员与代理人代号/
+  );
 });
 
 test("启动会生命周期对正向、否决、暂停和开发授权结论统一关闭", () => {
   const openStatus = {
     approvalReady: true,
+    d0Completed: false,
     problemFit: "PRECONFIRM · 待核验",
     g0: "未签发",
     feePathCode: "B",
@@ -177,16 +693,17 @@ test("启动会生命周期对正向、否决、暂停和开发授权结论统�
   assert.equal(isMeetingLifecycleClosed({ ...openStatus, feePathCode: "C" }), true);
   assert.equal(isMeetingLifecycleClosed({ ...openStatus, development: "已暂停" }), true);
   assert.equal(isMeetingLifecycleClosed({ ...openStatus, ddevReady: true }), true);
+  assert.equal(isMeetingLifecycleClosed({ ...openStatus, d0Completed: true }), true);
 });
 
 test("批准汇总与 G0-02 明细不一致时拒绝构建", async () => {
   const sources = await currentSources();
   sources.ledger = replaceGateStatus(sources.ledger, "G0-02", "待办");
-  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "0/14 Pass");
+  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "12/14 Pass");
   assert.throws(() => deriveProjectStatus(sources), /G0-02/);
 });
 
-test("2/29 时仅填写 Ddev 日期不得制造开发授权", async () => {
+test("27/29 时仅填写 Ddev 日期不得制造开发授权", async () => {
   const sources = await currentSources();
   sources.ledger = replaceStatus(sources.ledger, "Ddev", "2026-08-14");
   assert.throws(() => deriveProjectStatus(sources), /G0 未正式签发/);
@@ -200,6 +717,108 @@ test("全部证据与 G0 一致通过后，合法日期 Ddev 和正式 B 可成�
   assert.equal(status.g0Ready, true);
   assert.equal(status.ddevReady, true);
   assert.equal(status.feePathCode, "B");
+});
+
+test("G0 全绿且填写 Ddev 日期仍不能绕过 DEC-DDEV-01 授权", async () => {
+  const unsigned = fullyAdvance(await currentSources(), "2026-08-14", { authorizeDdev: false });
+  assert.throws(
+    () => deriveProjectStatus(unsigned),
+    /Ddev 日期不得在 DEC-DDEV-01 未 PASS 时成立/
+  );
+});
+
+test("DEC-DDEV-01 仍为 PREPARED 时不得在表内偷填 PASS 结论", async () => {
+  const misleading = await currentSources();
+  misleading.ledger = replaceDdevDecisionRow(misleading.ledger, "结论", "PASS");
+  assert.throws(
+    () => deriveProjectStatus(misleading),
+    /DEC-DDEV-01=PREPARED 时结论必须保持未填写/
+  );
+});
+
+test("DEC-DDEV-01 状态必须整词匹配，近似词不得被当作授权", async () => {
+  for (const token of ["PASSING", "HOLDING", "FAILURE", "PREPAREDNESS"]) {
+    const sources = await currentSources();
+    sources.ledger = sources.ledger.replace(
+      /^> \*\*当前状态：\*\*[^\n]*$/m,
+      `> **当前状态：** \`${token}\` · 非受控状态`
+    );
+    assert.throws(
+      () => deriveProjectStatus(sources),
+      /DEC-DDEV-01 当前状态必须是 PREPARED、PASS、HOLD 或 FAIL/,
+      token
+    );
+  }
+});
+
+test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交叉一致", async () => {
+  const cases = [
+    [
+      "G0 依据",
+      "G0-02～15：Pass 14 / 14；Scope：Pass 15 / 15；证据包 EVD-G0-OTHER",
+      /DEC-DDEV-01 G0 证据包必须与 G0 签发记录一致/,
+    ],
+    [
+      "冻结输入清单",
+      "01 排期 v3.20 / 03 Scope v4.19 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 03 版本 v4\.19 与当前真源 v4\.36 不一致/,
+    ],
+    [
+      "冻结输入清单",
+      "01 排期 v3.16 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.20 不一致/,
+    ],
+    [
+      "冻结输入清单",
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.6 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 04 版本 v3\.6 与当前真源 v3\.9 不一致/,
+    ],
+    [
+      "冻结输入清单",
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.15 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 37 版本 v1\.15 与当前真源 v1\.16 不一致/,
+    ],
+    [
+      "冻结输入清单",
+      "01 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.20；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 46 版本 v1\.20 与当前真源 v1\.21 不一致/,
+    ],
+    [
+      "冻结输入清单",
+      "010 排期 v3.20 / 03 Scope v4.36 / 04 费用 v3.9 / 37 架构 v1.16 / 46 实现设计 v1.21；EVD-DDEV-INPUTS-20260814",
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.20 不一致/,
+    ],
+    [
+      "允许环境与数据",
+      "development / test / production；EVD-DDEV-DATA-20260814",
+      /DEC-DDEV-01 只允许 development \/ test 环境/,
+    ],
+    [
+      "费用边界",
+      "B；EVD-DDEV-FEE-20260814",
+      /DEC-DDEV-01 B 费用边界必须写明 0 新增付费和已批准的下次决策日/,
+    ],
+    [
+      "生效时间 / 复核日",
+      "2026-08-15 / 2026-08-20",
+      /DEC-DDEV-01 生效日必须与 Ddev 日期一致/,
+    ],
+    [
+      "最终签发角色",
+      "业务：ROLE-OUTSIDER / EVD-DDEV-SIGN-BUSINESS；IT / 安全：ROLE-R05 / EVD-DDEV-SIGN-SECURITY；预算：ROLE-R04 / EVD-DDEV-SIGN-BUDGET；项目：ROLE-R01 / EVD-DDEV-SIGN-PROJECT",
+      /DEC-DDEV-01 业务签发人必须来自 RACI 客服业务 Owner 的主责或代理/,
+    ],
+    [
+      "授权证据",
+      "EVD-NOT-DDEV",
+      /DEC-DDEV-01 PASS 时必须填写 EVD-DDEV-\* 授权证据/,
+    ],
+  ];
+  for (const [field, value, expected] of cases) {
+    const drifted = fullyAdvance(await currentSources());
+    drifted.ledger = replaceDdevDecisionRow(drifted.ledger, field, value);
+    assert.throws(() => deriveProjectStatus(drifted), expected, field);
+  }
 });
 
 test("Ddev 日期早于章程下限、未知阶段或伪装的未开始文案均拒绝", async () => {
@@ -228,9 +847,9 @@ test("Ddev 日期早于章程下限、未知阶段或伪装的未开始文案均
 
 test("C 暂停可保持未开发，但不得通过 Scope #11 或签发 Ddev", async () => {
   const sources = await currentSources();
-  sources.cost = sources.cost.replace(
-    "- [ ] **C 暂停执行：** 原因 ________；下次复核日期 ________",
-    "- [x] **C 暂停执行：** 原因 业务证据不足；下次复核日期 2026-08-20"
+  sources.cost = selectOnlyFeePath(sources.cost, "C").replace(
+    /^- \[X\] \*\*C 暂停执行：\*\*.*$/m,
+    "- [X] **C 暂停执行：** 原因 业务证据不足；下次复核日期 2026-08-20"
   );
   sources.ledger = sources.ledger
     .split("\n")
@@ -243,19 +862,18 @@ test("C 暂停可保持未开发，但不得通过 Scope #11 或签发 Ddev", as
     })
     .join("\n");
   sources.ledger = fillCoreRaci(sources.ledger);
-  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "2/14 Pass");
+  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "13/14 Pass");
   sources.ledger = replaceStatus(sources.ledger, "产品开发", "已暂停");
+  sources.scope = replaceScopeCheck(sources.scope, "11", false, "");
+  sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "13/15 Pass");
   const paused = deriveProjectStatus(sources);
   assert.equal(paused.feePathCode, "C");
   assert.equal(paused.feePauseReason, "业务证据不足");
   assert.equal(paused.feeDecisionDate, "2026-08-20");
   assert.equal(paused.ddevReady, false);
 
-  sources.scope = sources.scope.replace(
-    /^(\| 11 \|[^\n]+\|) \[ \] \|[^\n]+$/m,
-    "$1 [x] | EVD-SCOPE-11 |"
-  );
-  sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "2/15 Pass");
+  sources.scope = replaceScopeCheck(sources.scope, "11", true, "EVD-SCOPE-11");
+  sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "14/15 Pass");
   assert.throws(() => deriveProjectStatus(sources), /C 暂停路径/);
 });
 
@@ -269,41 +887,37 @@ test("门禁 ID、状态和已勾 Scope 的证据必须可追溯", async () => {
   assert.throws(() => deriveProjectStatus(notPass), /不是受控门禁状态/);
 
   const checkedWithoutEvidence = await currentSources();
-  checkedWithoutEvidence.scope = checkedWithoutEvidence.scope.replace(
-    /^(\| 2 \|[^\n]+\|) \[ \] \|[^\n]+$/m,
-    "$1 [x] | 批准记录 EVD-* ID：____ |"
-  );
-  checkedWithoutEvidence.ledger = replaceStatus(checkedWithoutEvidence.ledger, "Scope 检查", "2/15 Pass");
-  assert.throws(() => deriveProjectStatus(checkedWithoutEvidence), /Scope #2.*可追溯外部证据/);
+  checkedWithoutEvidence.scope = replaceScopeCheck(checkedWithoutEvidence.scope, "5", true, "批准记录 EVD-* ID：____");
+  assert.throws(() => deriveProjectStatus(checkedWithoutEvidence), /Scope #5.*可追溯外部证据/);
 
   const rawUrlOnly = await currentSources();
-  rawUrlOnly.scope = rawUrlOnly.scope.replace(
-    /^(\| 2 \|[^\n]+\|) \[ \] \|[^\n]+$/m,
-    "$1 [x] | https://example.invalid/approval |"
-  );
-  rawUrlOnly.ledger = replaceStatus(rawUrlOnly.ledger, "Scope 检查", "2/15 Pass");
-  assert.throws(() => deriveProjectStatus(rawUrlOnly), /Scope #2.*可追溯/);
+  rawUrlOnly.scope = replaceScopeCheck(rawUrlOnly.scope, "5", true, "https://example.invalid/approval");
+  assert.throws(() => deriveProjectStatus(rawUrlOnly), /Scope #5.*可追溯/);
 
   const duplicateScope = await currentSources();
   duplicateScope.scope = duplicateScope.scope.replace(/^\| 15 \|/m, "| 14 |");
   assert.throws(() => deriveProjectStatus(duplicateScope), /Scope #1～#15/);
 
   const smuggledEvidence = await currentSources();
-  smuggledEvidence.scope = smuggledEvidence.scope.replace(
-    /^(\| 2 \|[^\n]+\|) \[ \] \|[^\n]+$/m,
-    "$1 [x] | 原始链接 https://example.invalid EVD-SCOPE-01 |"
-  );
-  smuggledEvidence.ledger = replaceStatus(smuggledEvidence.ledger, "Scope 检查", "2/15 Pass");
-  assert.throws(() => deriveProjectStatus(smuggledEvidence), /Scope #2.*可追溯/);
+  smuggledEvidence.scope = replaceScopeCheck(smuggledEvidence.scope, "5", true, "原始链接 https://example.invalid EVD-SCOPE-01");
+  assert.throws(() => deriveProjectStatus(smuggledEvidence), /Scope #5.*可追溯/);
 });
 
 test("RACI 人员代号与签发证据不得夹带姓名或原始链接", async () => {
   const namedRaci = fullyAdvance(await currentSources());
-  namedRaci.ledger = namedRaci.ledger.replace(
-    /^\| 项目负责人 \| ROLE-R01 /m,
-    "| 项目负责人 | 张三 ROLE-R01 "
-  );
+  namedRaci.ledger = replaceRaciFields(namedRaci.ledger, "项目负责人", {
+    "人员代号": "张三 ROLE-R01",
+  });
   assert.throws(() => deriveProjectStatus(namedRaci), /RACI 项目负责人 人员代号\s*格式无效/);
+
+  const feishuToken = fullyAdvance(await currentSources());
+  feishuToken.ledger = replaceRaciFields(feishuToken.ledger, "项目负责人", {
+    "人员代号": "doccnSensitiveToken",
+  });
+  assert.throws(
+    () => deriveProjectStatus(feishuToken),
+    /RACI 项目负责人 人员代号\s*格式无效/
+  );
 
   const linkedReviewer = fullyAdvance(await currentSources());
   linkedReviewer.ledger = replaceSignRow(
@@ -317,9 +931,57 @@ test("RACI 人员代号与签发证据不得夹带姓名或原始链接", async 
   );
 });
 
+test("RACI 接受状态与生效日期必须双向一致", async () => {
+  const missingDate = fullyAdvance(await currentSources());
+  missingDate.ledger = replaceRaciFields(missingDate.ledger, "项目负责人", { "生效日期": "" });
+  assert.throws(
+    () => deriveProjectStatus(missingDate),
+    /RACI 项目负责人 已接受时必须填写有效生效日期/
+  );
+
+  const invalidDate = fullyAdvance(await currentSources());
+  invalidDate.ledger = replaceRaciFields(invalidDate.ledger, "项目负责人", {
+    "生效日期": "2026-02-31",
+  });
+  assert.throws(
+    () => deriveProjectStatus(invalidDate),
+    /RACI 项目负责人 已接受时必须填写有效生效日期/
+  );
+
+  const prematureDate = await currentSources();
+  prematureDate.ledger = replaceRaciFields(prematureDate.ledger, "QA 负责人", {
+    "状态": "待填",
+    "生效日期": "2026-08-10",
+  });
+  assert.throws(
+    () => deriveProjectStatus(prematureDate),
+    /RACI QA 负责人 未接受前不得填写生效日期/
+  );
+});
+
+test("RACI 主代理代号不得相同，固定职责与分离说明不得删除", async () => {
+  const selfProxy = fullyAdvance(await currentSources());
+  selfProxy.ledger = replaceRaciFields(selfProxy.ledger, "项目负责人", {
+    "代理人代号": "ROLE-R01",
+  });
+  assert.throws(
+    () => deriveProjectStatus(selfProxy),
+    /RACI 项目负责人 人员代号不得与代理人代号相同/
+  );
+
+  for (const field of ["固定职责", "职责分离"]) {
+    const missingContract = fullyAdvance(await currentSources());
+    missingContract.ledger = replaceRaciFields(missingContract.ledger, "项目负责人", { [field]: "" });
+    assert.throws(
+      () => deriveProjectStatus(missingContract),
+      /RACI 项目负责人 必须保留固定职责与职责分离说明/
+    );
+  }
+});
+
 test("A 费用路径未填写责任人、cap 与批准证据时不得显示费用可用", async () => {
   const sources = await currentSources();
-  sources.cost = sources.cost.replace("- [ ] **A 费用可用：**", "- [x] **A 费用可用：**");
+  sources.cost = selectOnlyFeePath(sources.cost, "A");
   sources.ledger = sources.ledger
     .split("\n")
     .map((line) => {
@@ -331,22 +993,21 @@ test("A 费用路径未填写责任人、cap 与批准证据时不得显示费�
     })
     .join("\n");
   sources.ledger = fillCoreRaci(sources.ledger);
-  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "2/14 Pass");
+  sources.ledger = replaceStatus(sources.ledger, "外部责任包", "13/14 Pass");
   assert.throws(() => deriveProjectStatus(sources), /A 路径缺少必填批准项/);
 });
 
 test("A 费用路径拒绝伪金额与伪批准，合法 cap 必须月不高于全期", async () => {
   const prepareA = async () => {
     const sources = await currentSources();
-    sources.cost = sources.cost
-      .replace("- [ ] **A 费用可用：**", "- [x] **A 费用可用：**")
-      .replace("| 预算 / 费用责任人（仅 1 人） | |", "| 预算 / 费用责任人（仅 1 人） | ROLE-BUDGET-OWNER / EVD-BUDGET |")
-      .replace("| 客服项目月 cap | |", "| 客服项目月 cap | CNY 1000 |")
-      .replace("| 客服项目全期 cap | |", "| 客服项目全期 cap | CNY 5000 |")
-      .replace("| 费用科目 / 采购路径 | |", "| 费用科目 / 采购路径 | COST-CENTER-01 |")
-      .replace("| 预警阈值与通知人 | |", "| 预警阈值与通知人 | 80% / ROLE-BUDGET-OWNER |")
-      .replace("| 超线停扩授权 | |", "| 超线停扩授权 | EVD-STOP-AUTH |")
-      .replace("| 批准人代号 / 日期 / 决定摘要 / 证据 ID | |", "| 批准人代号 / 日期 / 决定摘要 / 证据 ID | ROLE-CAP-APPROVER / 2026-08-05 / 同意 / EVD-CAP-APPROVAL |");
+    sources.cost = selectOnlyFeePath(sources.cost, "A")
+      .replace(/^\| 预算 \/ 费用责任人（仅 1 人） \|.*$/m, "| 预算 / 费用责任人（仅 1 人） | ROLE-BUDGET-OWNER / EVD-BUDGET |")
+      .replace(/^\| 客服项目月 cap \|.*$/m, "| 客服项目月 cap | CNY 1000 |")
+      .replace(/^\| 客服项目全期 cap \|.*$/m, "| 客服项目全期 cap | CNY 5000 |")
+      .replace(/^\| 费用科目 \/ 采购路径 \|.*$/m, "| 费用科目 / 采购路径 | COST-CENTER-01 |")
+      .replace(/^\| 预警阈值与通知人 \|.*$/m, "| 预警阈值与通知人 | 80% / ROLE-BUDGET-OWNER |")
+      .replace(/^\| 超线停扩授权 \|.*$/m, "| 超线停扩授权 | EVD-STOP-AUTH |")
+      .replace(/^\| 批准人代号 \/ 日期 \/ 决定摘要 \/ 证据 ID \|.*$/m, "| 批准人代号 / 日期 / 决定摘要 / 证据 ID | ROLE-CAP-APPROVER / 2026-08-05 / 同意 / EVD-CAP-APPROVAL |");
     sources.ledger = sources.ledger
       .split("\n")
       .map((line) => {
@@ -358,7 +1019,9 @@ test("A 费用路径拒绝伪金额与伪批准，合法 cap 必须月不高于�
       })
       .join("\n");
     sources.ledger = fillCoreRaci(sources.ledger);
-    sources.ledger = replaceStatus(sources.ledger, "外部责任包", "2/14 Pass");
+    sources.ledger = replaceStatus(sources.ledger, "外部责任包", "13/14 Pass");
+    sources.scope = replaceScopeCheck(sources.scope, "11", true, "EVD-G0-07");
+    sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "14/15 Pass");
     return sources;
   };
 
@@ -408,16 +1071,47 @@ test("G0 必须由全部 15 项门禁和完整签发记录共同授权", async (
   assert.throws(() => deriveProjectStatus(missingResourceBaseline), /G0-14 Pass.*资源基线/);
 
   const missingOwner = fullyAdvance(await currentSources());
-  missingOwner.ledger = missingOwner.ledger.replace(/^\| 客服业务 Owner \|[^\n]+$/m, "| 客服业务 Owner | | | | 待填 |");
+  missingOwner.ledger = replaceRaciFields(missingOwner.ledger, "客服业务 Owner", {
+    "人员代号": "",
+    "代理人代号": "",
+    "接受职责证据 ID": "",
+    "状态": "待填",
+    "生效日期": "",
+  });
   assert.throws(() => deriveProjectStatus(missingOwner), /客服业务 Owner.*人员与代理人代号/);
 
   const missingQa = fullyAdvance(await currentSources());
-  missingQa.ledger = missingQa.ledger.replace(/^\| QA 负责人 \|[^\n]+$/m, "| QA 负责人 | | | | 待填 |");
+  missingQa.ledger = replaceRaciFields(missingQa.ledger, "QA 负责人", {
+    "人员代号": "",
+    "代理人代号": "",
+    "接受职责证据 ID": "",
+    "状态": "待填",
+    "生效日期": "",
+  });
   assert.throws(() => deriveProjectStatus(missingQa), /QA 负责人.*人员与代理人代号/);
 
   const selfApproved = fullyAdvance(await currentSources());
   selfApproved.ledger = selfApproved.ledger.replace(/^\| 预算责任人 \| ROLE-R04 /m, "| 预算责任人 | ROLE-R01 ");
   assert.throws(() => deriveProjectStatus(selfApproved), /职责分离/);
+
+  const proxyOverlap = fullyAdvance(await currentSources());
+  proxyOverlap.ledger = replaceRaciFields(proxyOverlap.ledger, "预算责任人", {
+    "代理人代号": "ROLE-R01",
+  });
+  assert.throws(
+    () => deriveProjectStatus(proxyOverlap),
+    /项目、业务、预算与 IT \/ 安全的主责及代理 8 个代号必须全局职责分离/
+  );
+
+  const preG0ProxyOverlap = await currentSources();
+  preG0ProxyOverlap.ledger = replaceRaciFields(preG0ProxyOverlap.ledger, "预算责任人", {
+    "代理人代号": "USR-ZIWEI-001",
+  });
+  assert.throws(
+    () => deriveProjectStatus(preG0ProxyOverlap),
+    /项目、业务、预算与 IT \/ 安全的主责及代理 8 个代号必须全局职责分离/,
+    "四类职责均接受后应立即检查 8 代号唯一性，不得等到 G0Ready"
+  );
 
   const staleVersions = fullyAdvance(await currentSources());
   staleVersions.ledger = replaceSignRow(
@@ -426,6 +1120,15 @@ test("G0 必须由全部 15 项门禁和完整签发记录共同授权", async (
     "章程 v1.0 / 台账 v1.0 / Scope v1.0 / 排期 v1.0"
   );
   assert.throws(() => deriveProjectStatus(staleVersions), /签发输入.*版本.*与当前真源/);
+
+  const futureRaci = fullyAdvance(await currentSources());
+  futureRaci.ledger = replaceRaciFields(futureRaci.ledger, "项目负责人", {
+    "生效日期": "2026-08-15",
+  });
+  assert.throws(
+    () => deriveProjectStatus(futureRaci),
+    /G0 评审日期不得早于 RACI 项目负责人\s*生效日期/
+  );
 });
 
 test("阶段与 G0 状态必须双向一致，Fail 也必须由明细驱动", async () => {
@@ -436,23 +1139,24 @@ test("阶段与 G0 状态必须双向一致，Fail 也必须由明细驱动", as
   const gateFail = await currentSources();
   gateFail.ledger = replaceGateStatus(gateFail.ledger, "G0-02", "Fail");
   gateFail.ledger = replaceStatus(gateFail.ledger, "公司正式批准", "Fail");
-  gateFail.ledger = replaceStatus(gateFail.ledger, "外部责任包", "0/14 Pass");
+  gateFail.ledger = replaceStatus(gateFail.ledger, "外部责任包", "12/14 Pass");
   assert.throws(() => deriveProjectStatus(gateFail), /G0 签发汇总必须为 Fail/);
 });
 
 test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结论", async () => {
   const sources = await currentSources();
   sources.ledger = replaceGateStatus(sources.ledger, "G0-02", "Fail");
+  sources.scope = replaceScopeCheck(sources.scope, "1", false);
   for (const [label, value] of [
     ["公司正式批准", "Fail"],
-    ["外部责任包", "0/14 Pass"],
+    ["外部责任包", "12/14 Pass"],
     ["G0 签发", "Fail"],
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
     ["评审时间", "2026-08-14 15:00"],
-    ["评审输入版本", "章程 v3.3 / 台账 v3.3 / Scope v3.3 / 排期 v3.3"],
-    ["G0-02～15", "Pass 0 / 14；Fail 1 / 14"],
-    ["Scope 检查", "Pass 1 / 15；Fail 14 / 15"],
+    ["评审输入版本", "章程 v3.26 / 台账 v3.63 / Scope v4.36 / 排期 v3.20"],
+    ["G0-02～15", "Pass 12 / 14；Fail 1 / 14"],
+    ["Scope 检查", "Pass 13 / 15；Fail 2 / 15"],
     ["业务审核人", "ROLE-BUSINESS-APPROVER / EVD-SIGN-BUSINESS"],
     ["IT / 安全审核人", "ROLE-SECURITY-APPROVER / EVD-SIGN-SECURITY"],
     ["预算审核人", "ROLE-BUDGET-APPROVER / EVD-SIGN-BUDGET"],
@@ -462,6 +1166,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
     ["证据包 ID", "EVD-G0-FAIL-20260814"],
     ["Ddev", "未成立"],
   ]) sources.ledger = replaceSignRow(sources.ledger, label, value);
+  sources.ledger = replaceStatus(sources.ledger, "Scope 检查", "13/15 Pass");
   assert.equal(deriveProjectStatus(sources).g0, "Fail");
 
   sources.ledger = replaceSignRow(sources.ledger, "业务审核人", "");

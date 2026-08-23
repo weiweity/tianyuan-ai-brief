@@ -10,10 +10,37 @@ import Ajv from "ajv";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => readFile(path.join(root, relativePath), "utf8");
 
+test("依赖清单保持为本地 vendor 的 audit/SBOM mirror", async () => {
+  const [packageText, lockText, policy, bootstrap, domPurifyLicense, mermaidLicense] =
+    await Promise.all([
+      read("package.json"),
+      read("package-lock.json"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/html-policy.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/bootstrap.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/vendor/dompurify-LICENSE.txt"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/vendor/mermaid-LICENSE.txt"),
+    ]);
+  const packageJson = JSON.parse(packageText);
+  const packageLock = JSON.parse(lockText);
+  const domPurifyVendor = policy.match(/vendor\/dompurify-(\d+\.\d+\.\d+)\.es\.mjs/);
+  const mermaidVendor = bootstrap.match(/vendor\/mermaid-(\d+\.\d+\.\d+)\.min\.js/);
+
+  assert.ok(domPurifyVendor, "DOMPurify 运行时必须引用带版本的本地 vendor");
+  assert.ok(mermaidVendor, "Mermaid 运行时必须引用带版本的本地 vendor");
+  assert.equal(packageJson.devDependencies.dompurify, domPurifyVendor[1]);
+  assert.equal(packageJson.devDependencies.mermaid, mermaidVendor[1]);
+  assert.equal(packageLock.packages[""].devDependencies.dompurify, domPurifyVendor[1]);
+  assert.equal(packageLock.packages[""].devDependencies.mermaid, mermaidVendor[1]);
+  assert.equal(packageLock.packages["node_modules/dompurify"].version, domPurifyVendor[1]);
+  assert.equal(packageLock.packages["node_modules/mermaid"].version, mermaidVendor[1]);
+  assert.match(domPurifyLicense, /Apache License/);
+  assert.match(mermaidLicense, /MIT License/);
+});
+
 test("content.json 通过结构 Schema", async () => {
   const [schemaText, contentText] = await Promise.all([
-    read("../archive/2026-07-31-ai-project-brief/data/content.schema.json"),
-    read("../archive/2026-07-31-ai-project-brief/data/content.json"),
+    read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/content.schema.json"),
+    read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/content.json"),
   ]);
   const schema = JSON.parse(schemaText);
   const content = JSON.parse(contentText);
@@ -23,7 +50,7 @@ test("content.json 通过结构 Schema", async () => {
 });
 
 test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
-  const content = JSON.parse(await read("../archive/2026-07-31-ai-project-brief/data/content.json"));
+  const content = JSON.parse(await read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/content.json"));
   assert.equal(content.version, "5.25.1");
   assert.equal(content.decisionSchemaVersion, 3);
   assert.equal(content.tabs.length, 7);
@@ -60,20 +87,19 @@ test("七页信息架构、区块 ID 与项目级决策键唯一", async () => {
 });
 
 test("核心隐性知识与反误导边界存在且无旧版统一路径", async () => {
-  const text = await read("../archive/2026-07-31-ai-project-brief/data/content.json");
+  const text = await read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/content.json");
   for (const term of [
     "未批不开发",
     "人在环",
     "客服话术库 MVP-A",
     "供应链备案识别",
-    "7000",
-    "5000",
-    "10000",
+    "精确金额已按公开边界脱敏",
     "立即停扩",
     "飞书/邮件",
   ]) {
     assert.match(text, new RegExp(term.replace("/", "\\/")));
   }
+  assert.doesNotMatch(text, /7000 \/ 5000 \/ 10000|7000 元|5000 元|10000 元/);
   assert.doesNotMatch(text, /对已选项目统一选路径/);
   assert.doesNotMatch(text, /如两项路径不同，请分两次记录/);
 });
@@ -94,18 +120,18 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
     logoBytes,
   ] =
     await Promise.all([
-      read("../archive/2026-07-31-ai-project-brief/index.html"),
-      read("../archive/2026-07-31-ai-project-brief/js/app.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/html-policy.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/bootstrap.js"),
-      read("../archive/2026-07-31-ai-project-brief/vendor/mermaid-10.9.6.min.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/app.bundle.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/app.offline.bundle.js"),
-      read("scripts/build-web.mjs"),
-      read("../archive/2026-07-31-ai-project-brief/data/content.json"),
-      read("../archive/2026-07-31-ai-project-brief/data/release.json"),
-      read("../archive/2026-07-31-ai-project-brief/css/app.css"),
-      readFile(path.join(root, "../archive/2026-07-31-ai-project-brief/assets/logo.png")),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/index.html"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/app.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/html-policy.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/bootstrap.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/vendor/mermaid-10.9.8.min.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/app.bundle.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/app.offline.bundle.js"),
+      read("scripts/build-security-maintenance-archive.mjs"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/content.json"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/data/release.json"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/css/app.css"),
+      readFile(path.join(root, "../archive/2026-08-09-ai-project-brief-security-maintenance/assets/logo.png")),
     ]);
   const release = JSON.parse(releaseText);
   assert.match(index, /Content-Security-Policy/);
@@ -125,13 +151,13 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
   assert.match(app, /sanitizeRichHtml/);
   assert.match(app, /createContentLoader/);
   assert.match(app, /isFileProtocol/);
-  assert.match(policy, /dompurify-3\.4\.12\.es\.mjs/);
+  assert.match(policy, /dompurify-3\.4\.13\.es\.mjs/);
   assert.match(bootstrap, /location\.protocol === "file:"/);
   assert.match(bootstrap, /app\.offline\.bundle\.js\?v=\$\{encodeURIComponent\(releaseId\)\}/);
   assert.match(bootstrap, /app\.bundle\.js\?v=\$\{encodeURIComponent\(releaseId\)\}/);
   assert.doesNotMatch(bootstrap, /app\.type\s*=\s*"module"/);
   assert.match(bootstrap, /__AI_BRIEF_LOAD_MERMAID__/);
-  assert.match(bootstrap, /mermaid-10\.9\.6\.min\.js/);
+  assert.match(bootstrap, /mermaid-10\.9\.8\.min\.js/);
   assert.match(bootstrap, /sha384-[A-Za-z0-9+/=]{40,}/);
   // Mermaid SRI 与 vendor 文件一致（CSP 补丁后哈希会变，以文件为准）
   const mermaidSha = createHash("sha384").update(mermaidVendor).digest("base64");
@@ -163,6 +189,8 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
     );
   const shellSha = createHash("sha256")
     .update(httpBundle)
+    .update("\n/* public-content-boundary */\n")
+    .update(contentText)
     .update("\n/* runtime-asset-boundary */\n")
     .update(css)
     .update("\n/* runtime-asset-boundary */\n")
@@ -182,7 +210,7 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
 });
 
 test("CSS 是单一分层契约，不再加载尾部版本补丁", async () => {
-  const [index, css] = await Promise.all([read("../archive/2026-07-31-ai-project-brief/index.html"), read("../archive/2026-07-31-ai-project-brief/css/app.css")]);
+  const [index, css] = await Promise.all([read("../archive/2026-08-09-ai-project-brief-security-maintenance/index.html"), read("../archive/2026-08-09-ai-project-brief-security-maintenance/css/app.css")]);
   const lines = css.split("\n").length;
   assert.ok(lines < 4750, `app.css 行数过高：${lines}`);
   assert.match(css, /UI contract v2/);
@@ -204,13 +232,13 @@ test("高风险前端能力保持独立模块且主控制器受体积门禁约�
     domPurifyVendor,
   ] =
     await Promise.all([
-      read("../archive/2026-07-31-ai-project-brief/js/app.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/decision-model.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/meeting-state.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/html-policy.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/mermaid-runtime.js"),
-      read("../archive/2026-07-31-ai-project-brief/js/modules/content-loader.js"),
-      read("../archive/2026-07-31-ai-project-brief/vendor/dompurify-3.4.12.es.mjs"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/app.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/decision-model.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/meeting-state.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/html-policy.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/mermaid-runtime.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/js/modules/content-loader.js"),
+      read("../archive/2026-08-09-ai-project-brief-security-maintenance/vendor/dompurify-3.4.13.es.mjs"),
     ]);
 
   assert.ok(app.split("\n").length < 2700, "app.js 应只负责 UI 编排");

@@ -1,0 +1,430 @@
+{
+  "$schema": "./content.schema.json",
+  "version": "5.25.1",
+  "decisionSchemaVersion": 3,
+  "ssot": "web-execution-v5.25.1-customer-g0",
+  "updated": "2026-07-31",
+  "meta": {
+    "title": "天元 · AI 赋能汇报（历史快照）",
+    "from": "",
+    "to": "",
+    "subtitle": "2026-07-31 收尾 · 非当前项目 SSOT",
+    "logo": "assets/logo.png",
+    "brand": "#EBE6EF",
+    "roleLine": "已收尾 · 仅供设计与交互参考",
+    "footerLeft": "历史快照日期 2026-07-31 · 当前状态请转客服 Agent 项目",
+    "footerRight": ""
+  },
+  "tabs": [
+    {
+      "id": "t1",
+      "no": "1",
+      "title": "立项结果",
+      "layout": "fill",
+      "blocks": [
+        {
+          "id": "t1.kpi",
+          "type": "kv-table",
+          "rows": [
+            {
+              "key": "总结",
+              "variant": "info",
+              "html": "按 2026-07-31 用户确认：<b>客服、供应链方案方向均通过</b>；<b>客服话术库 MVP-A</b> 为组合 P0 先进入 G0，<b>供应链备案识别</b> 为组合 P1、另立项"
+            },
+            {
+              "key": "建议",
+              "variant": "ok",
+              "html": "项目选择已关闭，不在本页重开；客服只做内容治理 + 检索推荐 + 人确认发出，供应链保持人终审且不共享客服范围、预算或验收"
+            },
+            {
+              "key": "请补",
+              "variant": "info",
+              "html": "本页只补客服执行留痕：① 公司正式批准凭证；② A 费用可用 / B 费用后置 / C 暂停执行；③ 客服单项目月 / 全期 cap；④ 业务 Owner 与超线 <b>立即停扩</b>"
+            },
+            {
+              "key": "钱",
+              "variant": "warn",
+              "html": "旧组合费用提案的精确金额已按公开边界脱敏，<b>不是客服已批预算</b>；收尾时客服 cap 留空待预算责任人确认，未批统一按 B：<b>未批不开发、0 新增工具支出</b>"
+            },
+            {
+              "key": "工期",
+              "variant": "default",
+              "html": "客服时间基准：<span class=\"flow-step\"><b>G0 外部证据齐备</b></span><span class=\"flow-arrow\" aria-hidden=\"true\">→</span><span class=\"flow-step\"><b>Ddev + 约 4 周内部演示</b></span><span class=\"flow-arrow\" aria-hidden=\"true\">→</span><span class=\"flow-step\"><b>再约 4 周内部小试用</b></span>；内部试点不代表外包接入已解决"
+            }
+          ]
+        },
+        {
+          "id": "t1.swap",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>收尾时 Goal：</b>归档批准人 / 时间 / 原话 / 链接，具名 Owner，冻结客服单项目费用、安全、复用、Scope 与评测协议；所有门禁以 20 / 21 / 16 为准"
+        },
+        {
+          "id": "t1.scope",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>收尾时不做：</b>重选项目 · 编写客服产品功能 · 承诺上线日 / 外包可用 · 继承旧组合预算 · 用页面勾选代替飞书/邮件正式确认"
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "no": "2",
+      "title": "组合优先级",
+      "layout": "stack",
+      "blocks": [
+        {
+          "id": "t2.chart",
+          "type": "mermaid",
+          "label": "组合 P0：客服话术库 · 组合 P1：供应链备案识别 · 其它后置",
+          "compactItems": [
+            { "label": "现在", "text": "客服话术库 MVP-A / G0", "tone": "ok" },
+            { "label": "下一项", "text": "供应链备案识别 / 另立项", "tone": "info" },
+            { "label": "后置", "text": "仓储 / 私域", "tone": "warn" },
+            { "label": "不开", "text": "设计", "tone": "danger" }
+          ],
+          "source": "flowchart TB\n  K[组合 P0 · 客服话术库 MVP-A<br/>先过 G0 · 人确认发出]\n  K --> G0[G0：正式凭证 · Owner · 费用<br/>复用 · 安全 · Scope · 评测]\n  G0 --> D{门禁全齐？}\n  D -->|是| DEV[Ddev 成立<br/>约4周演示 + 约4周小试用]\n  D -->|否| WAIT[不开发 · 不付费 · 不部署]\n  S[组合 P1 · 供应链备案识别<br/>方向通过] --> S0[另立章程 · 预算 · 指标<br/>客服黄/红即暂停准备]\n  H[仓储 / 私域<br/>后置] --> L[数据治理 / BI / 轻量人效]\n  N[设计<br/>本期不开] --> N0[业务自驱]\n  style K fill:#D9F5D6,stroke:#2F9E55\n  style G0 fill:#E3F0FF,stroke:#3D87D6\n  style DEV fill:#D9F5D6,stroke:#2F9E55\n  style WAIT fill:#FEE8E6,stroke:#E05555\n  style S fill:#E3F0FF,stroke:#3D87D6\n  style S0 fill:#E3F0FF,stroke:#3D87D6\n  style H fill:#FFF6D6,stroke:#D4A017\n  style N fill:#FEE8E6,stroke:#E05555"
+        },
+        {
+          "id": "t2.dept",
+          "type": "detail-card",
+          "title": "各部门：收尾时组合位置与边界",
+          "subtitle": "展开后保留可读决策缩略 · 详情区上下滑看 6 部门",
+          "defaultOpen": false,
+          "headers": [
+            "部门",
+            "为什么开",
+            "为什么不开",
+            "原因"
+          ],
+          "rows": [
+            {
+              "sector": "客服",
+              "whyOpen": "外包多、标准散；需要统一答法与可质培",
+              "whyNot": "不做自动代回、不首期嵌桌面",
+              "reason": "组合 P0：先过 G0，再做话术库 MVP-A；检索推荐 + 人确认发出"
+            },
+            {
+              "sector": "供应链",
+              "whyOpen": "备案材料核验重、易漏、重复劳动多",
+              "whyNot": "不做对账第二看板、不做智能排产",
+              "reason": "组合 P1：方向通过但另立章程 / 预算 / 验收；机器标差异 + 人终审"
+            },
+            {
+              "sector": "仓储",
+              "whyOpen": "—",
+              "whyNot": "有 AI 智能化助手需求，想基于历史数据做智能化、提醒化",
+              "reason": "先数据治理，BI 搞定后再智能化"
+            },
+            {
+              "sector": "私域",
+              "whyOpen": "—",
+              "whyNot": "不抢客服组合 P0 资源",
+              "reason": "RPA 和 BI 的需求大"
+            },
+            {
+              "sector": "设计",
+              "whyOpen": "—",
+              "whyNot": "已自驱用 AI 出图",
+              "reason": "本期不开，不占 FDE 人日"
+            },
+            {
+              "sector": "对账/数仓",
+              "whyOpen": "—",
+              "whyNot": "不宜再建第二套看板",
+              "reason": "归 BI；需要时 FDE 交 1 页需求摘要"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "no": "3",
+      "title": "交付边界",
+      "layout": "fill",
+      "blocks": [
+        {
+          "id": "t3.chart",
+          "type": "do-dont",
+          "label": "客服话术库 MVP-A · 收尾时交付边界",
+          "dontTitle": "不做",
+          "doTitle": "做",
+          "dont": [
+            "客服自动代回客户或替坐席承担口径责任",
+            "首期承诺外包网络、账号、授权或桌面嵌入",
+            "把供应链能力、数据、预算或指标混入客服项目",
+            "继承旧组合金额，或未冻结评测集就承诺准确率"
+          ],
+          "do": [
+            "单一逻辑话术库 + 平台 / 场景 / 版本字段 + 最小发布回滚",
+            "检索推荐展示话术 ID / 版本 / 来源；无依据时拒答",
+            "内部坐席验证 + 人确认发出；保留原始分母和人工复核",
+            "供应链另立 Owner、样本、费用、门禁与验收"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "no": "4",
+      "title": "阶段门禁",
+      "layout": "split",
+      "blocks": [
+        {
+          "id": "t4.chart",
+          "type": "mermaid",
+          "slot": "main",
+          "label": "G0 外部证据齐才成立 Ddev · 约 4 周演示 + 约 4 周试用 · 不过即停",
+          "source": "flowchart TB\n  G0[G0：正式凭证 / 需求基线 / Owner<br/>费用 / 复用 / 安全 / Scope / 评测] --> Q{全部有外部证据？}\n  Q -->|否| BLOCK[不成立 Ddev<br/>不开发 · 不付费 · 不部署]\n  Q -->|是| DDEV[Ddev]\n  DDEV --> G1A[G1a · 约4周内部演示<br/>冻结集全量测 · 引用/拒答]\n  G1A -->|不过| RETRY[最多整改1次<br/>整集重测]\n  G1A -->|过| G1B[G1b · 约4周内部小试用<br/>采用 + 有用 + 时效 + 安全]\n  G1B -->|过| M4[M4：扩面 / 整改 / 停止]\n  G1B -->|不过| STOP[停止扩面]\n  style G0 fill:#FFF6D6,stroke:#D4A017,color:#111\n  style BLOCK fill:#FEE8E6,stroke:#E05555,color:#111\n  style DDEV fill:#E3F0FF,stroke:#3D87D6,color:#111\n  style G1A fill:#E3F0FF,stroke:#3D87D6,color:#111\n  style G1B fill:#E3F0FF,stroke:#3D87D6,color:#111\n  style M4 fill:#D9F5D6,stroke:#2F9E55,color:#111\n  style STOP fill:#FEE8E6,stroke:#E05555,color:#111"
+        },
+        {
+          "id": "t4.dod",
+          "type": "gate-table",
+          "slot": "side",
+          "headers": [
+            "阶段",
+            "过关标准"
+          ],
+          "rows": [
+            {
+              "gate": "G0 前置",
+              "html": "<div class='line'>21 的 G0-02～15 共 14 个外部门禁有证据，且 16 的 15 项 Scope 检查同步通过：</div><div class='line'>· <b>公司批准凭证 + 需求与现状基线</b></div><div class='line'>· <b>单 A Owner + 客服单项目 cap</b></div><div class='line'>· 复用审计、平台场景、数据安全、Scope、评测协议</div><div class='line'>· 未齐 → 不写产品功能、不付费、不部署</div>"
+            },
+            {
+              "gate": "G1a 演示",
+              "html": "<div class='line'>Ddev 后约 4 周：</div><div class='line'>· 20 条冻结正例全量盲测，Top3 暂定 ≥70%</div><div class='line'>· ≥5 条负例；错误直答 / 越权 / 自动代发 = <b>0</b></div><div class='line'>· 展示有效话术 ID、来源与版本；无依据拒答</div><div class='line'>· 不过最多整改 1 次并整集重测</div>"
+            },
+            {
+              "gate": "G1b 试用",
+              "html": "<div class='line'>再约 4 周内部小试用：</div><div class='line'>· ≥3 坐席连续 2 周、每人每周 ≥5 个去重真实任务</div><div class='line'>· 同时报采纳率、有用率、未命中率、错误率与查找时长</div><div class='line'>· 草稿→复核→发布 / 回滚可审计；自动代发 = <b>0</b></div><div class='line'>· 仅刷检索次数不通过；任一硬指标不过不扩面</div>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "no": "5",
+      "title": "客服费用",
+      "layout": "split",
+      "blocks": [
+        {
+          "id": "t5.chart",
+          "type": "mermaid",
+          "slot": "main",
+          "label": "旧组合提案不继承 · 客服月 / 全期 cap 待正式补录",
+          "source": "flowchart TB\n  Q{客服执行路径怎么补录}\n  Q --> A[A 费用已批 · 可执行<br/>仍须 G0 全齐]\n  Q --> B[B 方向已批 · 费用后置<br/>只做 G0 前置]\n  Q --> C[C 暂停执行<br/>记录原因 · 不排期]\n  A --> A1[按客服单项目 cap 计量<br/>超线立即停扩]\n  B --> B1[不写产品功能<br/>不付费不部署]\n  C --> C1[不改变历史方向记录<br/>恢复时重新补门禁]\n  style A fill:#D9F5D6,stroke:#2F9E55,color:#111\n  style B fill:#E3F0FF,stroke:#3D87D6,color:#111\n  style C fill:#FEE8E6,stroke:#E05555,color:#111\n  style A1 fill:#D9F5D6,stroke:#2F9E55,color:#111\n  style B1 fill:#E3F0FF,stroke:#3D87D6,color:#111\n  style C1 fill:#FEE8E6,stroke:#E05555,color:#111\n"
+        },
+        {
+          "id": "t5.money",
+          "type": "kv-table",
+          "slot": "side",
+          "keyWidth": "wide",
+          "rows": [
+            {
+              "key": "收尾时默认",
+              "html": "公司正式费用路径与客服 cap 未归档前，统一按 <b>B 方向已批、费用后置</b>：只做 G0 盘点与设计，新增工具支出为 0"
+            },
+            {
+              "key": "历史提案",
+              "html": "会前组合费用提案的精确金额已按公开边界脱敏；该组合提案未证明批准，<b>不授权客服或供应链单项支出</b>"
+            },
+            {
+              "key": "客服 cap",
+              "html": "由唯一预算责任人补录目标预算、月 cap、全期 cap、科目与计量来源；<b>空值或口头数均不视为 A</b>"
+            },
+            {
+              "key": "超线怎么办",
+              "html": "当场授权：一超客服单项目止损线，执行方 <b>立即停扩</b>，飞书/邮件同步预算责任人与项目负责人；加预算必须重新确认"
+            },
+            {
+              "key": "人工怎么算",
+              "html": "工具费、人日、既有底座维护与未来 12 个月 TCO 分开记录；供应链使用独立 <code>project_id</code> 与预算，不得消耗客服额度"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "no": "6",
+      "title": "执行补录",
+      "layout": "fill",
+      "blocks": [
+        {
+          "id": "t6.check",
+          "type": "check-table",
+          "headers": [
+            "#",
+            "客服 G0 请补录",
+            "勾选"
+          ],
+          "rows": [
+            {
+              "no": "1",
+              "checked": false,
+              "html": "<b>客服话术库 MVP-A</b>：补录正式执行路径",
+              "projectBlurb": "A 费用可用 / B 费用后置 / C 暂停执行 · 均不自动代回",
+              "projectId": "agent",
+              "projectLabel": "客服话术库 MVP-A",
+              "pathOptions": [
+                "A",
+                "B",
+                "C"
+              ],
+              "pathValue": "",
+              "tier": "must",
+              "rowId": "t6-agent-path"
+            },
+            {
+              "no": "2",
+              "checked": false,
+              "html": "客服单项目目标预算、月 cap 与全期 cap（A 必填正式数；B 金额后置可留空且保持 0 支出；C 不适用）",
+              "kind": "fee",
+              "feeFields": {
+                "total": "",
+                "monthCap": "",
+                "allCap": "",
+                "otherNote": ""
+              },
+              "tier": "must",
+              "rowId": "t6-fee"
+            },
+            {
+              "no": "3",
+              "checked": false,
+              "html": "<b>客服话术库 MVP-A Owner</b>（选 A / B 时业务 A 至少 1 人具名；可补话术 Owner / 代理人）",
+              "kind": "owner",
+              "projectId": "agent",
+              "projectLabel": "客服话术库 MVP-A",
+              "owners": [
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                },
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                },
+                {
+                  "name": "",
+                  "dept": "",
+                  "scope": ""
+                }
+              ],
+              "tier": "must",
+              "rowId": "t6-agent-owner"
+            },
+            {
+              "no": "4",
+              "checked": false,
+              "html": "公司正式批准凭证已归档（批准人、时间、原话、飞书/邮件链接齐全）",
+              "tier": "must",
+              "rowId": "t6-approval-evidence"
+            },
+            {
+              "no": "5",
+              "checked": false,
+              "html": "已逐项核对 21 的需求、复用、安全、Scope、评测、部署与运行门禁（本项不替代外部证据）",
+              "tier": "later",
+              "rowId": "t6-g0-review"
+            },
+            {
+              "no": "6",
+              "checked": false,
+              "html": "授权超客服单项目 cap <b>立即停扩</b>（飞书/邮件同步预算责任人与项目负责人 · A/B 必勾）",
+              "kind": "stop-authority",
+              "tier": "must",
+              "rowId": "t6-stop-authority"
+            },
+            {
+              "no": "7",
+              "checked": false,
+              "html": "书面「出问题怎么办」齐全（人在环、拒答、回退、事件响应与停扩责任）",
+              "tier": "later",
+              "rowId": "t6-incident-plan"
+            }
+          ]
+        },
+        {
+          "id": "t6.gate",
+          "type": "callout",
+          "variant": "warn",
+          "html": "<b>本机最低记录：</b>客服选 A / B / C 并确认正式批准凭证；A / B 须具名业务 Owner、授权超线停扩，A 另须填写客服正式预算 / cap；B 金额可留空且费用未批前保持 0 支出。C 只表示暂停执行，不推翻已记录的方向。"
+        },
+        {
+          "id": "t6.bound",
+          "type": "callout",
+          "variant": "brand",
+          "html": "<b>留痕边界：</b>可复制结论或下载带 SHA-256 哈希的 JSON 凭证；两者仍是本机草稿，不能让 G0 通过。贴入飞书/邮件并由相关 A 确认后，才构成正式记录。"
+        }
+      ]
+    },
+    {
+      "id": "t7",
+      "no": "7",
+      "title": "G0 责任",
+      "layout": "fill",
+      "blocks": [
+        {
+          "id": "t7.timeline",
+          "type": "gate-table",
+          "headers": [
+            "时间",
+            "要完成什么"
+          ],
+          "rows": [
+            {
+              "gate": "08-03",
+              "html": "<div class='line'>归档公司正式批准凭证</div><div class='line'>具名业务 / 话术 / 预算 / IT 安全 Owner</div>"
+            },
+            {
+              "gate": "08-04",
+              "html": "<div class='line'>完成话术真源与 <b>dafuyan-wording</b> 复用审计</div><div class='line'>补客服单项目费用路径与 cap</div>"
+            },
+            {
+              "gate": "08-05～06",
+              "html": "<div class='line'>需求基线 · 平台场景 · 安全 · Scope</div><div class='line'>冻结正负例、盲审人与关键词基线</div>"
+            },
+            {
+              "gate": "08-07",
+              "html": "<div class='line'>逐项验 G0-02～15 外部证据</div><div class='line'>齐 → 定 Ddev；不齐 → 记录阻塞，<b>不开发</b></div>"
+            }
+          ]
+        },
+        {
+          "id": "t7.path",
+          "type": "gate-table",
+          "headers": [
+            "路径",
+            "会后怎么走"
+          ],
+          "rows": [
+            {
+              "gate": "A 费用可用",
+              "html": "<div class='line'>客服单项目预算已批；仍须 G0 全齐才成立 Ddev · 超 cap 立即停扩</div>"
+            },
+            {
+              "gate": "B 费用后置",
+              "html": "<div class='line'>方向已确认；只做 G0 盘点与设计，费用批完前不写产品功能、不烧工具费</div>"
+            },
+            {
+              "gate": "C 暂停执行",
+              "html": "<div class='line'>记录暂停原因 · 不排期 / 不支出；恢复时重新核对 G0，不重写历史决定</div>"
+            }
+          ]
+        },
+        {
+          "id": "t7.pm",
+          "type": "callout",
+          "variant": "ok",
+          "html": "<b>项目经理盯 5 件事：</b>① 外部证据是否真存在　② 每项是否只有一个 A　③ 钱是否是客服单项目 cap　④ 评测是否冻结且有原始分母　⑤ 该停有没有停。供应链准备 ≤20%，客服黄 / 红即暂停。"
+        }
+      ]
+    }
+  ],
+  "publishStamp": "1785472059001"
+}

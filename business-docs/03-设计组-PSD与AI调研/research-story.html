@@ -1,0 +1,1134 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Grok × Codex 对话调研过程说明 · 设计组 PSD/AI">
+  <meta name="robots" content="noindex,nofollow">
+  <title>调研过程说明 · Grok × Codex</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.min.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff;
+      --bg-elevated: #fafafa;
+      --bg-hover: #f4f4f4;
+      --fg: #000;
+      --fg-secondary: #666;
+      --fg-tertiary: #888;
+      --border: #eaeaea;
+      --border-strong: #999;
+      --accent: #0070f3;
+      --accent-soft: rgba(0, 112, 243, .08);
+      --grok: #000;
+      --codex: #10a37f;
+      --codex-soft: rgba(16, 163, 127, .1);
+      --ok: #0a7a3e;
+      --ok-bg: rgba(10, 122, 62, .1);
+      --warn: #b54708;
+      --warn-bg: rgba(181, 71, 8, .1);
+      --danger: #ee0000;
+      --danger-bg: rgba(238, 0, 0, .08);
+      --shadow: 0 0 0 1px rgba(0,0,0,.06), 0 8px 30px rgba(0,0,0,.04);
+      --shadow-lg: 0 0 0 1px rgba(0,0,0,.08), 0 16px 48px rgba(0,0,0,.08);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --nav-h: 56px;
+      --ease: cubic-bezier(.23, 1, .32, 1);
+      --font: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --max: 920px;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #000;
+      --bg-elevated: #0a0a0a;
+      --bg-hover: #111;
+      --fg: #ededed;
+      --fg-secondary: #a1a1a1;
+      --fg-tertiary: #666;
+      --border: #333;
+      --border-strong: #666;
+      --accent: #3291ff;
+      --accent-soft: rgba(50, 145, 255, .12);
+      --grok: #ededed;
+      --codex: #3dd68c;
+      --codex-soft: rgba(61, 214, 140, .12);
+      --ok: #3dd68c;
+      --ok-bg: rgba(61, 214, 140, .12);
+      --warn: #f5a623;
+      --warn-bg: rgba(245, 166, 35, .14);
+      --danger: #ff6369;
+      --danger-bg: rgba(255, 99, 105, .12);
+      --shadow: 0 0 0 1px rgba(255,255,255,.08), 0 8px 30px rgba(0,0,0,.4);
+      --shadow-lg: 0 0 0 1px rgba(255,255,255,.1), 0 16px 48px rgba(0,0,0,.5);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 20px); }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+
+    .topnav {
+      position: sticky; top: 0; z-index: 50;
+      height: var(--nav-h);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; letter-spacing: -.02em; flex-shrink: 0;
+    }
+    .brand-mark {
+      width: 20px; height: 20px; border-radius: 4px;
+      background: linear-gradient(135deg, var(--fg) 50%, var(--codex) 50%);
+    }
+    .brand small { color: var(--fg-secondary); font-weight: 400; font-size: 12px; }
+    .nav-scroll {
+      flex: 1; min-width: 0; display: flex; gap: 2px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .nav-scroll::-webkit-scrollbar { display: none; }
+    .nav-link {
+      flex-shrink: 0; padding: 6px 10px; border-radius: 999px;
+      font-size: 13px; color: var(--fg-secondary);
+      transition: color .15s, background .15s;
+    }
+    .nav-link:hover { color: var(--fg); background: var(--bg-hover); }
+    .nav-link.active { color: var(--fg); background: var(--bg-hover); font-weight: 500; }
+    .nav-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: var(--radius);
+      border: 1px solid var(--border); display: grid; place-items: center;
+      color: var(--fg-secondary);
+    }
+    .icon-btn:hover { background: var(--bg-hover); color: var(--fg); }
+    .link-btn {
+      height: 34px; padding: 0 12px; border-radius: var(--radius);
+      border: 1px solid var(--border); font-size: 12px; font-weight: 500;
+      color: var(--fg-secondary); display: inline-flex; align-items: center;
+    }
+    .link-btn:hover { background: var(--bg-hover); color: var(--fg); }
+
+    .read-progress {
+      position: fixed; top: var(--nav-h); left: 0; right: 0;
+      height: 2px; z-index: 49;
+    }
+    .read-progress > i {
+      display: block; height: 100%; width: 0%;
+      background: var(--fg); transition: width .1s linear;
+    }
+
+    main {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 36px 20px 120px;
+    }
+    section {
+      scroll-margin-top: calc(var(--nav-h) + 16px);
+      margin-bottom: 64px;
+      animation: rise .45s var(--ease) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-bottom: 12px; font-size: 12px; font-weight: 500;
+      letter-spacing: .04em; text-transform: uppercase;
+      color: var(--fg-secondary); font-family: var(--mono);
+    }
+    .eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(30px, 5vw, 44px);
+      font-weight: 650; letter-spacing: -.04em; line-height: 1.12;
+      text-wrap: balance;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 28px);
+      font-weight: 600; letter-spacing: -.03em; line-height: 1.2;
+    }
+    h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+    .lede {
+      max-width: 62ch; margin: 0 0 24px;
+      font-size: 16px; color: var(--fg-secondary); line-height: 1.7;
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: 12px;
+      color: var(--fg-secondary); background: var(--bg-elevated);
+    }
+    .chip.ok { color: var(--ok); background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok) 30%, var(--border)); }
+    .chip.info { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+    .chip.warn { color: var(--warn); background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, var(--border)); }
+    .chip.codex { color: var(--codex); background: var(--codex-soft); border-color: color-mix(in srgb, var(--codex) 30%, var(--border)); }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg);
+      padding: 18px;
+    }
+    .grid { display: grid; gap: 12px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Timeline */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: "";
+      position: absolute; left: 7px; top: 4px; bottom: 4px;
+      width: 2px; background: var(--border);
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: 20px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, transform .15s;
+      text-align: left;
+      width: 100%;
+    }
+    .tl-item:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+    .tl-item.open { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .tl-item::before {
+      content: "";
+      position: absolute; left: -25px; top: 22px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--border-strong);
+    }
+    .tl-item[data-who="grok"]::before { border-color: var(--fg); background: var(--fg); }
+    .tl-item[data-who="codex"]::before { border-color: var(--codex); background: var(--codex); }
+    .tl-item[data-who="both"]::before {
+      border-color: var(--accent); background: var(--accent);
+    }
+    .tl-item[data-who="user"]::before { border-color: var(--warn); background: var(--warn); }
+    .tl-head {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-bottom: 6px;
+    }
+    .tl-title { font-weight: 600; letter-spacing: -.01em; flex: 1; min-width: 160px; }
+    .tl-summary { color: var(--fg-secondary); font-size: 14px; margin: 0; }
+    .tl-body {
+      display: none; margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 14px; color: var(--fg-secondary);
+    }
+    .tl-item.open .tl-body { display: block; animation: rise .25s var(--ease); }
+    .tl-body ul { margin: 8px 0 0; padding-left: 18px; }
+    .tl-body li { margin-bottom: 6px; }
+
+    /* Compare */
+    .agent-card { position: relative; overflow: hidden; }
+    .agent-card.grok { border-top: 3px solid var(--fg); }
+    .agent-card.codex { border-top: 3px solid var(--codex); }
+    .agent-card .label {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--fg-tertiary); margin-bottom: 8px;
+    }
+    .agent-card ul { margin: 0; padding-left: 18px; color: var(--fg-secondary); font-size: 13px; }
+    .agent-card li { margin-bottom: 6px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+    }
+    .tabs button {
+      padding: 7px 12px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: 12px;
+      color: var(--fg-secondary);
+    }
+    .tabs button[aria-selected="true"] {
+      background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 500;
+    }
+    .panel {
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 18px; background: var(--bg-elevated);
+      min-height: 140px;
+    }
+    .panel h3 { margin-bottom: 10px; }
+    .panel p { margin: 0 0 10px; color: var(--fg-secondary); font-size: 14px; }
+    .panel p:last-child { margin-bottom: 0; }
+
+    /* Verdict rows */
+    .verdict-list { display: grid; gap: 8px; }
+    .v-row {
+      width: 100%; text-align: left;
+      display: grid; grid-template-columns: 28px 1fr auto;
+      gap: 12px; align-items: start;
+      padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg);
+      transition: background .15s, border-color .15s;
+    }
+    .v-row:hover { background: var(--bg-hover); }
+    .v-row.open { border-color: var(--accent); background: var(--accent-soft); }
+    .v-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .v-icon.pass { background: var(--ok-bg); color: var(--ok); }
+    .v-icon.fix { background: var(--warn-bg); color: var(--warn); }
+    .v-icon.unk { background: var(--bg-hover); color: var(--fg-tertiary); }
+    .v-detail {
+      grid-column: 1 / -1; display: none;
+      padding-top: 10px; border-top: 1px solid var(--border);
+      margin-top: 4px; font-size: 13px; color: var(--fg-secondary);
+    }
+    .v-row.open .v-detail { display: block; }
+    .v-badge {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--fg-tertiary); white-space: nowrap;
+    }
+
+    /* Quote */
+    .quote {
+      margin: 0;
+      padding: 18px 20px 18px 22px;
+      border-left: 3px solid var(--fg);
+      border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+      background: var(--bg-elevated);
+      font-size: 16px; line-height: 1.7;
+    }
+    .quote strong { font-weight: 600; }
+
+    /* Quiz */
+    .quiz-card {
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 18px; margin-bottom: 12px; background: var(--bg);
+    }
+    .quiz-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .quiz-opt {
+      padding: 8px 14px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: 13px;
+      transition: all .15s;
+    }
+    .quiz-opt:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+    .quiz-opt.correct {
+      background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok) 40%, var(--border));
+      color: var(--ok); font-weight: 500;
+    }
+    .quiz-opt.wrong {
+      background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+      color: var(--danger);
+    }
+    .quiz-opt:disabled { cursor: default; opacity: 1; }
+    .quiz-feedback {
+      margin-top: 12px; font-size: 13px; color: var(--fg-secondary);
+      display: none;
+    }
+    .quiz-feedback.show { display: block; animation: rise .25s var(--ease); }
+    .quiz-score {
+      padding: 14px 16px; border-radius: var(--radius-lg);
+      border: 1px solid var(--border); background: var(--bg-elevated);
+      font-size: 14px; margin-top: 8px;
+    }
+
+    /* Flow diagram simple */
+    .pipe {
+      display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 8px; align-items: stretch; margin: 16px 0;
+    }
+    @media (max-width: 720px) {
+      .pipe { grid-template-columns: 1fr; }
+      .pipe .arrow { transform: rotate(90deg); justify-self: center; }
+    }
+    .pipe .node {
+      padding: 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); background: var(--bg-elevated);
+      text-align: center;
+    }
+    .pipe .node b { display: block; font-size: 14px; margin-bottom: 4px; }
+    .pipe .node span { font-size: 12px; color: var(--fg-secondary); }
+    .pipe .arrow {
+      display: grid; place-items: center;
+      color: var(--fg-tertiary); font-size: 18px;
+    }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .btn {
+      display: inline-flex; align-items: center; height: 36px;
+      padding: 0 14px; border-radius: var(--radius);
+      border: 1px solid var(--border); font-size: 13px; font-weight: 500;
+    }
+    .btn:hover { background: var(--bg-hover); }
+    .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn-primary:hover { opacity: .9; background: var(--fg); }
+
+    .kbd-hint {
+      position: fixed; right: 16px; bottom: 16px; z-index: 40;
+      display: flex; gap: 6px; align-items: center;
+      padding: 8px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--bg);
+      box-shadow: var(--shadow); font-size: 12px; color: var(--fg-secondary);
+    }
+    .kbd-hint kbd {
+      font-family: var(--mono); font-size: 11px;
+      padding: 2px 6px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--bg-elevated);
+    }
+    @media (max-width: 720px) {
+      .kbd-hint { display: none; }
+      .brand small { display: none; }
+    }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 80; padding: 10px 16px; border-radius: 999px;
+      background: var(--fg); color: var(--bg); font-size: 13px; font-weight: 500;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s var(--ease);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: var(--bg-elevated); font-weight: 500; color: var(--fg-secondary); font-size: 12px; }
+    tr:last-child td { border-bottom: 0; }
+    .muted { color: var(--fg-secondary); }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>调研过程</span>
+      <small>Grok × Codex</small>
+    </div>
+    <nav class="nav-scroll" aria-label="章节">
+      <button type="button" class="nav-link active" data-nav="hero">这是什么</button>
+      <button type="button" class="nav-link" data-nav="ask">用户问了什么</button>
+      <button type="button" class="nav-link" data-nav="timeline">时间线</button>
+      <button type="button" class="nav-link" data-nav="agents">两方分工</button>
+      <button type="button" class="nav-link" data-nav="learned">搞懂了什么</button>
+      <button type="button" class="nav-link" data-nav="figma">Figma核验</button>
+      <button type="button" class="nav-link" data-nav="cross">交叉验证</button>
+      <button type="button" class="nav-link" data-nav="quiz">自测</button>
+      <button type="button" class="nav-link" data-nav="deliver">交付物</button>
+    </nav>
+    <div class="nav-actions">
+      <a class="link-btn" href="./index.html">方案汇报页 →</a>
+      <button type="button" class="icon-btn" id="btn-theme" title="切换主题" aria-label="切换主题">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="read-progress" aria-hidden="true"><i id="progress-bar"></i></div>
+
+  <main>
+    <!-- HERO -->
+    <section id="hero">
+      <div class="eyebrow"><span class="dot"></span> Meta · 对话复盘</div>
+      <h1>刚才那轮对话里，<br>Grok 和 Codex 搞懂了什么？</h1>
+      <p class="lede">
+        这份页面不是再讲一遍「怎么做主图」，而是把
+        <strong style="color:var(--fg)">调研过程、各自结论、交叉验证、最终口径</strong>
+        讲清楚——方便你自己复盘，或转给同事理解「材料从哪来」。
+      </p>
+      <div class="meta-row">
+        <span class="chip info">会话 2026-08-07</span>
+        <span class="chip">Grok · 初筛 + 综合</span>
+        <span class="chip codex">Codex CLI · 独立二验</span>
+        <span class="chip ok">交叉 PASS</span>
+      </div>
+
+      <div class="pipe" aria-hidden="true">
+        <div class="node">
+          <b>你的问题</b>
+          <span>PSD + AI 业内方案</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="node">
+          <b>Grok</b>
+          <span>X / Web 扫描</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="node">
+          <b>Codex</b>
+          <span>官方文档深挖</span>
+        </div>
+      </div>
+      <div class="pipe" style="grid-template-columns:1fr auto 1fr;max-width:520px;margin-left:auto;margin-right:auto" aria-hidden="true">
+        <div class="node">
+          <b>交叉打分</b>
+          <span>共识 / 修正 / 隔离</span>
+        </div>
+        <div class="arrow">→</div>
+        <div class="node">
+          <b>落盘交付</b>
+          <span>MD + 交互 HTML</span>
+        </div>
+      </div>
+
+      <blockquote class="quote" style="margin-top:24px">
+        <strong>读完你应能回答：</strong>
+        为什么不说「AI 能直接改 PSD」？为什么 Firefly 不能写进大陆默认 SOP？
+        为什么最终建议是「母版 + AI 素材 + 人审」？FDE 为什么不主 R？
+      </blockquote>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" data-nav="timeline">看时间线 →</button>
+        <button type="button" class="btn" data-nav="learned">直接看结论</button>
+        <button type="button" class="btn" data-nav="quiz">做 5 题自测</button>
+      </div>
+    </section>
+
+    <!-- ASK -->
+    <section id="ask">
+      <div class="eyebrow"><span class="dot"></span> 01 · 问题定义</div>
+      <h2>用户一开始问了什么</h2>
+      <p class="lede">问题从「专业电商设计师视角」出发，不是泛 AI 闲聊。</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <div class="label" style="font-family:var(--mono);font-size:11px;color:var(--fg-tertiary);margin-bottom:8px">Q1</div>
+          <h3>手里有 PSD，想用 AI 调整</h3>
+          <p class="muted" style="margin:0;font-size:14px">
+            真实诉求是：工程文件还在，能不能让 AI 参与改稿，而不是从零文生图。
+            关键约束是<strong style="color:var(--fg)">图层 / 可再编辑 / 商用交付</strong>。
+          </p>
+        </article>
+        <article class="card">
+          <div class="label" style="font-family:var(--mono);font-size:11px;color:var(--fg-tertiary);margin-bottom:8px">Q2</div>
+          <h3>业内解决方案是什么</h3>
+          <p class="muted" style="margin:0;font-size:14px">
+            要的是<strong style="color:var(--fg)">可落地路径地图</strong>，不是单一神器推荐。
+            后续又要求：推特排查 → 调 Codex → 交叉打分 → 写进立项目录 → 做成交互 HTML。
+          </p>
+        </article>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin-bottom:8px">后来叠加上的公司语境</h3>
+        <p class="muted" style="margin:0;font-size:14px">
+          材料要对齐 <strong style="color:var(--fg)">ai-赋能立项</strong> 里 7/22 设计组访谈：
+          电商侧 PSD 重、协作慢、AI 抽卡；品牌侧已在用生成工具但仍回 PS。
+          组合层口径是：设计 AI 出图/套版 <strong style="color:var(--fg)">FDE 不主 R</strong>——
+          所以交付是「调研反馈」，不是新开 FDE 项目。
+        </p>
+      </div>
+    </section>
+
+    <!-- TIMELINE -->
+    <section id="timeline">
+      <div class="eyebrow"><span class="dot"></span> 02 · 过程</div>
+      <h2>对话时间线（可点开）</h2>
+      <p class="lede">按真实推进顺序。点节点展开该步「输入 / 动作 / 产出」。</p>
+      <div class="timeline" id="timeline-list"></div>
+    </section>
+
+    <!-- AGENTS -->
+    <section id="agents">
+      <div class="eyebrow"><span class="dot"></span> 03 · 角色</div>
+      <h2>Grok 和 Codex 各干什么</h2>
+      <p class="lede">不是两个重复回答，而是「扫描 + 独立深挖 + 交叉」三层结构。</p>
+      <div class="grid grid-2">
+        <article class="card agent-card grok">
+          <div class="label">GROK · 主会话</div>
+          <h3>广度扫描 + 综合叙事</h3>
+          <ul>
+            <li>X / 推特语义与关键词检索（电商出图、PSD、Firefly 等）</li>
+            <li>Web 检索工具与工作流文章</li>
+            <li>归纳 5–6 条可行路径（PS 内 AI、模板、在线 PSD、Agent…）</li>
+            <li>对齐公司访谈纪要与驾驶舱口径</li>
+            <li>写 MD 汇报包 + 交互 HTML</li>
+          </ul>
+          <p class="muted" style="margin:12px 0 0;font-size:12px">
+            风险：媒体/营销话术可能混入（例如 Seede 导出 PSD）
+          </p>
+        </article>
+        <article class="card agent-card codex">
+          <div class="label">CODEX CLI 0.146</div>
+          <h3>独立事实核查 + 打分</h3>
+          <ul>
+            <li><code style="font-family:var(--mono);font-size:12px">codex exec</code> 约 20 分钟，read-only</li>
+            <li>优先官方文档（Adobe / Photopea / Codia / Photoroom…）</li>
+            <li>明确「无语义级读懂 PSD 成熟产品」</li>
+            <li>给出路径四维打分表 + 营销夸大清单</li>
+            <li>点出 Firefly 大陆不可用、CLI-Anything 无 PS harness 等</li>
+          </ul>
+          <p class="muted" style="margin:12px 0 0;font-size:12px">
+            价值：当「外部意见」，逼主会话改错与降权
+          </p>
+        </article>
+      </div>
+
+      <div class="tabs" style="margin-top:20px" role="tablist" aria-label="谁说了什么">
+        <button type="button" role="tab" data-tab="agree" aria-selected="true">双方一致</button>
+        <button type="button" role="tab" data-tab="fix" aria-selected="false">Codex 修正了 Grok</button>
+        <button type="button" role="tab" data-tab="unk" aria-selected="false">仍不确定</button>
+        <button type="button" role="tab" data-tab="method" aria-selected="false">方法怎么交叉</button>
+      </div>
+      <div class="panel" id="tab-panel" role="tabpanel"></div>
+    </section>
+
+    <!-- LEARNED -->
+    <section id="learned">
+      <div class="eyebrow"><span class="dot"></span> 04 · 认知模型</div>
+      <h2>最终「搞懂」的核心模型</h2>
+      <p class="lede">用一张心智模型概括：AI 吃像素，主图/详情 PSD 是工程，业务靠母版与模块。</p>
+
+      <blockquote class="quote">
+        <strong>PSD 是工程文件</strong>（图层、蒙版、智能对象、文字、效果）·
+        <strong>多数 AI 吃的是像素图</strong>（JPG/PNG）·
+        所以业内不是「上传 PSD → AI 全自动改完」，而是
+        <strong>规范母版 + AI 只做素材 + 确定性替换 + 人审</strong>。
+      </blockquote>
+
+      <div class="grid grid-2" style="margin-top:16px">
+        <article class="card">
+          <h3>AI 最适合</h3>
+          <p class="muted" style="margin:0;font-size:14px">
+            抠图、换背景、场景氛围、局部扩图/去杂、创意发散、上游批量出素材。
+          </p>
+        </article>
+        <article class="card">
+          <h3>AI 不适合当主路径</h3>
+          <p class="muted" style="margin:0;font-size:14px">
+            理解整份 PSD 业务语义、稳定改字改价、丝印小字终稿、无人值守批量交付。
+          </p>
+        </article>
+      </div>
+
+      <h3 style="margin:24px 0 12px">路径优先级（大陆 · 共识综合分）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>路径</th>
+              <th>综合</th>
+              <th>一句话</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>模板 + 智能对象 + 变量/动作</td><td><strong>9.8</strong></td><td>主图 SKU / 详情模块批量</td></tr>
+            <tr><td>PS + AI 素材回填（非 Firefly）</td><td><strong>9.0</strong></td><td>主图换景 / 详情场景块</td></tr>
+            <tr><td>Photopea</td><td>8.5</td><td>无 PS 应急</td></tr>
+            <tr><td>稿定类运营模板</td><td>7.8</td><td>运营改字，与工程解耦</td></tr>
+            <tr><td>Firefly（大陆）</td><td>≈2.0</td><td>官方不可用，勿写默认 SOP</td></tr>
+            <tr><td>「语义 AI 一键改 PSD」</td><td>≈0–1</td><td>不存在成熟产品</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- FIGMA -->
+    <section id="figma">
+      <div class="eyebrow"><span class="dot"></span> 04.5 · Codex 补核</div>
+      <h2>「Figma 能解决吗」核验结果</h2>
+      <p class="lede">在方案结论写出后，又用 Codex 独立交叉检查。总判定 <strong style="color:var(--fg)">PASS-WITH-CONDITIONS</strong>——方向对，但原稿低估了 Figma Buzz / AI / Weave。</p>
+
+      <div class="grid grid-2">
+        <article class="card">
+          <div class="label" style="font-family:var(--mono);font-size:11px;color:var(--fg-tertiary);margin-bottom:8px">成立</div>
+          <h3>核心方向不用改</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>Figma <strong style="color:var(--fg)">官方导入清单不含 PSD</strong>，不能原生保留复杂工程语义</li>
+            <li>不宜「全员迁 Figma」当存量主图产线默认解法</li>
+            <li>协作 / 组件 / 版本是真强项</li>
+            <li>试点可以，不承诺全库迁移、停 PS、AI 免审出图</li>
+          </ul>
+        </article>
+        <article class="card">
+          <div class="label" style="font-family:var(--mono);font-size:11px;color:var(--fg-tertiary);margin-bottom:8px">必须修正</div>
+          <h3>原稿写窄了的地方</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li>不能只说「协作 + 部分套版」——<strong style="color:var(--fg)">Buzz</strong> 有 CSV 批量与审批</li>
+            <li>不能说「AI 改场景不是 Figma 主业」——AI / Weave 已覆盖换背景、产品拍摄等</li>
+            <li>不能说「品牌平面与定位不匹配」——Buzz 面向数字广告与促销</li>
+            <li>「导入后图层还原不全」→ 更准确：<strong style="color:var(--fg)">无原生 PSD 导入</strong></li>
+          </ul>
+        </article>
+      </div>
+
+      <blockquote class="quote" style="margin-top:16px">
+        <strong>终版口径：</strong>按资产类型双轨——存量复杂 PSD 留 Photoshop 母版；
+        新建标准化数字物料可试点 Figma/Buzz。
+        AI 改图能力存在，但 <strong>≠ PSD 语义理解</strong>，发布仍须人审。
+        详见方案页 <a href="./index.html#figma">index.html#figma</a>。
+      </blockquote>
+    </section>
+
+    <!-- CROSS -->
+    <section id="cross">
+      <div class="eyebrow"><span class="dot"></span> 05 · 交叉验证</div>
+      <h2>哪些点被验证 / 修正 / 隔离</h2>
+      <p class="lede">点开看证据等级。总判定：关键结论无冲突，可出汇报。</p>
+      <div class="verdict-list" id="verdict-list"></div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="quiz">
+      <div class="eyebrow"><span class="dot"></span> 06 · 自测</div>
+      <h2>5 题确认你真的搞懂了</h2>
+      <p class="lede">选完即时反馈。全部答对 = 可以把口径讲给负责人听。</p>
+      <div id="quiz-list"></div>
+      <div class="quiz-score" id="quiz-score">得分：— / 5</div>
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-reset-quiz">重做</button>
+      </div>
+    </section>
+
+    <!-- DELIVER -->
+    <section id="deliver">
+      <div class="eyebrow"><span class="dot"></span> 07 · 交付</div>
+      <h2>最后落在哪里</h2>
+      <p class="lede">同目录文件 + 驾驶舱入口。状态：需求池参考 · 非立项。</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>给负责人看的</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li><a href="./index.html">index.html</a> · 方案交互汇报</li>
+            <li><a href="./00-一页纸_给设计负责人.md">00 一页纸</a></li>
+            <li>01 调研汇报 · 02 打分 · 03 行动边界</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>解释「过程」的</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;font-size:14px">
+            <li><strong style="color:var(--fg)">本页 research-story.html</strong></li>
+            <li>仓外公司受控目录中的 Codex 原稿</li>
+            <li>7/22 设计访谈纪要（受控，脱敏后写入结论）</li>
+          </ul>
+        </article>
+      </div>
+      <blockquote class="quote" style="margin-top:16px">
+        组合层备案口径：设计组 PSD/AI 诉求已完成外部方案调研与交叉验证。
+        结论支持设计侧<strong>母版化提效</strong>，不支持新开 FDE 主项目。
+      </blockquote>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="./index.html" style="text-decoration:none">打开方案汇报页</a>
+        <button type="button" class="btn" id="btn-copy-tldr">复制 30 秒 TL;DR</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="kbd-hint" aria-hidden="true">
+    <kbd>T</kbd> 主题
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+  (() => {
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const store = {
+      get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+    };
+
+    /* Theme */
+    const root = document.documentElement;
+    const saved = store.get("research-story-theme", null);
+    const preferDark = matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = saved || (preferDark ? "dark" : "light");
+    $("#btn-theme").addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      store.set("research-story-theme", root.dataset.theme);
+      toast(root.dataset.theme === "dark" ? "暗色" : "亮色");
+    });
+
+    let toastTimer;
+    function toast(m) {
+      const el = $("#toast");
+      el.textContent = m;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+    }
+
+    /* Nav */
+    const ids = ["hero","ask","timeline","agents","learned","figma","cross","quiz","deliver"];
+    function go(id) {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    $$("[data-nav]").forEach(b => b.addEventListener("click", () => go(b.dataset.nav)));
+    const io = new IntersectionObserver((ents) => {
+      ents.forEach(e => {
+        if (!e.isIntersecting) return;
+        $$("[data-nav]").forEach(b => b.classList.toggle("active", b.dataset.nav === e.target.id));
+      });
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+    addEventListener("scroll", () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      $("#progress-bar").style.width = (max > 0 ? h.scrollTop / max * 100 : 0) + "%";
+    }, { passive: true });
+
+    /* Timeline */
+    const steps = [
+      {
+        who: "user",
+        title: "提出问题",
+        summary: "PSD + AI 调整；业内方案是什么；先查推特。",
+        body: `
+          <p><strong>输入：</strong>专业电商设计师视角；两个明确问题。</p>
+          <ul>
+            <li>如何用 AI 调整已有 PSD</li>
+            <li>业内真实解决方案地图</li>
+            <li>要求排查 X/推特上的讨论</li>
+          </ul>`
+      },
+      {
+        who: "grok",
+        title: "Grok 第一轮：广度扫描",
+        summary: "X + Web 检索，归纳路径 A–E，给出冷水结论与 SOP。",
+        body: `
+          <p><strong>动作：</strong>语义搜索 / 关键词搜索 X；Web 查 Firefly、Codia、Seede、Photoroom、CLI-Anything 等。</p>
+          <ul>
+            <li>结论：几乎没有「读懂整份 PSD 再自然语言无损改」的成熟产品</li>
+            <li>路径：PS 内 AI、模板+智能对象、在线 PSD、Agent、重出+重建</li>
+            <li>业内分层：生成 / 编排 / 质检</li>
+          </ul>
+          <p><strong>产出：</strong>中文方案说明（对话内）。</p>`
+      },
+      {
+        who: "user",
+        title: "要求调用 Codex + 交叉打分",
+        summary: "第二意见，独立收集信息，再交叉验证。",
+        body: `
+          <ul>
+            <li>调用本机 Codex CLI（非再问一遍 Grok）</li>
+            <li>输出要能直接交叉：路径、局限、打分、营销夸大</li>
+          </ul>`
+      },
+      {
+        who: "codex",
+        title: "Codex 独立调研（约 20 分钟）",
+        summary: "官方文档优先，产出打分表与夸大清单。",
+        body: `
+          <p><strong>动作：</strong><code style="font-family:var(--mono)">codex exec --ephemeral -s read-only</code>，多轮 web search。</p>
+          <ul>
+            <li>模板母版综合分 9.8；Agent 约 4.3</li>
+            <li>强调 Firefly 大陆不可用（官方 FAQ）</li>
+            <li>Seede 官方导出列表与媒体说法冲突 → 不确定</li>
+            <li>CLI-Anything 无 Photoshop harness；PSBench 困难任务成功率低</li>
+            <li>Photopea / API-UXP 权重上调</li>
+          </ul>
+          <p><strong>产出：</strong>临时生成长文报告 → 经审核迁入仓外公司受控目录。</p>`
+      },
+      {
+        who: "both",
+        title: "交叉验证 + 共识分",
+        summary: "一致项锁定；修正 Firefly/Seede；可出汇报。",
+        body: `
+          <ul>
+            <li>高度共识：无语义级 PSD AI；批量=母版；AI 管素材</li>
+            <li>严重修正：大陆 Firefly 可行性降到 ~2</li>
+            <li>Seede 降为不确定，不进主建议</li>
+            <li>总判定：PASS，可汇报给设计负责人</li>
+          </ul>`
+      },
+      {
+        who: "grok",
+        title: "对齐公司访谈 + 落盘 MD",
+        summary: "读 7/22 电商/品牌纪要，写 03-设计组 目录。",
+        body: `
+          <ul>
+            <li>脱敏写一页纸 / 汇报 / 打分 / 行动边界</li>
+            <li>更新驾驶舱、业务文档地图：需求池参考 · 非 FDE 立项</li>
+            <li>明确 FDE 不主 R，设计主责母版试点</li>
+          </ul>`
+      },
+      {
+        who: "user",
+        title: "要求 Vercel 风格交互 HTML",
+        summary: "方案汇报页 index.html。",
+        body: `<p>场景向导、打分排序、SOP、拍板三问、⌘K、明暗主题。</p>`
+      },
+      {
+        who: "user",
+        title: "要求「解释对话过程」的第二份 HTML",
+        summary: "即本页 research-story.html。",
+        body: `<p>目标：让协作者理解 Grok/Codex 各自搞懂了什么，而不是只给结论幻灯片。</p>`
+      },
+      {
+        who: "user",
+        title: "追问：Figma 能解决吗？",
+        summary: "Grok 先答「非主解法」；要求 Codex 交叉后并入 HTML。",
+        body: `<ul>
+          <li>Codex 总判定 PASS-WITH-CONDITIONS</li>
+          <li>修正：Buzz/AI/Weave 能力需写入，不能只说协作</li>
+          <li>硬事实：官方无原生 PSD 导入</li>
+          <li>终版边界已并入 index.html#figma 与本页</li>
+        </ul>`
+      },
+      {
+        who: "codex",
+        title: "Codex 核验 Figma 边界",
+        summary: "官方 Help + Adobe 对照；产出终版 12 条 bullet。",
+        body: `<p>关键修正见上节。原稿存于仓外公司受控目录：2026-08-07_Codex核验_Figma边界.md</p>`
+      }
+    ];
+
+    const tl = $("#timeline-list");
+    steps.forEach((s, i) => {
+      const whoLabel = { user: "你", grok: "Grok", codex: "Codex", both: "交叉" }[s.who];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tl-item";
+      btn.dataset.who = s.who;
+      btn.innerHTML = `
+        <div class="tl-head">
+          <span class="chip ${s.who === "codex" ? "codex" : s.who === "both" ? "ok" : s.who === "user" ? "warn" : ""}">${String(i + 1).padStart(2, "0")} · ${whoLabel}</span>
+          <span class="tl-title">${s.title}</span>
+        </div>
+        <p class="tl-summary">${s.summary}</p>
+        <div class="tl-body">${s.body}</div>
+      `;
+      btn.addEventListener("click", () => {
+        const open = btn.classList.contains("open");
+        $$(".tl-item").forEach(x => x.classList.remove("open"));
+        if (!open) btn.classList.add("open");
+      });
+      tl.appendChild(btn);
+    });
+
+    /* Tabs */
+    const tabContent = {
+      agree: {
+        title: "双方高度一致（可当铁结论）",
+        html: `
+          <p>下列命题 Grok 与 Codex 同向，并与访谈痛点吻合：</p>
+          <p>· 不存在「AI 完整理解任意复杂 PSD 并自然语言无损改稿」的成熟产品。<br>
+          · 专业批量主线是模板 + 智能对象 + 变量/动作，AI 只做上游素材。<br>
+          · AI 适合抠图/背景/场景；商品、价、Logo、法务必须人审。<br>
+          · 「导出 PSD」≠「理解并保留原 PSD 语义」。<br>
+          · Agent 遥控 PS 处于早期，不能当无人值守产线。</p>`
+      },
+      fix: {
+        title: "Codex 修正 / 加强了什么",
+        html: `
+          <p><strong>Firefly 大陆：</strong>Grok 上轮偏全球默认首选；Codex 引用 Adobe 官方「Not available for users in China」。最终：地域分治，大陆 SOP 改写。</p>
+          <p><strong>Seede：</strong>媒体称可导出 PSD；Codex 查官方导出列表未见可靠一致性 → 标不确定，不进主建议。</p>
+          <p><strong>Photopea / PS API：</strong>权重上调为正经备选与工作室工程化路径。</p>
+          <p><strong>CLI-Anything：</strong>仓库无稳固 PS harness；再叠加 PSBench 低成功率 → 降为实验。</p>`
+      },
+      unk: {
+        title: "仍标不确定（诚实披露）",
+        html: `
+          <p>· Seede 分层 PSD 导出（需账号实测）<br>
+          · Codia 复杂 PSD 往返保真（新品，需 10–20 份试点）<br>
+          · 稿定完整兼容矩阵<br>
+          · Photopea 与最新 PS 逐项无损保证<br>
+          · Photoshop API 在中国大陆的合同与区域可用性</p>
+          <p>这些<strong>不阻塞</strong>主建议「母版 + AI 素材 + 人审」。</p>`
+      },
+      method: {
+        title: "交叉方法（可复用）",
+        html: `
+          <p>1. <strong>双源独立：</strong>Grok 先答；Codex 不读对话全文，只吃同一研究题。<br>
+          2. <strong>官方优先：</strong>冲突时 Adobe/厂商 docs &gt; 媒体评测 &gt; 社交帖。<br>
+          3. <strong>四维打分：</strong>可行性 / 图层保真 / 电商适用 / 成熟度。<br>
+          4. <strong>隔离不确定：</strong>证据冲突项不删，但移出「已验证建议」。<br>
+          5. <strong>公司对齐：</strong>外部结论必须过访谈与组合优先级（FDE 不主 R）。</p>`
+      }
+    };
+    const panel = $("#tab-panel");
+    function setTab(key) {
+      $$(".tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === key ? "true" : "false"));
+      const c = tabContent[key];
+      panel.innerHTML = `<h3>${c.title}</h3>${c.html}`;
+    }
+    setTab("agree");
+    $$(".tabs [data-tab]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+    /* Verdicts */
+    const verdicts = [
+      { icon: "pass", badge: "PASS", title: "无语义级读懂 PSD 成熟产品", detail: "Grok 初筛 + Codex 官方/学术侧一致。GUI Agent 困难任务成功率仍低。" },
+      { icon: "pass", badge: "PASS", title: "批量 = 模板 + 智能对象", detail: "Codex 综合 9.8；与专业工作流常识及电商批量诉求一致。" },
+      { icon: "fix", badge: "修正", title: "Firefly 不能当大陆默认", detail: "Adobe 产品页/FAQ 写明 China 不可用。大陆用国产/跨境素材工具回填 PS。" },
+      { icon: "pass", badge: "PASS", title: "AI 不稳批量 = 访谈真实", detail: "抽卡、字体、越界与 7/22 电商/品牌纪要同向。" },
+      { icon: "unk", badge: "隔离", title: "Seede 导出 PSD", detail: "媒体肯定 vs 官方列表存疑。可试用新稿生成，不当已验证「改原 PSD」。" },
+      { icon: "pass", badge: "PASS", title: "FDE 不主 R 设计 AI", detail: "组合 7 月已收敛；本交付是调研反馈，非新开项目。" },
+      { icon: "fix", badge: "加强", title: "Agent 控 PS 降权", detail: "无稳固 harness + 低成功率基准 → 观察项，非 2026 交付主路径。" }
+    ];
+    const vl = $("#verdict-list");
+    verdicts.forEach(v => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "v-row";
+      b.innerHTML = `
+        <span class="v-icon ${v.icon}">${v.icon === "pass" ? "✓" : v.icon === "fix" ? "!" : "?"}</span>
+        <span style="font-weight:500">${v.title}</span>
+        <span class="v-badge">${v.badge}</span>
+        <div class="v-detail">${v.detail}</div>
+      `;
+      b.addEventListener("click", () => {
+        const open = b.classList.contains("open");
+        $$(".v-row").forEach(x => x.classList.remove("open"));
+        if (!open) b.classList.add("open");
+      });
+      vl.appendChild(b);
+    });
+
+    /* Quiz */
+    const quiz = [
+      {
+        q: "「手里有 PSD，想用 AI 改」——业内更接近哪种说法？",
+        opts: [
+          { t: "上传 PSD，AI 一句话无损改完所有图层", ok: false },
+          { t: "母版工程 + AI 出素材 + 人审 / 批量替换", ok: true },
+          { t: "全部迁到 Figma 就自动解决", ok: false }
+        ],
+        why: "PSD 是工程文件，多数 AI 吃像素。成熟路径是母版化，不是语义 Agent。"
+      },
+      {
+        q: "为什么大陆团队不能把 Firefly 写进默认 SOP？",
+        opts: [
+          { t: "太贵", ok: false },
+          { t: "效果不如 Midjourney", ok: false },
+          { t: "Adobe 官方：生成式功能不对中国大陆用户提供", ok: true }
+        ],
+        why: "这是 Codex 交叉验证出的硬约束，不是口味问题。"
+      },
+      {
+        q: "多 SKU 批量，综合分最高的是？",
+        opts: [
+          { t: "Agent 遥控 Photoshop", ok: false },
+          { t: "模板 PSD + 智能对象 + 变量/动作", ok: true },
+          { t: "每张重新写提示词出完整主图", ok: false }
+        ],
+        why: "共识综合 9.8，专业电商生产主线。"
+      },
+      {
+        q: "这份调研在公司组合里的姿态是？",
+        opts: [
+          { t: "立即立项，FDE 主 R 做设计 AI 系统", ok: false },
+          { t: "需求池参考；设计主责；FDE 默认不主 R", ok: true },
+          { t: "替代客服 Agent 成为 P0", ok: false }
+        ],
+        why: "与 7 月收敛一致：设计 AI 出图/套版不主责。"
+      },
+      {
+        q: "关于 Figma，Codex 核验后的正确说法是？",
+        opts: [
+          { t: "全员迁 Figma 即可替代 PS 主图产线", ok: false },
+          { t: "官方无原生 PSD 导入；可双轨试点新建物料（Buzz），存量复杂工程仍宜 PS", ok: true },
+          { t: "Figma 完全没有批量与 AI 能力", ok: false }
+        ],
+        why: "PASS-WITH-CONDITIONS：方向「非主解法」成立，但 Buzz/AI/Weave 能力必须写全。"
+      }
+    ];
+    const answers = {};
+    const quizList = $("#quiz-list");
+    function renderQuiz() {
+      quizList.innerHTML = "";
+      quiz.forEach((item, qi) => {
+        const card = document.createElement("div");
+        card.className = "quiz-card";
+        card.innerHTML = `<div class="card-kicker" style="font-family:var(--mono);font-size:11px;color:var(--fg-tertiary);margin-bottom:6px">Q${qi + 1}</div>
+          <h3 style="font-size:15px">${item.q}</h3>
+          <div class="quiz-opts"></div>
+          <div class="quiz-feedback"></div>`;
+        const opts = card.querySelector(".quiz-opts");
+        const fb = card.querySelector(".quiz-feedback");
+        item.opts.forEach((o, oi) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "quiz-opt";
+          b.textContent = o.t;
+          if (answers[qi] != null) {
+            b.disabled = true;
+            if (o.ok) b.classList.add("correct");
+            if (answers[qi] === oi && !o.ok) b.classList.add("wrong");
+          }
+          b.addEventListener("click", () => {
+            if (answers[qi] != null) return;
+            answers[qi] = oi;
+            renderQuiz();
+            updateQuizScore();
+          });
+          opts.appendChild(b);
+        });
+        if (answers[qi] != null) {
+          const ok = item.opts[answers[qi]].ok;
+          fb.classList.add("show");
+          fb.innerHTML = (ok ? "<strong style='color:var(--ok)'>正确。</strong> " : "<strong style='color:var(--danger)'>不对。</strong> ") + item.why;
+        }
+        quizList.appendChild(card);
+      });
+      updateQuizScore();
+    }
+    function updateQuizScore() {
+      const n = Object.keys(answers).length;
+      let c = 0;
+      Object.entries(answers).forEach(([qi, oi]) => {
+        if (quiz[+qi].opts[oi].ok) c++;
+      });
+      const el = $("#quiz-score");
+      if (!n) el.textContent = "得分：— / 5（点选项开始）";
+      else el.textContent = `得分：${c} / 5${n === 5 ? (c === 5 ? " · 可以讲给负责人听了" : " · 建议回看「搞懂了什么」") : ""}`;
+    }
+    renderQuiz();
+    $("#btn-reset-quiz").addEventListener("click", () => {
+      Object.keys(answers).forEach(k => delete answers[k]);
+      renderQuiz();
+      toast("已重置自测");
+    });
+
+    /* TL;DR copy */
+    $("#btn-copy-tldr").addEventListener("click", async () => {
+      const text = [
+        "【PSD×AI 调研 · 30 秒】",
+        "1) 没有成熟产品能语义级读懂任意 PSD 再一句话无损改稿。",
+        "2) 业内落地：母版 PSD + AI 只做素材 + 批量替换 + 人审。",
+        "3) 大陆不能默认 Firefly（官方不可用）。",
+        "4) Grok 扫描 + Codex 官方二验，交叉 PASS。",
+        "5) Figma：官方无原生 PSD；非存量主解法；Buzz 可试点新建物料（Codex PASS-WITH-CONDITIONS）。",
+        "6) 对公司：设计主责试点；FDE 不主 R；材料在 03-设计组-PSD与AI调研。",
+        "— 2026-08-07"
+      ].join("\n");
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("TL;DR 已复制");
+      } catch {
+        toast("复制失败");
+      }
+    });
+
+    addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "t" && !/input|textarea/i.test(e.target.tagName) && !e.metaKey && !e.ctrlKey) {
+        $("#btn-theme").click();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

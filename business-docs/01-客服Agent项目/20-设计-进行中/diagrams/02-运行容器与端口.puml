@@ -1,0 +1,91 @@
+@startuml
+skinparam shadowing false
+title 运行容器与端口 C4 Containers\n目的：部署单元、红线端口、同步异步边与 DEC-042 内容治理边界
+
+rectangle "客户端层" {
+  [Float浮窗\n搜索/复制/无命中/放弃/升级\nplaceholder仅内存渲染+二次确认] as Float
+  [Dashboard\n自动事实双账 | 工单分析 | 话术优化待办] as Dash
+  [Preload IPC] as IPC
+  database "可选SQLite缓存\n完整snapshot本地按[from,to)过滤\n非SoR" as Cache
+}
+
+rectangle "API层 无状态可扩展" {
+  [auth] as Auth
+  [search 红线\n只经 search_recommendable_scripts\n显式scope + taxonomy/risk/review/quality\n封闭最小public mapper] as Search
+  [events 红线] as Events
+  [metrics] as Metrics
+  [workorders 红线\n只读分析] as WorkOrders
+  [content 红线\n稳定Question·质量门\n固定ASCII键+C排序受限hash\n含promoted_by_role] as Content
+  [announce\n完整不可变snapshot\n封闭最小public mapper] as Announce
+  [policy] as Policy
+  [redaction] as Redact
+}
+
+rectangle "数据层" {
+  database "PostgreSQL SoR\nroot question ≠ search operation\nwork_order_* ≠ iteration_task*\nQuestion复合版本+origin key version\n审核决定 ≠ 质量plan/evidence\npopulation_manifest_hash\nsemantic先退役留墓碑再删query" as PG
+  folder "共享持久 import 存储\nObject / 跨节点 RWX Must\nfilesystem 仅 single_host 共卷" as OBJ
+}
+
+rectangle "一期异步必经路径" {
+  queue "outbox_jobs\nPostgreSQL 持久表 Must" as Outbox
+    [TypeScript Import Worker\ncontent / work-order 分 capability\nclaim + heartbeat + lease_version\nfreeze quality plan + population manifest] as ImportWorker
+}
+
+rectangle "可选 / Deferred 旁路" {
+  [LLM Ranker] as LLM
+  [Python 清洗 Worker\nDeferred] as CleanWorker
+  [CR-003 Offline Lab\n49/50 · Embedding shadow\nlocal student · teacher受许可预算] as OfflineLab
+}
+
+Float --> IPC
+Dash --> IPC
+IPC -[#000000]-> Auth : 同步 /v1/auth
+IPC -[#000000]-> Search : 同步 POST /v1/search
+IPC -[#000000]-> Events : 同步 /v1/events
+IPC -[#000000]-> Metrics : 同步 /v1/metrics
+IPC -[#000000]-> WorkOrders : 同步 /v1/work-orders
+IPC -[#000000]-> Content : 同步 /v1/content
+IPC -[#000000]-> Announce : 同步 /v1/announce
+
+Search -[#000000]-> Redact
+Search -[#000000]-> Policy : 同步读一期 flag
+Search -[#000000]-> PG : 同步受控函数\napp_runtime不得直读view/底表\n同快照范围/审核/质量/hash硬门
+Events -[#000000]-> PG
+Metrics -[#000000]-> PG : iteration_tasks 读模型
+WorkOrders -[#000000]-> OBJ : 同步先持久批准文件
+WorkOrders -[#000000]-> PG : work_order batch + outbox
+Content -[#000000]-> OBJ : 同步先持久\n校验 key/hash/size
+Content -[#000000]-> PG : batch + outbox 同事务\ncommit 后才 202；publish 事务\n来源/租约denial与标准审计分流
+Announce -[#000000]-> PG
+
+Search -[#666666,dashed]-> LLM : 异步 <=400ms 降级
+PG -[#666666,dashed]-> Outbox : 同库持久 job
+Outbox -[#666666,dashed]-> ImportWorker : claim / heartbeat
+ImportWorker -[#000000]-> OBJ : 按 key 重读原文
+ImportWorker -[#000000]-> PG : lease_version fenced finalize\nnormalized row不接审核/质量结论\n审核池另写decision/evidence
+ImportWorker -[#666666,dashed]-> CleanWorker : 二期才可扩展
+Announce -[#666666,dashed]-> Cache : 完整snapshot经最小mapper\n客户端按effective [from,to)过滤\n异步重建本地索引
+PG -[#666666,dashed]-> OfflineLab : 仅获批候选引用\n无自动训练/导出
+
+legend right
+  实线同步 / 虚线异步
+  search events content workorders = 红线
+  自动事实复用 events；不是聊天记录
+  修改/发送/正确性仅 Pilot 离线抽样
+  DEC-042: 稳定Question + 显式scope/taxonomy/risk
+  Question hash含promoted_by_role；固定ASCII键+C排序，非通用JCS
+  quality绑定population_manifest_hash；同计数换行也失败
+  semantic asset先退役留墓碑，再允许删来源query
+  snapshot完整不可变；客户端[effective_from,effective_to)过滤
+  public mapper封闭最小，禁止内部HMAC/EVD/query/locator外泄
+  仅来源/租约走denial audit；内容/质量/hash走标准审计
+  high/冲突双审；quality quarantine+抽样阈值
+  clean<=500全审；501..5000抽10%(100..300)；>2%扩30%；>5%阻断
+  placeholder值/渲染正文零落库；事件只绑模板四元组
+  schema v1.12 / OpenAPI 1.11.0 静态合同已锁
+  迁移/runtime/动态EVD未实现；当前真PG NOT_CERTIFIED
+  CR-003: DeepSeek teacher另批；GLM distill Ban
+  import 原文 + outbox + TS worker = 一期 Must
+  work_order_* 与 iteration_task* 分表 / 分 API / 分权限
+endlegend
+@enduml

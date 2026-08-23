@@ -17,6 +17,7 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createSafeResultsDir } from "../../sites/tests/support/safe-results-dir.mjs";
+import { deriveProjectStatus } from "./customer_project_status.mjs";
 import {
   resolveCustomerProjectQaPaths,
   resolveCustomerProjectWorkspace,
@@ -104,6 +105,28 @@ function visibleHtmlText(html) {
     .trim();
 }
 
+function htmlAttributes(openTag) {
+  return Object.fromEntries(
+    [...openTag.matchAll(/([:\w-]+)\s*=\s*(["'])(.*?)\2/gs)].map((match) => [
+      match[1],
+      match[3],
+    ])
+  );
+}
+
+function expectedStatusAxisClasses(projectStatus) {
+  return {
+    direction: projectStatus.direction === "已记录" ? "confirmed" : "pending",
+    approval: projectStatus.approvalReady ? "confirmed" : "pending",
+    "problem-fit": projectStatus.problemFitReady ? "confirmed" : "pending",
+    external:
+      projectStatus.externalPass === projectStatus.externalTotal ? "confirmed" : "pending",
+    scope: projectStatus.scopePass === projectStatus.scopeTotal ? "confirmed" : "pending",
+    resource: projectStatus.resourceBaseline === "未选择" ? "pending" : "confirmed",
+    ddev: projectStatus.ddevReady ? "confirmed" : "pending",
+  };
+}
+
 await check("PRD 真源清单与内容契约 --check", async () => {
   const { stdout, stderr } = await execFileAsync(
     process.execPath,
@@ -143,8 +166,8 @@ await check("关键业务口径完整", async () => {
   if (mode === "public-template") {
     requiredFacts.push(
       "G0 未签发",
-      "1 / 14",
-      "1 / 15",
+      "13 / 14",
+      "14 / 15",
       "最早 08-14"
     );
   }
@@ -153,7 +176,118 @@ await check("关键业务口径完整", async () => {
   for (const stale of ["话术库 MVP-A", "独立预评分", "强制排序"]) {
     assert.equal(visible.includes(stale), false, `可见页面仍包含废止口径：${stale}`);
   }
+  assert.equal(visible.includes("编码从下一个可用工作日开始"), false, "Ddev 不得额外强制次日开工");
+  assert.match(visible, /Ddev 生效当日即可进入 DEV-M0/);
   return `${requiredFacts.length} 项`;
+});
+
+await check("状态轴文字与视觉类同源", async () => {
+  const [html, charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+    readFile(targetPath, "utf8"),
+    readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
+    readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
+    readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
+    readFile(path.join(projectDir, "03-Scope与验收.md"), "utf8"),
+    readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
+    readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
+    readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+  ]);
+  const projectStatus = deriveProjectStatus({
+    charter,
+    schedule,
+    ledger,
+    scope,
+    cost,
+    architecture,
+    implementation,
+  });
+  const expectedClasses = expectedStatusAxisClasses(projectStatus);
+  for (const [axis, expectedClass] of Object.entries(expectedClasses)) {
+    const openingTags = [
+      ...html.matchAll(
+        new RegExp(
+          `<[a-z][\\w:-]*\\b(?=[^>]*\\bdata-status-axis=["']${axis}["'])[^>]*>`,
+          "gi"
+        )
+      ),
+    ].map((match) => match[0]);
+    assert.equal(openingTags.length, 1, `状态轴 ${axis} 必须唯一`);
+    const classValue = openingTags[0].match(/\sclass=(["'])([^"']*)\1/i)?.[2] || "";
+    const classNames = new Set(classValue.split(/\s+/).filter(Boolean));
+    assert.equal(classNames.has(expectedClass), true, `${axis} 缺少 ${expectedClass}`);
+    assert.equal(
+      classNames.has(expectedClass === "confirmed" ? "pending" : "confirmed"),
+      false,
+      `${axis} 同时保留了冲突视觉类`
+    );
+  }
+  return `${Object.keys(expectedClasses).length}/7 状态轴`;
+});
+
+await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
+  const [html, charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+    readFile(targetPath, "utf8"),
+    readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
+    readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
+    readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
+    readFile(path.join(projectDir, "03-Scope与验收.md"), "utf8"),
+    readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
+    readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
+    readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+  ]);
+  const projectStatus = deriveProjectStatus({
+    charter,
+    schedule,
+    ledger,
+    scope,
+    cost,
+    architecture,
+    implementation,
+  });
+  const ddevMatches = [
+    ...html.matchAll(
+      /(<([a-z][\w:-]*)\b[^>]*\bdata-contract\s*=\s*(["'])ddev\3[^>]*>)([\s\S]*?)(<\/\2>)/gi
+    ),
+  ];
+  assert.equal(ddevMatches.length, 1, "data-contract=ddev 必须唯一");
+
+  const attributes = htmlAttributes(ddevMatches[0][1]);
+  const ddevVisible = visibleHtmlText(ddevMatches[0][0]);
+  const completed = projectStatus.externalPass + projectStatus.scopePass;
+  const total = projectStatus.externalTotal + projectStatus.scopeTotal;
+  assert.deepEqual(
+    {
+      externalPass: attributes["data-external-pass"],
+      externalTotal: attributes["data-external-total"],
+      scopePass: attributes["data-scope-pass"],
+      scopeTotal: attributes["data-scope-total"],
+      completed: attributes["data-pass"],
+      total: attributes["data-total"],
+    },
+    {
+      externalPass: String(projectStatus.externalPass),
+      externalTotal: String(projectStatus.externalTotal),
+      scopePass: String(projectStatus.scopePass),
+      scopeTotal: String(projectStatus.scopeTotal),
+      completed: String(completed),
+      total: String(total),
+    }
+  );
+  assert.ok(
+    ddevVisible.includes(
+      `外部责任包 ${projectStatus.externalPass} / ${projectStatus.externalTotal}`
+    ),
+    "Ddev 摘要的外部责任包计数不同源"
+  );
+  assert.ok(
+    ddevVisible.includes(`Scope 检查 ${projectStatus.scopePass} / ${projectStatus.scopeTotal}`),
+    "Ddev 摘要的 Scope 计数不同源"
+  );
+
+  const visible = visibleHtmlText(html);
+  assert.ok(visible.includes(`当前只完成 ${completed} / ${total} 项准备`), "Ddev 完成总计不同源");
+  assert.ok(visible.includes(`已经确认 · ${completed} / ${total}`), "Ddev 确认总计不同源");
+  return `外部 ${projectStatus.externalPass}/${projectStatus.externalTotal}；Scope ${projectStatus.scopePass}/${projectStatus.scopeTotal}；总计 ${completed}/${total}`;
 });
 
 const browserLaunchOptions = process.env.CI

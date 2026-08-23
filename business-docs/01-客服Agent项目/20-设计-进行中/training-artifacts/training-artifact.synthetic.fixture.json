@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_id": "SYNTHETIC-RETRIEVAL-001",
+  "artifact_kind": "training_bundle",
+  "status": "draft",
+  "data_account": "synthetic",
+  "purpose": "retrieval",
+  "dataset_version": "synthetic-v1",
+  "created_at": "2026-08-08T00:00:00Z",
+  "source_cutoff_at": "2026-08-08T00:00:00Z",
+  "license_manifest": {
+    "embedding_backend": null,
+    "student_model": null
+  },
+  "budget_policy": {
+    "currency": "CNY",
+    "per_run_cap": 0,
+    "daily_cap": 0,
+    "batch_cap": 0,
+    "monthly_cap": 0,
+    "external_paid_calls_allowed": false
+  },
+  "approvals": {
+    "business_review": {
+      "status": "synthetic_only",
+      "review_id": null,
+      "reviewer_capability": null,
+      "reviewed_at": null
+    },
+    "data_security_review": {
+      "status": "synthetic_only",
+      "review_id": null,
+      "reviewer_capability": null,
+      "reviewed_at": null
+    },
+    "training_authorization_id": null,
+    "publish_authorization_id": null
+  },
+  "items": [
+    {
+      "item_id": "SYN-ITEM-001",
+      "split": "train",
+      "data_account": "synthetic",
+      "purpose": "retrieval",
+      "semantic_asset": {
+        "semantic_asset_id": "SYN-ASSET-001",
+        "semantic_family_id": "SYN-FAMILY-CAMPAIGN-001",
+        "question_text": "虚构测试商品参加示例活动需要什么条件？",
+        "language": "zh-CN",
+        "source_type": "synthetic",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "answer_binding": {
+        "release_id": "SYN-RELEASE-001",
+        "script_id": "SYN-SCRIPT-001",
+        "script_version": 1,
+        "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "origin": {
+        "query_id": "SYN-QUERY-001",
+        "parent_query_id": null,
+        "attempt_kind": "original",
+        "lineage_group_id": "SYN-LINEAGE-001",
+        "template_ancestor_id": null
+      },
+      "behavior_signals": {
+        "copied": true,
+        "chosen_rank": 1,
+        "no_hit": false,
+        "dismissed": false,
+        "escalated": false,
+        "reselection_count": 0,
+        "signal_status": "candidate_only"
+      },
+      "labels": {
+        "intent": "synthetic_campaign_eligibility",
+        "relevance_grade": 3,
+        "label_source": "synthetic_policy",
+        "label_status": "candidate"
+      },
+      "review": {
+        "business_status": "synthetic_only",
+        "data_security_status": "synthetic_only",
+        "promotion_eligible": false
+      },
+      "lineage": {
+        "source_ids_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "source_expires_at": null,
+        "purpose_lock": "retrieval",
+        "deletion_key": "SYN-DELETE-001"
+      }
+    }
+  ],
+  "teacher_runs": [],
+  "deletion_manifest": {
+    "status": "not_applicable",
+    "entries": []
+  }
+}

@@ -1,13 +1,14 @@
 # 天元 · AI 赋能汇报 Web（已收尾）
 
 > **生命周期：** 已完成 / 参考资产
-> **收尾日期：** 2026-07-31
+> **业务收尾日期：** 2026-07-31
+> **最近安全维护：** 2026-08-09（不改变业务快照）
 > **当前项目：** [客服 Agent](../business-docs/01-客服Agent项目/README.md)
 > **边界：** 本 Web 不再承担项目推进、审批补录或当前状态 SSOT。
 
-历史在线地址固定为 <https://weiweity.github.io/tianyuan-ai-brief/>。当前客服启动会使用独立地址 <https://weiweity.github.io/tianyuan-ai-brief/customer-agent/>。
+历史在线地址固定为 <https://weiweity.github.io/tianyuan-ai-brief/>，其根页面发布 2026-08-09 安全维护与公开脱敏快照；页面中的业务结论仍来自 2026-07-31 收尾快照，历史组合费用精确金额已按公开边界移除。当前客服启动会使用独立地址 <https://weiweity.github.io/tianyuan-ai-brief/customer-agent/>。
 
-本归档的 29 个公开文件已按 [`archive-manifest.json`](archive-manifest.json) 冻结。2026-08-03 的目录整理只移动路径，没有改变入口文件或站点目录字节。
+2026-07-31 原始归档的 29 个文件继续按 [`archive-manifest.json`](archive-manifest.json) 冻结，目录与旧 manifest 均保持字节不动。2026-08-09 公开维护快照按 [`2026-08-09-ai-project-brief-security-maintenance.manifest.json`](2026-08-09-ai-project-brief-security-maintenance.manifest.json) 单独冻结：升级 DOMPurify / Mermaid、生成必要运行产物，并只对两处历史组合费用精确金额做确定性公开脱敏。
 
 ---
 
@@ -47,8 +48,10 @@
 ```text
 archive/
 ├── README.md
-├── archive-manifest.json
-└── 2026-07-31-ai-project-brief/ # 冻结站点，禁止原地修改
+├── archive-manifest.json                                      # 7 月 31 日旧收据，字节不动
+├── 2026-07-31-ai-project-brief/                               # 原始冻结站点
+├── 2026-08-09-ai-project-brief-security-maintenance.manifest.json
+└── 2026-08-09-ai-project-brief-security-maintenance/          # 当前公开安全快照
 sites/
 ├── package.json                 # 两个网址的质量与发布工具
 ├── scripts/                     # Bundle / Pages 编排
@@ -58,14 +61,15 @@ business-docs/01-客服Agent项目/   # 当前客服项目及独立品牌素材
 
 | 层级 | 文件 | 历史职责 |
 |------|------|----------|
-| 壳 | `2026-07-31-ai-project-brief/index.html` | 挂载点与资源声明 |
-| 启动 | `2026-07-31-ai-project-brief/js/bootstrap.js` | HTTP 版本化 Bundle 与 file 离线 Bundle |
-| 样式 | `2026-07-31-ai-project-brief/css/app.css` | 满屏自适应与移动 / 桌面分层 |
-| 冻结内容源 | `2026-07-31-ai-project-brief/data/content.json` | 收尾版本的页面文字、表格与 Mermaid |
-| 发布产物 | `2026-07-31-ai-project-brief/data/release.json` 与 Bundle | 冻结生成物 |
+| 原始证据 | `2026-07-31-ai-project-brief/` | 7 月 31 日原始冻结字节，不再直接发布 |
+| 当前公开壳 | `2026-08-09-ai-project-brief-security-maintenance/index.html` | 安全修补与费用公开脱敏后的挂载点与资源声明 |
+| 启动 | `2026-08-09-ai-project-brief-security-maintenance/js/bootstrap.js` | HTTP 版本化 Bundle 与 file 离线 Bundle |
+| 样式 | 两份归档的 `css/app.css` | 逐字节相同的满屏自适应与移动 / 桌面分层 |
+| 内容收据 | 两份归档的 `data/content.json` | 原始归档保留 2026-07-31 真源；公开快照只脱敏两处精确费用，并分别由 manifest 绑定 SHA-256 |
+| 发布产物 | 安全快照的 `data/release.json` 与 Bundle | 绑定补丁 vendor 的确定性生成物 |
 | 质量门禁 | `../sites/tests/` 与 `.github/workflows/quality.yml` | 哈希、单测、Schema、UI 与 a11y |
 
-技术细节见冻结文件 [ARCHITECTURE.md](2026-07-31-ai-project-brief/ARCHITECTURE.md)。其中出现的旧目录名属于 7 月 31 日历史记录，不再代表当前仓库结构。
+原始技术细节见冻结文件 [ARCHITECTURE.md](2026-07-31-ai-project-brief/ARCHITECTURE.md)，安全与公开脱敏边界见 [SECURITY-MAINTENANCE.md](2026-08-09-ai-project-brief-security-maintenance/SECURITY-MAINTENANCE.md)。公开快照的 `ARCHITECTURE.md` 只同步两项依赖版本；业务结论不变，精确费用不再公开。
 
 ---
 
@@ -78,13 +82,13 @@ npm run serve
 # 打开 http://localhost:8765
 ```
 
-也可双击 `archive/2026-07-31-ai-project-brief/index.html` 查看离线快照。预览只是回看历史资产，不会改变项目状态。
+也可双击 `archive/2026-08-09-ai-project-brief-security-maintenance/index.html` 查看离线安全快照。`2026-07-31-ai-project-brief/` 只用于原始证据回溯。预览不会改变项目状态。
 
 ---
 
 ## 冻结规则
 
-不要在 `2026-07-31-ai-project-brief/` 原地修改内容。若未来确需修复，必须建立新的日期版本、更新归档清单并单独评审；当前客服项目不得向本目录写状态。
+不要在 `2026-07-31-ai-project-brief/` 或 `2026-08-09-ai-project-brief-security-maintenance/` 原地修改内容。未来若再修复，必须建立新的日期版本、生成独立 manifest 并单独评审；当前客服项目不得向任一归档写状态。
 
 历史 HTML [`../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html`](../business-docs/99-归档/2026-07-31-立项阶段/print/AI赋能立项_金主一页汇报.html) 只作归档追溯，不是第二份业务正文。
 
@@ -92,6 +96,6 @@ npm run serve
 
 ## 版本
 
-**v5.25.1 · 2026-07-31 · 已收尾**
+**业务结论 v5.25.1 · 2026-07-31 已收尾 · 2026-08-09 安全维护与公开脱敏**
 
 项目状态已迁移到 `business-docs/01-客服Agent项目/`；本目录从执行链退出，只保留历史汇报与设计工程参考。

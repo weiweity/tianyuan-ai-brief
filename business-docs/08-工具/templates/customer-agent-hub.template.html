@@ -1658,7 +1658,7 @@
       </div>
 
       <aside class="next-card" aria-labelledby="next-title">
-        <p class="next-label">下一件关键事</p>
+        <p class="next-label">当前最紧急事项</p>
         <time class="next-date" id="next-date"></time>
         <h2 id="next-title"></h2>
         <p id="next-output"></p>
@@ -1823,7 +1823,7 @@
 
       <details>
         <summary>
-          <span>待具名责任人</span>
+          <span>角色责任确认</span>
           <span class="summary-meta" id="role-summary"></span>
         </summary>
         <div class="compact-list" id="roles"></div>
@@ -2595,8 +2595,10 @@ __PRETEXT_VENDOR__
       )
     );
 
-    document.querySelector("#role-summary").textContent =
-      `${data.governance.roles.filter((item) => item.needsNaming).length} 个角色待具名`;
+    const pendingRoleCount = data.governance.roles.filter((item) => item.needsAcceptance).length;
+    document.querySelector("#role-summary").textContent = pendingRoleCount === 0
+      ? `${data.governance.roles.length} 个角色已接受职责`
+      : `${pendingRoleCount} 个角色待接受职责`;
     document.querySelector("#roles").replaceChildren(
       ...data.governance.roles.map((item) =>
         element("div", { className: "compact-row" }, [

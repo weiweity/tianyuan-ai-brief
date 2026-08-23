@@ -1,0 +1,167 @@
+@startuml CS-AI-C11-Sequences
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "PingFang SC, Microsoft YaHei, sans-serif"
+skinparam sequenceArrowThickness 1.3
+skinparam responseMessageBelowArrow true
+skinparam shadowing false
+
+title 关键时序：权威来源+内容治理→持久导入→发布 + 检索复制自动事实\n目的：来源硬门、202 提交点、DEC-042 Question/scope/taxonomy/risk/quality/hash、placeholder零持久、parent与双账可测
+
+== A. 内容发布（同步事务 + 异步通知拉取）==
+
+actor Coach
+actor Owner
+participant "Dashboard" as UI #E8F1FF
+participant "API content" as API #E6F7F2
+collections "共享持久存储\nObject / RWX" as Storage #F0F9FF
+database "PostgreSQL" as PG #FFF6E5
+participant "TypeScript Import Worker\n一期 Must" as Worker #FFF0E8
+participant "坐席客户端" as Client #E8F1FF
+
+Coach -> UI : 上传 Excel/CSV
+UI -[#111111]> API : **同步** POST /v1/content/import\nmultipart + 1..4 source_bindings\n稳定Question + 显式scope/taxonomy/risk/placeholder
+API -[#111111]> PG : 解析 server-approved source_version_id\n校验域/hash/批准状态/未暂停
+API -[#111111]> Storage : **同步先持久** 流式写入\n完整性校验 key/hash/size
+Storage --[#111111]> API : opaque object_ref + hash + size
+API -[#111111]> PG : **单一 DB 事务**\nimport_batches(validating)\n+ outbox_jobs(import_validate,pending)
+note right of PG
+  同事务冻结 import_batch_source_bindings
+  客户端/文件不得自报 canonical source_ref
+  行序/正文hash不得派生question_id；(question_id,version)不可变
+  origin key version同存；治理hash规则在fenced finalize复验
+end note
+PG --[#111111]> API : COMMIT
+API --[#111111]> UI : **只在上述两步完成后** 202 validating + import_batch_id
+
+Worker -[#888888,dashed]> PG : **异步** validate(import_batch_id)\nclaim_content_import_validation(instance_id, lease)\n取 job + lease_version
+PG --[#888888,dashed]> Worker : running + fencing token
+Worker -[#111111]> Storage : 按 opaque object_ref 重读\n复验 hash/size
+loop 长解析/校验
+  Worker -[#888888,dashed]> PG : heartbeat_content_import_validation(job, owner, lease_version)
+end
+Worker -[#111111]> PG : freeze_content_quality_review_plan\n冻结规则/分母/seed/population_manifest_hash
+note right of PG
+  normalized row不接审核结论；审核/质量事实由受限函数分账写入
+  evidence绑plan/batch/manifest；finalize重算，同计数换行也失败
+end note
+Worker -[#111111]> PG : finalize_content_import_validation\n**单事务 fenced**复验source + Question/version/hash/key\n+ promoted_by_role + ASCII键/C排序 + population manifest\n+ scope/taxonomy/risk/placeholder + 双审 + quality evidence\n+ batch staged|failed + job complete；worker无通用complete权限
+alt lease 仍匹配且未过期
+  PG --[#111111]> Worker : COMMIT
+else 失租 / cancel / 被新 worker 重抢
+  PG --[#111111]> Worker : SQLSTATE ZA006\nDETAIL=OUTBOX_LEASE_LOST\nAPI 映射 409 CONFLICT\n整事务回滚，停止副作用
+end
+
+Owner -> UI : 确认发布
+UI -[#111111]> API : **同步** POST /v1/content/publish\nIdempotency-Key
+API -[#111111]> PG : **同步** pg_try_advisory_xact_lock\npublish_content_release()
+note right of PG
+  先验MERGE后完整snapshot；四域binding恰好各一
+  非权威/暂停/域错/hash错整单拒绝
+  只发clean；taxonomy/quarantine/冲突与固定双审硬门
+  <=500全审；501..5000抽10%；>2%扩30%；>5%阻断
+  hash含promoted_by_role；固定ASCII键+C排序（非通用JCS）
+  semantic先retire留墓碑再删query；来源切换替换完整域
+  单事务：scripts/release_items/current/announce/audit
+  rollback 也生成新 release，并重验目标四域
+end note
+API --[#111111]> UI : 200 release_seq
+
+Client -[#111111]> API : **同步** GET /v1/announce/current
+alt 首次 owner publish 前无 current
+  API --[#111111]> Client : 503 CONTENT_NOT_READY\nbusiness readiness=false
+else current 存在
+  API --[#111111]> Client : release_seq + source_binding_hash + 短时 lease
+end
+Client -[#111111]> API : **同步** GET snapshot\nrelease_id 必填 分页
+API --[#111111]> Client : 完整release分页+封闭最小mapper；不返query/HMAC/EVD/locator
+Client -[#888888,dashed]> Client : 本地按effective_from<=now<effective_to过滤（now==to排除）\n**异步**重建FTS；lease过期且离线停止检索
+Client -[#111111]> API : **同步** POST /v1/announce/ack
+
+== B. 一线检索、复制与自动事实（同步主路径 + 可选异步 LLM）==
+
+actor Agent
+participant "Float" as F #E8F1FF
+participant "API search/events" as S #E6F7F2
+participant "Redaction" as R #E6F7F2
+database "PostgreSQL" as DB #FFF6E5
+participant "DeepSeek" as LLM #F3F0FF
+
+Agent -> F : 粘贴客户原话 / 重新选问法
+F -[#111111]> S : **同步** POST /v1/search\ninteraction_reason + parent_query_id\nplatform + product_context_type/ref成对
+S -[#111111]> R : **同步先脱敏**\n先于日志/持久/LLM
+R --[#111111]> S : redacted text / fail-closed
+S -[#111111]> DB : user 桶→16分片 global 桶\n读 content_current + 四域 source bindings
+alt 无 current / 来源集合缺失或含暂停版本
+  DB --[#111111]> S : absent
+  S --[#111111]> F : 503 CONTENT_NOT_READY\n不写 query/impression/idem terminal\n来源/租约拒绝独立denial audit只记安全代号/hash
+else current 存在
+  S -[#111111]> DB : 调search_recommendable_scripts\napp_runtime不直读view/release_items/content_current\n同快照有效期+scope+taxonomy/risk/review/quality过滤
+  S -[#7C6AF5,dashed]> LLM : **异步可选** rerank ≤400ms\nflag 默认关
+  LLM --[#7C6AF5,dashed]> S : 序 / 超时降级
+  S -[#111111]> DB : **最终单事务**\nquery(parent同user无环) + 0..3 impressions\n候选绑定release/version/hash + idem complete
+  S --[#111111]> F : 封闭最小mapper：TopK模板原字节 + placeholder_keys\n候选绑release/script/version/governance hash\n不返内部query/HMAC/EVD/locator
+end
+opt 模板声明 order_id/date placeholder
+  Agent -> F : 输入值
+  F -[#111111]> F : **只在受控内存确定性渲染**\n缺值/未知token禁复制
+  F -> Agent : 二次确认渲染结果
+  note right of F
+    placeholder值/渲染正文/确认内容
+    零API回传·零DB·零event·零log/trace/cache/screenshot/artifact
+  end note
+end
+alt 命中且剪贴板写入成功
+  Agent -> F : 点选 1/2/3
+  F -[#111111]> F : **同步** 剪贴板 CTA
+  F -[#111111]> S : **同步** POST /v1/events/adoption\noutcome=adopted（机器兼容名）
+  S -[#111111]> DB : **同步** 精确匹配当次候选模板\nrank + release/version/governance hash\n不接收placeholder值/渲染正文
+  note right of DB
+    adopted 仅表示成功复制
+    不是已发送/答对
+  end note
+else 有候选但关闭/切后台/idle
+  F -[#111111]> S : **同步** 唯一 terminal\ndismissed | timeout\nCLIENT_ACTION_TIMEOUT_MS仅配置
+  S -[#111111]> DB : **同步** chosen字段为空\n同query仅一个terminal
+else 无命中退出
+  F -[#111111]> S : **同步** no_hit_exit
+  S -[#111111]> DB : **同步** 唯一terminal
+end
+opt 用户点击批准升级入口
+  F -[#111111]> S : **同步** POST /v1/events/escalate\nIdempotency-Key
+  S -[#111111]> DB : **辅助动作** unique(query_id, action)\n不替换terminal
+end
+S -[#111111]> DB : root question / search operation 双账
+Agent -> F : 回到接待端人工粘贴/修改/发送\n系统不读聊天正文
+note over Agent,F
+  是否修改 / 是否发送 / 是否正确
+  仅获批Pilot应用外三维抽样，不写在线API
+end note
+
+legend right
+  |= 线 |= 协议/语义 |
+  | 实线 | 同步 HTTPS/SQL 请求-响应 |
+  | 虚线 | 持久 outbox 异步 / 本地任务 / 可选 LLM |
+endlegend
+
+note over S,DB
+  CR-003 49/50：只允许获批候选引用进入离线链
+  train/G1a/G1b泄漏=0；无runtime→train自动路径
+end note
+
+note over API,PG
+  CR-004：来源登记/绑定/暂停/发布历史均不可变
+  来源/租约denial独立幂等；内容/质量/hash走标准审计
+  当前reference DDL本地PG15预检 PASS-WITH-LIMITATION
+  migration/N/N-1/runtime/managed/backup/concurrency/production仍NOT_CERTIFIED
+end note
+
+note over API,DB
+  DEC-042：人读+schema v1.12/OpenAPI 1.11.0静态机器合同已锁
+  role hash·ASCII+C·population manifest·semantic tombstone
+  完整snapshot+客户端[from,to)·封闭最小mapper已锁
+  迁移/生成类型/服务端客户端代码/动态证据未实现
+  G0 / Scope / Ddev 不变
+end note
+
+@enduml

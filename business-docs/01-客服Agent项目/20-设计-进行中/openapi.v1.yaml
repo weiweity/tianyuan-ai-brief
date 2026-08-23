@@ -1,0 +1,4832 @@
+openapi: 3.1.1
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: CS-AI-C11 Customer Service Agent API
+  version: 1.11.0
+  license:
+    name: Proprietary - internal use only
+    identifier: LicenseRef-Proprietary
+  summary: 客服 Agent 一期 HTTP API 的机器可校验合同
+  description: |
+    本合同将《39-API合同与发布状态机-v1.md》中一期客户端可调用的 `/v1` 路由固化为
+    OpenAPI 3.1。生产请求使用飞书会话 Bearer token；开发环境可使用成对的
+    `X-Mock-User` 与 `X-Mock-Role` 请求头。生产环境不得注册 mock-login 路由。
+
+    一期策略边界：`rewrite=false`、`auto_send=false`。尝试将其中任一开关设为
+    `true` 必须返回 403 `POLICY_DENIED`；publish、rollback、policy flags 仅 Owner
+    可写。业务工单分析使用 `work_order_*` / `/v1/work-orders/*`；内部话术优化待办
+    使用 `iteration_task*` / `/v1/*/iteration-tasks/*`，禁止 `/tickets` 与跨域原始明细。
+    一期不暴露在线人工复核、训练、数据集、teacher 或蒸馏 API；这些能力只允许在数据门后
+    通过受控离线 artifact 处理，不能从本合同推导出运行时权限。
+    `native_integration` 仅作未来枚举保留；Phase 1 请求声明该来源必须 403
+    `POLICY_DENIED` 且 query/impression/event 零写入，客户端不得自行声明原生可信来源。
+    CR-004 要求每个 current release 恰好绑定 presale/campaign/aftersale/product 四个
+    不可变 canonical source version。导入、发布、回滚、搜索与快照读取均 fail-closed；
+    `source_ref` 只允许安全 `SRC-*` 别名，内部 URL、token 与对象定位符不得出现在响应。
+    DEC-042 把每条发布内容固定为治理快照：显式平台/商品范围、生效时间、版本化意图、
+    稳定 Question 身份、风险双审与受控占位符共同参与 `content_hash`。结构/安全/来源错误
+    整批失败；行质量问题进入 quarantined，只有服务端冻结抽样计划、写入质量证据并判定
+    通过后，`clean + quality_gate_passed` 才可发布。普通导入 worker 不得自报审核主体、审核
+    结论或质量门结论；这些字段只从受限服务端证据派生。
+    模板占位符值只在客户端内存渲染，不是任何请求、响应或事件的可存储字段。
+    所有公开响应 handler 必须使用显式字段白名单 mapper 构造 wire object；
+    禁止将 DB row、ORM entity 或内部对象通过 spread/整体序列化进入响应。
+
+    当前文件仅是 Gate 3 实现设计与静态机器合同；Ddev 仍为空，尚未实现运行时
+    handler，也没有不可变迁移、N/N-1、应用 runtime、托管 PostgreSQL 或客户端运行证据。
+    当前 schema reference DDL 的本机隔离 PG15 前置结果不替代上述证据；本次版本号不表示已上线或已发布。
+    破坏性变更必须进入 `/v2`。
+  x-source-document: 39-API合同与发布状态机-v1.md
+  x-phase: Phase1
+  x-stable-details-reason-schema: '#/components/schemas/SourceContractReason'
+  x-source-denial-audit:
+    storage: source_denial_audits
+    coreStorageFunction: record_source_denial_audit
+    runtimeFunction: record_runtime_source_denial_audit
+    adminFunction: record_admin_source_denial_audit
+    allowedOperations:
+      - content_import
+      - content_publish
+      - content_rollback
+      - search
+      - announce_current
+      - announce_snapshot
+      - announce_ack
+      - source_suspend
+    applies-to-reasons:
+      - SOURCE_NOT_REGISTERED
+      - SOURCE_NOT_ELIGIBLE
+      - SOURCE_SUSPENDED
+      - SOURCE_DOMAIN_MISMATCH
+      - SOURCE_SNAPSHOT_MISMATCH
+      - SOURCE_SET_INCOMPLETE
+      - SOURCE_BASE_RELEASE_STALE
+      - SOURCE_BINDING_HASH_MISMATCH
+      - SOURCE_GATE_NOT_READY
+      - OFFLINE_LEASE_INVALID
+      - OFFLINE_LEASE_EXPIRED
+      - OFFLINE_LEASE_BINDING_MISMATCH
+    non-allowlisted-reason-audit: standard-controlled-change-or-error-audit
+    never-write-reasons:
+      - CONTENT_CONTRACT_INVALID
+      - GOVERNANCE_HASH_MISMATCH
+      - QUALITY_GATE_NOT_PASSED
+    transaction: independent-after-rollback
+    commitBeforeHttpResponse: true
+    idempotencyKey: HMAC(operation|request-id|reason-code)
+    safeFields:
+      - denial_key
+      - operation
+      - reason_code
+      - actor_subject_hash
+      - hash_key_version
+      - actor_role
+      - release_id
+      - source_version_id
+      - source_binding_hash
+      - diagnostic_id
+    forbiddenFields: [query_text, source_ref, internal_url, token, stack_trace]
+    description: |
+      先回滚被拒业务事务，再用新连接/新事务调用对应 workload 包装函数并 commit，最后才返回
+      HTTP denial。禁止在注定回滚的主事务中写审计；同 denial_key 异体必须 409。
+      `record_source_denial_audit` 仅是内部存储 writer，不授予应用角色；
+      content_import/search/current/snapshot/ack 只能调用 `record_runtime_source_denial_audit`，
+      publish/rollback/source_suspend 只能调用 `record_admin_source_denial_audit`。
+      仅当 operation 与 reason 同时命中上述 SQL 白名单，且端点
+      `x-rejection-audit.applies-to-reasons` 显式包含该 reason 时，
+      `x-source-denial-audit-required: true` 才要求写 `source_denial_audits`。
+      任何白名单外 reason（尤其 CONTENT_CONTRACT_INVALID、
+      GOVERNANCE_HASH_MISMATCH、QUALITY_GATE_NOT_PASSED）只走标准受控
+      change/error audit，不得写入 source_denial_audits。
+  x-offline-snapshot-lease:
+    storage: snapshot_offline_leases
+    issueFunction: issue_snapshot_offline_lease
+    validateFunction: validate_snapshot_offline_lease
+    ttlSeconds: { default: 600, minimum: 60, maximum: 900 }
+    binding: [client_id, user_id, release_id, source_binding_hash]
+    tokenStorage: sha256-only
+    ackRenewsLease: false
+    expiredBehavior: fail-closed
+  x-content-governance:
+    decision: DEC-042
+    executionClosure: schema.v1.12
+    hash: SHA-256(JCS(normalized-governance-snapshot))
+    timestampCanonicalization: UTC fixed-width microseconds with Z
+    scopedSearchDbFunction: search_recommendable_scripts(platform, product_context_type, product_context_ref)
+    runtimeDirectSelectBackingViews: false
+    allowedPlaceholderKeys: [order_id, date]
+    placeholderValuesPersisted: false
+    questionIdentity:
+      primaryKey: [question_id, question_version]
+      hashFunction: content_question_hash
+      originFingerprint: HMAC with origin_fingerprint_key_version
+      taxonomyBinding: [intent_taxonomy_version, intent_id]
+      historyOverwriteAllowed: false
+    riskCategories:
+      - refund_compensation
+      - price_discount
+      - campaign_rules
+      - efficacy_safety_claim
+      - account_privacy
+      - complaint_escalation
+      - legal_commitment
+    dualReview:
+      requiredWhen: risk_level=high OR has_conflict=true
+      primaryRole: ROLE-CONTENT-LEAD
+      secondaryRole: ROLE-CS-MANAGER
+      sameReviewerForbidden: true
+      storage: content_review_decisions
+      recordFunction: record_content_review_decision
+      reviewerSubjectInPublicResponse: false
+    qualityReview:
+      planStorage: content_quality_review_plans
+      evidenceStorage: content_quality_review_evidence
+      freezePlanFunction: freeze_content_quality_review_plan
+      recordEvidenceFunction: record_content_quality_review_evidence
+      thresholds:
+        upTo500: full-review
+        over500Initial: 10-percent-min100-max300
+        expandWhenDefectRate: greater-than-2-percent-up-to-5-percent
+        expandedSample: 30-percent
+        blockWhenDefectRate: greater-than-5-percent
+        highRiskOrConflict: full-review
+    normalImportWorkerMayAssertReviewDecision: false
+    normalImportWorkerMayAssertQualityConclusion: false
+    batchFatalClasses: [structure, security, source]
+    publishableQuality: { status: clean, qualityGatePassed: true }
+  x-public-wire-mapping:
+    mode: explicit-field-allowlist
+    db-row-spread: forbidden
+    internal-object-spread: forbidden
+  x-runtime-status:
+    implementation: not-started
+    ddev: empty
+    true-postgresql-evidence: not-certified
+    n-n-minus-1-evidence: not-certified
+  x-http-json-body-max-bytes: 32768
+  x-phase1-invariants:
+    rewrite: false
+    auto_send: false
+    onlineReviewApi: false
+    publicTrainingApi: false
+    nativePlatformIntegration: false
+    ownerOnlyWrites:
+      - POST /v1/content/publish
+      - POST /v1/content/rollback
+      - POST /v1/policy/flags
+servers:
+  - url: /
+    description: 与当前 Web/Electron 客户端同源的 API 根路径
+tags:
+  - name: auth
+    description: 会话身份与非生产 mock 登录
+  - name: search
+    description: 固定当前发布快照的客服话术搜索
+  - name: events
+    description: 查询操作的唯一 terminal 结果与辅助升级动作；不采集聊天记录或最终消息正文
+  - name: notices
+    description: 首次明确告知版本与当前用户决定
+  - name: metrics
+    description: 自动搜索复制事实的根问题/操作双口径、事件流及内部话术优化待办
+  - name: work-orders
+    description: 批准的业务工单导出文件只读分析；不含源系统写回
+  - name: content
+    description: 内容导入、发布与回滚
+  - name: announce
+    description: 当前发布公告、快照同步与 ACK
+  - name: policy
+    description: 一期策略读取与受控写入
+  - name: platform
+    description: 编排器存活与就绪探针，不计入九业务端口
+security:
+  - bearerAuth: []
+  - mockUser: []
+    mockRole: []
+paths:
+  /health:
+    get:
+      tags: [platform]
+      operationId: getHealth
+      summary: 进程存活探针
+      description: 不访问 DB 或外部依赖，不返回环境变量或依赖细节。
+      security: []
+      responses:
+        '200':
+          description: 进程 event loop 可响应
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ready:
+    get:
+      tags: [platform]
+      operationId: getReadiness
+      summary: 业务就绪探针
+      description: |
+        检查 DB、schema/migration、生产 auth 配置、import storage 写入/按 key/hash/size
+        重读完整性与首发内容就绪。
+        可选 ranker 失败不得拉低 readiness；响应不得含密钥、DSN 或异常文本。
+      security: []
+      responses:
+        '200':
+          description: 所有必要检查已就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          description: 至少一项必要检查未就绪
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfter'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotReadyResponse'
+
+  /v1/auth/mock-login:
+    post:
+      tags: [auth]
+      operationId: mockLogin
+      summary: 创建非生产 mock 会话
+      description: |
+        仅允许在非生产且 `AUTH_MODE=mock` 时注册。生产环境若仍注册本路由，
+        进程必须在监听端口前退出。
+      security: []
+      x-environments: [development, test]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockLoginRequest'
+            examples:
+              agent:
+                value:
+                  user_id: u-agent-001
+                  role: agent
+      responses:
+        '200':
+          description: Mock 会话已创建
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockLoginResponse'
+              examples:
+                success:
+                  value:
+                    token: dev-token-example
+                    user:
+                      user_id: u-agent-001
+                      role: agent
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: 获取当前已验签身份
+      responses:
+        '200':
+          description: 当前用户与鉴权模式
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+              examples:
+                feishuOwner:
+                  value:
+                    user_id: ou_8f5c2a
+                    role: owner
+                    auth_mode: feishu
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/notices/current:
+    get:
+      tags: [notices]
+      operationId: getCurrentPrivacyNotice
+      summary: 获取当前明确告知版本与本用户决定
+      description: |
+        返回唯一 `status=current` 的 notice，以及当前 token 用户对该版本的首次决定。
+        decision 为 null 时，客户端必须展示一次明确告知；不得把页面浏览等同于接受。
+      x-required-roles: [agent, coach, owner]
+      responses:
+        '200':
+          description: 当前告知版本与用户决定
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentNoticeResponse'
+              examples:
+                undecided:
+                  value:
+                    notice:
+                      version: notice-2026-08-v1
+                      content: 采集脱敏后的搜索原话与成功复制的话术，用于改进知识库；不采集聊天记录或最终发送正文。
+                      content_hash: 1c8aa5ac59a9ce0f2e79cac6801e36b9c8f8f127067b525e69b7e88b0303db99
+                      published_at: '2026-08-08T00:00:00Z'
+                    decision: null
+                    decided_at: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/notices/{version}/decision:
+    post:
+      tags: [notices]
+      operationId: recordPrivacyNoticeDecision
+      summary: 记录当前用户对明确告知版本的首次决定
+      description: |
+        只接受当前 notice version。服务端从 token 写 user_id；同一 user/version 只保留
+        第一条决定。同幂等键重放首次终态；同版本已存在不同决定返回 409，禁止覆盖审计证据。
+      x-required-roles: [agent, coach, owner]
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoticeDecisionRequest'
+            examples:
+              accept:
+                value:
+                  decision: accepted
+      responses:
+        '200':
+          description: 决定已记录或幂等重放
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoticeDecisionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/search:
+    post:
+      tags: [search]
+      operationId: searchScripts
+      summary: 在当前 release snapshot 中搜索客服话术
+      x-http-json-body-max-bytes: 32768
+      description: |
+        `query_id` 是本路由的幂等键。相同 user/query_id/body 的终态请求重放首次
+        响应；同 query_id 异体返回 409。redaction 失败时 fail-closed，不记录原文、
+        不调用 ranker，并返回 500。`rewrite=false` 时 `answer_text` 必须字节级等于
+        当前 release item 的正文。`collection_mode=pilot_recorded` 时服务端必须确认当前
+        notice version 已被当前用户接受；未接受或 notice 校验不可用时 fail-closed。
+        仅 telemetry 写入故障且 auth、DLP、当前内容与检索仍健康时，可返回
+        `telemetry_status=collection_disabled` 的无状态结果；该路径不得写 query/impression，
+        不接受后续 adoption/escalate，并自动排除所有指标。DLP/Auth/content 失败不得降级。
+        在线召回主路固定为 PostgreSQL 字符 bigram + normalize + exact/ILIKE 回退；候选必须
+        原样绑定本次 release item 的 release_id/script_id/script_version/content_hash。
+        `platform_source=native_integration` 是未来保留值；Phase 1 必须返回 403
+        `POLICY_DENIED` 且不写 query/impression/event。
+        服务端必须先验证 current release 的四域 source gate；集合缺失、哈希不一致或任一
+        source 已暂停时返回 503 `SOURCE_GATE_NOT_READY`，且 query/impression/event 零写入。
+        同时必须调用与 SQL `content_scope_matches` 同义的过滤：平台必须显式命中
+        `platform_scope`；storewide 内容可在无商品上下文时命中，category/sku 内容必须分别
+        收到同类型 `product_context_type + product_context_ref` 精确命中。禁止把 category 当 sku 或猜测范围。
+        handler 必须使用 `SearchResponse`/`SearchCandidate` 白名单显式映射；
+        禁止 spread DB row 或重用内部审核/来源对象。
+      x-required-roles: [agent, coach, owner]
+      x-search-strategy: postgres-character-bigram-primary
+      x-rejection-audit:
+        operation: search
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
+        applies-to-reasons: [SOURCE_GATE_NOT_READY]
+      x-source-denial-audit-required: true
+      x-search-telemetry-transaction:
+        mode: atomic
+        writes: [query_events, candidate_impressions]
+        rollbackOn: [SOURCE_GATE_NOT_READY]
+      x-error-reasons:
+        '503': [SOURCE_GATE_NOT_READY]
+      x-idempotency:
+        key: body.query_id
+        headerRequired: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+            examples:
+              acceptedForegroundHint:
+                value:
+                  query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                  parent_query_id: null
+                  interaction_reason: original
+                  query_text: 客户问这件衣服什么时候发货
+                  collection_mode: pilot_recorded
+                  detected_platform: qianniu
+                  platform: qianniu
+                  platform_source: foreground_process
+                  product_context_type: sku
+                  product_context_ref: sku-001
+                  top_k: 3
+      responses:
+        '200':
+          description: 搜索完成；无候选时 candidates 为空数组
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              examples:
+                hit:
+                  value:
+                    query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                    hit_status: hit
+                    release_id: rel-20260806-0012
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    telemetry_status: recorded
+                    candidates:
+                      - rank: 1
+                        release_id: rel-20260806-0012
+                        script_id: shipping-001
+                        script_version: 3
+                        content_hash: a98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                        title: 发货时效
+                        category: presale
+                        answer_text: 您好，订单将在付款后 48 小时内发出。
+                        platform_scope: [qianniu, douyin]
+                        product_scope_type: storewide
+                        product_scope_refs: []
+                        effective_from: '2026-08-10T00:00:00Z'
+                        effective_to: null
+                        intent_taxonomy_version: itax_2026_08_v1
+                        intent_id: intent_shipping_eta
+                        risk_level: low
+                        risk_categories: []
+                        has_conflict: false
+                        placeholder_keys: []
+                noHit:
+                  value:
+                    query_id: ce17d26f-456c-495d-aaba-7fdce87c6f91
+                    hit_status: no_hit
+                    release_id: rel-20260806-0012
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    telemetry_status: recorded
+                    candidates: []
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /v1/events/adoption:
+    post:
+      tags: [events]
+      operationId: recordAdoption
+      summary: 记录当前用户的复制成功或退出结果（adoption 兼容名）
+      description: |
+        query 必须属于当前 token 用户。`adopted` 的冻结语义是候选已成功复制，不代表
+        已发送或正确；历史字段名 `push_method` 保持兼容。adopted 必须引用同一 query
+        的真实候选，且 push_method 只能是 clipboard 或 autofill；未复制类 outcome
+        不得携带候选。`collection_disabled` 的无状态搜索没有 query 事件，不得调用本路由。
+        每个 query 只能写一个 terminal outcome。`timeout` 只能由客户端窗口关闭、切后台或
+        idle 达到部署配置 `CLIENT_ACTION_TIMEOUT_MS` 后上报，服务端不得凭请求延迟猜测 timeout。
+      x-required-roles: [agent, coach, owner]
+      x-client-lifecycle-timeout-config: CLIENT_ACTION_TIMEOUT_MS
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptionEventRequest'
+            examples:
+              adopted:
+                value:
+                  query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                  outcome: adopted
+                  chosen_rank: 1
+                  chosen_script_id: shipping-001
+                  push_method: clipboard
+              noHitExit:
+                value:
+                  query_id: ce17d26f-456c-495d-aaba-7fdce87c6f91
+                  outcome: no_hit_exit
+                  chosen_rank: null
+                  chosen_script_id: null
+                  push_method: null
+      responses:
+        '200':
+          description: 事件已记录，或重放同幂等键的首次终态结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionEventResponse'
+              examples:
+                success:
+                  value:
+                    ok: true
+                    query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/events/escalate:
+    post:
+      tags: [events]
+      operationId: recordEscalation
+      summary: 记录非终态的人工升级辅助动作
+      description: |
+        escalation 不结束 query；query 的唯一 terminal 事实仍由 adoption endpoint 写入。
+        同一 query 可记录不同 action，但 `(query_id, action)` 只允许一条；同幂等键同体重放
+        首次 200，重复 action 返回同一事实，异体返回 409。动作只证明产品内按钮已执行，
+        不证明外部人工已接单或问题已解决。
+      x-required-roles: [agent, coach, owner]
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationRequest'
+            examples:
+              openFeishu:
+                value:
+                  query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                  action: open_feishu
+      responses:
+        '200':
+          description: 升级动作已记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalationResponse'
+              examples:
+                success:
+                  value:
+                    escalate_id: esc-01J4PEM8Y9T8J5
+                    query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                    action: open_feishu
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/metrics/tool:
+    get:
+      tags: [metrics]
+      operationId: getToolMetrics
+      summary: 查询根问题与搜索操作双口径的自动事实指标
+      description: |
+        只返回自动记录的搜索、候选、成功复制/退出和辅助升级动作；禁止返回发送、正确性、
+        满意度或转化率推断。root question 是 original query 及其全部 reselection 后代；
+        search operation 是每一条 query。两套分母必须同时返回，不得混算。
+        collection_disabled 无状态搜索没有 query/impression/event 行，必须排除全部分母。
+      x-required-roles: [coach, owner]
+      x-time-window-max-days: 7
+      x-time-window-semantics: "to > from; to - from <= 7 days; otherwise 400 VALIDATION"
+      parameters:
+        - $ref: '#/components/parameters/MetricsFrom'
+        - $ref: '#/components/parameters/MetricsTo'
+        - $ref: '#/components/parameters/MetricsUserId'
+      responses:
+        '200':
+          description: 指定时间窗内的工具指标
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolMetricsResponse'
+              examples:
+                emptyWindow:
+                  value:
+                    root_question_count: 0
+                    search_operation_count: 0
+                    reselection_count: 0
+                    root_adopted_count: 0
+                    operation_adopted_count: 0
+                    root_adoption_rate: 0.0
+                    operation_adoption_rate: 0.0
+                    operation_no_hit_count: 0
+                    operation_no_hit_rate: 0.0
+                    top1_copy_share: 0.0
+                    root_escalated_count: 0
+                    escalate_action_count: 0
+                    root_escalation_rate: 0.0
+                    p95_latency_ms: null
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/metrics/stream:
+    get:
+      tags: [metrics]
+      operationId: getMetricsStream
+      summary: 分页查询搜索、复制 terminal 与升级辅助动作事件流
+      description: |
+        coach/owner 可按授权范围读取；agent 只能读取自己的 user_id。cursor 是不透明的
+        base64url 值，内部编码为 `iso_created_at + "|" + query_id`，客户端不得自行改写。
+      x-required-roles: [agent, coach, owner]
+      x-agent-scope: own-user-only
+      parameters:
+        - $ref: '#/components/parameters/MetricsFrom'
+        - $ref: '#/components/parameters/MetricsTo'
+        - $ref: '#/components/parameters/MetricsUserId'
+        - $ref: '#/components/parameters/MetricsPlatform'
+        - $ref: '#/components/parameters/MetricsHitStatus'
+        - $ref: '#/components/parameters/MetricsChosenRank'
+        - $ref: '#/components/parameters/MetricsReleaseId'
+        - $ref: '#/components/parameters/StreamLimit'
+        - $ref: '#/components/parameters/MetricsCursor'
+      responses:
+        '200':
+          description: 倒序事件页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsStreamResponse'
+              examples:
+                firstPage:
+                  value:
+                    items:
+                      - query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                        root_query_id: 4d690ef7-a98d-4a56-a9c4-92ae4c52168f
+                        parent_query_id: null
+                        interaction_reason: original
+                        user_id: u-agent-001
+                        query_text_redacted: 客户问这件衣服什么时候发货
+                        text_storage_status: stored
+                        platform: qianniu
+                        platform_source: foreground_process
+                        hit_status: hit
+                        outcome: adopted
+                        chosen_rank: 1
+                        push_method: clipboard
+                        release_id: rel-20260808-001
+                        latency_ms: 36
+                        created_at: '2026-08-06T03:14:15Z'
+                        escalate_actions: []
+                        candidates:
+                          - rank: 1
+                            release_id: rel-20260808-001
+                            script_id: shipping-001
+                            script_version: 3
+                            content_hash: a98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                            source_version_id: srcv_presale_2026_08_09_01
+                            source_ref: SRC-PRESALE-20260809
+                            effective_from: '2026-08-01T00:00:00Z'
+                            effective_to: null
+                            review_due_at: '2026-09-01T00:00:00Z'
+                    next_cursor: MjAyNi0wOC0wNlQwMzoxNDoxNVp8NGQ2OTBlZjctYTk4ZC00YTU2LWE5YzQtOTJhZTRjNTIxNjhm
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/metrics/iteration-tasks:
+    get:
+      tags: [metrics]
+      operationId: listIterationTasks
+      summary: 分页查询话术优化待办
+      description: |
+        仅返回由搜索 / 复制兼容信号生成的内部话术优化待办。不得返回业务工单原始明细，
+        也不得使用 ticket 命名。
+      x-required-roles: [coach, owner]
+      x-domain: iteration_task
+      parameters:
+        - $ref: '#/components/parameters/IterationTaskStatusFilter'
+        - $ref: '#/components/parameters/IterationTaskSignalFilter'
+        - $ref: '#/components/parameters/IterationTaskAssigneeFilter'
+        - $ref: '#/components/parameters/StreamLimit'
+        - $ref: '#/components/parameters/MetricsCursor'
+      responses:
+        '200':
+          description: 话术优化待办页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationTaskListResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/events/iteration-tasks/{task_id}/start:
+    post:
+      tags: [events]
+      operationId: startIterationTask
+      summary: 开始处理话术优化待办
+      description: 仅允许 open 到 in_progress；expected_version 不匹配返回 409，禁止覆盖并发更新。
+      x-required-roles: [coach, owner]
+      x-domain: iteration_task
+      parameters:
+        - $ref: '#/components/parameters/IterationTaskId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IterationTaskStartRequest'
+      responses:
+        '200':
+          description: 已进入处理中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationTask'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/events/iteration-tasks/{task_id}/close:
+    post:
+      tags: [events]
+      operationId: closeIterationTask
+      summary: 关闭话术优化待办
+      description: |
+        仅允许 in_progress 到 resolved 或 wont_fix。关闭待办不等于内容已经发布，
+        且系统不得自动修改 Answer。
+      x-required-roles: [coach, owner]
+      x-domain: iteration_task
+      parameters:
+        - $ref: '#/components/parameters/IterationTaskId'
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IterationTaskCloseRequest'
+      responses:
+        '200':
+          description: 待办已进入终态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationTask'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/work-orders/imports:
+    post:
+      tags: [work-orders]
+      operationId: createWorkOrderImport
+      summary: 提交业务工单导出文件分析批次
+      description: |
+        仅接收批准的 CSV/XLSX。受控原稿持久化且 work_order_import_batches 与
+        work_order_import_validate outbox 同事务提交后才可返回 202。未知列、敏感列、
+        恶意公式和超限文件必须拒绝；不得连接班牛写接口。
+      x-required-roles: [coach, owner]
+      x-domain: work_order
+      x-no-external-writeback: true
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkOrderImportRequest'
+      responses:
+        '202':
+          description: 文件已持久受理并进入校验
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderImportAcceptedResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/work-orders/imports/{import_batch_id}:
+    get:
+      tags: [work-orders]
+      operationId: getWorkOrderImport
+      summary: 查询业务工单分析导入批次
+      x-required-roles: [coach, owner]
+      x-domain: work_order
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderImportBatchId'
+      responses:
+        '200':
+          description: 批次状态与安全计数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderImportStatusResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/work-orders/analysis:
+    get:
+      tags: [work-orders]
+      operationId: getWorkOrderAnalysis
+      summary: 查询业务工单聚合分析
+      description: 时间窗为半开区间且最多 31 天；每个聚合必须返回批次、筛选口径和刷新时间。
+      x-required-roles: [coach, owner]
+      x-domain: work_order
+      x-time-window-max-days: 31
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderFrom'
+        - $ref: '#/components/parameters/WorkOrderTo'
+        - $ref: '#/components/parameters/WorkOrderImportBatchFilter'
+        - $ref: '#/components/parameters/WorkOrderChannelFilter'
+        - $ref: '#/components/parameters/WorkOrderCategoryFilter'
+        - $ref: '#/components/parameters/WorkOrderIssueTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderStatusFilter'
+        - $ref: '#/components/parameters/WorkOrderErrorTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderEscalatedFilter'
+      responses:
+        '200':
+          description: 授权范围内的聚合分析
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderAnalysisResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/work-orders/records:
+    get:
+      tags: [work-orders]
+      operationId: listWorkOrderRecords
+      summary: 分页下钻业务工单标准化明细
+      description: 只返回批准白名单字段、内部 UUID 与安全 hash；不得返回原始客户、订单或工单长编号。
+      x-required-roles: [coach, owner]
+      x-domain: work_order
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderFrom'
+        - $ref: '#/components/parameters/WorkOrderTo'
+        - $ref: '#/components/parameters/WorkOrderImportBatchFilter'
+        - $ref: '#/components/parameters/WorkOrderChannelFilter'
+        - $ref: '#/components/parameters/WorkOrderCategoryFilter'
+        - $ref: '#/components/parameters/WorkOrderIssueTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderStatusFilter'
+        - $ref: '#/components/parameters/WorkOrderErrorTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderEscalatedFilter'
+        - $ref: '#/components/parameters/WorkOrderLimit'
+        - $ref: '#/components/parameters/WorkOrderCursor'
+      responses:
+        '200':
+          description: 标准化明细页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderRecordListResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/work-orders/analysis/export:
+    get:
+      tags: [work-orders]
+      operationId: exportWorkOrderAnalysis
+      summary: 导出当前筛选范围的脱敏业务工单分析
+      description: |
+        仅导出批准字段并只追加审计。文件名不得含客户、订单或原始工单编号；
+        超出同步上限返回 400。不存在任何源系统写回副作用。
+      x-required-roles: [coach, owner]
+      x-domain: work_order
+      x-audit-required: true
+      x-no-external-writeback: true
+      parameters:
+        - $ref: '#/components/parameters/WorkOrderFrom'
+        - $ref: '#/components/parameters/WorkOrderTo'
+        - $ref: '#/components/parameters/WorkOrderImportBatchFilter'
+        - $ref: '#/components/parameters/WorkOrderChannelFilter'
+        - $ref: '#/components/parameters/WorkOrderCategoryFilter'
+        - $ref: '#/components/parameters/WorkOrderIssueTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderStatusFilter'
+        - $ref: '#/components/parameters/WorkOrderErrorTypeFilter'
+        - $ref: '#/components/parameters/WorkOrderEscalatedFilter'
+      responses:
+        '200':
+          description: UTF-8 CSV 脱敏导出
+          headers:
+            Content-Disposition:
+              description: 仅含生成时间与批次短标识的安全文件名
+              schema:
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/content/import:
+    post:
+      tags: [content]
+      operationId: createContentImport
+      summary: 提交异步内容导入批次
+      description: |
+        仅当受控文件已持久化，且 import_batches(validating) 与 import_validate outbox
+        及 source_bindings 在同一数据库事务提交后，才可返回 202。source_bindings 只接收
+        已登记的 canonical source_version_id；未知、reference-only、已暂停、域不匹配或
+        snapshot hash 不匹配均硬拒绝且不得创建 batch/outbox。只进入内存队列不得返回 202。
+        规范化行必须完成 DEC-042 的 scope/taxonomy/question/review/placeholder/hash 校验。
+        结构、安全或来源错误使整批 failed 且不持久 staging；只有可安全展示的质量问题可
+        持久为 `quality_status=quarantined`。发布仅消费 `clean + quality_gate_passed`。
+        拒绝审计必须在原事务回滚后另开独立事务，仅记录稳定 reason、diagnostic_id 与安全 ID/hash。
+      x-required-roles: [coach, owner]
+      x-error-reasons:
+        '400': [SOURCE_NOT_REGISTERED, SOURCE_DOMAIN_MISMATCH, SOURCE_SNAPSHOT_MISMATCH, SOURCE_SET_INCOMPLETE, CONTENT_CONTRACT_INVALID, GOVERNANCE_HASH_MISMATCH]
+        '403': [SOURCE_NOT_ELIGIBLE, SOURCE_SUSPENDED]
+      x-rejection-audit:
+        transaction: independent-after-rollback
+        commit-before-response: true
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
+        operation: content_import
+        applies-to-reasons:
+          - SOURCE_NOT_REGISTERED
+          - SOURCE_DOMAIN_MISMATCH
+          - SOURCE_SNAPSHOT_MISMATCH
+          - SOURCE_SET_INCOMPLETE
+          - SOURCE_NOT_ELIGIBLE
+          - SOURCE_SUSPENDED
+        excluded-reasons-standard-audit: [CONTENT_CONTRACT_INVALID, GOVERNANCE_HASH_MISMATCH]
+        allowed-fields:
+          - denial_key
+          - operation
+          - reason_code
+          - actor_subject_hash
+          - hash_key_version
+          - actor_role
+          - release_id
+          - source_version_id
+          - source_binding_hash
+          - diagnostic_id
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileImportRequest'
+            encoding:
+              file:
+                contentType: text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeishuImportRequest'
+            examples:
+              feishuApi:
+                value:
+                  source_type: feishu_api
+                  source_bindings:
+                    - domain: presale
+                      source_version_id: srcv_presale_2026_08_09_01
+      responses:
+        '202':
+          description: 导入批次及持久 outbox 已原子提交
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    import_batch_id: imp-01J4PF9TQX7G
+                    status: validating
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/content/import/{import_batch_id}:
+    parameters:
+      - $ref: '#/components/parameters/ImportBatchId'
+    get:
+      tags: [content]
+      operationId: getContentImport
+      summary: 查询导入批次状态与预览
+      x-required-roles: [coach, owner]
+      responses:
+        '200':
+          description: 导入批次当前状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportStatusResponse'
+              examples:
+                staged:
+                  value:
+                    import_batch_id: imp-01J4PF9TQX7G
+                    status: staged
+                    base_release_id: rel-20260806-0012
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    source_bindings:
+                      - domain: presale
+                        source_version_id: srcv_presale_2026_08_09_01
+                        source_ref: SRC-PRESALE-20260809
+                    error_report: null
+                    staged_count: 1
+                    clean_count: 1
+                    quarantined_count: 0
+                    quality_gate_passed: true
+                    quality_review:
+                      plan_id: qplan_01J4PF9TQX7G
+                      sampling_policy_version: quality-sampling-v1
+                      cutoff_at: '2026-08-10T01:00:00Z'
+                      clean_population_count: 1
+                      ordinary_population_count: 1
+                      mandatory_full_review_count: 0
+                      initial_sample_target: 1
+                      expanded_sample_target: 1
+                      initial_sample_reviewed_count: 1
+                      initial_defect_count: 0
+                      expanded_sample_reviewed_count: null
+                      expanded_defect_count: null
+                      mandatory_reviewed_count: 0
+                      mandatory_defect_count: 0
+                      publishable_clean_count: 1
+                      review_quarantined_count: 0
+                      conclusion: passed
+                      evidence_ref: EVD-QUALITY-20260810-001
+                    preview:
+                      - script_id: shipping-001
+                        operation: upsert
+                        category: presale
+                        source_version_id: srcv_presale_2026_08_09_01
+                        source_ref: SRC-PRESALE-20260809
+                        title: 发货时效
+                        answer_text: 您好，订单{订单号}将在付款后 48 小时内发出。
+                        content_hash: a98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                        platform_scope: [qianniu, douyin]
+                        product_scope_type: storewide
+                        product_scope_refs: []
+                        effective_from: '2026-08-10T00:00:00Z'
+                        effective_to: null
+                        intent_taxonomy_version: itax_2026_08_v1
+                        intent_id: intent_shipping_eta
+                        risk_level: low
+                        risk_categories: []
+                        has_conflict: false
+                        review_mode: single
+                        primary_review_evd: EVD-CONTENT-REVIEW-20260810-001
+                        secondary_review_evd: null
+                        placeholder_keys: [order_id]
+                        quality_status: clean
+                        quality_issue_codes: []
+                        quality_gate_passed: true
+                        questions:
+                          - question_id: q_01J4SHIPPING001
+                            question_version: 1
+                            question_text: 什么时候发货
+                            question_hash: b98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                            semantic_family_id: sf_shipping_eta
+                            origin_fingerprint: c98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                            origin_fingerprint_key_version: hmac-question-v1
+                            source_asset_id: sa_shipping_question_001
+                            source: manual
+                            intent_taxonomy_version: itax_2026_08_v1
+                            intent_id: intent_shipping_eta
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/content/import/{import_batch_id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/ImportBatchId'
+    post:
+      tags: [content]
+      operationId: cancelContentImport
+      summary: 取消 validating 或 staged 导入批次
+      description: Owner 可取消任意授权批次；coach 只能取消自己发起的批次。
+      x-required-roles: [coach, owner]
+      x-conditional-role-access:
+        role: coach
+        condition: batch.actor_user_id == claims.user_id
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelImportRequest'
+            examples:
+              cancel:
+                value:
+                  reason: 内容源需要修订
+      responses:
+        '200':
+          description: 批次已标记 failed，未完成 outbox 已 fenced 为 dead
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelImportResponse'
+              examples:
+                success:
+                  value:
+                    ok: true
+                    import_batch_id: imp-01J4PF9TQX7G
+                    status: failed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/content/publish:
+    post:
+      tags: [content]
+      operationId: publishContent
+      summary: 将 staged 批次发布为新的 current release
+      description: |
+        一期仅 Owner。调用受控 publish_content_release 事务并使用全站 try-lock；第二个
+        并发发布立即返回 409。发布必须 CAS 校验 base_release_id，原子写入四域绑定、内容
+        快照、current、公告与审计。被本批次绑定的域按全域快照替换，不保留该域旧来源残行。
+        只发布 `quality_status=clean AND quality_gate_passed=true` 的行，且二次计算
+        `SHA-256(JCS(normalized governance snapshot))`；quarantined 行保留在导入证据中而不进 release。
+      x-required-roles: [owner]
+      x-phase1-owner-only: true
+      x-error-reasons:
+        '400': [SOURCE_SET_INCOMPLETE, SOURCE_BINDING_HASH_MISMATCH, GOVERNANCE_HASH_MISMATCH, QUALITY_GATE_NOT_PASSED]
+        '403': [SOURCE_NOT_ELIGIBLE, SOURCE_SUSPENDED]
+        '409': [SOURCE_BASE_RELEASE_STALE, SOURCE_BINDING_HASH_MISMATCH]
+      x-rejection-audit:
+        transaction: independent-after-rollback
+        commit-before-response: true
+        storage: source_denial_audits
+        function: record_admin_source_denial_audit
+        operation: content_publish
+        applies-to-reasons:
+          - SOURCE_SET_INCOMPLETE
+          - SOURCE_BINDING_HASH_MISMATCH
+          - SOURCE_NOT_ELIGIBLE
+          - SOURCE_SUSPENDED
+          - SOURCE_BASE_RELEASE_STALE
+        excluded-reasons-standard-audit: [GOVERNANCE_HASH_MISMATCH, QUALITY_GATE_NOT_PASSED]
+        allowed-fields:
+          - denial_key
+          - operation
+          - reason_code
+          - actor_subject_hash
+          - hash_key_version
+          - actor_role
+          - release_id
+          - source_version_id
+          - source_binding_hash
+          - diagnostic_id
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+            examples:
+              publish:
+                value:
+                  import_batch_id: imp-01J4PF9TQX7G
+                  title: 2026-08-06 客服话术发布
+                  summary: 更新发货时效与活动问法
+      responses:
+        '200':
+          description: 新 release 已发布并成为 current
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishResponse'
+              examples:
+                success:
+                  value:
+                    release_id: rel-20260806-0013
+                    release_seq: 13
+                    announcement_id: ann-01J4PG1RAP
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/content/rollback:
+    post:
+      tags: [content]
+      operationId: rollbackContent
+      summary: 把目标快照复制为新的 current release
+      description: |
+        一期仅 Owner。回滚创建新的单调 release_seq，并写 rollback_of_release_id；
+        禁止原地修改历史 release，也禁止直接把 current 指针改回旧 release。目标 release
+        的四域绑定也复制到新 release；任一来源已暂停、绑定哈希不一致或任一
+        DEC-042 治理快照 hash 不一致时硬拒绝。
+      x-required-roles: [owner]
+      x-phase1-owner-only: true
+      x-error-reasons:
+        '400': [SOURCE_SET_INCOMPLETE, SOURCE_BINDING_HASH_MISMATCH, GOVERNANCE_HASH_MISMATCH]
+        '403': [SOURCE_NOT_ELIGIBLE, SOURCE_SUSPENDED]
+      x-rejection-audit:
+        transaction: independent-after-rollback
+        commit-before-response: true
+        storage: source_denial_audits
+        function: record_admin_source_denial_audit
+        operation: content_rollback
+        applies-to-reasons:
+          - SOURCE_SET_INCOMPLETE
+          - SOURCE_BINDING_HASH_MISMATCH
+          - SOURCE_NOT_ELIGIBLE
+          - SOURCE_SUSPENDED
+        excluded-reasons-standard-audit: [GOVERNANCE_HASH_MISMATCH]
+        allowed-fields:
+          - denial_key
+          - operation
+          - reason_code
+          - actor_subject_hash
+          - hash_key_version
+          - actor_role
+          - release_id
+          - source_version_id
+          - source_binding_hash
+          - diagnostic_id
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+            examples:
+              rollback:
+                value:
+                  target_release_id: rel-20260805-0011
+                  title: 回滚至已验证版本
+                  summary: 新版本命中率异常
+      responses:
+        '200':
+          description: 目标快照已复制为新 release 并成为 current
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackResponse'
+              examples:
+                success:
+                  value:
+                    release_id: rel-20260806-0014
+                    release_seq: 14
+                    announcement_id: ann-01J4PG5FJS
+                    rollback_of_release_id: rel-20260805-0011
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/announce/current:
+    get:
+      tags: [announce]
+      operationId: getCurrentAnnouncement
+      summary: 获取当前 release 与公告
+      description: |
+        服务端必须以 `read_current_announcement_with_lease` 作为唯一内容读取边界；该
+        SECURITY DEFINER 函数在同一受控边界内复核 current 与四域 source gate、调用
+        `issue_snapshot_offline_lease` 并投影最小公告字段。app_runtime 不得直接读取
+        content_current/content_releases/release_source_bindings/announcements 等 SoR 底表。
+        集合缺失、哈希不一致、非 canonical 或已暂停时 fail-closed 返回 503 `SOURCE_GATE_NOT_READY`，
+        不得把故障版本当成当前公告。通过后签发绑定
+        client/user/release/source_binding_hash 的 60..900 秒短租约。该路由不写
+        query/impression/event。
+        只有请求携带的原租约仍有效时才能 304；304 只回显原 token/expires，不续期。
+        handler 必须通过 `CurrentAnnouncementResponse` 的显式白名单 mapper
+        构造响应，禁止 spread DB row/内部 announcement 对象。
+      x-error-reasons:
+        '503': [SOURCE_GATE_NOT_READY]
+      x-rejection-audit:
+        operation: announce_current
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
+        applies-to-reasons: [SOURCE_GATE_NOT_READY]
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+        - $ref: '#/components/parameters/SnapshotClientId'
+        - $ref: '#/components/parameters/OptionalSnapshotLeaseToken'
+      responses:
+        '200':
+          description: 当前 release 与可选公告
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAnnouncementResponse'
+              examples:
+                withAnnouncement:
+                  value:
+                    current_release_id: rel-20260806-0013
+                    release_seq: 13
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    offline_lease:
+                      token: osl_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                      expires_at: '2026-08-09T10:10:00Z'
+                      release_id: rel-20260806-0013
+                      source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    announcement:
+                      title: 话术库已更新
+                      summary: 新增发货时效问法
+                      created_at: '2026-08-06T04:00:00Z'
+        '304':
+          description: If-None-Match 命中当前弱 ETag；无响应体
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            X-Snapshot-Lease:
+              $ref: '#/components/headers/SnapshotLease'
+            X-Snapshot-Lease-Expires:
+              $ref: '#/components/headers/SnapshotLeaseExpires'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /v1/announce/snapshot:
+    get:
+      tags: [announce]
+      operationId: getAnnouncementSnapshot
+      summary: 在固定 release_id 下分页拉取完整快照
+      description: |
+        本路由返回固定 release 的完整、不可变内容快照，包括尚未到
+        `effective_from` 或已到 `effective_to` 的历史快照项，以保证跨页集合稳定。
+        服务端不得按请求时间过滤快照项，也不承诺响应中的每项在请求时仍有效。
+        后续页必须沿用第一页的 release_id；cursor 是上一页最后一个 script_id。服务端每页均
+        只调用 `read_snapshot_page`；该 SECURITY DEFINER 函数在同一 SQL statement
+        snapshot 内调用 `validate_snapshot_offline_lease`，复核 client/user/release/
+        source hash/过期时间与目标 release source gate，再按 script_id 稳定分页并只投影
+        wire 白名单字段。app_runtime 不得直接读取 release_items 或自行拼接分页 SQL。
+        已暂停来源返回 403，其余不完整/哈希故障返回 503；任何失败都不得返回剩余域的
+        部分快照。token 无效、绑定不匹配或过期均返回 403 且不返回部分 items。客户端
+        每次本地检索都必须以本地 `now` 执行
+        `effective_from <= now AND (effective_to IS NULL OR now < effective_to)`；
+        `now == effective_to` 时必须排除。离线租约过期后必须立即停止本地搜索，
+        在线重新取得 current 租约后才能恢复。handler 必须显式映射
+        `SnapshotResponse`/`SnapshotItem`/`PublicSnapshotQuestion` 白名单，
+        禁止 spread DB row 或内部 `ContentQuestion`。
+      x-error-reasons:
+        '403':
+          - SOURCE_SUSPENDED
+          - SOURCE_NOT_ELIGIBLE
+          - OFFLINE_LEASE_INVALID
+          - OFFLINE_LEASE_EXPIRED
+          - OFFLINE_LEASE_BINDING_MISMATCH
+        '503': [SOURCE_GATE_NOT_READY]
+      x-rejection-audit:
+        operation: announce_snapshot
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
+        applies-to-reasons:
+          - SOURCE_SUSPENDED
+          - SOURCE_NOT_ELIGIBLE
+          - OFFLINE_LEASE_INVALID
+          - OFFLINE_LEASE_EXPIRED
+          - OFFLINE_LEASE_BINDING_MISMATCH
+          - SOURCE_GATE_NOT_READY
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/ReleaseIdQuery'
+        - $ref: '#/components/parameters/SnapshotLimit'
+        - $ref: '#/components/parameters/SnapshotCursor'
+        - $ref: '#/components/parameters/SnapshotClientId'
+        - $ref: '#/components/parameters/RequiredSnapshotLeaseToken'
+      responses:
+        '200':
+          description: 固定 release 的一页话术快照
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+              examples:
+                page:
+                  value:
+                    release_id: rel-20260806-0013
+                    release_seq: 13
+                    source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    offline_lease:
+                      token: osl_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                      expires_at: '2026-08-09T10:10:00Z'
+                      release_id: rel-20260806-0013
+                      source_binding_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+                    items:
+                      - script_id: shipping-001
+                        script_version: 3
+                        content_hash: a98fc80eaeeecfd3aa57fbfece9a081ab675bc044ffaac7aecfac06aceadc5b0
+                        title: 发货时效
+                        category: presale
+                        answer_text: 您好，订单将在付款后 48 小时内发出。
+                        platform_scope: [qianniu]
+                        product_scope_type: sku
+                        product_scope_refs: [sku-001]
+                        effective_from: '2026-08-10T00:00:00Z'
+                        effective_to: null
+                        intent_taxonomy_version: itax_2026_08_v1
+                        intent_id: intent_shipping_eta
+                        risk_level: low
+                        risk_categories: []
+                        has_conflict: false
+                        placeholder_keys: []
+                        questions:
+                          - question_id: q_shipping_001
+                            question_version: 1
+                            question_text: 什么时候发货
+                            question_hash: '1111111111111111111111111111111111111111111111111111111111111111'
+                            semantic_family_id: sf_shipping_eta
+                    next_cursor: shipping-001
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/announce/ack:
+    post:
+      tags: [announce]
+      operationId: acknowledgeAnnouncement
+      summary: 确认客户端已完成固定 release 的快照同步
+      description: |
+        ACK 只表示客户端内容游标，不表示用户已读。乱序旧 ACK 返回 200，但不得回退
+        last_seen_release_seq；client_id 被另一用户占用时返回 403。ACK 必须验证当次
+        token 与 client/user/release/source_binding_hash 及 expires_at，记录 token hash；
+        路由只调用 `ack_client_release(client_id,user_id,release_id,release_seq,
+        offline_lease_token)`；不得 UPDATE `snapshot_offline_leases`，不得续期。来源门或
+        离线租约拒绝必须先回滚 ACK 业务事务，再用独立幂等短事务调用
+        `record_runtime_source_denial_audit` 并 commit，最后才返回 HTTP denial；ACK 的
+        其他内容错误只走标准受控 error audit。
+      x-error-reasons:
+        '403': [OFFLINE_LEASE_INVALID, OFFLINE_LEASE_EXPIRED, OFFLINE_LEASE_BINDING_MISMATCH, SOURCE_GATE_NOT_READY]
+      x-rejection-audit:
+        operation: announce_ack
+        storage: source_denial_audits
+        function: record_runtime_source_denial_audit
+        applies-to-reasons:
+          - OFFLINE_LEASE_INVALID
+          - OFFLINE_LEASE_EXPIRED
+          - OFFLINE_LEASE_BINDING_MISMATCH
+          - SOURCE_GATE_NOT_READY
+        source-denial-audits-write: required
+        excluded-reasons-standard-audit: all-non-source-or-lease-reasons
+        rationale: 仅来源门或离线租约 reason 写最小 source denial audit；其他 ACK 错误继续走标准受控 error audit。
+      x-source-denial-audit-required: true
+      parameters:
+        - $ref: '#/components/parameters/OptionalIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementAckRequest'
+            examples:
+              synced:
+                value:
+                  client_id: mac-cs-001
+                  release_id: rel-20260806-0013
+                  release_seq: 13
+                  offline_lease_token: osl_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      responses:
+        '200':
+          description: 同步游标已写入，或旧 ACK 被安全忽略
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+              examples:
+                success:
+                  value:
+                    ok: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/policy:
+    get:
+      tags: [policy]
+      operationId: getPolicy
+      summary: 获取一期策略与只读鉴权模式
+      description: 未知 flag 读取按最严 OFF；auth_mode 只来自部署配置，不属于 policy_flags。
+      responses:
+        '200':
+          description: 当前策略；一期 rewrite 与 auto_send 恒为 false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+              examples:
+                phase1:
+                  value:
+                    rewrite: false
+                    auto_send: false
+                    autofill_adapter: false
+                    llm_ranker: false
+                    metrics_experimental_kpi: false
+                    auth_mode: feishu
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+  /v1/policy/flags:
+    post:
+      tags: [policy]
+      operationId: setPolicyFlag
+      summary: 通过唯一受控入口写策略开关
+      description: |
+        一期仅 Owner，且服务端必须调用 set_policy_flag。rewrite=true 或 auto_send=true
+        即使带 ADR 也必须返回 403 POLICY_DENIED；mock_auth 与未知 key 返回 400。
+      x-required-roles: [owner]
+      x-phase1-owner-only: true
+      x-phase1-hard-off:
+        flags: [rewrite, auto_send]
+        deniedValue: true
+        responseStatus: 403
+        errorCode: POLICY_DENIED
+      parameters:
+        - $ref: '#/components/parameters/RequiredIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyFlagUpdateRequest'
+            examples:
+              enableRanker:
+                value:
+                  flag_key: llm_ranker
+                  flag_value: true
+                  adr_id: ADR-012
+              hardOffRewrite:
+                summary: 语法有效，但一期必须以 403 POLICY_DENIED 拒绝
+                value:
+                  flag_key: rewrite
+                  flag_value: true
+                  adr_id: ADR-099
+      responses:
+        '200':
+          description: 可写策略已更新，或 hard-off 开关保持 false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyFlagUpdateResponse'
+              examples:
+                success:
+                  value:
+                    ok: true
+                    flag_key: llm_ranker
+                    flag_value: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/ForbiddenOrPolicyDenied'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Overloaded'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Feishu session
+      description: |
+        生产唯一鉴权方案。服务端必须验签并从 claims 取得 user_id 与 role；不得信任
+        业务请求体中的身份字段。
+    mockUser:
+      type: apiKey
+      in: header
+      name: X-Mock-User
+      description: 仅 development/test 且 AUTH_MODE=mock；必须与 X-Mock-Role 同时出现。
+    mockRole:
+      type: apiKey
+      in: header
+      name: X-Mock-Role
+      description: 仅 development/test，值为 agent、coach 或 owner；请求日志必须标记 AUTH_MOCK。
+
+  parameters:
+    RequiredIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        同 scope/key/body 重放首次终态响应；同键异体或处理中返回 409。建议 UUID。
+        终态 TTL 至少 24 小时。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      example: 5a5d8ff9-a23e-4c04-b902-64d0e33502cf
+    OptionalIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: 提供时按共用幂等状态机处理；本路由在 39 合同中未列为强制携带。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      example: 68cc44fb-3d14-4860-a765-e882754d66d7
+    ImportBatchId:
+      name: import_batch_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: imp-01J4PF9TQX7G
+    IterationTaskId:
+      name: task_id
+      in: path
+      required: true
+      description: 内部话术优化待办 ID；不得填业务工单 ID。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: itask-01J4PF9TQX7G
+    IterationTaskStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/IterationTaskStatus'
+    IterationTaskSignalFilter:
+      name: signal_id
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    IterationTaskAssigneeFilter:
+      name: assignee_role
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderImportBatchId:
+      name: import_batch_id
+      in: path
+      required: true
+      description: 业务工单分析导入批次 ID。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: woimp-01J4PF9TQX7G
+    WorkOrderFrom:
+      name: from
+      in: query
+      required: true
+      description: 业务记录时间窗起点；与 to 构成半开区间，最大 31 天。
+      schema:
+        type: string
+        format: date-time
+      example: '2026-07-01T00:00:00Z'
+    WorkOrderTo:
+      name: to
+      in: query
+      required: true
+      description: 业务记录时间窗终点；必须晚于 from，差值不超过 31 天。
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-01T00:00:00Z'
+    WorkOrderImportBatchFilter:
+      name: import_batch_id
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderChannelFilter:
+      name: channel
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderCategoryFilter:
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderIssueTypeFilter:
+      name: issue_type
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderErrorTypeFilter:
+      name: error_type
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    WorkOrderEscalatedFilter:
+      name: escalated
+      in: query
+      required: false
+      schema:
+        type: boolean
+    WorkOrderLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    WorkOrderCursor:
+      name: cursor
+      in: query
+      required: false
+      description: 不透明、稳定倒序的业务工单明细游标。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 1024
+    MetricsFrom:
+      name: from
+      in: query
+      required: true
+      description: 查询窗起点，ISO-8601 UTC；必须满足 to > from 且 to - from 不超过 7 天，否则返回 400 VALIDATION。
+      schema:
+        type: string
+        format: date-time
+      example: '2026-07-31T00:00:00Z'
+    MetricsTo:
+      name: to
+      in: query
+      required: true
+      description: 查询窗终点，ISO-8601 UTC；必须晚于 from，且与 from 的差不超过 7 天，否则返回 400 VALIDATION。
+      schema:
+        type: string
+        format: date-time
+      example: '2026-08-06T23:59:59Z'
+    MetricsUserId:
+      name: user_id
+      in: query
+      required: false
+      description: 可选的用户过滤条件，仍受调用者授权范围约束。
+      schema:
+        type: string
+        minLength: 1
+      example: u-agent-001
+    MetricsPlatform:
+      name: platform
+      in: query
+      required: false
+      description: 按用户已确认的 canonical 平台过滤。
+      schema:
+        type: string
+        enum: [qianniu, douyin, unknown]
+    MetricsHitStatus:
+      name: hit_status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/HitStatus'
+    MetricsChosenRank:
+      name: chosen_rank
+      in: query
+      required: false
+      description: 按成功复制的候选位次过滤。
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 3
+    MetricsReleaseId:
+      name: release_id
+      in: query
+      required: false
+      description: 按搜索当时的不可变内容 release 过滤。
+      schema:
+        type: string
+        minLength: 1
+    StreamLimit:
+      name: limit
+      in: query
+      required: false
+      description: 每页条目数。
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      example: 50
+    MetricsCursor:
+      name: cursor
+      in: query
+      required: false
+      description: 不透明 base64url cursor；内部为 created_at 与 query_id 的稳定倒序游标。
+      schema:
+        type: string
+        minLength: 1
+      example: MjAyNi0wOC0wNlQwMzoxNDoxNVp8NGQ2OTBlZjctYTk4ZC00YTU2LWE5YzQtOTJhZTRjNTIxNjhm
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      description: 上次 current 响应的弱 ETag；命中时返回 304。
+      schema:
+        type: string
+      example: 'W/"13"'
+    SnapshotClientId:
+      name: X-Client-Id
+      in: header
+      required: true
+      description: 当前客户端稳定 ID；租约同时绑定验签用户，不得跨客户端复用。
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: mac-cs-001
+    OptionalSnapshotLeaseToken:
+      name: X-Snapshot-Lease
+      in: header
+      required: false
+      description: |
+        只用于 current 条件请求；仅当该 token 未过期且绑定同一 release/source hash
+        时才允许 304，否则必须返回 200 并签发新短租约。
+      schema:
+        $ref: '#/components/schemas/OfflineSnapshotLeaseToken'
+    RequiredSnapshotLeaseToken:
+      name: X-Snapshot-Lease
+      in: header
+      required: true
+      description: current 签发的不透明短租约；每一页都必须重新验证绑定与过期时间。
+      schema:
+        $ref: '#/components/schemas/OfflineSnapshotLeaseToken'
+    ReleaseIdQuery:
+      name: release_id
+      in: query
+      required: true
+      description: 从 current 响应复制；同一次分页全过程不得省略或切换。
+      schema:
+        type: string
+        minLength: 1
+      example: rel-20260806-0013
+    SnapshotLimit:
+      name: limit
+      in: query
+      required: false
+      description: 每页话术数。
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 200
+      example: 200
+    SnapshotCursor:
+      name: cursor
+      in: query
+      required: false
+      description: 上一页最后一个 script_id；服务端按 script_id 升序继续。
+      schema:
+        type: string
+        minLength: 1
+      example: shipping-001
+
+  headers:
+    RetryAfter:
+      description: 客户端重试前至少等待的秒数，最少为 1。
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    ETag:
+      description: 由 release_seq 构成的弱 ETag。
+      schema:
+        type: string
+        pattern: '^W/"[0-9]+"$'
+      example: 'W/"13"'
+    CacheControl:
+      description: current 可缓存不超过 10 秒。
+      schema:
+        type: string
+      example: max-age=10
+    SnapshotLease:
+      description: 304 仅回显请求中仍有效的原租约，不签发、不续期。
+      schema:
+        $ref: '#/components/schemas/OfflineSnapshotLeaseToken'
+    SnapshotLeaseExpires:
+      description: 原租约的固定过期时间；304 不得延长。
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    ValidationError:
+      description: 请求结构、字段或业务对应关系无效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorEnvelope'
+          examples:
+            validation:
+              value:
+                error:
+                  code: VALIDATION
+                  message: 请求参数不合法
+                  details:
+                    field: top_k
+                    reason: must be between 1 and 3
+    Unauthorized:
+      description: 缺少或无法验证会话
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedErrorEnvelope'
+          examples:
+            unauthorized:
+              value:
+                error:
+                  code: UNAUTHORIZED
+                  message: 会话无效或已过期
+    Forbidden:
+      description: 当前已验签身份无权访问该资源或动作
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForbiddenErrorEnvelope'
+          examples:
+            forbidden:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: 当前角色无权执行此操作
+    ForbiddenOrPolicyDenied:
+      description: 当前身份越权，或动作违反一期策略
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForbiddenOrPolicyDeniedErrorEnvelope'
+          examples:
+            forbidden:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: 当前身份无权访问该资源或执行此操作
+            adoptionPolicyDenied:
+              value:
+                error:
+                  code: POLICY_DENIED
+                  message: adopted 只能通过 clipboard 或 autofill 完成
+            phase1HardOff:
+              value:
+                error:
+                  code: POLICY_DENIED
+                  message: Phase 1 禁止启用 rewrite
+                  details:
+                    reason: PHASE1_HARD_OFF
+                    flag_key: rewrite
+                    requested_value: true
+            nativeIntegrationDisabled:
+              value:
+                error:
+                  code: POLICY_DENIED
+                  message: Phase 1 未启用原生平台集成
+                  details:
+                    reason: NATIVE_INTEGRATION_DISABLED
+                    platform_source: native_integration
+            sourceSuspended:
+              value:
+                error:
+                  code: POLICY_DENIED
+                  message: 权威来源版本已暂停
+                  details:
+                    reason: SOURCE_SUSPENDED
+                    source_version_id: srcv_presale_2026_08_09_01
+            offlineLeaseExpired:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: 离线快照租约已过期，请联网刷新
+                  details:
+                    reason: OFFLINE_LEASE_EXPIRED
+                    diagnostic_id: diag_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    NotFound:
+      description: 指定资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundErrorEnvelope'
+          examples:
+            notFound:
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: 指定资源不存在
+    Conflict:
+      description: 幂等键、状态机、发布锁或资源当前状态发生冲突
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictErrorEnvelope'
+          examples:
+            idempotencyBodyMismatch:
+              value:
+                error:
+                  code: CONFLICT
+                  message: 幂等键已用于不同请求体
+                  details:
+                    reason: IDEMPOTENCY_BODY_MISMATCH
+            inFlight:
+              value:
+                error:
+                  code: CONFLICT
+                  message: 同一幂等请求仍在处理中
+                  details:
+                    reason: IDEMPOTENCY_IN_FLIGHT
+            sourceBaseReleaseStale:
+              value:
+                error:
+                  code: CONFLICT
+                  message: 导入基线已不是当前发布版本
+                  details:
+                    reason: SOURCE_BASE_RELEASE_STALE
+    TooManyRequests:
+      description: 令牌桶拒绝当前请求
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitedErrorEnvelope'
+          examples:
+            rateLimited:
+              value:
+                error:
+                  code: RATE_LIMITED
+                  message: 请求过于频繁，请稍后重试
+                  details:
+                    retry_after_sec: 2
+    Overloaded:
+      description: 连接池、并发槽或依赖存储暂时过载；生产限流存储故障也 fail-closed 到此响应
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OverloadedErrorEnvelope'
+          examples:
+            overloaded:
+              value:
+                error:
+                  code: OVERLOADED
+                  message: 服务暂时过载
+                  details:
+                    retry_after_sec: 1
+    ServiceUnavailable:
+      description: 路由或依赖过载，或 Owner 尚未完成首次内容发布
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/OverloadedErrorEnvelope'
+              - $ref: '#/components/schemas/ContentNotReadyErrorEnvelope'
+          examples:
+            overloaded:
+              value:
+                error:
+                  code: OVERLOADED
+                  message: 服务暂时过载
+                  details:
+                    reason: DB_POOL_EXHAUSTED
+                    retry_after_sec: 1
+            firstReleasePending:
+              value:
+                error:
+                  code: OVERLOADED
+                  message: 内容尚未发布
+                  details:
+                    reason: CONTENT_NOT_READY
+                    retry_after_sec: 1
+            sourceGateNotReady:
+              value:
+                error:
+                  code: OVERLOADED
+                  message: 当前内容来源校验未通过
+                  details:
+                    reason: SOURCE_GATE_NOT_READY
+                    retry_after_sec: 1
+    InternalError:
+      description: 未归类的服务端错误；不得泄露原始查询或内部堆栈
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InternalErrorEnvelope'
+          examples:
+            internal:
+              value:
+                error:
+                  code: INTERNAL
+                  message: 服务内部错误
+
+  schemas:
+    Role:
+      type: string
+      enum: [agent, coach, owner]
+      description: 只允许来自服务端验签后的会话 claims。
+    AuthMode:
+      type: string
+      enum: [mock, feishu]
+    ErrorCode:
+      type: string
+      enum:
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - VALIDATION
+        - NOT_FOUND
+        - CONFLICT
+        - POLICY_DENIED
+        - RATE_LIMITED
+        - OVERLOADED
+        - INTERNAL
+    SourceContractReason:
+      type: string
+      description: |
+        来源、租约与内容治理的稳定拒绝原因，必须放在 `error.details.reason`；
+        客户端不得解析 message 文本。只有 `info.x-source-denial-audit.applies-to-reasons`
+        白名单中的值才能写入 source_denial_audits。
+      enum:
+        - SOURCE_NOT_REGISTERED
+        - SOURCE_NOT_ELIGIBLE
+        - SOURCE_SUSPENDED
+        - SOURCE_DOMAIN_MISMATCH
+        - SOURCE_SNAPSHOT_MISMATCH
+        - SOURCE_SET_INCOMPLETE
+        - SOURCE_BASE_RELEASE_STALE
+        - SOURCE_BINDING_HASH_MISMATCH
+        - SOURCE_GATE_NOT_READY
+        - SOURCE_HISTORY_IMMUTABLE
+        - OFFLINE_LEASE_INVALID
+        - OFFLINE_LEASE_EXPIRED
+        - OFFLINE_LEASE_BINDING_MISMATCH
+        - CONTENT_CONTRACT_INVALID
+        - GOVERNANCE_HASH_MISMATCH
+        - QUALITY_GATE_NOT_PASSED
+        - QUESTION_IDENTITY_CONFLICT
+        - PHASE1_HARD_OFF
+        - NATIVE_INTEGRATION_DISABLED
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, service, version]
+      properties:
+        status:
+          const: ok
+        service:
+          const: cs-ai-api
+        version:
+          type: string
+          minLength: 1
+    ReadyCheckStatus:
+      type: string
+      enum: [ok, not_ready]
+    ReadyChecks:
+      type: object
+      additionalProperties: false
+      required: [database, schema, auth, storage, content]
+      properties:
+        database:
+          $ref: '#/components/schemas/ReadyCheckStatus'
+        schema:
+          $ref: '#/components/schemas/ReadyCheckStatus'
+        auth:
+          $ref: '#/components/schemas/ReadyCheckStatus'
+        storage:
+          $ref: '#/components/schemas/ReadyCheckStatus'
+        content:
+          $ref: '#/components/schemas/ReadyCheckStatus'
+    ReadyResponse:
+      type: object
+      additionalProperties: false
+      required: [status, checks]
+      properties:
+        status:
+          const: ready
+        checks:
+          allOf:
+            - $ref: '#/components/schemas/ReadyChecks'
+            - properties:
+                database: { const: ok }
+                schema: { const: ok }
+                auth: { const: ok }
+                storage: { const: ok }
+                content: { const: ok }
+    NotReadyResponse:
+      type: object
+      additionalProperties: false
+      required: [status, checks]
+      properties:
+        status:
+          const: not_ready
+        checks:
+          allOf:
+            - $ref: '#/components/schemas/ReadyChecks'
+            - anyOf:
+                - properties: { database: { const: not_ready } }
+                  required: [database]
+                - properties: { schema: { const: not_ready } }
+                  required: [schema]
+                - properties: { auth: { const: not_ready } }
+                  required: [auth]
+                - properties: { storage: { const: not_ready } }
+                  required: [storage]
+                - properties: { content: { const: not_ready } }
+                  required: [content]
+    ValidationErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: VALIDATION
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    UnauthorizedErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: UNAUTHORIZED
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    ForbiddenErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: FORBIDDEN
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    ForbiddenOrPolicyDeniedErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - enum: [FORBIDDEN, POLICY_DENIED]
+            message: { type: string, minLength: 1 }
+            details:
+              type: object
+              properties:
+                reason:
+                  $ref: '#/components/schemas/SourceContractReason'
+              additionalProperties: true
+    NotFoundErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: NOT_FOUND
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    ConflictErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: CONFLICT
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    RateLimitedErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: RATE_LIMITED
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    OverloadedErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: OVERLOADED
+            message: { type: string, minLength: 1 }
+            details:
+              type: object
+              properties:
+                reason:
+                  enum:
+                    - DB_POOL_EXHAUSTED
+                    - CONCURRENCY_LIMIT
+                    - RATE_LIMIT_STORAGE_UNAVAILABLE
+                    - STORAGE_UNAVAILABLE
+                    - SOURCE_GATE_NOT_READY
+              additionalProperties: true
+    ContentNotReadyErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: OVERLOADED
+            message: { type: string, minLength: 1 }
+            details:
+              type: object
+              required: [reason]
+              properties:
+                reason: { const: CONTENT_NOT_READY }
+              additionalProperties: true
+    InternalErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              allOf:
+                - $ref: '#/components/schemas/ErrorCode'
+                - const: INTERNAL
+            message: { type: string, minLength: 1 }
+            details: { type: object, additionalProperties: true }
+    UserClaims:
+      type: object
+      required: [user_id, role]
+      properties:
+        user_id:
+          type: string
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/Role'
+    MockLoginRequest:
+      allOf:
+        - $ref: '#/components/schemas/UserClaims'
+    MockLoginResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          minLength: 1
+        user:
+          $ref: '#/components/schemas/UserClaims'
+    CurrentUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/UserClaims'
+        - type: object
+          required: [auth_mode]
+          properties:
+            auth_mode:
+              $ref: '#/components/schemas/AuthMode'
+
+    NoticeDecision:
+      type: string
+      enum: [accepted, declined]
+    PrivacyNotice:
+      type: object
+      required: [version, content, content_hash, published_at]
+      properties:
+        version:
+          type: string
+          minLength: 1
+          maxLength: 128
+        content:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        content_hash:
+          $ref: '#/components/schemas/ContentHash'
+        published_at:
+          type: string
+          format: date-time
+    CurrentNoticeResponse:
+      type: object
+      required: [notice, decision, decided_at]
+      properties:
+        notice:
+          $ref: '#/components/schemas/PrivacyNotice'
+        decision:
+          oneOf:
+            - $ref: '#/components/schemas/NoticeDecision'
+            - type: 'null'
+        decided_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    NoticeDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/NoticeDecision'
+    NoticeDecisionResponse:
+      type: object
+      required: [ok, version, decision, decided_at]
+      properties:
+        ok:
+          const: true
+        version:
+          type: string
+          minLength: 1
+          maxLength: 128
+        decision:
+          $ref: '#/components/schemas/NoticeDecision'
+        decided_at:
+          type: string
+          format: date-time
+
+    Platform:
+      type:
+        - string
+        - 'null'
+      enum: [qianniu, douyin, unknown, null]
+      description: 已确认的规范平台；无法确认时显式 unknown 或 null。
+    CollectionMode:
+      type: string
+      enum: [synthetic, approved_redacted, pilot_recorded]
+      description: |
+        数据来源授权模式。pilot_recorded 需要服务端验证当前用户已接受 current notice；
+        该校验依赖服务端状态，不能只靠 JSON Schema。
+    PlatformSource:
+      type: string
+      enum: [manual, foreground_process, native_integration, unknown]
+      x-phase1-denied-values: [native_integration]
+      description: |
+        Phase 1 的 platform 仍必须经用户确认。manual=直接选择或修正；
+        foreground_process=用户接受本次唤起时的一次性进程提示，此时必须
+        detected_platform=platform；native_integration 为未来预留，Phase 1 请求该值
+        必须 403 POLICY_DENIED 且零写入；unknown 时 platform 只能为 unknown/null。
+        禁止将该字段解释为全局监控、未确认真值或客户端自证的原生来源。
+    InteractionReason:
+      type: string
+      enum: [original, reselection]
+      description: original=一个根问题的首次搜索；reselection=父操作 terminal 后的再次选择/搜索。
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - query_id
+        - parent_query_id
+        - interaction_reason
+        - query_text
+        - collection_mode
+        - detected_platform
+        - platform
+        - platform_source
+        - product_context_type
+        - product_context_ref
+        - top_k
+      properties:
+        query_id:
+          type: string
+          format: uuid
+          description: 当前用户在本路由的幂等键。
+        parent_query_id:
+          type: [string, 'null']
+          format: uuid
+          description: reselection 必须引用同一用户、已经写入 terminal adoption outcome 的父 query。
+        interaction_reason:
+          $ref: '#/components/schemas/InteractionReason'
+        query_text:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: 原始输入按 Unicode code point 计 1..500；超限返回 400 VALIDATION。
+        collection_mode:
+          $ref: '#/components/schemas/CollectionMode'
+        detected_platform:
+          $ref: '#/components/schemas/Platform'
+        platform:
+          $ref: '#/components/schemas/Platform'
+        platform_source:
+          $ref: '#/components/schemas/PlatformSource'
+        product_context_type:
+          type: [string, 'null']
+          enum: [category, sku, null]
+          description: 商品上下文类型；不得用 sku 字段代替 category 范围。
+        product_context_ref:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 128
+          description: 对应 category 或 sku 的规范引用；服务端只持久版本化 HMAC，不持久原值。
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 3
+          default: 3
+      oneOf:
+        - title: original 根问题
+          properties:
+            interaction_reason:
+              const: original
+            parent_query_id:
+              type: 'null'
+        - title: reselection 后续操作
+          properties:
+            interaction_reason:
+              const: reselection
+            parent_query_id:
+              type: string
+              format: uuid
+      allOf:
+        - oneOf:
+            - title: storewide 检索无商品上下文
+              properties:
+                product_context_type: { type: 'null' }
+                product_context_ref: { type: 'null' }
+            - title: category 精确上下文
+              properties:
+                product_context_type: { const: category }
+                product_context_ref: { type: string, minLength: 1, maxLength: 128 }
+            - title: sku 精确上下文
+              properties:
+                product_context_type: { const: sku }
+                product_context_ref: { type: string, minLength: 1, maxLength: 128 }
+    HitStatus:
+      type: string
+      enum: [hit, no_hit]
+    ContentHash:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+      description: |
+        `SHA-256(JCS(normalized governance snapshot))` 的小写十六进制值，不再是 Answer 单字段 hash。
+        Answer、Question 映射、scope、taxonomy、risk/review、有效期或 placeholder 任一变更均生成
+        新 script_version 和新 content_hash。
+    AuthoritativeSourceVersionId:
+      type: string
+      pattern: '^srcv_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+      description: 已登记的不可变权威来源版本 ID；不得放入 URL、token 或路径。
+    SafeSourceRef:
+      type: string
+      pattern: '^SRC-[A-Z0-9][A-Z0-9._-]{0,126}$'
+      description: 可向客服与审计界面展示的稳定别名，不是内部资源定位符。
+    SourceBindingHash:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+      description: 按 domain 排序后对 `domain:source_version_id` 四域集合计算的 sha256。
+    OfflineSnapshotLeaseToken:
+      type: string
+      pattern: '^osl_[0-9a-f]{64}$'
+      description: |
+        一次性签发的不透明 bearer token；服务端只存 sha256。不得写入日志、
+        denial audit 或 source_ref，不得作为 URL 参数。
+    OfflineSnapshotLease:
+      type: object
+      additionalProperties: false
+      required: [token, expires_at, release_id, source_binding_hash]
+      properties:
+        token:
+          $ref: '#/components/schemas/OfflineSnapshotLeaseToken'
+        expires_at:
+          type: string
+          format: date-time
+          description: |
+            签发后 60..900 秒。客户端每次本地检索前都必须检查该时间；
+            `now >= expires_at` 时必须立即停止本地搜索。
+        release_id:
+          type: string
+          minLength: 1
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+      description: |
+        token、release_id、source_binding_hash、expires_at 必须作为一个原子包保存和校验；
+        任一字段缺失/不匹配或 `now >= expires_at` 都 fail-closed。
+    AuthoritativeSourceBinding:
+      type: object
+      additionalProperties: false
+      required: [domain, source_version_id]
+      properties:
+        domain:
+          $ref: '#/components/schemas/ScriptCategory'
+        source_version_id:
+          $ref: '#/components/schemas/AuthoritativeSourceVersionId'
+    AuthoritativeSourceBindingStatus:
+      type: object
+      additionalProperties: false
+      required: [domain, source_version_id, source_ref]
+      properties:
+        domain:
+          $ref: '#/components/schemas/ScriptCategory'
+        source_version_id:
+          $ref: '#/components/schemas/AuthoritativeSourceVersionId'
+        source_ref:
+          $ref: '#/components/schemas/SafeSourceRef'
+    ScriptCategory:
+      type: string
+      enum: [presale, campaign, aftersale, product]
+    PlatformScope:
+      type: array
+      minItems: 1
+      maxItems: 2
+      uniqueItems: true
+      items:
+        type: string
+        enum: [qianniu, douyin]
+      description: 必填且非空；两值同时存在表示 both，禁止 null/[] 表示全平台。
+    ProductScopeType:
+      type: string
+      enum: [storewide, category, sku]
+    ProductScopeRefs:
+      type: array
+      uniqueItems: true
+      maxItems: 1000
+      items:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description: storewide 必须为 []；category/sku 必须非空。
+    IntentTaxonomyVersion:
+      type: string
+      pattern: '^itax_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+    IntentId:
+      type: string
+      pattern: '^intent_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+    RiskLevel:
+      type: string
+      enum: [low, medium, high]
+    RiskCategory:
+      type: string
+      enum:
+        - refund_compensation
+        - price_discount
+        - campaign_rules
+        - efficacy_safety_claim
+        - account_privacy
+        - complaint_escalation
+        - legal_commitment
+    RiskCategories:
+      type: array
+      uniqueItems: true
+      maxItems: 7
+      items:
+        $ref: '#/components/schemas/RiskCategory'
+      description: high 必须至少一类；low/medium 必须为空数组。
+    ReviewMode:
+      type: string
+      enum: [single, dual]
+    PlaceholderKey:
+      type: string
+      enum: [order_id, date]
+    QuestionSource:
+      type: string
+      enum: [manual, from_log, import]
+    ContentQuestion:
+      type: object
+      additionalProperties: false
+      required:
+        - question_id
+        - question_version
+        - question_text
+        - question_hash
+        - semantic_family_id
+        - origin_fingerprint
+        - origin_fingerprint_key_version
+        - source_asset_id
+        - source
+        - intent_taxonomy_version
+        - intent_id
+      properties:
+        question_id:
+          type: string
+          pattern: '^q_[A-Za-z0-9][A-Za-z0-9_-]{7,126}$'
+          description: 上游给定的稳定随机 ID；禁止从行号、排序或数组下标派生。
+        question_version: { type: integer, minimum: 1 }
+        question_text: { type: string, minLength: 1, maxLength: 500 }
+        question_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        semantic_family_id:
+          type: string
+          pattern: '^sf_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+        origin_fingerprint:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: 版本化密钥计算的 HMAC 指纹；不是原始客户文本。
+        origin_fingerprint_key_version:
+          type: string
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$'
+          description: 计算 origin_fingerprint 的服务端 HMAC 密钥版本；不含密钥材料。
+        source_asset_id:
+          type: string
+          pattern: '^sa_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+        source:
+          $ref: '#/components/schemas/QuestionSource'
+        intent_taxonomy_version:
+          $ref: '#/components/schemas/IntentTaxonomyVersion'
+        intent_id:
+          $ref: '#/components/schemas/IntentId'
+        source_query_id: { type: [string, 'null'], minLength: 1 }
+        promotion_review_ref: { type: [string, 'null'], minLength: 1 }
+        promoted_by_role: { type: [string, 'null'], minLength: 1 }
+        promoted_at: { type: [string, 'null'], format: date-time }
+      oneOf:
+        - title: from_log 获批晋级
+          properties:
+            source: { const: from_log }
+            source_query_id: { type: string, minLength: 1 }
+            promotion_review_ref: { type: string, minLength: 1 }
+            promoted_by_role: { type: string, minLength: 1 }
+            promoted_at:
+              type: string
+              format: date-time
+              pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,6})?Z$'
+          required: [source_query_id, promotion_review_ref, promoted_by_role, promoted_at]
+        - title: manual 或 import 原生语义资产
+          properties:
+            source: { enum: [manual, import] }
+            source_query_id: { type: 'null' }
+            promotion_review_ref: { type: 'null' }
+            promoted_by_role: { type: 'null' }
+            promoted_at: { type: 'null' }
+    SearchCandidate:
+      type: object
+      additionalProperties: false
+      description: |
+        公开检索候选的封闭白名单投影。handler 必须逐字段构造，禁止
+        DB row/internal object spread；不含审核证据、负责人或内部来源定位符。
+      required:
+        - rank
+        - release_id
+        - script_id
+        - script_version
+        - content_hash
+        - title
+        - category
+        - answer_text
+        - platform_scope
+        - product_scope_type
+        - product_scope_refs
+        - effective_from
+        - effective_to
+        - intent_taxonomy_version
+        - intent_id
+        - risk_level
+        - risk_categories
+        - has_conflict
+        - placeholder_keys
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+          maximum: 3
+        release_id:
+          type: string
+          minLength: 1
+          description: 与本候选不可变绑定的 release_items.release_id，必须等于响应顶层 release_id。
+        script_id:
+          type: string
+          minLength: 1
+        script_version:
+          type: integer
+          minimum: 1
+        content_hash:
+          $ref: '#/components/schemas/ContentHash'
+        title:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/ScriptCategory'
+        answer_text:
+          type: string
+          minLength: 1
+          description: Phase 1 必须原样来自当前 release_items，不得改写。
+        platform_scope:
+          $ref: '#/components/schemas/PlatformScope'
+        product_scope_type:
+          $ref: '#/components/schemas/ProductScopeType'
+        product_scope_refs:
+          $ref: '#/components/schemas/ProductScopeRefs'
+        effective_from:
+          type: string
+          format: date-time
+          description: 包含下界；只有 `effective_from <= now` 才可推荐。
+        effective_to:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 排他上界；只有 `now < effective_to` 才可推荐，`now == effective_to` 必须排除。
+        intent_taxonomy_version:
+          $ref: '#/components/schemas/IntentTaxonomyVersion'
+        intent_id:
+          $ref: '#/components/schemas/IntentId'
+        risk_level:
+          $ref: '#/components/schemas/RiskLevel'
+        risk_categories:
+          $ref: '#/components/schemas/RiskCategories'
+        has_conflict: { type: boolean }
+        placeholder_keys:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/PlaceholderKey'
+          description: 仅声明机器键；值与渲染后正文不得进入 API 或事件。
+      allOf:
+        - oneOf:
+            - properties:
+                product_scope_type: { const: storewide }
+                product_scope_refs: { maxItems: 0 }
+            - properties:
+                product_scope_type: { enum: [category, sku] }
+                product_scope_refs: { minItems: 1 }
+        - oneOf:
+            - properties:
+                risk_level: { enum: [low, medium] }
+                risk_categories: { maxItems: 0 }
+            - properties:
+                risk_level: { const: high }
+                risk_categories: { minItems: 1 }
+    TelemetryStatus:
+      type: string
+      enum: [recorded, collection_disabled]
+      description: |
+        collection_disabled 只允许 telemetry 写故障时的无状态检索；不写 query/impression/event，
+        客户端不得随后提交 adoption/escalate，该次也不进入指标。
+    SearchResponse:
+      type: object
+      additionalProperties: false
+      description: |
+        检索 handler 的封闭白名单响应；顶层与每个 candidate 都禁止未声明字段。
+      required: [query_id, hit_status, release_id, source_binding_hash, telemetry_status, candidates]
+      properties:
+        query_id:
+          type: string
+          format: uuid
+        hit_status:
+          $ref: '#/components/schemas/HitStatus'
+        release_id:
+          type: string
+          minLength: 1
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+        telemetry_status:
+          $ref: '#/components/schemas/TelemetryStatus'
+        candidates:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/SearchCandidate'
+      oneOf:
+        - title: hit 必须返回 1 至 3 条候选
+          properties:
+            hit_status:
+              const: hit
+            candidates:
+              minItems: 1
+              maxItems: 3
+        - title: no_hit 必须返回空候选
+          properties:
+            hit_status:
+              const: no_hit
+            candidates:
+              maxItems: 0
+
+    AdoptionOutcome:
+      type: string
+      enum: [adopted, dismissed, no_hit_exit, timeout]
+      description: |
+        adopted 仅表示候选已成功复制，不表示已发送、正确或客户已接受。timeout 是客户端
+        生命周期达到 CLIENT_ACTION_TIMEOUT_MS 后上报的 terminal，不由服务端延迟推断。
+    PushMethod:
+      type:
+        - string
+        - 'null'
+      enum: [clipboard, autofill, failed, pending, null]
+    AdoptionEventRequest:
+      oneOf:
+        - $ref: '#/components/schemas/AdoptedEventRequest'
+        - $ref: '#/components/schemas/NonAdoptedEventRequest'
+      discriminator:
+        propertyName: outcome
+        mapping:
+          adopted: '#/components/schemas/AdoptedEventRequest'
+          dismissed: '#/components/schemas/NonAdoptedEventRequest'
+          no_hit_exit: '#/components/schemas/NonAdoptedEventRequest'
+          timeout: '#/components/schemas/NonAdoptedEventRequest'
+    AdoptedEventRequest:
+      type: object
+      additionalProperties: false
+      required: [query_id, outcome, chosen_rank, chosen_script_id, push_method]
+      properties:
+        query_id:
+          type: string
+          format: uuid
+        outcome:
+          const: adopted
+        chosen_rank:
+          type: integer
+          minimum: 1
+          maximum: 3
+        chosen_script_id:
+          type: string
+          minLength: 1
+        push_method:
+          type: string
+          enum: [clipboard, autofill]
+    NonAdoptedEventRequest:
+      type: object
+      additionalProperties: false
+      required: [query_id, outcome, chosen_rank, chosen_script_id, push_method]
+      properties:
+        query_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [dismissed, no_hit_exit, timeout]
+        chosen_rank:
+          type: 'null'
+        chosen_script_id:
+          type: 'null'
+        push_method:
+          $ref: '#/components/schemas/PushMethod'
+    AdoptionEventResponse:
+      type: object
+      required: [ok, query_id]
+      properties:
+        ok:
+          const: true
+        query_id:
+          type: string
+          format: uuid
+    EscalationAction:
+      type: string
+      enum: [open_feishu, copy_contact, other]
+    EscalationRequest:
+      type: object
+      additionalProperties: false
+      required: [query_id, action]
+      properties:
+        query_id:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/EscalationAction'
+    EscalationResponse:
+      type: object
+      required: [escalate_id, query_id, action]
+      properties:
+        escalate_id:
+          type: string
+          minLength: 1
+        query_id:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/EscalationAction'
+
+    Rate:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 1
+    ToolMetricsResponse:
+      type: object
+      required:
+        - root_question_count
+        - search_operation_count
+        - reselection_count
+        - root_adopted_count
+        - operation_adopted_count
+        - root_adoption_rate
+        - operation_adoption_rate
+        - operation_no_hit_count
+        - operation_no_hit_rate
+        - top1_copy_share
+        - root_escalated_count
+        - escalate_action_count
+        - root_escalation_rate
+        - p95_latency_ms
+      properties:
+        root_question_count:
+          type: integer
+          minimum: 0
+          description: interaction_reason=original 的根问题数。
+        search_operation_count:
+          type: integer
+          minimum: 0
+          description: 全部 query 操作数；包含 original 与 reselection。
+        reselection_count:
+          type: integer
+          minimum: 0
+          description: interaction_reason=reselection 的操作数。
+        root_adopted_count:
+          type: integer
+          minimum: 0
+          description: 任一链上操作成功复制的去重根问题数，不代表已发送或正确。
+        operation_adopted_count:
+          type: integer
+          minimum: 0
+          description: outcome=adopted 的搜索操作数，只表示成功复制。
+        root_adoption_rate:
+          $ref: '#/components/schemas/Rate'
+          description: root_adopted_count / root_question_count；无分母时返回 0。
+        operation_adoption_rate:
+          $ref: '#/components/schemas/Rate'
+          description: operation_adopted_count / search_operation_count；无分母时返回 0。
+        operation_no_hit_count:
+          type: integer
+          minimum: 0
+          description: hit_status=no_hit 的搜索操作数。
+        operation_no_hit_rate:
+          $ref: '#/components/schemas/Rate'
+          description: operation_no_hit_count / search_operation_count；无分母时返回 0。
+        top1_copy_share:
+          $ref: '#/components/schemas/Rate'
+          description: chosen_rank=1 的成功复制操作 / operation_adopted_count；无分母时返回 0。
+        root_escalated_count:
+          type: integer
+          minimum: 0
+          description: 链内至少有一个辅助升级动作的去重根问题数。
+        escalate_action_count:
+          type: integer
+          minimum: 0
+          description: 全部去重 (query_id, action) 动作数；同一 query 可贡献多个不同 action。
+        root_escalation_rate:
+          $ref: '#/components/schemas/Rate'
+          description: root_escalated_count / root_question_count；非解决率，无分母时返回 0。
+        p95_latency_ms:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+          description: 有录制查询时返回延迟 P95；空窗口返回 null，不用 0 冒充未知。
+    MetricCandidate:
+      type: object
+      description: metrics stream 中的候选展示投影，不包含 answer_text。
+      required:
+        - rank
+        - release_id
+        - script_id
+        - script_version
+        - content_hash
+        - source_version_id
+        - source_ref
+        - effective_from
+        - effective_to
+        - review_due_at
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+          maximum: 3
+        release_id:
+          type: string
+          minLength: 1
+          description: 候选不可变快照 release；与同一流项的 release_id 一致。
+        script_id:
+          type: string
+          minLength: 1
+        script_version:
+          type: integer
+          minimum: 1
+        content_hash:
+          $ref: '#/components/schemas/ContentHash'
+        source_ref:
+          $ref: '#/components/schemas/SafeSourceRef'
+        source_version_id:
+          $ref: '#/components/schemas/AuthoritativeSourceVersionId'
+        effective_from:
+          type: [string, 'null']
+          format: date-time
+        effective_to:
+          type: [string, 'null']
+          format: date-time
+        review_due_at:
+          type: string
+          format: date-time
+    MetricsStreamItem:
+      type: object
+      required:
+        - query_id
+        - root_query_id
+        - parent_query_id
+        - interaction_reason
+        - user_id
+        - query_text_redacted
+        - text_storage_status
+        - platform
+        - platform_source
+        - hit_status
+        - outcome
+        - chosen_rank
+        - push_method
+        - release_id
+        - latency_ms
+        - created_at
+        - escalate_actions
+        - candidates
+      properties:
+        query_id:
+          type: string
+          format: uuid
+        root_query_id:
+          type: string
+          format: uuid
+          description: 沿 parent_query_id 追溯得到的 original query_id。
+        parent_query_id:
+          type: [string, 'null']
+          format: uuid
+        interaction_reason:
+          $ref: '#/components/schemas/InteractionReason'
+        user_id:
+          type: string
+          minLength: 1
+        query_text_redacted:
+          type: [string, 'null']
+          description: text_storage_status=suppressed 时必须为 null。
+        text_storage_status:
+          type: string
+          enum: [stored, suppressed]
+        platform:
+          $ref: '#/components/schemas/Platform'
+        platform_source:
+          $ref: '#/components/schemas/PlatformSource'
+        hit_status:
+          $ref: '#/components/schemas/HitStatus'
+        outcome:
+          oneOf:
+            - $ref: '#/components/schemas/AdoptionOutcome'
+            - type: 'null'
+        chosen_rank:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 3
+        push_method:
+          oneOf:
+            - $ref: '#/components/schemas/PushMethod'
+            - type: 'null'
+        release_id:
+          type: string
+          minLength: 1
+        latency_ms:
+          type: [integer, 'null']
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        escalate_actions:
+          type: array
+          description: 非终态辅助事实；按 action 去重，不证明外部人工已接单或已解决。
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/EscalationFact'
+        candidates:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/MetricCandidate'
+    EscalationFact:
+      type: object
+      additionalProperties: false
+      required: [escalate_id, action, created_at]
+      properties:
+        escalate_id:
+          type: string
+          minLength: 1
+        action:
+          $ref: '#/components/schemas/EscalationAction'
+        created_at:
+          type: string
+          format: date-time
+    MetricsStreamResponse:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricsStreamItem'
+        next_cursor:
+          type:
+            - string
+            - 'null'
+          description: 不透明 base64url cursor；无更多数据时为 null。
+
+    IterationTaskStatus:
+      type: string
+      enum: [open, in_progress, resolved, wont_fix]
+    IterationTaskCause:
+      type: string
+      enum: [content_gap, ranking, stale, mixed]
+    IterationTask:
+      type: object
+      additionalProperties: false
+      required:
+        - task_id
+        - signal_id
+        - cluster_key
+        - sample_query_ids
+        - suspected_cause
+        - suggested_script_ids
+        - status
+        - version
+        - created_at
+        - updated_at
+      properties:
+        task_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        signal_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        cluster_key:
+          type: string
+          minLength: 1
+          maxLength: 512
+        sample_query_ids:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+        suspected_cause:
+          $ref: '#/components/schemas/IterationTaskCause'
+        suggested_script_ids:
+          type: array
+          maxItems: 50
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+        status:
+          $ref: '#/components/schemas/IterationTaskStatus'
+        assignee_role:
+          type: [string, 'null']
+          maxLength: 128
+        resolution:
+          type: [string, 'null']
+          enum: [resolved, wont_fix, null]
+        resolution_note:
+          type: [string, 'null']
+          maxLength: 2000
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: [string, 'null']
+          format: date-time
+    IterationTaskListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/IterationTask'
+        next_cursor:
+          type: [string, 'null']
+    IterationTaskStartRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version]
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+    IterationTaskCloseRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, status, resolution_note]
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [resolved, wont_fix]
+        resolution_note:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    WorkOrderImportRequest:
+      type: object
+      additionalProperties: false
+      required: [file, source_system, mapping_version]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 批准的 CSV/XLSX；原始文件名不进入业务分析结果或导出文件名。
+        source_system:
+          type: string
+          minLength: 1
+          maxLength: 128
+          example: banniu_export
+        mapping_version:
+          type: string
+          minLength: 1
+          maxLength: 128
+        data_from:
+          type: string
+          format: date-time
+        data_to:
+          type: string
+          format: date-time
+    WorkOrderImportAcceptedResponse:
+      type: object
+      additionalProperties: false
+      required: [import_batch_id, status]
+      properties:
+        import_batch_id:
+          type: string
+          minLength: 1
+        status:
+          const: validating
+    WorkOrderImportStatus:
+      type: string
+      enum: [received, validating, ready, failed]
+    WorkOrderImportIssueCode:
+      type: string
+      enum:
+        - MISSING_REQUIRED_FIELD
+        - INVALID_FIELD_TYPE
+        - INVALID_VALUE
+        - DUPLICATE_SOURCE_RECORD
+        - UNKNOWN_COLUMN
+        - SENSITIVE_COLUMN
+        - INVALID_DATE
+        - INVALID_DURATION
+        - HASH_MISMATCH
+        - UNSUPPORTED_FORMAT
+        - FORMULA_DETECTED
+        - ROW_LIMIT_EXCEEDED
+        - FILE_TOO_LARGE
+    WorkOrderImportFailureReport:
+      type: object
+      additionalProperties: false
+      required: [code, diagnostic_id]
+      properties:
+        code:
+          type: string
+          enum:
+            - VALIDATION_FAILED
+            - SOURCE_UNREADABLE
+            - HASH_MISMATCH
+            - UNSUPPORTED_FORMAT
+            - STORAGE_UNAVAILABLE
+            - MAX_ATTEMPTS_EXHAUSTED
+        diagnostic_id:
+          type: string
+          pattern: '^diag_[0-9a-f]{32}$'
+        row:
+          type: integer
+          minimum: 1
+        column:
+          type: integer
+          minimum: 1
+        error_count:
+          type: integer
+          minimum: 1
+        issue_codes:
+          type: array
+          maxItems: 13
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/WorkOrderImportIssueCode'
+    WorkOrderImportStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - import_batch_id
+        - status
+        - source_system
+        - mapping_version
+        - record_count
+        - accepted_count
+        - rejected_count
+        - error_report
+        - created_at
+      properties:
+        import_batch_id:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/WorkOrderImportStatus'
+        source_system:
+          type: string
+          minLength: 1
+        mapping_version:
+          type: string
+          minLength: 1
+        record_count:
+          type: integer
+          minimum: 0
+        accepted_count:
+          type: integer
+          minimum: 0
+        rejected_count:
+          type: integer
+          minimum: 0
+        data_from:
+          type: [string, 'null']
+          format: date-time
+        data_to:
+          type: [string, 'null']
+          format: date-time
+        error_report:
+          oneOf:
+            - $ref: '#/components/schemas/WorkOrderImportFailureReport'
+            - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: [string, 'null']
+          format: date-time
+    WorkOrderAnalysisScope:
+      type: object
+      additionalProperties: false
+      required: [from, to]
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        import_batch_id: { type: [string, 'null'] }
+        channel: { type: [string, 'null'] }
+        category: { type: [string, 'null'] }
+        issue_type: { type: [string, 'null'] }
+        status: { type: [string, 'null'] }
+        error_type: { type: [string, 'null'] }
+        escalated: { type: [boolean, 'null'] }
+    WorkOrderAnalysisTotals:
+      type: object
+      additionalProperties: false
+      required: [record_count, escalated_count, error_count]
+      properties:
+        record_count: { type: integer, minimum: 0 }
+        escalated_count: { type: integer, minimum: 0 }
+        error_count: { type: integer, minimum: 0 }
+    WorkOrderDimensionBucket:
+      type: object
+      additionalProperties: false
+      required: [key, count]
+      properties:
+        key:
+          type: [string, 'null']
+          description: null 表示未知，不得改写为 0 或“无问题”。
+        count:
+          type: integer
+          minimum: 0
+    WorkOrderHandlingTime:
+      type: object
+      additionalProperties: false
+      required: [sample_count, median_seconds, p90_seconds]
+      properties:
+        sample_count: { type: integer, minimum: 0 }
+        median_seconds: { type: [number, 'null'], minimum: 0 }
+        p90_seconds: { type: [number, 'null'], minimum: 0 }
+    WorkOrderTrendPoint:
+      type: object
+      additionalProperties: false
+      required: [bucket_start, count]
+      properties:
+        bucket_start:
+          type: string
+          format: date-time
+        count:
+          type: integer
+          minimum: 0
+    WorkOrderAnalysisResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - scope
+        - totals
+        - by_category
+        - by_issue_type
+        - by_error_type
+        - handling_time
+        - trend
+        - refreshed_at
+      properties:
+        scope:
+          $ref: '#/components/schemas/WorkOrderAnalysisScope'
+        totals:
+          $ref: '#/components/schemas/WorkOrderAnalysisTotals'
+        by_category:
+          type: array
+          items: { $ref: '#/components/schemas/WorkOrderDimensionBucket' }
+        by_issue_type:
+          type: array
+          items: { $ref: '#/components/schemas/WorkOrderDimensionBucket' }
+        by_error_type:
+          type: array
+          items: { $ref: '#/components/schemas/WorkOrderDimensionBucket' }
+        handling_time:
+          $ref: '#/components/schemas/WorkOrderHandlingTime'
+        trend:
+          type: array
+          items: { $ref: '#/components/schemas/WorkOrderTrendPoint' }
+        refreshed_at:
+          type: string
+          format: date-time
+    WorkOrderRecord:
+      type: object
+      additionalProperties: false
+      description: 标准化白名单投影；不含原始客户、订单或工单长编号。
+      required:
+        - record_id
+        - import_batch_id
+        - source_record_hash
+        - escalated
+        - quality_tags
+        - normalization_version
+        - created_at
+      properties:
+        record_id: { type: string, minLength: 1 }
+        import_batch_id: { type: string, minLength: 1 }
+        source_record_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        category: { type: [string, 'null'] }
+        issue_type: { type: [string, 'null'] }
+        product_ref_hash: { type: [string, 'null'], pattern: '^[0-9a-f]{64}$' }
+        channel: { type: [string, 'null'] }
+        status: { type: [string, 'null'] }
+        opened_at: { type: [string, 'null'], format: date-time }
+        closed_at: { type: [string, 'null'], format: date-time }
+        handling_seconds: { type: [integer, 'null'], minimum: 0 }
+        error_type: { type: [string, 'null'] }
+        escalated: { type: boolean }
+        quality_tags:
+          type: array
+          uniqueItems: true
+          items: { type: string }
+        normalization_version: { type: string, minLength: 1 }
+        created_at: { type: string, format: date-time }
+    WorkOrderRecordListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, scope]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkOrderRecord'
+        next_cursor:
+          type: [string, 'null']
+        scope:
+          $ref: '#/components/schemas/WorkOrderAnalysisScope'
+
+    ImportStatus:
+      type: string
+      enum: [validating, failed, staged, publishing, published, rolled_back]
+      description: |
+        published 是 batch 终态；后续 rollback 不修改原 batch。取消 validating/staged
+        批次后也使用 failed，并在 error_report.code 中标记 CANCELLED。rolled_back 仅为
+        旧数据只读兼容值，新迁移不再写入。
+    ImportOperation:
+      type: string
+      enum: [upsert, withdraw]
+      default: upsert
+    FileImportRequest:
+      type: object
+      additionalProperties: false
+      required: [file, source_bindings]
+      description: |
+        文件行由受控 worker 规范化为 ContentImportRowContract。行号不是 question_id 的输入。
+        文件中不得含 placeholder values 或渲染后 Answer。
+      x-normalized-row-schema:
+        $ref: '#/components/schemas/ContentImportRowContract'
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 原始 CSV 或 XLSX 文件；文件名和 multipart boundary 不参与 request hash。
+        source_bindings:
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          x-unique-by: domain
+          items:
+            $ref: '#/components/schemas/AuthoritativeSourceBinding'
+    FeishuImportRequest:
+      type: object
+      additionalProperties: false
+      required: [source_type, source_bindings]
+      description: |
+        服务端读取的每行同样必须通过 ContentImportRowContract；结构/安全/来源失败整批失败，
+        只有质量问题可进 quarantined。
+      x-normalized-row-schema:
+        $ref: '#/components/schemas/ContentImportRowContract'
+      properties:
+        source_type:
+          const: feishu_api
+        source_bindings:
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          x-unique-by: domain
+          items:
+            $ref: '#/components/schemas/AuthoritativeSourceBinding'
+          description: 服务端按登记表解析飞书定位与凭据；客户端不得提交内部 URL 或 token。
+    ContentQualityStatus:
+      type: string
+      enum: [clean, quarantined]
+    ContentQualityIssueCode:
+      type: string
+      enum:
+        - UNKNOWN_INTENT
+        - INTENT_MAPPING_REQUIRED
+        - UNRESOLVED_CONFLICT
+        - REVIEW_EVIDENCE_MISSING
+        - QUESTION_DUPLICATE
+        - QUESTION_HASH_MISMATCH
+        - QUESTION_ORIGIN_UNVERIFIED
+        - CONTENT_NEEDS_REVIEW
+    ContentImportUpsertRow:
+      type: object
+      additionalProperties: false
+      required:
+        - staging_id
+        - script_id
+        - operation
+        - category
+        - title
+        - answer_text
+        - content_hash
+        - source_version_id
+        - owner_role
+        - review_due_at
+        - platform_scope
+        - product_scope_type
+        - product_scope_refs
+        - effective_from
+        - effective_to
+        - intent_taxonomy_version
+        - intent_id
+        - risk_level
+        - risk_categories
+        - has_conflict
+        - placeholder_keys
+        - questions_json
+        - questions_grams_text
+        - title_grams_text
+        - answer_grams_text
+        - search_fallback_text
+        - quality_status
+        - quality_issue_codes
+      properties:
+        staging_id: { type: string, minLength: 1, maxLength: 128 }
+        script_id: { type: string, minLength: 1, maxLength: 128 }
+        operation: { const: upsert }
+        category: { $ref: '#/components/schemas/ScriptCategory' }
+        title: { type: string, minLength: 1, maxLength: 500 }
+        answer_text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: 发布模板原文；只可含 placeholder_keys 声明的 `{订单号}`/`{日期}`。
+        content_hash:
+          $ref: '#/components/schemas/ContentHash'
+          description: 引用受限审核服务已经绑定的目标治理快照；worker 不得据此自报审核主体。
+        source_version_id: { $ref: '#/components/schemas/AuthoritativeSourceVersionId' }
+        owner_role: { type: string, minLength: 1, maxLength: 128 }
+        review_due_at: { type: string, format: date-time }
+        platform_scope: { $ref: '#/components/schemas/PlatformScope' }
+        product_scope_type: { $ref: '#/components/schemas/ProductScopeType' }
+        product_scope_refs: { $ref: '#/components/schemas/ProductScopeRefs' }
+        campaign_tag: { type: [string, 'null'], minLength: 1, maxLength: 128 }
+        effective_from: { type: string, format: date-time }
+        effective_to:
+          type: [string, 'null']
+          format: date-time
+          description: 排他上界；effective_to 非空时必须严格晚于 effective_from。
+        intent_taxonomy_version: { $ref: '#/components/schemas/IntentTaxonomyVersion' }
+        intent_id: { $ref: '#/components/schemas/IntentId' }
+        risk_level: { $ref: '#/components/schemas/RiskLevel' }
+        risk_categories: { $ref: '#/components/schemas/RiskCategories' }
+        has_conflict: { type: boolean }
+        placeholder_keys:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/PlaceholderKey' }
+        questions_json:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/ContentQuestion' }
+        questions_grams_text: { type: string, minLength: 1, maxLength: 200000 }
+        title_grams_text: { type: string, minLength: 1, maxLength: 20000 }
+        answer_grams_text: { type: string, minLength: 1, maxLength: 200000 }
+        search_fallback_text: { type: string, minLength: 1, maxLength: 20000 }
+        quality_status: { $ref: '#/components/schemas/ContentQualityStatus' }
+        quality_issue_codes:
+          type: array
+          uniqueItems: true
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ContentQualityIssueCode' }
+      allOf:
+        - oneOf:
+            - properties:
+                product_scope_type: { const: storewide }
+                product_scope_refs: { maxItems: 0 }
+            - properties:
+                product_scope_type: { enum: [category, sku] }
+                product_scope_refs: { minItems: 1 }
+        - oneOf:
+            - properties:
+                risk_level: { enum: [low, medium] }
+                risk_categories: { maxItems: 0 }
+            - properties:
+                risk_level: { const: high }
+                risk_categories: { minItems: 1 }
+        - oneOf:
+            - properties:
+                quality_status: { const: clean }
+                quality_issue_codes: { maxItems: 0 }
+            - properties:
+                quality_status: { const: quarantined }
+                quality_issue_codes: { minItems: 1 }
+    ContentImportWithdrawRow:
+      type: object
+      additionalProperties: false
+      required:
+        - staging_id
+        - script_id
+        - operation
+        - category
+        - source_version_id
+        - quality_status
+        - quality_issue_codes
+      properties:
+        staging_id: { type: string, minLength: 1, maxLength: 128 }
+        script_id: { type: string, minLength: 1, maxLength: 128 }
+        operation: { const: withdraw }
+        category: { $ref: '#/components/schemas/ScriptCategory' }
+        source_version_id: { $ref: '#/components/schemas/AuthoritativeSourceVersionId' }
+        quality_status: { const: clean }
+        quality_issue_codes: { type: array, maxItems: 0 }
+    ContentImportRowContract:
+      oneOf:
+        - $ref: '#/components/schemas/ContentImportUpsertRow'
+        - $ref: '#/components/schemas/ContentImportWithdrawRow'
+      description: |
+        这是受控 worker 到 SQL finalizer 的规范化行合同，不是新 HTTP route。placeholder values、
+        渲染后 Answer、原始客户文本和内部飞书 token 均不在该 schema，因而不可入库。审核
+        主体、审核 EVD、审核模式和 quality_gate_passed 也不在本合同；finalizer 只能从
+        content_review_decisions 与受限质量 evidence 派生这些结论。
+    ImportAcceptedResponse:
+      type: object
+      additionalProperties: false
+      required: [import_batch_id, status, source_binding_hash]
+      properties:
+        import_batch_id:
+          type: string
+          minLength: 1
+        status:
+          const: validating
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+    ImportErrorReport:
+      oneOf:
+        - $ref: '#/components/schemas/ImportFailureReport'
+        - type: 'null'
+    ImportFailureReport:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [code, diagnostic_id]
+          properties:
+            code:
+              const: CANCELLED
+            diagnostic_id:
+              $ref: '#/components/schemas/ImportDiagnosticId'
+        - type: object
+          additionalProperties: false
+          required: [code, diagnostic_id, attempts, max_attempts]
+          properties:
+            code:
+              const: MAX_ATTEMPTS_EXHAUSTED
+            diagnostic_id:
+              $ref: '#/components/schemas/ImportDiagnosticId'
+            attempts:
+              type: integer
+              minimum: 1
+            max_attempts:
+              type: integer
+              minimum: 1
+        - type: object
+          additionalProperties: false
+          required: [code, diagnostic_id]
+          properties:
+            code:
+              enum:
+                - VALIDATION_FAILED
+                - SOURCE_UNREADABLE
+                - HASH_MISMATCH
+                - UNSUPPORTED_FORMAT
+                - STORAGE_UNAVAILABLE
+                - SOURCE_NOT_ELIGIBLE
+                - SOURCE_SUSPENDED
+                - SOURCE_DOMAIN_MISMATCH
+                - SOURCE_SNAPSHOT_MISMATCH
+                - SOURCE_SET_INCOMPLETE
+                - CONTENT_CONTRACT_INVALID
+                - GOVERNANCE_HASH_MISMATCH
+            diagnostic_id:
+              $ref: '#/components/schemas/ImportDiagnosticId'
+            row:
+              type: integer
+              minimum: 1
+            column:
+              type: integer
+              minimum: 1
+            error_count:
+              type: integer
+              minimum: 1
+            issue_codes:
+              type: array
+              maxItems: 26
+              uniqueItems: true
+              items:
+                $ref: '#/components/schemas/ImportIssueCode'
+    ImportDiagnosticId:
+      type: string
+      pattern: '^diag_[0-9a-f]{32}$'
+      description: 由数据库随机 UUID 生成，仅用于运维关联受限诊断；不得由 worker、文件内容、路径或异常文本派生。
+    ImportIssueCode:
+      type: string
+      enum:
+        - MISSING_REQUIRED_FIELD
+        - INVALID_FIELD_TYPE
+        - INVALID_VALUE
+        - DUPLICATE_SCRIPT_ID
+        - UNKNOWN_SCRIPT_ID
+        - INVALID_EFFECTIVE_WINDOW
+        - MISSING_EFFECTIVE_WINDOW
+        - HASH_MISMATCH
+        - UNSUPPORTED_FORMAT
+        - MACRO_DETECTED
+        - EXTERNAL_LINK_DETECTED
+        - ROW_LIMIT_EXCEEDED
+        - CONTENT_TOO_LARGE
+        - SOURCE_NOT_REGISTERED
+        - SOURCE_NOT_CANONICAL
+        - SOURCE_SUSPENDED
+        - SOURCE_DOMAIN_MISMATCH
+        - SOURCE_SNAPSHOT_MISMATCH
+        - SOURCE_SET_INCOMPLETE
+        - MISSING_PLATFORM_SCOPE
+        - INVALID_PRODUCT_SCOPE
+        - INVALID_TAXONOMY_REF
+        - INVALID_QUESTION_IDENTITY
+        - INVALID_REVIEW_EVIDENCE
+        - INVALID_PLACEHOLDER_TEMPLATE
+        - GOVERNANCE_HASH_MISMATCH
+    ImportPreviewItem:
+      type: object
+      additionalProperties: false
+      required:
+        - script_id
+        - operation
+        - category
+        - source_version_id
+        - source_ref
+        - quality_status
+        - quality_issue_codes
+        - quality_gate_passed
+      properties:
+        script_id:
+          type: string
+          minLength: 1
+        operation:
+          $ref: '#/components/schemas/ImportOperation'
+        category:
+          $ref: '#/components/schemas/ScriptCategory'
+        source_version_id:
+          $ref: '#/components/schemas/AuthoritativeSourceVersionId'
+        source_ref:
+          $ref: '#/components/schemas/SafeSourceRef'
+        title:
+          type:
+            - string
+            - 'null'
+        answer_text:
+          type:
+            - string
+            - 'null'
+        content_hash:
+          oneOf:
+            - $ref: '#/components/schemas/ContentHash'
+            - type: 'null'
+        platform_scope:
+          oneOf:
+            - $ref: '#/components/schemas/PlatformScope'
+            - type: 'null'
+        product_scope_type:
+          oneOf:
+            - $ref: '#/components/schemas/ProductScopeType'
+            - type: 'null'
+        product_scope_refs:
+          oneOf:
+            - $ref: '#/components/schemas/ProductScopeRefs'
+            - type: 'null'
+        effective_from: { type: [string, 'null'], format: date-time }
+        effective_to: { type: [string, 'null'], format: date-time }
+        intent_taxonomy_version:
+          oneOf:
+            - $ref: '#/components/schemas/IntentTaxonomyVersion'
+            - type: 'null'
+        intent_id:
+          oneOf:
+            - $ref: '#/components/schemas/IntentId'
+            - type: 'null'
+        risk_level:
+          oneOf:
+            - $ref: '#/components/schemas/RiskLevel'
+            - type: 'null'
+        risk_categories:
+          oneOf:
+            - $ref: '#/components/schemas/RiskCategories'
+            - type: 'null'
+        has_conflict: { type: [boolean, 'null'] }
+        review_mode:
+          oneOf:
+            - $ref: '#/components/schemas/ReviewMode'
+            - type: 'null'
+        primary_review_evd: { type: [string, 'null'], minLength: 1, maxLength: 256 }
+        secondary_review_evd: { type: [string, 'null'], minLength: 1, maxLength: 256 }
+        placeholder_keys:
+          type: [array, 'null']
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/PlaceholderKey' }
+        questions:
+          type: [array, 'null']
+          items: { $ref: '#/components/schemas/ContentQuestion' }
+        quality_status:
+          $ref: '#/components/schemas/ContentQualityStatus'
+        quality_issue_codes:
+          type: array
+          uniqueItems: true
+          maxItems: 8
+          items: { $ref: '#/components/schemas/ContentQualityIssueCode' }
+        quality_gate_passed: { type: boolean }
+    ContentQualityReviewSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - plan_id
+        - sampling_policy_version
+        - cutoff_at
+        - clean_population_count
+        - ordinary_population_count
+        - mandatory_full_review_count
+        - initial_sample_target
+        - expanded_sample_target
+        - initial_sample_reviewed_count
+        - initial_defect_count
+        - expanded_sample_reviewed_count
+        - expanded_defect_count
+        - mandatory_reviewed_count
+        - mandatory_defect_count
+        - publishable_clean_count
+        - review_quarantined_count
+        - conclusion
+        - evidence_ref
+      properties:
+        plan_id:
+          type: string
+          pattern: '^qplan_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+        sampling_policy_version: { type: string, minLength: 1, maxLength: 128 }
+        cutoff_at: { type: string, format: date-time }
+        clean_population_count: { type: integer, minimum: 0, maximum: 5000 }
+        ordinary_population_count: { type: integer, minimum: 0, maximum: 5000 }
+        mandatory_full_review_count: { type: integer, minimum: 0, maximum: 5000 }
+        initial_sample_target: { type: integer, minimum: 0, maximum: 5000 }
+        expanded_sample_target: { type: integer, minimum: 0, maximum: 5000 }
+        initial_sample_reviewed_count: { type: integer, minimum: 0, maximum: 5000 }
+        initial_defect_count: { type: integer, minimum: 0, maximum: 5000 }
+        expanded_sample_reviewed_count: { type: [integer, 'null'], minimum: 0, maximum: 5000 }
+        expanded_defect_count: { type: [integer, 'null'], minimum: 0, maximum: 5000 }
+        mandatory_reviewed_count: { type: integer, minimum: 0, maximum: 5000 }
+        mandatory_defect_count: { type: integer, minimum: 0, maximum: 5000 }
+        publishable_clean_count: { type: integer, minimum: 0, maximum: 5000 }
+        review_quarantined_count: { type: integer, minimum: 0, maximum: 5000 }
+        conclusion: { type: string, enum: [passed, blocked] }
+        evidence_ref: { type: string, minLength: 1, maxLength: 256 }
+      description: |
+        服务端受限证据投影；不是上传文件或普通 worker 可写字段。high/conflict 行计入
+        mandatory_full_review_count 并 100% 复核。
+    ImportStatusResponseBase:
+      type: object
+      additionalProperties: false
+      required:
+        - import_batch_id
+        - status
+        - base_release_id
+        - source_binding_hash
+        - source_bindings
+        - error_report
+        - staged_count
+        - clean_count
+        - quarantined_count
+        - quality_gate_passed
+        - quality_review
+        - preview
+      properties:
+        import_batch_id:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/ImportStatus'
+        base_release_id:
+          type: [string, 'null']
+          description: enqueue 时锁定的 current release；首次发布前为 null。
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+        source_bindings:
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          x-unique-by: domain
+          items:
+            $ref: '#/components/schemas/AuthoritativeSourceBindingStatus'
+        error_report:
+          $ref: '#/components/schemas/ImportErrorReport'
+        staged_count:
+          type: integer
+          minimum: 0
+        clean_count:
+          type: integer
+          minimum: 0
+        quarantined_count:
+          type: integer
+          minimum: 0
+        quality_gate_passed:
+          type: boolean
+          description: 至少一条 clean 行通过批次抽检门；不代表 quarantined 行可发布。
+        quality_review:
+          oneOf:
+            - $ref: '#/components/schemas/ContentQualityReviewSummary'
+            - type: 'null'
+          description: validating/failed 尚无完整证据时可为 null；进入 staged 前必须已通过。
+        preview:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportPreviewItem'
+    ImportStatusResponse:
+      oneOf:
+        - allOf:
+            - $ref: '#/components/schemas/ImportStatusResponseBase'
+            - type: object
+              properties:
+                status:
+                  const: failed
+                error_report:
+                  $ref: '#/components/schemas/ImportFailureReport'
+        - allOf:
+            - $ref: '#/components/schemas/ImportStatusResponseBase'
+            - type: object
+              properties:
+                status:
+                  enum: [validating, staged, publishing, published, rolled_back]
+                error_report:
+                  type: 'null'
+    CancelImportRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type:
+            - string
+            - 'null'
+    CancelImportResponse:
+      type: object
+      required: [ok, import_batch_id, status]
+      properties:
+        ok:
+          const: true
+        import_batch_id:
+          type: string
+          minLength: 1
+        status:
+          const: failed
+    PublishRequest:
+      type: object
+      required: [import_batch_id, title, summary]
+      properties:
+        import_batch_id:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+        summary:
+          type:
+            - string
+            - 'null'
+    PublishResponse:
+      type: object
+      required: [release_id, release_seq, announcement_id, source_binding_hash]
+      properties:
+        release_id:
+          type: string
+          minLength: 1
+        release_seq:
+          type: integer
+          minimum: 1
+        announcement_id:
+          type: string
+          minLength: 1
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+    RollbackRequest:
+      type: object
+      required: [target_release_id, title, summary]
+      properties:
+        target_release_id:
+          type: string
+          minLength: 1
+        title:
+          type:
+            - string
+            - 'null'
+        summary:
+          type:
+            - string
+            - 'null'
+    RollbackResponse:
+      allOf:
+        - $ref: '#/components/schemas/PublishResponse'
+        - type: object
+          required: [rollback_of_release_id]
+          properties:
+            rollback_of_release_id:
+              type: string
+              minLength: 1
+
+    Announcement:
+      type: object
+      additionalProperties: false
+      description: 公开公告的封闭白名单投影；不得透传创建主体或内部定位字段。
+      required: [title, summary, created_at]
+      properties:
+        title:
+          type: string
+        summary:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+    CurrentAnnouncementResponse:
+      type: object
+      additionalProperties: false
+      description: handler 必须显式映射顶层、offline_lease 与 announcement 白名单。
+      required: [current_release_id, release_seq, source_binding_hash, offline_lease, announcement]
+      properties:
+        current_release_id:
+          type: string
+          minLength: 1
+        release_seq:
+          type: integer
+          minimum: 1
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+        offline_lease:
+          $ref: '#/components/schemas/OfflineSnapshotLease'
+        announcement:
+          oneOf:
+            - $ref: '#/components/schemas/Announcement'
+            - type: 'null'
+    PublicSnapshotQuestion:
+      type: object
+      additionalProperties: false
+      description: |
+        离线检索所需的最小 Question 投影。禁止暴露 origin HMAC/密钥版本、
+        source_query_id、source_asset_id、promotion review、role 或时间字段。
+      required: [question_id, question_version, question_text, question_hash, semantic_family_id]
+      properties:
+        question_id:
+          type: string
+          pattern: '^q_[A-Za-z0-9][A-Za-z0-9_-]{7,126}$'
+        question_version: { type: integer, minimum: 1 }
+        question_text: { type: string, minLength: 1, maxLength: 500 }
+        question_hash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        semantic_family_id:
+          type: string
+          pattern: '^sf_[A-Za-z0-9][A-Za-z0-9._-]{0,126}$'
+    SnapshotItem:
+      type: object
+      additionalProperties: false
+      description: |
+        固定 release 中的不可变、封闭公开投影。响应中出现不代表该项当前有效；
+        客户端每次检索都必须自行执行有效期过滤。禁止 DB row/internal object spread。
+      required:
+        - script_id
+        - script_version
+        - content_hash
+        - title
+        - category
+        - answer_text
+        - platform_scope
+        - product_scope_type
+        - product_scope_refs
+        - effective_from
+        - effective_to
+        - intent_taxonomy_version
+        - intent_id
+        - risk_level
+        - risk_categories
+        - has_conflict
+        - placeholder_keys
+        - questions
+      properties:
+        script_id:
+          type: string
+          minLength: 1
+        script_version:
+          type: integer
+          minimum: 1
+        content_hash:
+          $ref: '#/components/schemas/ContentHash'
+        title:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/ScriptCategory'
+        answer_text:
+          type: string
+          minLength: 1
+        platform_scope:
+          $ref: '#/components/schemas/PlatformScope'
+        product_scope_type:
+          $ref: '#/components/schemas/ProductScopeType'
+        product_scope_refs:
+          $ref: '#/components/schemas/ProductScopeRefs'
+        effective_from:
+          type: string
+          format: date-time
+          description: |
+            包含下界。完整 release snapshot 可包含未到生效时间的项；
+            客户端只能在 `effective_from <= now` 时将其纳入本地检索。
+        effective_to:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: |
+            排他上界。完整 release snapshot 可包含已过期项，服务端不按当前时间过滤；
+            客户端只能在 `effective_to IS NULL OR now < effective_to` 时纳入本地检索，
+            `now == effective_to` 必须排除。
+        intent_taxonomy_version:
+          $ref: '#/components/schemas/IntentTaxonomyVersion'
+        intent_id:
+          $ref: '#/components/schemas/IntentId'
+        risk_level:
+          $ref: '#/components/schemas/RiskLevel'
+        risk_categories:
+          $ref: '#/components/schemas/RiskCategories'
+        has_conflict: { type: boolean }
+        placeholder_keys:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/PlaceholderKey' }
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicSnapshotQuestion'
+      allOf:
+        - oneOf:
+            - properties:
+                product_scope_type: { const: storewide }
+                product_scope_refs: { maxItems: 0 }
+            - properties:
+                product_scope_type: { enum: [category, sku] }
+                product_scope_refs: { minItems: 1 }
+        - oneOf:
+            - properties:
+                risk_level: { enum: [low, medium] }
+                risk_categories: { maxItems: 0 }
+            - properties:
+                risk_level: { const: high }
+                risk_categories: { minItems: 1 }
+    SnapshotResponse:
+      type: object
+      additionalProperties: false
+      description: |
+        固定 release 的完整、不可变分页快照响应。页集合不按生效时间改变；
+        租约有效时，客户端每次本地检索必须再执行每项的时间窗口过滤。
+      required: [release_id, release_seq, source_binding_hash, offline_lease, items, next_cursor]
+      properties:
+        release_id:
+          type: string
+          minLength: 1
+        release_seq:
+          type: integer
+          minimum: 1
+        source_binding_hash:
+          $ref: '#/components/schemas/SourceBindingHash'
+        offline_lease:
+          $ref: '#/components/schemas/OfflineSnapshotLease'
+        items:
+          type: array
+          description: 当页完整快照项；不是“当前有效项”的服务端过滤结果。
+          items:
+            $ref: '#/components/schemas/SnapshotItem'
+        next_cursor:
+          type:
+            - string
+            - 'null'
+          description: 本页最后一个 script_id；无更多时为 null。
+    AnnouncementAckRequest:
+      type: object
+      additionalProperties: false
+      required: [client_id, release_id, release_seq, offline_lease_token]
+      properties:
+        client_id:
+          type: string
+          minLength: 1
+        release_id:
+          type: string
+          minLength: 1
+        release_seq:
+          type: integer
+          minimum: 1
+        offline_lease_token:
+          $ref: '#/components/schemas/OfflineSnapshotLeaseToken'
+    OkResponse:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          const: true
+
+    PolicyFlagKey:
+      type: string
+      enum: [rewrite, auto_send, autofill_adapter, llm_ranker, metrics_experimental_kpi]
+    MutablePolicyFlagKey:
+      type: string
+      enum: [autofill_adapter, llm_ranker, metrics_experimental_kpi]
+    Phase1HardOffPolicyFlagKey:
+      type: string
+      enum: [rewrite, auto_send]
+    PolicyResponse:
+      type: object
+      required: [rewrite, auto_send, autofill_adapter, llm_ranker, metrics_experimental_kpi, auth_mode]
+      properties:
+        rewrite:
+          const: false
+          description: Phase 1 hard-off。
+        auto_send:
+          const: false
+          description: Phase 1 hard-off；启用需独立立项与 /v2。
+        autofill_adapter:
+          type: boolean
+        llm_ranker:
+          type: boolean
+        metrics_experimental_kpi:
+          type: boolean
+        auth_mode:
+          $ref: '#/components/schemas/AuthMode'
+    PolicyFlagUpdateRequest:
+      oneOf:
+        - $ref: '#/components/schemas/MutablePolicyFlagUpdateRequest'
+        - $ref: '#/components/schemas/HardOffPolicyFlagUpdateRequest'
+      discriminator:
+        propertyName: flag_key
+        mapping:
+          rewrite: '#/components/schemas/HardOffPolicyFlagUpdateRequest'
+          auto_send: '#/components/schemas/HardOffPolicyFlagUpdateRequest'
+          autofill_adapter: '#/components/schemas/MutablePolicyFlagUpdateRequest'
+          llm_ranker: '#/components/schemas/MutablePolicyFlagUpdateRequest'
+          metrics_experimental_kpi: '#/components/schemas/MutablePolicyFlagUpdateRequest'
+      description: |
+        hard-off 分支允许表达 flag_value=true 请求，以便合同明确该请求的 403
+        POLICY_DENIED 响应；允许通过语法校验不代表允许持久化。
+    MutablePolicyFlagUpdateRequest:
+      type: object
+      required: [flag_key, flag_value, adr_id]
+      properties:
+        flag_key:
+          $ref: '#/components/schemas/MutablePolicyFlagKey'
+        flag_value:
+          type: boolean
+        adr_id:
+          type:
+            - string
+            - 'null'
+          pattern: '^ADR-[A-Za-z0-9._-]+$'
+    HardOffPolicyFlagUpdateRequest:
+      type: object
+      required: [flag_key, flag_value, adr_id]
+      x-phase1-denied-when:
+        flag_value: true
+        responseStatus: 403
+        errorCode: POLICY_DENIED
+      properties:
+        flag_key:
+          $ref: '#/components/schemas/Phase1HardOffPolicyFlagKey'
+        flag_value:
+          type: boolean
+          description: false 可保持 hard-off；true 必须返回 403，且不得写库。
+        adr_id:
+          type:
+            - string
+            - 'null'
+          pattern: '^ADR-[A-Za-z0-9._-]+$'
+    PolicyFlagUpdateResponse:
+      type: object
+      required: [ok, flag_key, flag_value]
+      properties:
+        ok:
+          const: true
+        flag_key:
+          $ref: '#/components/schemas/PolicyFlagKey'
+        flag_value:
+          type: boolean

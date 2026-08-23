@@ -1,0 +1,38 @@
+@startuml CS-AI-C11-FourViews
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "PingFang SC, Microsoft YaHei, sans-serif"
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title 四个视角 · 自上而下\n目的：同一套系统，四张关注点（竖排，非左右并排）
+
+package "1 设计与开发视角" #E8F1FF {
+  card "看什么：边界 / 端口 / 数据模型 / SPI" as D1
+  card "产出：C4 · 时序 · 表结构 · API 合同" as D2
+  D1 -down-> D2
+}
+
+package "2 测试视角" #E6F7F2 {
+  card "看什么：parent/候选谱系 · 双账 · 幂等锁 · 泄漏" as T1
+  card "产出：失败分支时序 · 状态机 · 数据集隔离测试" as T2
+  T1 -down-> T2
+}
+
+package "3 运维视角" #FFF6E5 {
+  card "看什么：部署 · 扩容 · 限流 · 备份告警" as O1
+  card "产出：部署图 · 容量 · SLI 手册" as O2
+  O1 -down-> O2
+}
+
+package "4 架构图画法" #F3F0FF {
+  card "分层画 · 关系画清 · 颜色分层 · 图例" as M1
+  card "一图一问 · 实线同步虚线异步" as M2
+  M1 -down-> M2
+}
+
+D2 -down-> T1
+T2 -down-> O1
+O2 -down-> M1
+
+@enduml
