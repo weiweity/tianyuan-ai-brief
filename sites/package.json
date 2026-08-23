@@ -50,7 +50,7 @@
     "@redocly/cli": "^2.44.2",
     "ajv": "8.20.0",
     "axe-core": "4.12.1",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.14",
     "esbuild": "0.28.1",
     "jsdom": "29.1.1",
     "mermaid": "10.9.8",
