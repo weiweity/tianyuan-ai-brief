@@ -6,6 +6,13 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "playwright";
 
+import {
+  buildArchitectureProvenance,
+  parseArchitectureProvenance,
+  reconcileRenderedSvg,
+  sha256,
+  upsertArchitectureProvenance,
+} from "./architecture-diagram-provenance.mjs";
 import { architectureDiagrams } from "./customer-agent-architecture-diagrams.manifest.mjs";
 
 const sitesDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -100,6 +107,17 @@ function replaceEmbeddedSvg(html, id, svg) {
   return html.replace(pattern, `$1${svg.trim()}$2`);
 }
 
+async function calculateRendererSha256() {
+  const assets = await Promise.all(
+    ["plantuml.js", "viz-global.js"].map(async (fileName) => ({
+      fileName,
+      sha256: sha256(await readFile(path.join(coreDir, fileName))),
+    }))
+  );
+  return sha256(JSON.stringify(assets));
+}
+
+const rendererSha256 = await calculateRendererSha256();
 const { server, origin } = await startRendererServer();
 let browser;
 try {
@@ -108,9 +126,12 @@ try {
   await page.goto(`${origin}/index.html`, { waitUntil: "load" });
   await page.waitForFunction(() => window.rendererReady === true);
 
-  let board = await readFile(boardPath, "utf8");
+  const currentBoard = await readFile(boardPath, "utf8");
+  const previousProvenance = parseArchitectureProvenance(currentBoard);
+  let board = currentBoard;
   const differences = [];
   const renderedDiagrams = [];
+  const provenanceDiagrams = [];
   for (const { id, baseName } of architectureDiagrams) {
     const sourcePath = path.join(diagramDir, `${baseName}.puml`);
     const outputPath = path.join(svgDir, `${baseName}.svg`);
@@ -123,12 +144,30 @@ try {
     try {
       current = await readFile(outputPath, "utf8");
     } catch {}
-    if (current !== rendered) differences.push(path.relative(repoRoot, outputPath));
-    board = replaceEmbeddedSvg(board, id, rendered);
-    renderedDiagrams.push({ outputPath, baseName, rendered });
+    const sourceSha256 = sha256(source);
+    const reconciliation = reconcileRenderedSvg({
+      id,
+      current,
+      rendered,
+      sourceSha256,
+      rendererSha256,
+      previousProvenance,
+    });
+    if (reconciliation.changed) differences.push(path.relative(repoRoot, outputPath));
+    board = replaceEmbeddedSvg(board, id, reconciliation.canonical);
+    renderedDiagrams.push({ outputPath, baseName, rendered: reconciliation.canonical });
+    provenanceDiagrams.push({
+      id,
+      baseName,
+      sourceSha256,
+      svg: reconciliation.canonical,
+    });
   }
 
-  const currentBoard = await readFile(boardPath, "utf8");
+  board = upsertArchitectureProvenance(
+    board,
+    buildArchitectureProvenance({ rendererSha256, diagrams: provenanceDiagrams })
+  );
   if (currentBoard !== board) differences.push(path.relative(repoRoot, boardPath));
 
   if (checkOnly && differences.length > 0) {
