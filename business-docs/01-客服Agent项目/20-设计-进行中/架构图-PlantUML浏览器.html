@@ -1164,7 +1164,8 @@
       return parseFloat(window.getComputedStyle(node).fontSize) || 0;
     }).filter(function (fontSize) { return Number.isFinite(fontSize) && fontSize > 0; });
     if (!fontSizes.length) return 1;
-    var targetPx = window.innerWidth <= 700 ? 11.25 : 12.25;
+    // Keep mobile glyph bounds above the 12px readability gate after Linux Chromium subpixel rounding.
+    var targetPx = window.innerWidth <= 700 ? 11.5 : 12.25;
     return targetPx / Math.min.apply(null, fontSizes);
   }
 
