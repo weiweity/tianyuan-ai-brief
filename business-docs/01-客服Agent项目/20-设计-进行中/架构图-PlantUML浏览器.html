@@ -1074,7 +1074,8 @@
 <script>
 (function () {
   var state = {}; // id -> {scale, naturalW, naturalH, fitScale, readableScale, mode}
-  var MIN = 0.25, MAX = 4, STEP = 0.15;
+  // Keep one CSS-pixel margin above the 12px acceptance floor for SVG transform rounding.
+  var MIN = 0.25, MAX = 4, STEP = 0.15, READABLE_TEXT_FLOOR = 13;
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
@@ -1160,13 +1161,60 @@
     var stage = document.getElementById("stage-" + id);
     var svg = stage && stage.querySelector("svg");
     if (!svg) return 1;
-    var fontSizes = $all("text", svg).map(function (node) {
-      return parseFloat(window.getComputedStyle(node).fontSize) || 0;
-    }).filter(function (fontSize) { return Number.isFinite(fontSize) && fontSize > 0; });
-    if (!fontSizes.length) return 1;
-    // Keep mobile glyph bounds above the 12px readability gate after Linux Chromium subpixel rounding.
-    var targetPx = window.innerWidth <= 700 ? 11.5 : 12.25;
-    return targetPx / Math.min.apply(null, fontSizes);
+    var currentScale = 1;
+    var transform = window.getComputedStyle(stage).transform;
+    if (transform && transform !== "none" && window.DOMMatrixReadOnly) {
+      try {
+        var matrix = new window.DOMMatrixReadOnly(transform);
+        var measuredScale = Math.hypot(matrix.a, matrix.b);
+        if (Number.isFinite(measuredScale) && measuredScale > 0) currentScale = measuredScale;
+      } catch (err) {
+        // Invalid or unsupported transform syntax falls back to the unscaled measurement.
+      }
+    }
+    var intrinsicHeights = $all("text", svg).map(function (node) {
+      return node.getBoundingClientRect().height / currentScale;
+    }).filter(function (height) { return Number.isFinite(height) && height > 0; });
+    if (!intrinsicHeights.length) return 1;
+    // Seed from actual glyph bounds because font metrics differ across OS/browser fallbacks.
+    return READABLE_TEXT_FLOOR / Math.min.apply(null, intrinsicHeights);
+  }
+
+  function calibrateRenderedTextFloor(id) {
+    var st = ensureState(id);
+    var stage = document.getElementById("stage-" + id);
+    var svg = stage && stage.querySelector("svg");
+    if (!svg) return;
+    // SVG text bounds can snap down by a device pixel after CSS transforms on Linux Chromium.
+    // Feed the post-transform measurement back into the scale instead of trusting the seed alone.
+    for (var attempt = 0; attempt < 3; attempt += 1) {
+      var heights = $all("text", svg).map(function (node) {
+        return node.getBoundingClientRect().height;
+      }).filter(function (height) { return Number.isFinite(height) && height > 0; });
+      if (!heights.length) return;
+      var minimum = Math.min.apply(null, heights);
+      if (minimum >= READABLE_TEXT_FLOOR) return;
+      var correctedScale = Math.min(MAX, st.scale * READABLE_TEXT_FLOOR / minimum);
+      if (!Number.isFinite(correctedScale) || correctedScale <= st.scale) return;
+      st.scale = correctedScale;
+      st.readableScale = correctedScale;
+      apply2(id);
+    }
+  }
+
+  function settleRenderedTextFloor(id) {
+    requestAnimationFrame(function () {
+      var st = ensureState(id);
+      var panel = document.querySelector('.panel[data-id="' + id + '"]');
+      var stage = document.getElementById("stage-" + id);
+      if (!stage || !panel || panel.hidden || st.mode !== "readable") return;
+      var previousTransition = stage.style.transition;
+      stage.style.transition = "none";
+      calibrateRenderedTextFloor(id);
+      stage.getBoundingClientRect();
+      stage.style.transition = previousTransition;
+      focusReadableStart(id);
+    });
   }
 
   function focusReadableStart(id) {
@@ -1224,11 +1272,13 @@
     var previousTransition = stage ? stage.style.transition : "";
     if (stage) stage.style.transition = "none";
     apply2(id);
+    calibrateRenderedTextFloor(id);
     if (stage) {
       stage.getBoundingClientRect();
       stage.style.transition = previousTransition;
     }
     focusReadableStart(id);
+    settleRenderedTextFloor(id);
   }
 
   function fit(id, attempt) {
@@ -1286,9 +1336,7 @@
     // 仅在可见时 fit；隐藏 tab 不要用错误宽度初始化
     var panel = document.querySelector('.panel[data-id="' + id + '"]');
     if (panel && panel.hidden) return;
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () { readableFit(id); });
-    });
+    readableFit(id);
   }
 
   // tabs
@@ -1353,12 +1401,8 @@
     }
     if (updateHash !== false) writeDiagramHash(id);
     // 每次切入都恢复默认可读大小；超出部分只在图框内滚动。
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        ensureState(id);
-        readableFit(id);
-      });
-    });
+    ensureState(id);
+    readableFit(id);
   }
 
   $all(".tab").forEach(function (tab) {
