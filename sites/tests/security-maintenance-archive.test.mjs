@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import {
-  ALLOWED_SECURITY_DIFFERENCES,
+  ALLOWED_MAINTENANCE_DIFFERENCES,
   BASE_ARCHIVE_ROOT,
   BASE_MANIFEST_PATH,
   SECURITY_ARCHIVE_ROOT,
@@ -34,10 +34,12 @@ test("旧归档与旧 manifest 保持冻结字节", async () => {
   );
 });
 
-test("安全维护快照可由锁定依赖确定性重建", async () => {
+test("安全维护与公开脱敏快照可由锁定依赖确定性重建", async () => {
   const result = await verifySecurityMaintenanceArchive();
+  assert.equal(result.manifest.schemaVersion, 2);
   assert.equal(result.manifest.status, "archived-security-maintenance");
-  assert.equal(result.manifest.maintenanceType, "security-only");
+  assert.equal(result.manifest.maintenanceType, "security-and-public-redaction");
+  assert.deepEqual(result.manifest.redactions, ["historical-exact-costs"]);
   assert.deepEqual(result.manifest.runtimeDependencies, {
     dompurify: "3.4.13",
     mermaid: "10.9.8",
@@ -45,13 +47,12 @@ test("安全维护快照可由锁定依赖确定性重建", async () => {
   assert.equal(result.receipt.relativeFiles.length, 30);
 });
 
-test("新旧快照只允许安全白名单差异，业务内容与素材逐字节相同", async () => {
+test("新旧快照只允许安全和公开脱敏白名单差异", async () => {
   const comparison = await compareSecuritySnapshot();
-  assert.deepEqual(comparison.differences, [...ALLOWED_SECURITY_DIFFERENCES].sort());
+  assert.deepEqual(comparison.differences, [...ALLOWED_MAINTENANCE_DIFFERENCES].sort());
 
   const byteIdentical = [
     "css/app.css",
-    "data/content.json",
     "data/content.schema.json",
     "js/app.js",
     "js/modules/content-loader.js",
@@ -97,8 +98,17 @@ test("新旧快照只允许安全白名单差异，业务内容与素材逐字�
 
   const manifest = JSON.parse(await readFile(SECURITY_MANIFEST_PATH, "utf8"));
   assert.equal(
-    manifest.businessContentSha256,
+    manifest.sourceBusinessContentSha256,
     await fileSha(BASE_ARCHIVE_ROOT, "data/content.json")
   );
-  assert.deepEqual(manifest.allowedDifferences, ALLOWED_SECURITY_DIFFERENCES);
+  assert.equal(
+    manifest.publicContentSha256,
+    await fileSha(SECURITY_ARCHIVE_ROOT, "data/content.json")
+  );
+  assert.notEqual(manifest.publicContentSha256, manifest.sourceBusinessContentSha256);
+  assert.deepEqual(manifest.allowedDifferences, ALLOWED_MAINTENANCE_DIFFERENCES);
+
+  const publicContent = await readFile(path.join(SECURITY_ARCHIVE_ROOT, "data/content.json"), "utf8");
+  assert.match(publicContent, /精确金额已按公开边界脱敏/);
+  assert.doesNotMatch(publicContent, /7000 \/ 5000 \/ 10000|7000 元|5000 元|10000 元/);
 });

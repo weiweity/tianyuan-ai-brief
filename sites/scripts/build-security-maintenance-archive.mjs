@@ -37,9 +37,10 @@ const DOMPURIFY_TO = "3.4.13";
 const MERMAID_FROM = "10.9.6";
 const MERMAID_TO = "10.9.8";
 
-export const ALLOWED_SECURITY_DIFFERENCES = Object.freeze([
+export const ALLOWED_MAINTENANCE_DIFFERENCES = Object.freeze([
   "ARCHITECTURE.md",
   "SECURITY-MAINTENANCE.md",
+  "data/content.json",
   "data/release.json",
   "index.html",
   "js/app.bundle.js",
@@ -50,6 +51,19 @@ export const ALLOWED_SECURITY_DIFFERENCES = Object.freeze([
   `vendor/dompurify-${DOMPURIFY_TO}.es.mjs`,
   `vendor/mermaid-${MERMAID_FROM}.min.js`,
   `vendor/mermaid-${MERMAID_TO}.min.js`,
+]);
+
+const PUBLIC_COST_REDACTIONS = Object.freeze([
+  {
+    label: "历史组合费用摘要",
+    before: "旧 <b>7000 / 5000 / 10000</b> 是客服 + 供应链会前组合提案，<b>不是客服已批预算</b>；收尾时客服 cap 留空待预算责任人确认，未批统一按 B：<b>未批不开发、0 新增工具支出</b>",
+    after: "旧组合费用提案的精确金额已按公开边界脱敏，<b>不是客服已批预算</b>；收尾时客服 cap 留空待预算责任人确认，未批统一按 B：<b>未批不开发、0 新增工具支出</b>",
+  },
+  {
+    label: "历史组合费用明细",
+    before: "会前曾提两项合计目标 <b>7000 元</b>、首月 <b>5000 元</b>、全期 <b>10000 元</b>；该组合数字未证明批准，<b>不授权客服或供应链单项支出</b>",
+    after: "会前组合费用提案的精确金额已按公开边界脱敏；该组合提案未证明批准，<b>不授权客服或供应链单项支出</b>",
+  },
 ]);
 
 function sha256(value) {
@@ -206,21 +220,32 @@ async function patchSecurityRuntime(stagingRoot) {
   );
   await writeFile(architecturePath, architecture, "utf8");
 
-  const maintenanceNote = `# 2026-08-09 安全维护快照\n\n` +
-    `> **性质：** 仅修复公开历史 Web 的第三方前端依赖，不改变 2026-07-31 的业务内容、状态、结论或审批记录。\n` +
+  const maintenanceNote = `# 2026-08-09 安全维护与公开脱敏快照\n\n` +
+    `> **性质：** 修复公开历史 Web 的第三方前端依赖，并按当前公开边界遮罩历史组合费用的精确金额；不改变项目状态、结论或审批记录。\n` +
     `> **派生基线：** \`${BASE_ARCHIVE_NAME}\`（旧目录与旧 manifest 保持字节不动）。\n\n` +
     `## 变更\n\n` +
     `- DOMPurify \`${DOMPURIFY_FROM}\` → \`${DOMPURIFY_TO}\`（GHSA-55q2-fjhq-7xh7）；\n` +
     `- Mermaid \`${MERMAID_FROM}\` → \`${MERMAID_TO}\`（GHSA-c4c3-pg64-4m4v、GHSA-6x64-9x62-f2gx、GHSA-2v8p-3f2j-5mp7）；\n` +
+    `- 公开副本只保留“历史组合费用提案未获批准”的结论，移除其精确金额；\n` +
     `- 同步本地 vendor、DOMPurify import、Mermaid loader/SRI，以及由构建器生成的 Bundle、release.json 和 index 资源指纹。\n\n` +
     `## 不变边界\n\n` +
-    `除上述安全白名单与本说明外，所有文件必须与基础归档逐字节一致。尤其 \`data/content.json\`、Schema、CSS、业务源 JS、许可证与素材不得变化。\n` +
+    `除上述安全与公开脱敏白名单及本说明外，所有文件必须与基础归档逐字节一致。\`data/content.json\` 只允许两处确定性费用脱敏；Schema、CSS、业务源 JS、许可证与素材不得变化。\n` +
     `本目录仍是历史展示快照，不是当前客服 Agent 项目或任何业务状态的真源。\n` +
     `\`ARCHITECTURE.md\` 只同步上述两项依赖版本，其余历史语义不变。\n`;
   await writeFile(path.join(stagingRoot, "SECURITY-MAINTENANCE.md"), maintenanceNote, {
     encoding: "utf8",
     flag: "wx",
   });
+}
+
+async function redactPublicHistoricalCosts(stagingRoot) {
+  const contentPath = path.join(stagingRoot, "data/content.json");
+  let content = await readFile(contentPath, "utf8");
+  for (const redaction of PUBLIC_COST_REDACTIONS) {
+    content = replaceExactly(content, redaction.before, redaction.after, redaction.label);
+  }
+  JSON.parse(content);
+  await writeFile(contentPath, content, "utf8");
 }
 
 async function generateRuntimeArtifacts(stagingRoot) {
@@ -264,6 +289,8 @@ async function generateRuntimeArtifacts(stagingRoot) {
     );
   const releaseSourceSha256 = createHash("sha256")
     .update(httpGenerated)
+    .update("\n/* public-content-boundary */\n")
+    .update(contentText)
     .update("\n/* runtime-asset-boundary */\n")
     .update(cssText)
     .update("\n/* runtime-asset-boundary */\n")
@@ -313,9 +340,9 @@ export async function compareSecuritySnapshot(candidateRoot = SECURITY_ARCHIVE_R
     (relative) => base.hashes.get(relative) !== candidate.hashes.get(relative)
   );
   const unexpected = differences.filter(
-    (relative) => !ALLOWED_SECURITY_DIFFERENCES.includes(relative)
+    (relative) => !ALLOWED_MAINTENANCE_DIFFERENCES.includes(relative)
   );
-  const missingExpected = ALLOWED_SECURITY_DIFFERENCES.filter(
+  const missingExpected = ALLOWED_MAINTENANCE_DIFFERENCES.filter(
     (relative) => !differences.includes(relative)
   );
   if (unexpected.length || missingExpected.length) {
@@ -333,18 +360,19 @@ async function createExpectedSnapshot(stagingRoot) {
     errorOnExist: true,
   });
   await patchSecurityRuntime(stagingRoot);
+  await redactPublicHistoricalCosts(stagingRoot);
   const release = await generateRuntimeArtifacts(stagingRoot);
   const comparison = await compareSecuritySnapshot(stagingRoot);
   const contentSha256 = sha256(await readFile(path.join(stagingRoot, "data/content.json")));
   const entrySha256 = sha256(await readFile(path.join(stagingRoot, "index.html")));
   const manifest = Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     status: "archived-security-maintenance",
     snapshotDate: "2026-08-09",
     businessSnapshotDate: "2026-07-31",
     derivedFrom: BASE_ARCHIVE_NAME,
     derivedFromManifestSha256: BASE_MANIFEST_SHA256,
-    maintenanceType: "security-only",
+    maintenanceType: "security-and-public-redaction",
     releaseId: release.releaseId,
     contentVersion: release.contentVersion,
     publicUrl: "https://weiweity.github.io/tianyuan-ai-brief/",
@@ -352,8 +380,12 @@ async function createExpectedSnapshot(stagingRoot) {
       dompurify: DOMPURIFY_TO,
       mermaid: MERMAID_TO,
     },
-    businessContentSha256: contentSha256,
-    allowedDifferences: ALLOWED_SECURITY_DIFFERENCES,
+    sourceBusinessContentSha256: sha256(
+      await readFile(path.join(BASE_ARCHIVE_ROOT, "data/content.json"))
+    ),
+    publicContentSha256: contentSha256,
+    redactions: ["historical-exact-costs"],
+    allowedDifferences: ALLOWED_MAINTENANCE_DIFFERENCES,
     fileCount: comparison.candidate.relativeFiles.length,
     entrySha256,
     treeSha256: comparison.candidate.treeSha256,

@@ -2,7 +2,8 @@
 """客服话术/VOC 的离线 staging 导入器。
 
 边界：
-* 只读取 Excel，输出脱敏后的 JSONL 与批次报告；不连接 PostgreSQL。
+* 只读取 Excel，输出高置信标识符已遮罩的 JSONL 与批次报告；不连接 PostgreSQL。
+  这不是完整匿名化或 DLP，输出仍须位于受控私有目录或仓内 ignored output/。
 * 所有输出都标记为 ``prefill``，不能直接视为正式数据或 G0 证据。
 * 竞品工作表默认排除；VOC 汇总表只登记来源，行级数据来自三张明细表。
 
@@ -22,12 +23,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import re
 import shutil
 import sys
 import tempfile
 from collections import Counter
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -38,6 +38,14 @@ except ImportError as exc:  # pragma: no cover - environment diagnostic
         "缺少 openpyxl。请使用项目配置的 Python 运行时，或先安装 openpyxl；"
         "本工具不会自动安装依赖。"
     ) from exc
+
+from customer_project_output_boundary import (
+    ensure_sources_outside_output,
+    publish_managed_directory,
+    validate_output_boundary,
+    write_managed_marker,
+)
+from customer_service_staging_contract import SOURCE_SIZE_FIELD, scrub_text
 
 
 PREFILL = "prefill"
@@ -94,29 +102,6 @@ VOC_SUMMARY = {
     "精华水|液 【周累计】-停更",
     "ALL品 全维度反馈【月】",
 }
-
-URL_RE = re.compile(r"(?i)(?:https?://|www\.)[^\s<>{}\[\]()\"']+")
-TOKEN_RE = re.compile(
-    r"(?i)(?:tenant_access_token|open_id|doc_token|wiki_token|file_token)\s*[=:]\s*[^\s,;]+"
-)
-
-
-def scrub_text(value: Any, limit: int = 1600) -> str:
-    """转换成可写入 staging 的文本，并去掉 URL/token 等敏感值。"""
-
-    if value is None:
-        return ""
-    if isinstance(value, datetime):
-        return value.isoformat(sep=" ")
-    if isinstance(value, date):
-        return value.isoformat()
-    text = str(value).replace("\x00", "").strip()
-    text = URL_RE.sub("[URL_REDACTED]", text)
-    text = TOKEN_RE.sub("[TOKEN_REDACTED]", text)
-    if len(text) > limit:
-        return text[:limit] + "…[TRUNCATED]"
-    return text
-
 
 def is_present(value: Any) -> bool:
     return value not in (None, "")
@@ -423,17 +408,18 @@ def extract_voc(workbook: Any, file_name: str, batch_id: str, registry: list[dic
 
 
 def build_batch(args: argparse.Namespace) -> dict[str, Any]:
-    output_dir = Path(args.output_dir).expanduser().resolve()
+    output_dir = validate_output_boundary(Path(args.output_dir))
     if output_dir.exists() and any(output_dir.iterdir()) and not args.overwrite:
         raise FileExistsError(f"输出目录已有文件，若确认覆盖请加 --overwrite：{output_dir}")
+    source_paths = {
+        "product_qa": Path(args.qa_file).expanduser().resolve(),
+        "campaign": Path(args.campaign_file).expanduser().resolve(),
+        "voc": Path(args.voc_file).expanduser().resolve(),
+    }
+    ensure_sources_outside_output(output_dir, source_paths.values())
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     staging_dir = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}-", dir=output_dir.parent))
     try:
-        source_paths = {
-            "product_qa": Path(args.qa_file).expanduser().resolve(),
-            "campaign": Path(args.campaign_file).expanduser().resolve(),
-            "voc": Path(args.voc_file).expanduser().resolve(),
-        }
         registry: list[dict[str, Any]] = []
         quality = make_quality()
         records = {
@@ -449,7 +435,7 @@ def build_batch(args: argparse.Namespace) -> dict[str, Any]:
         files = []
         for kind, path in source_paths.items():
             workbook = read_workbook(path)
-            files.append({"source_file_name": path.name, "source_type": kind, "file_size_bytes": path.stat().st_size, "source_sha256": source_sha256(path), "sheet_count": len(workbook.sheetnames), "data_status": PREFILL, "raw_file_unchanged": True})
+            files.append({"source_file_name": path.name, "source_type": kind, SOURCE_SIZE_FIELD: path.stat().st_size, "source_sha256": source_sha256(path), "sheet_count": len(workbook.sheetnames), "data_status": PREFILL, "raw_file_unchanged": True})
         manifest = {
             "batch_id": args.batch_id,
             "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -462,7 +448,8 @@ def build_batch(args: argparse.Namespace) -> dict[str, Any]:
             "postgresql_written": False,
             "notes": [
                 "这是离线 staging 输出，不是正式导入。",
-                "原始 Excel 未改写；订单号、图片引用、URL/token 已脱敏。",
+                "原始 Excel 未改写；订单号、图片引用和高置信 URL/token/邮箱/手机号/身份证号已遮罩。",
+                "该遮罩不是完整匿名化或 DLP；输出仍须留在受控私有目录或仓内 ignored output/。",
                 "竞品工作表按用户决定暂不纳入。",
                 "预填数据不计入正式 G0-03 指标。",
             ],
@@ -480,9 +467,17 @@ def build_batch(args: argparse.Namespace) -> dict[str, Any]:
             "",
         ])
         (staging_dir / "README.md").write_text(readme, encoding="utf-8")
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        staging_dir.rename(output_dir)
+        write_managed_marker(
+            staging_dir,
+            kind="customer-service-staging",
+            metadata={"batch_id": args.batch_id},
+        )
+        publish_managed_directory(
+            staging_dir,
+            output_dir,
+            kind="customer-service-staging",
+            overwrite=args.overwrite,
+        )
         return manifest
     except Exception:
         shutil.rmtree(staging_dir, ignore_errors=True)
@@ -491,6 +486,8 @@ def build_batch(args: argparse.Namespace) -> dict[str, Any]:
 
 def run_self_test() -> None:
     assert scrub_text("https://example.test/a tenant_access_token=abc") == "[URL_REDACTED] [TOKEN_REDACTED]"
+    assert scrub_text("联系 13800138000 或 qa@example.test") == "联系 [PHONE_REDACTED] 或 [EMAIL_REDACTED]"
+    assert scrub_text("身份证 11010519491231002X") == "身份证 [ID_REDACTED]"
     assert product_family("海葡萄面膜3.0") == "面膜"
     assert product_family("儿童棉片") == "棉片"
     assert product_family("海葡萄精萃液") == "精华水/液"

@@ -4,7 +4,7 @@
 
 | 发布单元 | 生命周期 | 仓库源 | 网址 |
 |---|---|---|---|
-| AI 赋能立项汇报 | **2026-07-31 业务快照 · 2026-08-09 安全维护** | [`../archive/2026-08-09-ai-project-brief-security-maintenance/`](../archive/2026-08-09-ai-project-brief-security-maintenance/) | <https://weiweity.github.io/tianyuan-ai-brief/> |
+| AI 赋能立项汇报 | **2026-07-31 业务结论 · 2026-08-09 安全维护与公开脱敏** | [`../archive/2026-08-09-ai-project-brief-security-maintenance/`](../archive/2026-08-09-ai-project-brief-security-maintenance/) | <https://weiweity.github.io/tianyuan-ai-brief/> |
 | 客服 Agent 一期启动会 | **PRE-D0 / 需求阶段会议快照 · 非当前设计 SSOT** | [`../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html`](../business-docs/01-客服Agent项目/09-客服Agent需求会汇报.html) | <https://weiweity.github.io/tianyuan-ai-brief/customer-agent/> |
 
 ## 边界

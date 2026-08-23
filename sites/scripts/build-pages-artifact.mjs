@@ -229,9 +229,11 @@ export async function assertArchivedSiteFrozen({
     });
   const treeSha256 = sha256((await Promise.all(treeReceipt)).join(""));
   const entrySha256 = sha256(await readFile(path.join(archiveRoot, "index.html")));
+  const schemaMatchesStatus =
+    (manifest.status === "archived" && manifest.schemaVersion === 1) ||
+    (manifest.status === "archived-security-maintenance" && manifest.schemaVersion === 2);
   if (
-    manifest.schemaVersion !== 1 ||
-    !["archived", "archived-security-maintenance"].includes(manifest.status) ||
+    !schemaMatchesStatus ||
     manifest.fileCount !== files.length ||
     manifest.treeSha256 !== treeSha256 ||
     manifest.entrySha256 !== entrySha256

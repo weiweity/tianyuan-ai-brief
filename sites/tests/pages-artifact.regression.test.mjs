@@ -92,6 +92,8 @@ test("Pages artifact 发布历史 Web 与脱敏启动会，PRD / Hub 仍降级",
   const artifactText = await publicText(outputPath);
   assert.doesNotMatch(artifactText, /business-docs|current\/customer-agent/);
   assert.match(artifactText, /客服 Agent 一期启动会|meeting-v1-/);
+  assert.match(artifactText, /精确金额已按公开边界脱敏/);
+  assert.doesNotMatch(artifactText, /7000 \/ 5000 \/ 10000|7000 元|5000 元|10000 元/);
   for (const name of privateProjectFiles.filter((name) => name !== "09-客服Agent需求会汇报.html")) {
     assert.doesNotMatch(artifactText, new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -126,8 +128,8 @@ test("7 月 31 日历史站点与归档清单完全一致", async () => {
 test("Pages 默认发布 8 月 9 日安全维护快照", async () => {
   const result = await assertArchivedSiteFrozen();
   assert.equal(result.files.length, 30);
-  assert.equal(result.entrySha256, "3054840a85e506341c4229b7fbb9cc814756ef86b49ab97e53ff6db7aecc2a43");
-  assert.equal(result.treeSha256, "f3183f1cc9a2a5fbf881c962ef2ecfd0af73cc7ea77842b2797b2da199d555a2");
+  assert.equal(result.entrySha256, "602a2118fd07aa0e9a464f4aa1aed96e908f04662cd1cd48fcc4290c3415a520");
+  assert.equal(result.treeSha256, "0edec737cb789e7ce3a549367db5ab5d841e2c796977d54e5205da591f9f47fc");
 });
 
 test("发布副本降级指向仓库外的 Markdown 链接，保留公开 Web 内部链接", async () => {

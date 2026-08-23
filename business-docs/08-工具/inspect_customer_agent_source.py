@@ -14,6 +14,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from customer_project_output_boundary import validate_output_boundary
+
 try:
     from openpyxl import load_workbook
 except ImportError:  # pragma: no cover - 仅在实际读取 xlsx 时报告
@@ -169,7 +171,7 @@ def inspect_source(source: Path, domain: str) -> dict[str, Any]:
 
 
 def write_report(report: dict[str, Any], output_dir: Path) -> Path:
-    output_dir = output_dir.expanduser().resolve()
+    output_dir = validate_output_boundary(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"输出目录非空，拒绝覆盖：{output_dir}")
     output_dir.parent.mkdir(parents=True, exist_ok=True)

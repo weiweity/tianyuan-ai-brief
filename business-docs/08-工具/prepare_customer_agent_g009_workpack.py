@@ -12,6 +12,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from customer_project_output_boundary import validate_output_boundary
+
 
 SCHEMA_VERSION = 1
 DOMAINS = ("presale", "campaign", "aftersale", "product")
@@ -134,7 +136,7 @@ def build_workpack(template: dict[str, Any], reports: dict[str, dict[str, Any]])
 
 
 def write_workpack(template: dict[str, Any], workpack: dict[str, Any], output_dir: Path) -> Path:
-    output_dir = output_dir.expanduser().resolve()
+    output_dir = validate_output_boundary(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"输出目录非空，拒绝覆盖：{output_dir}")
     output_dir.parent.mkdir(parents=True, exist_ok=True)

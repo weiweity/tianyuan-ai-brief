@@ -2,7 +2,8 @@
 """把 staging JSONL 生成 PostgreSQL SQL；默认 dry-run，不连接数据库。
 
 默认行为：读取 importer 输出目录，检查批次/脱敏/字段完整性，并生成
-``staging_load.sql``。只有显式 ``--apply --database-url ...`` 才调用 psql。
+``staging_load.sql``。只有显式 ``--apply --pg-service ...`` 才调用 psql；
+数据库凭据只由 libpq service / pgpass 读取，不进入命令行参数或错误日志。
 这条链只写 ``customer_service_staging`` 隔离 schema，不写正式内容发布表。
 """
 
@@ -10,16 +11,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+from customer_project_output_boundary import validate_output_boundary
+from customer_service_staging_contract import (
+    SOURCE_SIZE_FIELD,
+    contains_high_confidence_identifier,
+)
+
 
 SCHEMA_FILE = Path(__file__).with_name("customer_service_staging_schema.sql")
-SENSITIVE_RE = re.compile(r"(?i)(?:https?://|www\.|tenant_access_token|open_id|doc_token|wiki_token|file_token)")
 REQUIRED_FILES = ("batch_manifest.json", "quality_report.json", "qa.jsonl", "campaign.jsonl", "voc.jsonl")
+SOURCE_TYPES = frozenset({"product_qa", "campaign", "voc"})
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+PG_SERVICE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 
 
 def sql_string(value: Any) -> str:
@@ -68,6 +78,37 @@ def validate_batch(staging_dir: Path) -> tuple[dict[str, Any], dict[str, list[di
         raise ValueError("当前 loader 只接受 data_status=prefill 的 staging 批次")
     if manifest.get("postgresql_written") is True:
         raise ValueError("批次已标记 postgresql_written=true，拒绝重复写入")
+    source_files = manifest.get("source_files")
+    if not isinstance(source_files, list) or not source_files:
+        raise ValueError("batch_manifest.json 缺少 source_files")
+    seen_source_types: set[str] = set()
+    for index, source in enumerate(source_files, start=1):
+        if not isinstance(source, dict):
+            raise ValueError(f"source_files[{index}] 必须是对象")
+        source_type = source.get("source_type")
+        if source_type not in SOURCE_TYPES:
+            raise ValueError(f"source_files[{index}] source_type 不受控")
+        if source_type in seen_source_types:
+            raise ValueError(f"source_files[{index}] source_type 重复")
+        seen_source_types.add(source_type)
+        source_file_name = source.get("source_file_name")
+        if (
+            not isinstance(source_file_name, str)
+            or not source_file_name
+            or Path(source_file_name).name != source_file_name
+        ):
+            raise ValueError(
+                f"source_files[{index}] source_file_name 必须是不含路径的非空文件名"
+            )
+        if not isinstance(source.get("source_sha256"), str) or not SHA256_RE.fullmatch(source["source_sha256"]):
+            raise ValueError(f"source_files[{index}] source_sha256 无效")
+        if type(source.get(SOURCE_SIZE_FIELD)) is not int or source[SOURCE_SIZE_FIELD] < 0:
+            raise ValueError(f"source_files[{index}] {SOURCE_SIZE_FIELD} 必须是非负整数")
+        if type(source.get("sheet_count")) is not int or source["sheet_count"] < 0:
+            raise ValueError(f"source_files[{index}] sheet_count 必须是非负整数")
+    if seen_source_types != SOURCE_TYPES:
+        missing = ",".join(sorted(SOURCE_TYPES - seen_source_types))
+        raise ValueError(f"batch_manifest.json source_files 缺少来源类型：{missing}")
     rows = {name.removesuffix(".jsonl"): read_jsonl(staging_dir / name) for name in REQUIRED_FILES if name.endswith(".jsonl")}
     for record_type, records in rows.items():
         ids: set[str] = set()
@@ -81,8 +122,8 @@ def validate_batch(staging_dir: Path) -> tuple[dict[str, Any], dict[str, list[di
                 raise ValueError(f"{record_type}.jsonl:{index} record_id 缺失或重复")
             ids.add(record_id)
             encoded = json.dumps(record, ensure_ascii=False)
-            if SENSITIVE_RE.search(encoded):
-                raise ValueError(f"{record_type}.jsonl:{index} 命中 URL/token 敏感模式")
+            if contains_high_confidence_identifier(encoded):
+                raise ValueError(f"{record_type}.jsonl:{index} 命中未遮罩的高置信标识符")
     expected = manifest.get("output_records", {})
     for record_type, records in rows.items():
         if expected.get(record_type) != len(records):
@@ -122,7 +163,7 @@ def build_sql(manifest: dict[str, Any], rows: dict[str, list[dict[str, Any]]], s
         source_values.append(
             "(" + sql_string(batch_id) + ", "
             + ", ".join(sql_string(source.get(key)) for key in ["source_file_name", "source_type"]) + ", "
-            + ", ".join(sql_string(source.get(key)) for key in ["source_sha256", "source_size_bytes", "sheet_count"]) + ", TRUE)"
+            + ", ".join(sql_string(source.get(key)) for key in ["source_sha256", SOURCE_SIZE_FIELD, "sheet_count"]) + ", TRUE)"
         )
     if source_values:
         lines.extend([
@@ -147,16 +188,39 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--sql-out", required=False)
     parser.add_argument("--schema-file", default=str(SCHEMA_FILE))
     parser.add_argument("--apply", action="store_true", help="显式调用 psql 写入隔离 staging schema")
-    parser.add_argument("--database-url", default=None, help="仅与 --apply 一起使用；不会打印到日志")
+    parser.add_argument("--pg-service", default=None, help="仅与 --apply 一起使用；凭据由 libpq service/pgpass 提供，不进入命令行")
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
+
+
+def build_psql_command(sql_out: Path) -> list[str]:
+    return [
+        "psql",
+        "--no-psqlrc",
+        "--no-password",
+        "--set=ON_ERROR_STOP=1",
+        "--file",
+        str(sql_out),
+    ]
+
+
+def psql_environment(pg_service: str) -> dict[str, str]:
+    if not PG_SERVICE_RE.fullmatch(pg_service):
+        raise ValueError("--pg-service 只允许字母、数字、点、下划线和短横线")
+    environment = os.environ.copy()
+    environment["PGSERVICE"] = pg_service
+    return environment
 
 
 def self_test() -> None:
     assert sql_string("O'Reilly") == "'O''Reilly'"
     assert sql_array("商品问题|料体内部问题") == "ARRAY['商品问题','料体内部问题']::text[]"
-    assert SENSITIVE_RE.search("https://example.test")
-    assert not SENSITIVE_RE.search("[URL_REDACTED]")
+    assert contains_high_confidence_identifier("https://example.test")
+    assert not contains_high_confidence_identifier("[URL_REDACTED]")
+    assert build_psql_command(Path("staging.sql"))[:4] == [
+        "psql", "--no-psqlrc", "--no-password", "--set=ON_ERROR_STOP=1"
+    ]
+    assert psql_environment("customer_agent_staging")["PGSERVICE"] == "customer_agent_staging"
     print("SELF_TEST_PASS")
 
 
@@ -167,18 +231,30 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if not args.staging_dir or not args.sql_out:
         raise SystemExit("需要 --staging-dir 和 --sql-out；或使用 --self-test")
-    if args.apply and not args.database_url:
-        raise SystemExit("--apply 必须同时提供 --database-url；默认只生成 SQL，不连接数据库")
-    staging_dir = Path(args.staging_dir).expanduser().resolve()
+    if args.pg_service and not args.apply:
+        raise SystemExit("--pg-service 只允许与 --apply 同时使用")
+    if args.apply and not args.pg_service:
+        raise SystemExit("--apply 必须同时提供 --pg-service；默认只生成 SQL，不连接数据库")
+    staging_dir = validate_output_boundary(Path(args.staging_dir))
     schema_file = Path(args.schema_file).expanduser().resolve()
     manifest, rows = validate_batch(staging_dir)
     sql = build_sql(manifest, rows, schema_file.read_text(encoding="utf-8"))
-    sql_out = Path(args.sql_out).expanduser().resolve()
+    requested_sql_out = Path(args.sql_out).expanduser()
+    if requested_sql_out.is_symlink():
+        raise ValueError("SQL 输出文件不能是符号链接")
+    sql_out = requested_sql_out.resolve()
+    validate_output_boundary(sql_out.parent)
     sql_out.parent.mkdir(parents=True, exist_ok=True)
     sql_out.write_text(sql, encoding="utf-8")
     result = {"batch_id": manifest["batch_id"], "sql_out": str(sql_out), "records": {key: len(value) for key, value in rows.items()}, "applied": False}
     if args.apply:
-        subprocess.run(["psql", "--dbname", args.database_url, "--file", str(sql_out)], check=True)
+        subprocess.run(
+            build_psql_command(sql_out),
+            check=True,
+            capture_output=True,
+            text=True,
+            env=psql_environment(args.pg_service),
+        )
         result["applied"] = True
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
@@ -187,6 +263,9 @@ def main(argv: list[str] | None = None) -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (FileNotFoundError, ValueError, OSError, subprocess.CalledProcessError) as exc:
+    except subprocess.CalledProcessError as exc:
+        print(f"ERROR: psql 执行失败（exit={exc.returncode}）；未确认 staging 已应用", file=sys.stderr)
+        raise SystemExit(2) from exc
+    except (FileNotFoundError, ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc

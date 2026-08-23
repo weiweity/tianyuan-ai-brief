@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from inspect_customer_agent_source import inspect_source, write_report
+from customer_project_output_boundary import REPO_ROOT
 
 
 class SourceInspectorTest(unittest.TestCase):
@@ -37,6 +38,12 @@ class SourceInspectorTest(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), report)
             with self.assertRaises(FileExistsError):
                 write_report(report, output)
+
+        with self.assertRaisesRegex(ValueError, "output/"):
+            write_report(
+                {"status": "TECHNICAL_PREFILL"},
+                REPO_ROOT / "business-docs/unsafe-direct-inspection-output",
+            )
 
     def test_rejects_unknown_domain_and_suffix(self):
         with tempfile.TemporaryDirectory() as root:

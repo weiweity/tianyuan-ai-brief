@@ -93,14 +93,13 @@ test("核心隐性知识与反误导边界存在且无旧版统一路径", async
     "人在环",
     "客服话术库 MVP-A",
     "供应链备案识别",
-    "7000",
-    "5000",
-    "10000",
+    "精确金额已按公开边界脱敏",
     "立即停扩",
     "飞书/邮件",
   ]) {
     assert.match(text, new RegExp(term.replace("/", "\\/")));
   }
+  assert.doesNotMatch(text, /7000 \/ 5000 \/ 10000|7000 元|5000 元|10000 元/);
   assert.doesNotMatch(text, /对已选项目统一选路径/);
   assert.doesNotMatch(text, /如两项路径不同，请分两次记录/);
 });
@@ -190,6 +189,8 @@ test("正式入口自包含、依赖固定、发布指纹一致且启用 CSP", a
     );
   const shellSha = createHash("sha256")
     .update(httpBundle)
+    .update("\n/* public-content-boundary */\n")
+    .update(contentText)
     .update("\n/* runtime-asset-boundary */\n")
     .update(css)
     .update("\n/* runtime-asset-boundary */\n")

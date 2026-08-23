@@ -22,11 +22,11 @@
 | `prepare_customer_agent_publish_manifest.mjs` | 为 `DEC-PUBLISH-01` 双采样完整工作树，校验迁移配对、生成链、敏感路径、断链与未暂存边界，并在 ignored `output/` 生成绑定 HEAD/origin 的 exact-file 候选；获批并由人工精确暂存后还可核对 index blob/mode；绝不执行 Git 写操作 |
 | `project_workspace.mjs` | 强制公开模板 / 仓外私有工作区二选一；私有模式须有标记且不得位于公开仓内 |
 | `prepare_private_customer_project.mjs` | 在公开仓外创建不覆盖的私有副本，供 A 路径和真实状态使用 |
-| `customer_service_staging_importer.py` | 离线读取产品 QA、活动话术、VOC Excel，输出脱敏 JSONL、批次 manifest 和质量报告；只写 staging，不连接 PostgreSQL |
+| `customer_service_staging_importer.py` | 离线读取产品 QA、活动话术、VOC Excel，输出高置信标识符已遮罩的 JSONL、批次 manifest 和质量报告；非完整匿名化，只写受控 staging，不连接 PostgreSQL |
 | `customer_service_staging_schema.sql` | 隔离的 `customer_service_staging` 表结构；不接入客服 Agent 在线发布链，也不授予 `app_runtime` |
 | `customer_service_staging_loader.py` | 校验 staging 批次并生成 PostgreSQL dry-run SQL；默认不连接数据库，显式 `--apply` 才执行 |
-| `customer_service_staging_api.py` | 本地预览/人工审阅 API 原型；只读 JSONL 并追加审阅事件，不连接 PostgreSQL、不晋级正式话术 |
-| `test_customer_service_staging_api.py` | staging API 的标准库合同测试；验证预填边界、EVD、幂等审阅和路径隔离 |
+| `customer_service_staging_api.py` | 本地预览/人工审阅 API 原型；默认只读，启用写入时用服务端角色 + 本次启动 Bearer token；不连接 PostgreSQL、不晋级正式话术 |
+| `test_customer_service_staging_pipeline.py` / `test_customer_service_staging_api.py` | importer → loader 端到端、受控覆盖、凭据/SQL 失败门禁、审阅鉴权和幂等合同测试 |
 
 从仓库根执行：
 
@@ -36,6 +36,9 @@ node business-docs/08-工具/prepare_private_customer_project.mjs --target=/绝�
 export CUSTOMER_PROJECT_MODE=private
 export CUSTOMER_PROJECT_ROOT=/绝对路径/客服Agent项目
 
+# 首次使用 Excel staging 工具时，在受控 Python 环境安装精确依赖
+python3 -m pip install --requirement business-docs/08-工具/requirements-customer-agent-tools.txt
+
 # 客服数据先进入离线 staging（不创建/连接/写入 PostgreSQL）
 python3 business-docs/08-工具/customer_service_staging_importer.py --self-test
 python3 business-docs/08-工具/customer_service_staging_importer.py \
@@ -44,6 +47,8 @@ python3 business-docs/08-工具/customer_service_staging_importer.py \
   --voc-file '/绝对路径/达肤妍核心产品VOC反馈.xlsx' \
   --output-dir '/绝对路径/output/customer-service-staging-YYYYMMDD' \
   --batch-id 'BATCH-PREFILL-YYYYMMDD-001'
+# 只有该目录已带工具生成的 managed marker 时，才允许追加 --overwrite 原子替换；
+# 任意非托管目录、公开仓非 ignored 目录和宽泛目录都会 fail-closed。
 
 # staging 批次只生成 SQL（默认 dry-run，不连接数据库）
 python3 business-docs/08-工具/customer_service_staging_loader.py --self-test
@@ -51,18 +56,27 @@ python3 business-docs/08-工具/customer_service_staging_loader.py \
   --staging-dir '/绝对路径/output/customer-service-staging-YYYYMMDD' \
   --sql-out '/绝对路径/output/customer-service-staging-YYYYMMDD/staging_load.sql'
 
-# 本地打开 staging 预览/人工审阅台；仅监听 127.0.0.1，不连接 PostgreSQL
+# 本地只读预览；仅监听 127.0.0.1，不连接 PostgreSQL
 python3 business-docs/08-工具/customer_service_staging_api.py --self-test
 python3 business-docs/08-工具/customer_service_staging_api.py \
   --staging-dir '/绝对路径/output/customer-service-staging-YYYYMMDD' \
   --port 8787
 
+# 确需追加本地审阅事件时，角色由服务端启动参数绑定，token 只走环境变量；
+# 请求体不得自报 reviewer_role，同一幂等键异体请求返回 409。
+export CUSTOMER_STAGING_REVIEW_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python3 business-docs/08-工具/customer_service_staging_api.py \
+  --staging-dir '/绝对路径/output/customer-service-staging-YYYYMMDD' \
+  --reviewer-role 'ROLE-QA-001' \
+  --port 8787
+
 # 只有明确授权且确认连接目标为隔离 staging 库时，才允许实际执行；
-# 不得把这个命令指向客服 Agent 正式发布库。
+# 不得把这个命令指向客服 Agent 正式发布库。连接信息与凭据必须预先放入
+# 受控 libpq service / pgpass；工具只接收非敏感 service 名。
 python3 business-docs/08-工具/customer_service_staging_loader.py \
   --staging-dir '/绝对路径/output/customer-service-staging-YYYYMMDD' \
   --sql-out '/绝对路径/output/customer-service-staging-YYYYMMDD/staging_load.sql' \
-  --apply --database-url 'postgresql://…/customer_agent_staging'
+  --apply --pg-service 'customer_agent_staging'
 
 # 真源变更后同步 07/08；09 仅在生命周期开放时生成，关闭后只校验冻结快照
 node business-docs/08-工具/sync_customer_agent_surfaces.mjs
@@ -143,7 +157,7 @@ node business-docs/08-工具/prepare_customer_agent_publish_manifest.mjs --verif
 4. 先向用户展示列映射、缺口和将要计算的指标，经一次确认后再计算；输出只回填脱敏聚合值、版本与 `EVD-*` 收据，不回填逐行原始数据或可逆哈希。
 5. G0-03 与 G0-13 分别签发：业务基线证据不能替代评测集冻结证据，QA 职责接受也不能替代独立盲审。任一包未归档前，对应 G0 / Scope 保持未完成。
 
-这一路径不把 Excel 解析依赖接入客服 Agent 在线运行时。收到真实表格后，使用 `customer_service_staging_importer.py` 在离线/受控环境只读解析并做脱敏 staging 预览；若表内结构不足，先引导用户补列或确认口径，不为追求自动化猜造分母、日期、Owner 或审核结论。`customer_service_staging_loader.py` 默认只生成 SQL，不连接数据库；只有明确指定隔离 staging 库并显式传 `--apply` 才允许落库。
+这一路径不把 Excel 解析依赖接入客服 Agent 在线运行时。收到真实表格后，使用 `customer_service_staging_importer.py` 在离线/受控环境只读解析，并遮罩 URL、token、邮箱、大陆手机号和身份证号等高置信标识符。该处理**不是完整匿名化或 DLP**，不能证明姓名、地址或上下文隐私已全部消除，所以逐行 staging 只允许留在仓外受控目录或仓内 ignored `output/`，不得进入公开 Git。若表内结构不足，先引导用户补列或确认口径，不为追求自动化猜造分母、日期、Owner 或审核结论。`customer_service_staging_loader.py` 默认只生成 SQL，不连接数据库；只有明确指定隔离 staging 库、配置受控 libpq service / pgpass 并显式传 `--apply --pg-service` 才允许落库。`psql` 固定启用 `ON_ERROR_STOP=1`，SQL 报错不得回报 `applied=true`。
 
 ### staging API 原型边界
 
@@ -151,9 +165,9 @@ node business-docs/08-工具/prepare_customer_agent_publish_manifest.mjs --verif
 
 * `GET /healthz`：确认服务是本地原型且 `postgresql_written=false`；
 * `GET /batches`、`GET /batches/{batch_id}`：查看预填批次摘要；
-* `GET /batches/{batch_id}/records?type=qa|campaign|voc&limit=50&offset=0`：分页预览脱敏记录；
+* `GET /batches/{batch_id}/records?type=qa|campaign|voc&limit=50&offset=0`：分页预览高置信标识符已遮罩、但非完整匿名化的记录；
 * `GET /batches/{batch_id}/reviews`：查看追加的人工审阅事件；
-* `POST /batches/{batch_id}/reviews`：提交 `hold / confirm / reject`。`confirm` 与 `reject` 必须带 `ROLE-*` 和 `EVD-*`，事件写入 `review_events.jsonl`，原始记录仍保持 `prefill`。
+* `POST /batches/{batch_id}/reviews`：只有同时提供启动时绑定的 `--reviewer-role ROLE-*` 与环境变量中的本次启动 Bearer token 才启用；请求体只提交 `hold / confirm / reject`、记录、`EVD-*` 和幂等键，禁止自报角色。服务校验 Host / Origin / JSON Content-Type，同 key 同体才重放、异体返回 409。事件写入 `review_events.jsonl`，原始记录仍保持 `prefill`。
 
 审阅事件只证明“有人看过并留下决定”，不等于 G0-13 证据、正式内容发布或 `official` 数据。后续若要晋级，必须另做质量复核、四域来源绑定、正式签发和独立发布流程；本原型不会替代这些门禁。API 默认只绑定回环地址，禁止把它暴露到公网或直接指向正式客服 Agent 库。
 

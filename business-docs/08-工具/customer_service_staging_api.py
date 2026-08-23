@@ -24,9 +24,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
+import secrets
 import sys
 import threading
 import uuid
@@ -36,6 +38,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlsplit
+
+from customer_project_output_boundary import validate_output_boundary
 
 
 RECORD_FILES = {"qa": "qa.jsonl", "campaign": "campaign.jsonl", "voc": "voc.jsonl"}
@@ -53,6 +57,10 @@ MAX_LIMIT = 200
 
 class StagingValidationError(ValueError):
     """输入批次或人工审阅请求不符合本地 staging 合同。"""
+
+
+class StagingConflictError(StagingValidationError):
+    """同一幂等键被用于不同的规范化请求。"""
 
 
 def utc_now() -> str:
@@ -100,10 +108,10 @@ class StagingStore:
     """对一个 importer 输出目录提供只读记录和追加审阅事件。"""
 
     def __init__(self, staging_dir: str | os.PathLike[str]):
-        root = Path(staging_dir).expanduser()
-        if root.is_symlink():
-            raise StagingValidationError("staging 目录不能是符号链接")
-        self.root = root.resolve()
+        try:
+            self.root = validate_output_boundary(Path(staging_dir))
+        except ValueError as exc:
+            raise StagingValidationError(str(exc)) from exc
         if not self.root.is_dir():
             raise StagingValidationError(f"staging 目录不存在：{self.root}")
         self.manifest_path = self.root / "batch_manifest.json"
@@ -198,17 +206,18 @@ class StagingStore:
             "postgresql_written": False,
         }
 
-    def append_review(self, payload: Any) -> tuple[dict[str, Any], bool]:
+    def append_review(self, payload: Any, reviewer_role: str) -> tuple[dict[str, Any], bool]:
         if not isinstance(payload, dict):
             raise StagingValidationError("请求体必须是 JSON 对象")
+        if "reviewer_role" in payload:
+            raise StagingValidationError("reviewer_role 由服务端启动会话绑定，禁止由请求体声明")
         record_type = _safe_record_type(payload.get("record_type"))
         record_id = _safe_record_id(payload.get("record_id"))
         decision = payload.get("decision")
         if decision not in DECISIONS:
             raise StagingValidationError("decision 必须是 hold、confirm 或 reject")
-        reviewer_role = payload.get("reviewer_role")
         if not isinstance(reviewer_role, str) or not ROLE_RE.fullmatch(reviewer_role):
-            raise StagingValidationError("reviewer_role 必须是 ROLE-* 代号")
+            raise StagingValidationError("服务端 reviewer_role 必须是 ROLE-* 代号")
         evidence_id = payload.get("evidence_id", "")
         if decision in {"confirm", "reject"}:
             if not isinstance(evidence_id, str) or not EVIDENCE_RE.fullmatch(evidence_id):
@@ -227,10 +236,31 @@ class StagingStore:
         if not any(row.get("record_id") == record_id for row in existing):
             raise StagingValidationError("record_id 不属于指定批次或记录类型")
 
+        normalized_request = {
+            "batch_id": self.batch_id,
+            "record_type": record_type,
+            "record_id": record_id,
+            "decision": decision,
+            "reviewer_role": reviewer_role,
+            "evidence_id": evidence_id or "",
+            "note": note.strip(),
+            "idempotency_key": idempotency_key or "",
+        }
+        request_sha256 = hashlib.sha256(
+            json.dumps(
+                normalized_request,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+
         with self._write_lock:
             for event in self.reviews():
                 if idempotency_key and event.get("idempotency_key") == idempotency_key:
-                    return event, True
+                    if event.get("request_sha256") == request_sha256:
+                        return event, True
+                    raise StagingConflictError("同一 idempotency_key 已绑定不同请求体")
             event = {
                 "review_id": f"REV-{uuid.uuid4().hex.upper()}",
                 "batch_id": self.batch_id,
@@ -241,6 +271,7 @@ class StagingStore:
                 "evidence_id": evidence_id or "",
                 "note": note.strip(),
                 "idempotency_key": idempotency_key or "",
+                "request_sha256": request_sha256,
                 "created_at": utc_now(),
                 "record_data_status": "prefill",
                 "prefill_unchanged": True,
@@ -258,8 +289,23 @@ class StagingStore:
 class StagingHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = True
 
-    def __init__(self, address: tuple[str, int], store: StagingStore):
+    def __init__(
+        self,
+        address: tuple[str, int],
+        store: StagingStore,
+        *,
+        reviewer_role: str | None = None,
+        review_token: str | None = None,
+    ):
+        if bool(reviewer_role) != bool(review_token):
+            raise StagingValidationError("reviewer_role 与 review_token 必须同时提供或同时省略")
+        if reviewer_role and not ROLE_RE.fullmatch(reviewer_role):
+            raise StagingValidationError("reviewer_role 必须是 ROLE-* 代号")
+        if review_token and len(review_token) < 32:
+            raise StagingValidationError("review_token 至少需要 32 个字符")
         self.store = store
+        self.reviewer_role = reviewer_role
+        self.review_token = review_token
         super().__init__(address, StagingRequestHandler)
 
 
@@ -268,14 +314,17 @@ class StagingRequestHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
-        # 默认不把用户数据/查询参数写入终端日志。
-        sys.stderr.write("staging-api: " + format % args + "\n")
+        # BaseHTTPRequestHandler 的标准日志含完整请求行；这里只保留方法和状态码。
+        status = args[1] if len(args) > 1 else "-"
+        sys.stderr.write(f"staging-api: method={self.command} status={status}\n")
 
     def _send(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        if self.close_connection:
+            self.send_header("Connection", "close")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -292,11 +341,47 @@ class StagingRequestHandler(BaseHTTPRequestHandler):
         parts = [unquote(part) for part in parsed.path.split("/") if part]
         return parts, parse_qs(parsed.query, keep_blank_values=True)
 
+    def _authorize_review_request(self) -> bool:
+        port = self.server.server_port
+        allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        if self.headers.get("Host", "") not in allowed_hosts:
+            self.close_connection = True
+            self._error(HTTPStatus.BAD_REQUEST, "Host 不属于当前回环服务")
+            return False
+        origin = self.headers.get("Origin")
+        allowed_origins = {f"http://127.0.0.1:{port}", f"http://localhost:{port}"}
+        if origin and origin not in allowed_origins:
+            self.close_connection = True
+            self._error(HTTPStatus.FORBIDDEN, "Origin 不属于当前回环服务")
+            return False
+        if self.headers.get_content_type() != "application/json":
+            self.close_connection = True
+            self._error(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "Content-Type 必须是 application/json")
+            return False
+        if not self.server.review_token or not self.server.reviewer_role:
+            self.close_connection = True
+            self._error(HTTPStatus.FORBIDDEN, "服务以只读模式启动，未启用审阅写入")
+            return False
+        expected = f"Bearer {self.server.review_token}"
+        supplied = self.headers.get("Authorization", "")
+        if not secrets.compare_digest(supplied, expected):
+            self.close_connection = True
+            self._error(HTTPStatus.UNAUTHORIZED, "缺少有效的本次启动 review token")
+            return False
+        return True
+
     def do_GET(self) -> None:  # noqa: N802
         try:
             parts, query = self._route()
             if parts == ["healthz"]:
-                self._send(HTTPStatus.OK, {"ok": True, "service": "customer-service-staging-api", "mode": "local-readonly-prototype", "postgresql_written": False})
+                reviews_enabled = bool(self.server.review_token)
+                self._send(HTTPStatus.OK, {
+                    "ok": True,
+                    "service": "customer-service-staging-api",
+                    "mode": "local-review-prototype" if reviews_enabled else "local-readonly-prototype",
+                    "reviews_enabled": reviews_enabled,
+                    "postgresql_written": False,
+                })
                 return
             if parts == ["batches"]:
                 self._send(HTTPStatus.OK, {"ok": True, "batches": [self.store.summary()]})
@@ -337,6 +422,8 @@ class StagingRequestHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.INTERNAL_SERVER_ERROR, f"staging API 内部错误：{exc}")
 
     def do_POST(self) -> None:  # noqa: N802
+        # 写请求使用单次连接，确保任何提前拒绝都不会把未读 body 留给下一条 HTTP 请求。
+        self.close_connection = True
         try:
             parts, _ = self._route()
             if len(parts) != 3 or parts[0] != "batches" or parts[2] != "reviews":
@@ -345,6 +432,8 @@ class StagingRequestHandler(BaseHTTPRequestHandler):
             batch_id = _safe_batch_id(parts[1])
             if batch_id != self.store.batch_id:
                 self._error(HTTPStatus.NOT_FOUND, "批次不存在")
+                return
+            if not self._authorize_review_request():
                 return
             raw_length = self.headers.get("Content-Length", "")
             try:
@@ -358,8 +447,10 @@ class StagingRequestHandler(BaseHTTPRequestHandler):
                 payload = json.loads(raw.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as exc:
                 raise StagingValidationError("请求体必须是 UTF-8 JSON") from exc
-            event, duplicate = self.store.append_review(payload)
+            event, duplicate = self.store.append_review(payload, self.server.reviewer_role)
             self._send(HTTPStatus.OK if duplicate else HTTPStatus.CREATED, {"ok": True, "duplicate": duplicate, "review": event, "promotion_required": True})
+        except StagingConflictError as exc:
+            self._error(HTTPStatus.CONFLICT, str(exc))
         except StagingValidationError as exc:
             self._error(HTTPStatus.BAD_REQUEST, str(exc))
         except Exception as exc:  # pragma: no cover - defensive HTTP boundary
@@ -371,6 +462,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--staging-dir", required=False, help="importer 输出目录")
     parser.add_argument("--host", default="127.0.0.1", help="默认只监听本机回环地址")
     parser.add_argument("--port", type=int, default=8787)
+    parser.add_argument("--reviewer-role", help="启用 POST 审阅时绑定的 ROLE-*；token 只从 CUSTOMER_STAGING_REVIEW_TOKEN 读取")
     parser.add_argument("--self-test", action="store_true", help="仅检查模块导入与合同常量")
     return parser.parse_args(argv)
 
@@ -381,6 +473,7 @@ def self_test() -> None:
     assert ROLE_RE.fullmatch("ROLE-CS-MANAGER")
     assert EVIDENCE_RE.fullmatch("EVD-G0-13-REVIEW-20260812")
     assert not BATCH_ID_RE.fullmatch("../escape")
+    assert len("0123456789abcdef0123456789abcdef") >= 32
     print("SELF_TEST_PASS")
 
 
@@ -395,9 +488,19 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("为避免意外暴露，host 只允许 127.0.0.1 或 localhost")
     if not 1 <= args.port <= 65535:
         raise SystemExit("port 必须在 1..65535")
+    review_token = os.environ.get("CUSTOMER_STAGING_REVIEW_TOKEN", "").strip() or None
+    if bool(args.reviewer_role) != bool(review_token):
+        raise SystemExit(
+            "启用审阅写入时必须同时提供 --reviewer-role，并通过 CUSTOMER_STAGING_REVIEW_TOKEN 提供至少 32 字符的本次启动 token；两者都不提供则为只读模式"
+        )
     store = StagingStore(args.staging_dir)
-    server = StagingHTTPServer(("127.0.0.1", args.port), store)
-    print(json.dumps({"service": "customer-service-staging-api", "host": "127.0.0.1", "port": server.server_port, "batch_id": store.batch_id, "mode": "local-readonly-prototype", "postgresql_written": False}, ensure_ascii=False), flush=True)
+    server = StagingHTTPServer(
+        ("127.0.0.1", args.port),
+        store,
+        reviewer_role=args.reviewer_role,
+        review_token=review_token,
+    )
+    print(json.dumps({"service": "customer-service-staging-api", "host": "127.0.0.1", "port": server.server_port, "batch_id": store.batch_id, "mode": "local-review-prototype" if review_token else "local-readonly-prototype", "reviews_enabled": bool(review_token), "postgresql_written": False}, ensure_ascii=False), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -8,27 +8,9 @@ import json
 from pathlib import Path
 from typing import Any
 
+from customer_project_output_boundary import REPO_ROOT, validate_output_boundary
 from inspect_customer_agent_source import inspect_source
 from prepare_customer_agent_g009_workpack import build_workpack, read_json, write_workpack
-
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-REPO_OUTPUT = (REPO_ROOT / "output").resolve()
-
-
-def is_within(child: Path, parent: Path) -> bool:
-    try:
-        child.relative_to(parent)
-        return True
-    except ValueError:
-        return False
-
-
-def validate_output_boundary(output_dir: Path) -> Path:
-    resolved = output_dir.expanduser().resolve()
-    if is_within(resolved, REPO_ROOT) and not is_within(resolved, REPO_OUTPUT):
-        raise ValueError("仓内输出只允许写入已忽略的 output/；也可选择仓外受控目录")
-    return resolved
 
 
 def run_intake(

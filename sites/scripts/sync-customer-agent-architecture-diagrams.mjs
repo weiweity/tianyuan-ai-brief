@@ -13,6 +13,7 @@ import {
   sha256,
   upsertArchitectureProvenance,
 } from "./architecture-diagram-provenance.mjs";
+import { replaceEmbeddedSvg } from "./architecture-diagram-embedding.mjs";
 import { architectureDiagrams } from "./customer-agent-architecture-diagrams.manifest.mjs";
 
 const sitesDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -97,14 +98,6 @@ function normalizeSvg(svg) {
     result = result.replace(/^<svg\b/i, '<svg class="diagram-svg"');
   }
   return `${result}\n`;
-}
-
-function replaceEmbeddedSvg(html, id, svg) {
-  const pattern = new RegExp(
-    `(<div class="stage" id="stage-${id}">\\s*)<svg\\b[\\s\\S]*?</svg>(\\s*</div>)`
-  );
-  assert.match(html, pattern, `missing embedded SVG stage-${id}`);
-  return html.replace(pattern, `$1${svg.trim()}$2`);
 }
 
 async function calculateRendererSha256() {

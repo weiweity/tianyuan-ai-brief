@@ -33,14 +33,16 @@
     "test:docs:fast": "git diff --check && git diff --cached --check",
     "test:customer-agent-contract-set": "node --test tests/customer-agent-contract-set.test.mjs",
     "test:customer-agent-g009-tools": "PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/test_inspect_customer_agent_source.py && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/test_prepare_customer_agent_g009_workpack.py && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/test_run_customer_agent_g009_intake.py",
-    "test:customer-contracts": "node --test tests/customer-project-status.test.mjs tests/customer-project-contract.regression.test.mjs && npm run test:customer-agent-contract-set && npm run test:customer-agent-g009-tools && npm run check:business-sources",
+    "test:customer-agent-staging-tools": "PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/test_customer_service_staging_pipeline.py && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/test_customer_service_staging_api.py && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/customer_service_staging_importer.py --self-test && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/customer_service_staging_loader.py --self-test && PYTHONDONTWRITEBYTECODE=1 python3 ../business-docs/08-工具/customer_service_staging_api.py --self-test",
+    "test:customer-agent-python-tools": "npm run test:customer-agent-g009-tools && npm run test:customer-agent-staging-tools",
+    "test:customer-contracts": "node --test tests/customer-project-status.test.mjs tests/customer-project-contract.regression.test.mjs && npm run test:customer-agent-contract-set && npm run test:customer-agent-python-tools && npm run check:business-sources",
     "test:customer-boundary": "node --test tests/public-project-boundary.test.mjs",
     "test:design-contracts": "npm run test:architecture-contract && npm run check:arch-diagrams",
     "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar",
     "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci",
     "audit:deps": "npm audit --registry=https://registry.npmjs.org",
     "test:release": "npm run test:all",
-    "test:all": "npm run test && npm run test:ui && npm run test:arch-board-ui && npm run test:business && npm run lint:openapi && npm run test:sql-grammar && npm run test:architecture-contract && npm run check:arch-diagrams && npm run audit:deps"
+    "test:all": "npm run test && npm run test:ui && npm run test:arch-board-ui && npm run test:business && npm run test:customer-agent-python-tools && npm run lint:openapi && npm run test:sql-grammar && npm run test:architecture-contract && npm run check:arch-diagrams && npm run audit:deps"
   },
   "devDependencies": {
     "@libpg-query/parser": "17.6.10",

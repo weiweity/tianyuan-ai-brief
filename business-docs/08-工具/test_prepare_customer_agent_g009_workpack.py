@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from prepare_customer_agent_g009_workpack import build_workpack, write_workpack
+from customer_project_output_boundary import REPO_ROOT
 
 
 def template():
@@ -69,6 +70,13 @@ class WorkpackTest(unittest.TestCase):
             self.assertIn("不是 EVD", (target / "NEXT_STEPS.md").read_text(encoding="utf-8"))
             with self.assertRaises(FileExistsError):
                 write_workpack(source_template, result, target)
+
+        with self.assertRaisesRegex(ValueError, "output/"):
+            write_workpack(
+                template(),
+                build_workpack(template(), {"presale": report("presale")}),
+                REPO_ROOT / "business-docs/unsafe-direct-workpack-output",
+            )
 
 
 if __name__ == "__main__":
