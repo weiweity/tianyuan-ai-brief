@@ -230,14 +230,14 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.63" in ledger
+    assert "v3.64" in ledger
     _assert_same_line(
         ledger,
-        "DEC-050",
+        "DEC-052",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "还缺两域文档创建与主源指定",
+        "PRECONFIRM",
+        "权限收紧未落地",
+        "还缺两域唯一主源指定与版本 / 快照",
         "三域现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -253,15 +253,15 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     _assert_same_line(ledger, "G0-15", "**Pass**", "EVD-G0-15-RUN-HANDOVER-20260812")
     _assert_same_line(ledger, "G0-06", "**Pass**", "EVD-CONTENT-GOVERNANCE-APPROVAL-20260809")
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.63 · 2026-08-21")
+    assert footer.startswith("*G0 责任与证据台账 v3.64 · 2026-08-24")
     assert footer.endswith("*")
     for token in (
         "DEC-051",
-        "DEC-050",
+        "DEC-052",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "两域文档创建与主源指定",
+        "PRECONFIRM",
+        "权限收紧未落地",
+        "两域唯一主源指定与版本 / 快照",
         "三域现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -274,19 +274,21 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     ):
         assert token in footer, f"ledger footer missing: {token}"
     scope = (DESIGN.parent / "03-Scope与验收.md").read_text(encoding="utf-8")
-    assert "Scope 与验收 v4.36" in scope
+    assert "Scope 与验收 v4.37" in scope
     _assert_same_line(
         scope,
         "| 9 |",
         "[ ]",
+        "DEC-052",
         "DEC-050",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "创建后须由 Content Lead 指定各域唯一主源",
+        "PRECONFIRM",
+        "仍须由 Content Lead 指定各域唯一主源",
+        "组织外访问能力仍为允许",
+        "API 收紧未持久化",
         "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
         "四域公开安全收据必须全部为 `READY`",
-        "两域文档创建与主源指定",
+        "两域唯一主源指定与版本 / 快照",
         "售前 / 活动 / 售后现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -297,12 +299,13 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     _assert_same_line(
         scope,
         "> **状态：**",
-        "v4.36",
+        "v4.37",
+        "DEC-052",
         "DEC-050",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "两域文档创建与主源指定",
+        "PRECONFIRM",
+        "权限收紧未落地",
+        "两域主源指定与版本 / 快照",
         "三域现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -333,12 +336,12 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     )
     scope_footer = scope.rstrip().splitlines()[-1]
     for token in (
-        "Scope 与验收 v4.36",
-        "DEC-050",
+        "Scope 与验收 v4.37",
+        "DEC-052",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "两域文档创建与主源指定",
+        "PRECONFIRM",
+        "权限收紧未落地",
+        "两域唯一主源指定与版本 / 快照",
         "三域现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -1253,15 +1256,18 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # Static contract selection does not close organizational gates or manufacture runtime evidence.
-    assert "v3.63" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger and "DEC-051" in ledger
+    assert "v3.64" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger and "DEC-051" in ledger and "DEC-052" in ledger
     g009_line = next(line for line in ledger.splitlines() if line.startswith("| G0-09 |"))
     for token in (
         "**进行中**",
         "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-        "DEC-050",
-        "纠正旧事实",
-        "NOT_CREATED / UPSTREAM_AUTHORING",
-        "Content Lead 指定各域唯一主源",
+        "DEC-052",
+        "更新 `DEC-050` 的创建事实",
+        "候选文件已在受控空间创建",
+        "PRECONFIRM",
+        "Content Lead 唯一主源指定",
+        "组织外访问能力仍为允许",
+        "API 收紧未持久化",
         "DEC-DDEV-01",
         "不得 Pass",
         "不得开始产品功能代码",
@@ -1272,16 +1278,17 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     _assert_same_line(
         ledger,
         "售前 `presale`",
-        "NOT_CREATED / UPSTREAM_AUTHORING",
-        "上游人员",
-        "文档尚未创建",
+        "OPEN · PRECONFIRM",
+        "候选文件已在受控空间创建",
+        "尚未由 Content Lead 指定 `canonical / current`",
+        "权限收紧未落地",
     )
     _assert_same_line(ledger, "活动 `campaign`", "SRC-04A9A86874258A6A", "srcv_76b9165b2fe31908", "2026-08-01～2026-08-31", "67 源行、66 条规范化、1 条跳过")
     _assert_same_line(ledger, "产品 `product`", "SRC-60D6B23861F4FBF5", "srcv_88af65aa70c894aa", "2026-09-12 首次月度复核", "632 源行、631 条规范化")
     receipt = _between(
         ledger,
         "### G0-09 机器可核验关闭收据（公开安全投影）",
-        "售前、售后在文档创建前保持",
+        "售前、售后候选文件已创建并进入",
     )
     receipt_lines = receipt.splitlines()
     receipt_header = "| domain | source_ref | source_version_id | snapshot_evd | acl_evd | total_rows | importable_rows | quarantined_rows | quality_evd | final_approver_role | overall_approval_evd | readiness |"
@@ -1307,8 +1314,10 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     _assert_same_line(
         ledger,
         "售后 `aftersale`",
-        "NOT_CREATED / UPSTREAM_AUTHORING",
-        "上游人员",
+        "OPEN · PRECONFIRM",
+        "候选文件已在受控空间创建",
+        "组织外访问能力仍为允许",
+        "权限收紧未落地",
         "旧售后 ACL 收据",
         "历史",
         "不计当前覆盖",
@@ -1365,7 +1374,12 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     _assert_same_line(
         ledger,
         "售前、售后",
-        "文档尚未创建",
+        "候选文件已完成受控只读排查",
+        "链接分享均已关闭",
+        "组织外访问能力仍为允许",
+        "不继承父级权限",
+        "没有权限写入成功",
+        "未生成 `EVD-*`",
         "原售后 ACL 收据",
         "历史 / 不匹配",
         "不计覆盖",
@@ -1393,20 +1407,22 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     dec041_line = next(line for line in ledger.splitlines() if "| DEC-041 |" in line)
     assert "app_content_admin" not in dec041_line
 
-    assert "v4.36" in scope and "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812" in scope
+    assert "v4.37" in scope and "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812" in scope
     _assert_same_line(
         scope,
         "| 9 |",
         "[ ]",
         "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
+        "DEC-052",
         "DEC-050",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "创建后须由 Content Lead 指定各域唯一主源",
+        "PRECONFIRM",
+        "仍须由 Content Lead 指定各域唯一主源",
+        "组织外访问能力仍为允许",
+        "API 收紧未持久化",
         "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
         "四域公开安全收据必须全部为 `READY`",
-        "两域文档创建与主源指定",
+        "两域唯一主源指定与版本 / 快照",
         "售前 / 活动 / 售后现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",
@@ -1420,20 +1436,23 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         "飞书上游文档实际权限核验",
         "[ ]",
         "EVD-FEISHU-ACL-PRODUCT-20260810",
-        "售前 / 售后文档尚未创建",
+        "售前 / 售后候选文件已受控核验",
+        "组织外访问能力仍为允许",
+        "权限收紧未落地",
         "旧售后 ACL 收据",
         "历史 / 不匹配",
-        "当前有效覆盖仅 1/4",
+        "当前有效覆盖仍仅 1/4",
+        "独立受控管理员 / 平台管理员",
     )
     _assert_same_line(scope, "回滚上一版本", "重验目标快照四域来源", "新的单调 `release_seq`", "不把 current 直接指回旧 release")
     scope_footer = scope.rstrip().splitlines()[-1]
     for token in (
-        "Scope 与验收 v4.36",
-        "DEC-050",
+        "Scope 与验收 v4.37",
+        "DEC-052",
         "DEC-049",
-        "NOT_CREATED",
-        "UPSTREAM_AUTHORING",
-        "两域文档创建与主源指定",
+        "PRECONFIRM",
+        "权限收紧未落地",
+        "两域唯一主源指定与版本 / 快照",
         "三域现行 ACL EVD",
         "四域质量分母",
         "整体最终签发",

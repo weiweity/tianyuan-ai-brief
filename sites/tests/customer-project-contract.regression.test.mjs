@@ -323,7 +323,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.63 · 2026-08-21/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.64 · 2026-08-24/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/
@@ -337,10 +337,13 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     "USR-CONTENT-001 / ROLE-CONTENT-LEAD",
     "**进行中**",
     "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-    "DEC-050",
-    "纠正旧事实",
-    "NOT_CREATED / UPSTREAM_AUTHORING",
-    "Content Lead 指定各域唯一主源",
+    "DEC-052",
+    "更新 `DEC-050` 的创建事实",
+    "候选文件已在受控空间创建",
+    "PRECONFIRM",
+    "Content Lead 唯一主源指定",
+    "组织外访问能力仍为允许",
+    "API 收紧未持久化",
     "DEC-DDEV-01",
     "不得 Pass",
     "不得开始产品功能代码",
@@ -369,11 +372,15 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   );
   assert.match(
     ledger,
-    /DEC-048[^\n]+事实前提已由 DEC-050 纠正[^\n]+当前文档已存在[^\n]+不再作为现行依据/
+    /DEC-048[^\n]+事实前提先由 DEC-050 纠正[^\n]+现行创建状态由 DEC-052 更新[^\n]+候选文件存在不恢复“当前主源已指定”的结论/
   );
   assert.match(
     ledger,
-    /DEC-050[^\n]+售前、售后[^\n]+文档尚未创建[^\n]+上游人员[^\n]+NOT_CREATED \/ UPSTREAM_AUTHORING[^\n]+Content Lead[^\n]+canonical \/ current[^\n]+纠正 DEC-048[^\n]+旧售后 ACL[^\n]+产品 1\/4[^\n]+13\/14、14\/15[^\n]+G0、Ddev 与代码状态均不变/
+    /DEC-050[^\n]+售前、售后[^\n]+文档尚未创建[^\n]+NOT_CREATED \/ UPSTREAM_AUTHORING[^\n]+HISTORICAL[^\n]+创建事实已由 DEC-052 更新[^\n]+未经 Content Lead 指定不得登记 `canonical \/ current`/
+  );
+  assert.match(
+    ledger,
+    /DEC-052[^\n]+售前、售后候选文件[^\n]+受控空间创建[^\n]+PRECONFIRM[^\n]+不等于 Content Lead 已指定唯一主源[^\n]+组织外访问能力仍为允许[^\n]+API 收紧未持久化[^\n]+没有权限写入成功[^\n]+独立受控管理员 \/ 平台管理员整改[^\n]+13\/14、14\/15[^\n]+G0、Ddev 与代码状态均不变/
   );
   assert.match(
     ledger,
@@ -387,21 +394,21 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   assert.match(ledger, /\| Scope 检查 \| \*\*14\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*空\*\* \|/);
   assert.match(ledger, /合计 27\/29/);
-  assert.match(ledger, /## G0-09 权威来源登记（上游编写与来源创建待补 · 未签发）/);
+  assert.match(ledger, /## G0-09 权威来源登记（两域候选文件已创建，主源 \/ 版本 \/ ACL \/ 质量待补 · 未签发）/);
   assert.match(ledger, /DEC-045[^\n]+资料整理阶段收尾[^\n]+DEV-M0 开工准备窗口[^\n]+DEC-DDEV-01[^\n]+产品功能代码不得开始/);
   assert.match(ledger, /售前、活动、售后、产品每类必须恰好 1 个 `canonical`/);
   assert.match(
     ledger,
-    /\| 售前 `presale` \|[^\n]+NOT_CREATED \/ UPSTREAM_AUTHORING[^\n]+上游人员[^\n]+文档尚未创建[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+\|/
+    /\| 售前 `presale` \|[^\n]+OPEN · PRECONFIRM[^\n]+候选文件已在受控空间创建[^\n]+尚未由 Content Lead 指定 `canonical \/ current`[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+权限收紧未落地[^\n]+\|/
   );
   assert.match(
     ledger,
-    /\| 售后 `aftersale` \|[^\n]+NOT_CREATED \/ UPSTREAM_AUTHORING[^\n]+上游人员[^\n]+文档尚未创建[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+\|/
+    /\| 售后 `aftersale` \|[^\n]+OPEN · PRECONFIRM[^\n]+候选文件已在受控空间创建[^\n]+尚未由 Content Lead 指定 `canonical \/ current`[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+权限收紧未落地[^\n]+\|/
   );
   const sourceAclEvidence = new Map([
-    ["售前 `presale`", /尚无可核验的现行文档或 ACL EVD/],
+    ["售前 `presale`", /组织外访问能力仍为允许[^|]+权限收紧未落地[^|]+现行 ACL EVD 待补/],
     ["活动 `campaign`", /独立 ACL EVD 仍待补/],
-    ["售后 `aftersale`", /旧售后 ACL 收据[^|]+历史 \/ 不匹配[^|]+不计当前覆盖/],
+    ["售后 `aftersale`", /组织外访问能力仍为允许[^|]+权限收紧未落地[^|]+旧售后 ACL 收据[^|]+历史 \/ 不匹配[^|]+不计当前覆盖/],
     ["产品 `product`", /ACL 4\/4 已核验：`EVD-FEISHU-ACL-PRODUCT-20260810`/],
   ]);
   for (const [domain, aclEvidence] of sourceAclEvidence) {
@@ -462,7 +469,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   );
   assert.match(
     ledger,
-    /售前、售后文档尚未创建[^\n]+原售后 ACL 收据[^\n]+历史 \/ 不匹配证据[^\n]+不计覆盖[^\n]+当前只有产品 1\/4 来源具备可归属的 ACL EVD[^\n]+不把 G0-09 改为 Pass[^\n]+不改变 Scope #9、计数或 Ddev/
+    /售前、售后候选文件已完成受控只读排查[^\n]+链接分享均已关闭[^\n]+组织外访问能力仍为允许[^\n]+不继承父级权限[^\n]+API 收紧后复读仍为允许[^\n]+没有权限写入成功[^\n]+未生成 `EVD-\*`[^\n]+原售后 ACL 收据[^\n]+历史 \/ 不匹配证据[^\n]+不计覆盖[^\n]+当前只有产品 1\/4 来源具备可归属的 ACL EVD[^\n]+不把 G0-09 改为 Pass[^\n]+不改变 Scope #9、计数或 Ddev/
   );
   assert.match(
     ledger,
@@ -490,20 +497,23 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     scope,
     /\| 7 [^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD \| \[x\] \| `EVD-CONTENT-GOVERNANCE-APPROVAL-20260809`[^\n]*\|/
   );
-  assert.match(scope, /> \*\*状态：\*\* v4\.36 /);
+  assert.match(scope, /> \*\*状态：\*\* v4\.37 /);
   const scope9Line = scope.split("\n").find((line) => line.startsWith("| 9 |")) ?? "";
   for (const token of [
     "内容 / 话术 Owner",
     "[ ]",
     "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-    "DEC-050",
+    "DEC-052",
+    "更新 `DEC-050` 的创建事实",
     "DEC-049",
-    "NOT_CREATED",
-    "UPSTREAM_AUTHORING",
-    "创建后须由 Content Lead 指定各域唯一主源",
+    "候选文件现已创建",
+    "PRECONFIRM",
+    "仍须由 Content Lead 指定各域唯一主源",
+    "组织外访问能力仍为允许",
+    "API 收紧未持久化",
     "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
     "四域公开安全收据必须全部为 `READY`",
-    "两域文档创建与主源指定",
+    "两域唯一主源指定与版本 / 快照",
     "售前 / 活动 / 售后现行 ACL EVD",
     "四域质量分母",
     "整体最终签发",
@@ -516,7 +526,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   }
   assert.match(
     scope,
-    /\| 飞书上游文档实际权限核验 \|[^\n]+\| \[ \] \|[^\n]+产品：`EVD-FEISHU-ACL-PRODUCT-20260810`[^\n]+售前 \/ 售后文档尚未创建[^\n]+旧售后 ACL 收据[^\n]+历史 \/ 不匹配[^\n]+当前有效覆盖仅 1\/4 \|/
+    /\| 飞书上游文档实际权限核验 \|[^\n]+\| \[ \] \|[^\n]+产品：`EVD-FEISHU-ACL-PRODUCT-20260810`[^\n]+售前 \/ 售后候选文件已受控核验[^\n]+组织外访问能力仍为允许[^\n]+权限收紧未落地[^\n]+旧售后 ACL 收据[^\n]+历史 \/ 不匹配[^\n]+当前有效覆盖仍仅 1\/4[^\n]+独立受控管理员 \/ 平台管理员 \|/
   );
   assert.match(
     scope,
@@ -686,7 +696,7 @@ test("评测按平台场景分层，单一简单场景不能包办总分", async
   assert.match(scope, /六类风险负例为信息不足、内容冲突 \/ 过期、跨平台、错 SKU、越权承诺、敏感信息/);
   assert.match(scope, /缺分层或只报总分不得验收/);
   assert.match(scope, /任一分层未达线即失败，不能用总体均值抵扣/);
-  assert.match(scope, /Scope 与验收 v4\.36/);
+  assert.match(scope, /Scope 与验收 v4\.37/);
 });
 
 test("一期 Dashboard 明确区分业务工单分析与内部话术优化待办", async () => {
