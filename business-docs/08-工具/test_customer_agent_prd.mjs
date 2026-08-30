@@ -164,11 +164,29 @@ await check("关键业务口径完整", async () => {
     "不让客服人员选择技术框架",
   ];
   if (mode === "public-template") {
+    const [charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+      readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
+      readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
+      readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
+      readFile(path.join(projectDir, "03-Scope与验收.md"), "utf8"),
+      readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
+      readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
+      readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+    ]);
+    const projectStatus = deriveProjectStatus({
+      charter,
+      schedule,
+      ledger,
+      scope,
+      cost,
+      architecture,
+      implementation,
+    });
     requiredFacts.push(
-      "G0 未签发",
-      "13 / 14",
-      "14 / 15",
-      "最早 08-14"
+      `G0 ${projectStatus.g0}`,
+      `${projectStatus.externalPass} / ${projectStatus.externalTotal}`,
+      `${projectStatus.scopePass} / ${projectStatus.scopeTotal}`,
+      `历史日期下限 ${projectStatus.earliestDdev.slice(5)}`
     );
   }
   const missing = requiredFacts.filter((fact) => !visible.includes(fact));
@@ -176,6 +194,7 @@ await check("关键业务口径完整", async () => {
   for (const stale of ["话术库 MVP-A", "独立预评分", "强制排序"]) {
     assert.equal(visible.includes(stale), false, `可见页面仍包含废止口径：${stale}`);
   }
+  assert.doesNotMatch(visible, /全部通过后，最早\s+\d{2}-\d{2}/, "已过期的 Ddev 日期不得继续伪装成当前开工预测");
   assert.equal(visible.includes("编码从下一个可用工作日开始"), false, "Ddev 不得额外强制次日开工");
   assert.match(visible, /Ddev 生效当日即可进入 DEV-M0/);
   return `${requiredFacts.length} 项`;
@@ -679,22 +698,22 @@ try {
           await soloButton.getAttribute("aria-pressed"),
           "true"
         );
-        assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
+        assert.match(await page.locator("#scenario-output").innerText(), /Ddev \+ 39～56 个净工程日/);
         assert.match(page.url(), /resource=solo/);
         await page.reload({ waitUntil: "load" });
         assert.equal(await soloButton.getAttribute("aria-pressed"), "true");
-        assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
+        assert.match(await page.locator("#scenario-output").innerText(), /Ddev \+ 39～56 个净工程日/);
         await teamButton.click();
-        assert.match(await page.locator("#scenario-output").innerText(), /09-11/);
+        assert.match(await page.locator("#scenario-output").innerText(), /需重估/);
         assert.match(page.url(), /resource=team/);
         await page.goBack();
         await page.waitForFunction(() => new URL(location.href).searchParams.get("resource") === "solo");
         assert.equal(await soloButton.getAttribute("aria-pressed"), "true");
-        assert.match(await page.locator("#scenario-output").innerText(), /11-20/);
+        assert.match(await page.locator("#scenario-output").innerText(), /Ddev \+ 39～56 个净工程日/);
         await page.goForward();
         await page.waitForFunction(() => new URL(location.href).searchParams.get("resource") === "team");
         assert.equal(await teamButton.getAttribute("aria-pressed"), "true");
-        assert.match(await page.locator("#scenario-output").innerText(), /09-11/);
+        assert.match(await page.locator("#scenario-output").innerText(), /需重估/);
         return "solo → reload → team → Back solo → Forward team";
       });
 

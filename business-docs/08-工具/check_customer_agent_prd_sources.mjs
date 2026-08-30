@@ -547,10 +547,11 @@ function derivePrdFacts(sourceById, projectStatus) {
   assertSame("G0 决策日", g0Date, charterG0Date);
 
   const ddevEarliest = projectStatus.earliestDdev;
-  const scheduleDdev = schedule.match(/最早于\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日签发开发(?:开工许可|日)\s*\(?Ddev\)?/);
-  if (!scheduleDdev) throw new Error("无法从真源解析：排期 Ddev 最早日");
-  const scheduleDdevIso = `${d0.slice(0, 4)}-${String(scheduleDdev[1]).padStart(2, "0")}-${String(scheduleDdev[2]).padStart(2, "0")}`;
-  assertSame("Ddev 最早日", ddevEarliest, scheduleDdevIso);
+  const scheduleDdevIso = required(
+    schedule.match(/`(\d{4}-\d{2}-\d{2})`\s+只保留为 Ddev 不得早于的历史日期下限/)?.[1],
+    "排期 Ddev 历史日期下限"
+  );
+  assertSame("Ddev 历史日期下限", ddevEarliest, scheduleDdevIso);
 
   const {
     overallTop3,
@@ -712,7 +713,7 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
     [
       `外部责任包 ${facts.externalPass} / ${facts.externalTotal}`,
       `Scope 检查 ${facts.scopePass} / ${facts.scopeTotal}`,
-      `最早 ${facts.ddevEarliest.slice(5)}`,
+      `历史日期下限 ${facts.ddevEarliest.slice(5)}`,
       `Ddev ${facts.ddevState}`,
     ]
   );
