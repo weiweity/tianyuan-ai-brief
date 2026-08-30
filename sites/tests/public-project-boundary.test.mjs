@@ -76,7 +76,9 @@ async function artifactState(paths) {
 }
 
 async function advancePrivateFixture(target) {
-  const g009ClosureEvidence = "EVD-G0-09-AUTHORITY-SOURCES-20260813";
+  const g003Evidence = "EVD-G0-03-MENOKIN-APPLICABILITY-20260830";
+  const g009ClosureEvidence = "EVD-G0-09-AUTHORITY-SOURCES-20260830";
+  const g013Evidence = "EVD-G0-13-MENOKIN-EVALUATION-FREEZE-20260830";
   const readmePath = path.join(target, "README.md");
   const charterPath = path.join(target, "00-项目章程.md");
   const ledgerPath = path.join(target, "02-G0责任与证据台账.md");
@@ -85,7 +87,7 @@ async function advancePrivateFixture(target) {
 
   const charter = replaceRequired(
     await readFile(charterPath, "utf8"),
-    "外部责任包 **13/14**、Scope **14/15**",
+    "外部责任包 **11/14**、Scope **11/15**",
     "外部责任包 **14/14**、Scope **15/15**",
     "私有章程门禁汇总"
   );
@@ -93,7 +95,7 @@ async function advancePrivateFixture(target) {
 
   const readme = replaceRequired(
     await readFile(readmePath, "utf8"),
-    "外部责任包 13/14、Scope 14/15（合计 27/29）",
+    "外部责任包 11/14、Scope 11/15（合计 22/29）",
     "外部责任包 14/14、Scope 15/15（合计 29/29）",
     "私有 README 门禁汇总"
   );
@@ -105,31 +107,43 @@ async function advancePrivateFixture(target) {
   const summaryCells = gateLines[summaryIndex].split("|");
   assert.equal(
     summaryCells[2].replace(/\*\*/g, "").trim(),
-    "13/14 Pass",
-    "私有台账必须从当前 13/14 基线推进"
+    "11/14 Pass",
+    "私有台账必须从当前 11/14 基线推进"
   );
   summaryCells[2] = " **14/14 Pass** ";
   summaryCells[3] = " G0-02～G0-15 已完成；等待正式 G0 签发（职责接受与草案不等于 Pass） ";
   gateLines[summaryIndex] = summaryCells.join("|");
+  const priorityIndex = gateLines.findIndex((line) => line.startsWith("| 业务问题优先级 |"));
+  assert.notEqual(priorityIndex, -1, "私有台账缺少业务问题优先级汇总");
+  const priorityCells = gateLines[priorityIndex].split("|");
+  priorityCells[2] = " **已核验** ";
+  priorityCells[3] = ` Menokin 适用性已由 \`${g003Evidence}\` 签发 `;
+  gateLines[priorityIndex] = priorityCells.join("|");
   const scopeSummaryIndex = gateLines.findIndex((line) => line.startsWith("| Scope 检查 |"));
   assert.notEqual(scopeSummaryIndex, -1, "私有台账缺少 Scope 汇总");
   const scopeSummaryCells = gateLines[scopeSummaryIndex].split("|");
-  assert.equal(scopeSummaryCells[2].replace(/\*\*/g, "").trim(), "14/15 Pass");
+  assert.equal(scopeSummaryCells[2].replace(/\*\*/g, "").trim(), "11/15 Pass");
   scopeSummaryCells[2] = " **15/15 Pass** ";
   scopeSummaryCells[3] = " #1～#15 已确认；等待正式 G0 签发 ";
   gateLines[scopeSummaryIndex] = scopeSummaryCells.join("|");
-  const gateIndex = gateLines.findIndex((line) => line.startsWith("| G0-09 |"));
-  assert.notEqual(gateIndex, -1, "私有台账缺少 G0-09");
-  const gateCells = gateLines[gateIndex].split("|");
-  assert.equal(gateCells.length, 9, "G0-09 表格结构异常");
-  assert.equal(
-    gateCells[6].replace(/\*\*/g, "").trim(),
-    "进行中",
-    "G0-09 应从进行中基线推进"
-  );
-  gateCells[6] = " **Pass** ";
-  gateCells[7] = ` \`${g009ClosureEvidence}\` `;
-  gateLines[gateIndex] = gateCells.join("|");
+  for (const [gateId, evidence] of [
+    ["G0-03", g003Evidence],
+    ["G0-09", g009ClosureEvidence],
+    ["G0-13", g013Evidence],
+  ]) {
+    const gateIndex = gateLines.findIndex((line) => line.startsWith(`| ${gateId} |`));
+    assert.notEqual(gateIndex, -1, `私有台账缺少 ${gateId}`);
+    const gateCells = gateLines[gateIndex].split("|");
+    assert.equal(gateCells.length, 9, `${gateId} 表格结构异常`);
+    assert.equal(
+      gateCells[6].replace(/\*\*/g, "").trim(),
+      "进行中",
+      `${gateId} 应从进行中基线推进`
+    );
+    gateCells[6] = " **Pass** ";
+    gateCells[7] = ` \`${evidence}\` `;
+    gateLines[gateIndex] = gateCells.join("|");
+  }
 
   // 仅用于仓外私有迁移测试：使用不透明代号、脱敏计数和 EVD 收据，
   // 不写入 URL、token、真实标题、原始快照 SHA、成员名单或审批原文。
@@ -138,45 +152,45 @@ async function advancePrivateFixture(target) {
       domain: "presale",
       sourceRef: "SRC-1A7C9E4B2D8F6H3K",
       sourceVersionId: "srcv_2b8d4f6a1c3e7b90",
-      snapshotEvd: "EVD-G0-09-PRESALE-SNAPSHOT-20260813",
-      aclEvd: "EVD-FEISHU-ACL-PRESALE-20260813",
-      totalRows: 24,
-      importableRows: 23,
-      quarantinedRows: 1,
-      qualityEvd: "EVD-G0-09-PRESALE-QUALITY-20260813",
+      snapshotEvd: "EVD-G0-09-PRESALE-SNAPSHOT-20260830",
+      aclEvd: "EVD-FEISHU-ACL-PRESALE-20260830",
+      totalRows: 81,
+      importableRows: 79,
+      quarantinedRows: 2,
+      qualityEvd: "EVD-G0-09-PRESALE-QUALITY-20260830",
     },
     {
       domain: "campaign",
       sourceRef: "SRC-04A9A86874258A6A",
       sourceVersionId: "srcv_76b9165b2fe31908",
-      snapshotEvd: "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-      aclEvd: "EVD-FEISHU-ACL-CAMPAIGN-20260813",
-      totalRows: 67,
-      importableRows: 66,
-      quarantinedRows: 1,
-      qualityEvd: "EVD-G0-09-CAMPAIGN-QUALITY-20260813",
+      snapshotEvd: "EVD-G0-09-CAMPAIGN-SNAPSHOT-20260830",
+      aclEvd: "EVD-FEISHU-ACL-CAMPAIGN-20260830",
+      totalRows: 4,
+      importableRows: 4,
+      quarantinedRows: 0,
+      qualityEvd: "EVD-G0-09-CAMPAIGN-QUALITY-20260830",
     },
     {
       domain: "aftersale",
       sourceRef: "SRC-8C2E6G4J9L1N5Q7S",
       sourceVersionId: "srcv_5d9a1c3e7b2f6d80",
-      snapshotEvd: "EVD-G0-09-AFTERSALE-SNAPSHOT-20260813",
-      aclEvd: "EVD-FEISHU-ACL-AFTERSALE-20260810",
-      totalRows: 18,
-      importableRows: 18,
+      snapshotEvd: "EVD-G0-09-AFTERSALE-SNAPSHOT-20260830",
+      aclEvd: "EVD-FEISHU-ACL-AFTERSALE-20260830",
+      totalRows: 223,
+      importableRows: 223,
       quarantinedRows: 0,
-      qualityEvd: "EVD-G0-09-AFTERSALE-QUALITY-20260813",
+      qualityEvd: "EVD-G0-09-AFTERSALE-QUALITY-20260830",
     },
     {
       domain: "product",
       sourceRef: "SRC-60D6B23861F4FBF5",
       sourceVersionId: "srcv_88af65aa70c894aa",
-      snapshotEvd: "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-      aclEvd: "EVD-FEISHU-ACL-PRODUCT-20260810",
-      totalRows: 632,
-      importableRows: 631,
-      quarantinedRows: 1,
-      qualityEvd: "EVD-G0-09-PRODUCT-QUALITY-20260813",
+      snapshotEvd: "EVD-G0-09-PRODUCT-SNAPSHOT-20260830",
+      aclEvd: "EVD-FEISHU-ACL-PRODUCT-20260830",
+      totalRows: 106,
+      importableRows: 106,
+      quarantinedRows: 0,
+      qualityEvd: "EVD-G0-09-PRODUCT-QUALITY-20260830",
     },
   ];
   for (const row of readyReceiptRows) {
@@ -206,37 +220,44 @@ async function advancePrivateFixture(target) {
   await writeFile(ledgerPath, ledger, "utf8");
 
   const scopeLines = (await readFile(scopePath, "utf8")).split(/\r?\n/);
-  const scopeIndex = scopeLines.findIndex((line) => line.startsWith("| 9 |"));
-  assert.notEqual(scopeIndex, -1, "私有 Scope 缺少 #9");
-  const scopeCells = scopeLines[scopeIndex].split("|");
-  assert.equal(scopeCells[4].trim(), "[ ]", "Scope #9 必须从未完成基线推进");
-  scopeCells[4] = " [X] ";
-  scopeCells[5] = ` \`${g009ClosureEvidence}\` `;
-  scopeLines[scopeIndex] = scopeCells.join("|");
+  for (const [scopeId, evidence] of [
+    ["5", g003Evidence],
+    ["6", g003Evidence],
+    ["9", g009ClosureEvidence],
+    ["14", g013Evidence],
+  ]) {
+    const scopeIndex = scopeLines.findIndex((line) => line.startsWith(`| ${scopeId} |`));
+    assert.notEqual(scopeIndex, -1, `私有 Scope 缺少 #${scopeId}`);
+    const scopeCells = scopeLines[scopeIndex].split("|");
+    assert.equal(scopeCells[4].trim(), "[ ]", `Scope #${scopeId} 必须从未完成基线推进`);
+    scopeCells[4] = " [X] ";
+    scopeCells[5] = ` \`${evidence}\` `;
+    scopeLines[scopeIndex] = scopeCells.join("|");
+  }
   await writeFile(scopePath, scopeLines.join("\n"), "utf8");
 
   let prd = await readFile(prdPath, "utf8");
   prd = replaceRequired(
     prd,
-    "外部责任包 · 13 / 14",
+    "外部责任包 · 11 / 14",
     "外部责任包 · 14 / 14",
     "PRD 外部责任包状态轴"
   );
   prd = replaceRequired(
     prd,
-    "外部责任包 13 / 14；Scope 检查 14 / 15；",
+    "外部责任包 11 / 14；Scope 检查 11 / 15；",
     "外部责任包 14 / 14；Scope 检查 15 / 15；",
     "PRD Ddev 门禁摘要"
   );
   prd = replaceRequired(
     prd,
-    "Scope · 14 / 15",
+    "Scope · 11 / 15",
     "Scope · 15 / 15",
     "PRD Scope 状态轴"
   );
   prd = replaceRequired(
     prd,
-    "当前只完成 27 / 29 项准备",
+    "当前只完成 22 / 29 项准备",
     "当前只完成 29 / 29 项准备",
     "PRD 总准备计数"
   );
@@ -729,12 +750,12 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   assert.equal(payload.gates.find((gate) => gate.id === "G0-13")?.status, "Pass");
   assert.equal(
     payload.gates.find((gate) => gate.id === "G0-13")?.evidence,
-    "EVD-G0-13-EVALUATION-FREEZE-20260812"
+    "EVD-G0-13-MENOKIN-EVALUATION-FREEZE-20260830"
   );
   assert.equal(payload.scopeChecks.find((item) => String(item.id) === "14")?.status, "Pass");
   assert.equal(
     payload.scopeChecks.find((item) => String(item.id) === "14")?.evidence,
-    "EVD-G0-13-EVALUATION-FREEZE-20260812"
+    "EVD-G0-13-MENOKIN-EVALUATION-FREEZE-20260830"
   );
 
   const privateLedgerPath = path.join(target, "02-G0责任与证据台账.md");

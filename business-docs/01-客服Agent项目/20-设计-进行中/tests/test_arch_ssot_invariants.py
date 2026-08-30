@@ -185,7 +185,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     ):
         assert phrase not in t, f"current portfolio dashboard still contains forbidden: {phrase}"
     _assert_same_line(t, "剪贴板主 CTA", "autofill", "实验性次入口")
-    _assert_same_line(t, "Demo 种子", "有效窗口", "不得返回窗外话术")
+    _assert_same_line(t, "S0 合成 fixture", "有效窗口", "不得返回窗外话术")
     _assert_same_line(t, "实现设计文档 Ready", "Ddev 未授权")
     _assert_same_line(t, "设计阶段", "架构设计 PASS-WITH-CONDITIONS", "静态设计")
 
@@ -194,8 +194,8 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     ledger = ledger_path.read_text(encoding="utf-8")
     _assert_same_line(ledger, "DEC-025", "历史建议", "已被 31/37", "剪贴板主 CTA")
     _assert_same_line(ledger, "DEC-029", "99-历史/2026-08-06-架构设计收口/28-自研vs中台WBS对照.md", "46-实现设计-开工包.md")
-    _assert_same_line(ledger, "有效期字段", "Demo 种子", "不得返回窗外话术")
-    _assert_same_line(ledger, "架构设计已 PASS-WITH-CONDITIONS", "静态设计")
+    _assert_same_line(ledger, "有效期字段", "PILOT-S0", "合成 fixture", "不得返回窗外话术")
+    _assert_same_line(ledger, "CR-004", "静态合同已选择", "运行能力尚未实现", "不构成 G0-09 / Scope #9 Pass")
     _assert_same_line(
         ledger,
         "G0-12",
@@ -230,21 +230,14 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.64" in ledger
+    assert "v3.67" in ledger
     _assert_same_line(
         ledger,
         "DEC-052",
-        "DEC-049",
-        "PRECONFIRM",
-        "权限收紧未落地",
-        "还缺两域唯一主源指定与版本 / 快照",
-        "三域现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "13/14",
-        "14/15",
-        "合计 27/29",
-        "Ddev 为空",
+        "历史记录保留",
+        "DEC-053",
+        "Menokin",
+        "PILOT-S0",
     )
     _assert_same_line(ledger, "G0-08", "**Pass**", "EVD-G0-08-GREENFIELD-ISOLATION-20260810")
     _assert_same_line(ledger, "G0-10", "**Pass**", "EVD-G0-10-PRD-SCOPE-FREEZE-20260810")
@@ -253,64 +246,53 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     _assert_same_line(ledger, "G0-15", "**Pass**", "EVD-G0-15-RUN-HANDOVER-20260812")
     _assert_same_line(ledger, "G0-06", "**Pass**", "EVD-CONTENT-GOVERNANCE-APPROVAL-20260809")
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.64 · 2026-08-24")
+    assert footer.startswith("*G0 责任与证据台账 v3.67 · 2026-08-30")
     assert footer.endswith("*")
     for token in (
-        "DEC-051",
-        "DEC-052",
-        "DEC-049",
-        "PRECONFIRM",
-        "权限收紧未落地",
-        "两域唯一主源指定与版本 / 快照",
-        "三域现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "13/14",
-        "14/15",
-        "合计 27/29",
+        "Menokin",
+        "G0-03",
+        "G0-09",
+        "G0-13",
+        "11/14",
+        "11/15",
         "Ddev 为空",
         "G0 未签",
-        "代码未开始",
+        "PILOT-S0",
+        "不计正式产品开发",
     ):
         assert token in footer, f"ledger footer missing: {token}"
     scope = (DESIGN.parent / "03-Scope与验收.md").read_text(encoding="utf-8")
-    assert "Scope 与验收 v4.37" in scope
+    assert "Scope 与验收 v4.39" in scope
     _assert_same_line(
         scope,
         "| 9 |",
         "[ ]",
-        "DEC-052",
-        "DEC-050",
         "DEC-049",
-        "PRECONFIRM",
-        "仍须由 Content Lead 指定各域唯一主源",
-        "组织外访问能力仍为允许",
-        "API 收紧未持久化",
+        "DEC-053",
+        "企业工作簿四个子表",
+        "唯一候选",
         "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
-        "四域公开安全收据必须全部为 `READY`",
-        "两域唯一主源指定与版本 / 快照",
-        "售前 / 活动 / 售后现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "DEC-DDEV-01",
-        "产品功能代码不得开始",
-        "不计完成",
+        "四域收据全部为 `READY`",
+        "受控版本映射 / 快照",
+        "对应 ACL",
+        "逐域质量",
+        "整体最终批准 EVD",
+        "DEC-055",
+        "PILOT-S0",
+        "不改变本项",
     )
     _assert_same_line(
         scope,
         "> **状态：**",
-        "v4.37",
-        "DEC-052",
-        "DEC-050",
-        "DEC-049",
-        "PRECONFIRM",
-        "权限收紧未落地",
-        "两域主源指定与版本 / 快照",
-        "三域现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "当前 Scope 14/15",
-        "Ddev 与产品功能代码不得开始",
+        "v4.39",
+        "Menokin",
+        "当前 Scope 11/15",
+        "DEC-055",
+        "#5/#6/#14 重新开放",
+        "#9",
+        "INCOMPLETE",
+        "PILOT-S0",
+        "不形成正式 Ddev",
     )
     _assert_same_line(
         scope,
@@ -336,42 +318,38 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     )
     scope_footer = scope.rstrip().splitlines()[-1]
     for token in (
-        "Scope 与验收 v4.37",
-        "DEC-052",
-        "DEC-049",
-        "PRECONFIRM",
-        "权限收紧未落地",
-        "两域唯一主源指定与版本 / 快照",
-        "三域现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "G0-09 / Scope #9",
-        "14/15",
-        "Ddev 与产品功能代码不得开始",
+        "Scope 与验收 v4.39",
+        "Menokin",
+        "11/15",
+        "#5/#6",
+        "#9",
+        "#14",
+        "PILOT-S0",
+        "不等于正式 Ddev",
     ):
         assert token in scope_footer, f"scope footer missing: {token}"
 
     schedule = (DESIGN.parent / "01-总排期与阶段门禁.md").read_text(encoding="utf-8")
     delivery = (DESIGN.parent / "05-全栈交付计划.md").read_text(encoding="utf-8")
     cost = (DESIGN.parent / "04-费用与成本控制.md").read_text(encoding="utf-8")
-    assert "排期版本：** v3.20" in schedule
-    _assert_same_line(schedule, "DEC-DDEV-01", "Ddev 生效当日", "DEV-M0", "不额外等待")
+    assert "排期版本：** v3.23" in schedule
+    _assert_same_line(schedule, "DEC-DDEV-01", "Ddev 生效当日", "即可进入", "DEV-M0")
     _assert_same_line(schedule, "证据等级", "EVD-G0-14-WBS-CAPACITY-20260813", "公司受控系统归档", "不单独使 G0-14 / Scope #15 Pass")
     _assert_same_line(schedule, "一期部署与交付目标", "2026-08-31", "内部目标，不是对外硬承诺")
     _assert_same_line(schedule, "二期目标启动", "2026-09-12", "另批")
-    assert "三期日期保持 TBD" in schedule
+    _assert_same_line(schedule, "| 三期 |", "TBD", "另行立项", "不得由一期结果自动启动")
     assert "G0-14 · 单人 FDE 可签 WBS 草案" in schedule
     assert "Ddev → DEV-M0 → M1 → M2 → M3 → M4 → G1a → Pilot Ready → 连续两周 Pilot → G1b / M4" in schedule
     assert "每周最多安排 **4 个净工程日**" in schedule
-    assert "全栈交付计划 v2.10" in delivery
+    assert "全栈交付计划 v2.12" in delivery
     assert "G0-15 · 已批准的运行交接方案" in delivery
     assert "EVD-G0-15-RUN-HANDOVER-20260812" in delivery
     assert "真实告警接入、备份恢复、回退和试点演练属于 Ddev 后退出证据" in delivery
-    assert "费用与成本控制 v3.9" in cost
+    assert "费用与成本控制 v3.11" in cost
     assert "费用路径未批" not in cost
     assert "费用路径和 cap 均未签发" not in cost
     assert "G0-07 / G0-14 仍需" not in cost
-    _assert_same_line(cost, "当前事实", "B 路径", "新增付费为 0", "2026-08-31", "EVD-G0-07-FEE-PATH-20260813", "受控归档")
+    _assert_same_line(cost, "当前事实", "B 路径", "新增付费 0", "2026-08-31", "2026-09-30", "EVD-G0-07-FEE-PATH-20260813", "受控系统归档")
     _assert_same_line(cost, "当前设备决定", "保持现状", "不做硬件升级", "现有 Mac", "Windows 10 x64", "后续云服务器")
 
     old_wbs = _read_history("28-自研vs中台WBS对照.md")
@@ -469,8 +447,8 @@ def test_raci_is_the_single_13_role_intake_with_fixed_owner_projection() -> None
     assert sum(text.count(intake_header) for text in (ledger, scope, implementation)) == 1
     _assert_same_line(scope, "| 2 |", "[x]", "EVD-RACI-ACCEPTANCE-PACK-20260810")
     _assert_same_line(scope, "| 4 |", "[x]", "EVD-RACI-ACCEPTANCE-PACK-20260810")
-    _assert_same_line(ledger, "外部责任包", "13/14 Pass")
-    _assert_same_line(ledger, "Scope 检查", "14/15 Pass")
+    _assert_same_line(ledger, "外部责任包", "11/14 Pass")
+    _assert_same_line(ledger, "Scope 检查", "11/15 Pass")
     _assert_same_line(ledger, "Ddev", "空")
 
 
@@ -997,7 +975,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     assert "当前 v1.16" in ssot
     assert "**v1.16 ENG-T1" in contract
     assert "NFR 冻结包 v1.13" in nfr
-    assert "2026-08-21 · v1.21" in implementation
+    assert "2026-08-30 · v1.22" in implementation
     assert SCHEMA_VERSION in raw_ddl
     assert f"version: {OPENAPI_VERSION}" in spec
     for name, text in {
@@ -1256,21 +1234,21 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # Static contract selection does not close organizational gates or manufacture runtime evidence.
-    assert "v3.64" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger and "DEC-051" in ledger and "DEC-052" in ledger
+    assert "v3.67" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-045" in ledger and "DEC-046" in ledger and "DEC-047" in ledger and "DEC-048" in ledger and "DEC-049" in ledger and "DEC-050" in ledger and "DEC-051" in ledger and "DEC-052" in ledger and "DEC-053" in ledger and "DEC-055" in ledger
     g009_line = next(line for line in ledger.splitlines() if line.startswith("| G0-09 |"))
     for token in (
         "**进行中**",
-        "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-        "DEC-052",
-        "更新 `DEC-050` 的创建事实",
-        "候选文件已在受控空间创建",
-        "PRECONFIRM",
-        "Content Lead 唯一主源指定",
-        "组织外访问能力仍为允许",
-        "API 收紧未持久化",
+        "DEC-053",
+        "四域唯一业务候选",
+        "适用产品",
+        "产品 / 活动旧现行版本不得与新候选混用",
+        "`SRC-* / srcv_*`",
+        "逐域质量 EVD",
+        "0/4 `READY`",
         "DEC-DDEV-01",
         "不得 Pass",
-        "不得开始产品功能代码",
+        "正式 `DEV-M0` 不得开始",
+        "Menokin `PILOT-S0`",
         "本行不计 Pass",
     ):
         assert token in g009_line, f"G0-09 事实纠偏行缺少：{token}"
@@ -1278,17 +1256,18 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     _assert_same_line(
         ledger,
         "售前 `presale`",
-        "OPEN · PRECONFIRM",
-        "候选文件已在受控空间创建",
-        "尚未由 Content Lead 指定 `canonical / current`",
-        "权限收紧未落地",
+        "DEC-053 · FROZEN CANDIDATE",
+        "唯一业务候选已定",
+        "尚未升级为 `canonical / current`",
+        "81 / 79 / 2",
+        "质量 EVD / 整体签发待补",
     )
-    _assert_same_line(ledger, "活动 `campaign`", "SRC-04A9A86874258A6A", "srcv_76b9165b2fe31908", "2026-08-01～2026-08-31", "67 源行、66 条规范化、1 条跳过")
-    _assert_same_line(ledger, "产品 `product`", "SRC-60D6B23861F4FBF5", "srcv_88af65aa70c894aa", "2026-09-12 首次月度复核", "632 源行、631 条规范化")
+    _assert_same_line(ledger, "活动 `campaign`", "DEC-053 · FROZEN CANDIDATE", "storewide + []", "仅冻结 4 条", "2026-09-01～2026-09-30", "4 / 4 / 0")
+    _assert_same_line(ledger, "产品 `product`", "DEC-053 · FROZEN CANDIDATE", "首列字段为“适用产品”", "106 / 106 / 0", "旧产品 ACL EVD 不复用")
     receipt = _between(
         ledger,
         "### G0-09 机器可核验关闭收据（公开安全投影）",
-        "售前、售后候选文件已创建并进入",
+        "`2026-08-28` 活动新候选进度",
     )
     receipt_lines = receipt.splitlines()
     receipt_header = "| domain | source_ref | source_version_id | snapshot_evd | acl_evd | total_rows | importable_rows | quarantined_rows | quality_evd | final_approver_role | overall_approval_evd | readiness |"
@@ -1303,7 +1282,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     assert all(row[10] == "待补" for row in rows)
     assert all(row[11] == "INCOMPLETE" for row in rows)
     _assert_same_line(
-        receipt,
+        ledger,
         "只有四行都变为 `READY`",
         "total_rows = importable_rows + quarantined_rows",
         "G0-09、Scope #9 与四行 `overall_approval_evd` 使用同一个",
@@ -1314,19 +1293,20 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     _assert_same_line(
         ledger,
         "售后 `aftersale`",
-        "OPEN · PRECONFIRM",
-        "候选文件已在受控空间创建",
-        "组织外访问能力仍为允许",
-        "权限收紧未落地",
-        "旧售后 ACL 收据",
-        "历史",
-        "不计当前覆盖",
+        "DEC-053 · FROZEN CANDIDATE",
+        "唯一业务候选已定",
+        "尚未升级为 `canonical / current`",
+        "223 / 223 / 0",
+        "公司业务号码",
+        "旧 ACL 收据只作历史 / 不匹配记录",
+        "历史 / 不匹配",
     )
     _assert_same_line(
         ledger,
         "产品 `product`",
-        "ACL 4/4 已核验",
-        "`EVD-FEISHU-ACL-PRODUCT-20260810`",
+        "DEC-053 · FROZEN CANDIDATE",
+        "新候选 ACL EVD 待补",
+        "旧产品 ACL EVD 不复用",
     )
     _assert_same_line(
         ledger,
@@ -1373,17 +1353,15 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     )
     _assert_same_line(
         ledger,
-        "售前、售后",
-        "候选文件已完成受控只读排查",
-        "链接分享均已关闭",
-        "组织外访问能力仍为允许",
-        "不继承父级权限",
-        "没有权限写入成功",
-        "未生成 `EVD-*`",
-        "原售后 ACL 收据",
-        "历史 / 不匹配",
-        "不计覆盖",
-        "当前只有产品 1/4 来源具备可归属的 ACL EVD",
+        "产品旧现行来源的 ACL 受控证据已保存",
+        "不能证明 `DEC-053` 新产品候选的 ACL",
+        "`DEC-052`",
+        "历史记录保留",
+        "企业工作簿四个新候选",
+        "形成可关联的新 ACL EVD",
+        "同一工作簿可由一份证据覆盖四域",
+        "明确列出四个子表与同一版本",
+        "当前新候选 0/4 具备可归属的 ACL EVD",
         "尚无四类最终来源批准 EVD",
         "不把 G0-09 改为 Pass",
         "不改变 Scope #9、计数或 Ddev",
@@ -1407,58 +1385,54 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
     dec041_line = next(line for line in ledger.splitlines() if "| DEC-041 |" in line)
     assert "app_content_admin" not in dec041_line
 
-    assert "v4.37" in scope and "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812" in scope
+    assert "v4.39" in scope and "DEC-053" in scope and "DEC-055" in scope
     _assert_same_line(
         scope,
         "| 9 |",
         "[ ]",
-        "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-        "DEC-052",
-        "DEC-050",
         "DEC-049",
-        "PRECONFIRM",
-        "仍须由 Content Lead 指定各域唯一主源",
-        "组织外访问能力仍为允许",
-        "API 收紧未持久化",
+        "DEC-053",
+        "企业工作簿四个子表",
+        "唯一候选",
+        "81/79/2",
+        "4/4/0",
+        "223/223/0",
+        "适用产品",
+        "106/106/0",
         "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
-        "四域公开安全收据必须全部为 `READY`",
-        "两域唯一主源指定与版本 / 快照",
-        "售前 / 活动 / 售后现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "DEC-DDEV-01",
-        "不得 Pass",
-        "产品功能代码不得开始",
-        "不计完成",
+        "四域收据全部为 `READY`",
+        "受控版本映射 / 快照",
+        "对应 ACL",
+        "逐域质量",
+        "整体最终批准 EVD",
+        "DEC-055",
+        "PILOT-S0",
+        "不改变本项",
     )
     _assert_same_line(
         scope,
         "飞书上游文档实际权限核验",
         "[ ]",
         "EVD-FEISHU-ACL-PRODUCT-20260810",
-        "售前 / 售后候选文件已受控核验",
-        "组织外访问能力仍为允许",
-        "权限收紧未落地",
-        "旧售后 ACL 收据",
-        "历史 / 不匹配",
-        "当前有效覆盖仍仅 1/4",
+        "DEC-053",
+        "四域新候选位于同一企业工作簿",
+        "只作历史",
+        "当前新候选有效 ACL 覆盖为 0/4",
+        "一份受控 EVD 覆盖四域",
+        "明确四个子表",
         "独立受控管理员 / 平台管理员",
     )
     _assert_same_line(scope, "回滚上一版本", "重验目标快照四域来源", "新的单调 `release_seq`", "不把 current 直接指回旧 release")
     scope_footer = scope.rstrip().splitlines()[-1]
     for token in (
-        "Scope 与验收 v4.37",
-        "DEC-052",
-        "DEC-049",
-        "PRECONFIRM",
-        "权限收紧未落地",
-        "两域唯一主源指定与版本 / 快照",
-        "三域现行 ACL EVD",
-        "四域质量分母",
-        "整体最终签发",
-        "G0-09 / Scope #9",
-        "14/15",
-        "Ddev 与产品功能代码不得开始",
+        "Scope 与验收 v4.39",
+        "Menokin",
+        "11/15",
+        "#5/#6",
+        "#9",
+        "#14",
+        "PILOT-S0",
+        "不等于正式 Ddev",
     ):
         assert token in scope_footer
 
@@ -1838,10 +1812,10 @@ def test_dec_042_content_governance_machine_contract_is_fail_closed_and_complete
     # Static machine alignment is not runtime proof and cannot move organization gates.
     _assert_same_line(ssot, "DEC-042", "schema v1.12", "OpenAPI 1.11.0", "迁移", "动态证据", "G0", "Scope", "Ddev")
     _assert_same_line(gate_board, "3 实现设计", "Pass", "Ready", "不等于开发授权")
-    _assert_same_line(gate_board, "组织授权门（不计入八关）", "G0 未签", "Ddev 未授权", "13/14", "14/15")
-    for token in ("13/14", "14/15", "Ddev 为空"):
+    _assert_same_line(gate_board, "组织授权门（不计入八关）", "G0 未签", "Ddev 未授权", "11/14", "11/15")
+    for token in ("11/14", "11/15", "Ddev 为空"):
         assert token in ledger
-    assert "14/15" in scope and "`DEC-DDEV-01` 不得 Pass" in scope
+    assert "11/15" in scope and "`PILOT-S0` 不形成正式 Ddev" in scope
 
 
 def test_cr_002_g1a_and_real_fwd_evidence_flow_is_acyclic() -> None:
@@ -2000,7 +1974,7 @@ def test_architecture_diagrams_three_kinds() -> None:
 
 def test_waterfall_gate_status() -> None:
     t = _read("40-架构图与关卡状态.md")
-    _assert_same_line(t, "状态", "2026-08-13", "v1.21")
+    _assert_same_line(t, "状态", "2026-08-30", "v1.23")
     for gate in ("1 需求分析", "2 架构设计", "3 实现设计", "4 代码开发", "5 单元测试", "6 系统测试", "7 上线发布", "8 生产运维"):
         assert gate in t, f"missing gate {gate}"
     assert "组织授权门（不计入八关）" in t
@@ -2086,7 +2060,7 @@ def test_waterfall_gate_status() -> None:
         "48 v0.5",
         "50 v0.4",
     )
-    _assert_same_line(t46, "日期", "2026-08-21", "v1.21")
+    _assert_same_line(t46, "日期", "2026-08-30", "v1.22")
     _assert_same_line(
         t46,
         "Ddev 前**静态安全启动矩阵**",
@@ -2317,7 +2291,7 @@ def test_waterfall_gate_status() -> None:
     _assert_same_line(d04, "2026-08-10 Codex", "90", "冻结评审", "46")
     _assert_same_line(d04, "组织授权门", "不计入八关")
     _assert_same_line(d04, "G0 未签发", "Ddev 未授权")
-    _assert_same_line(d04, "外部责任包 13/14", "Scope 14/15", "不开代码")
+    _assert_same_line(d04, "Menokin证据适用性复核", "外部责任包 11/14", "Scope 11/15", "正式不开代码")
     _assert_same_line(d04, "等待授权", "未开始")
     _assert_same_line(d04, "当前 schema v1.12 reference DDL", "PG15", "PASS-WITH-LIMITATION")
     _assert_same_line(d04, "managed", "backup", "concurrency", "production", "NOT_CERTIFIED")
@@ -2424,9 +2398,9 @@ def test_extension_compatibility_contracts_are_executable() -> None:
     _assert_same_line(auth_mapping, "auth", "/v1/notices/*", "子能力", "不增加第十端口")
     _assert_same_line(implementation, "CONTRACT", "native_integration", "403+零写入", "notices 归 auth 子能力")
 
-    _assert_same_line(navigation, "更新", "2026-08-10", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
+    _assert_same_line(navigation, "更新", "2026-08-30", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
     _assert_same_line(navigation, "扩展治理", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "不新增端口、路由或表")
-    _assert_same_line(gate_board, "状态", "2026-08-13", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
+    _assert_same_line(gate_board, "状态", "2026-08-30", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
     _assert_same_line(gate_board, "2026-08-09 扩展治理收口", "N/N-1", "PlatformAdapter", "数据库变更", "不新增第十端口")
     _assert_same_line(gate_board, "| v1.4 |", "2026-08-09", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "NOT_CERTIFIED")
 

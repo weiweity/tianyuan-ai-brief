@@ -303,8 +303,8 @@ test("02 §5 是 13 角色与七类 Owner 的唯一回填入口，固定职责�
   );
   assert.match(scope, /\| 2 \| 客服业务 Owner \*\*具名\*\*并接受验收责任[^\n]+\[x\][^\n]+EVD-RACI-ACCEPTANCE-PACK-20260810/);
   assert.match(scope, /\| 4 \| 预算责任人、IT \/ 安全责任人、IT 服务 \/ 运维责任人具名[^\n]+\[x\][^\n]+EVD-RACI-ACCEPTANCE-PACK-20260810/);
-  assert.match(ledger, /\| 外部责任包 \| \*\*13\/14 Pass\*\* \|/);
-  assert.match(ledger, /\| Scope 检查 \| \*\*14\/15 Pass\*\* \|/);
+  assert.match(ledger, /\| 外部责任包 \| \*\*11\/14 Pass\*\* \|/);
+  assert.match(ledger, /\| Scope 检查 \| \*\*11\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*空\*\* \|/);
 });
 
@@ -323,7 +323,7 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.64 · 2026-08-24/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.67 · 2026-08-30/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/
@@ -336,17 +336,17 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   for (const token of [
     "USR-CONTENT-001 / ROLE-CONTENT-LEAD",
     "**进行中**",
-    "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-    "DEC-052",
-    "更新 `DEC-050` 的创建事实",
-    "候选文件已在受控空间创建",
-    "PRECONFIRM",
-    "Content Lead 唯一主源指定",
-    "组织外访问能力仍为允许",
-    "API 收紧未持久化",
+    "DEC-053",
+    "四域唯一业务候选",
+    "适用产品",
+    "产品 / 活动旧现行版本不得与新候选混用",
+    "`SRC-* / srcv_*`",
+    "逐域质量 EVD",
+    "0/4 `READY`",
     "DEC-DDEV-01",
     "不得 Pass",
-    "不得开始产品功能代码",
+    "正式 `DEV-M0` 不得开始",
+    "Menokin `PILOT-S0`",
     "本行不计 Pass",
   ]) assert.ok(g009Line.includes(token), `G0-09 事实纠偏行缺少：${token}`);
   assert.match(ledger, /DEC-037[^\n]+Ddev 前补齐[^\n]+不等于 G0-09 \/ Scope #9 Pass/);
@@ -390,26 +390,26 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     ledger,
     /CR-004[^\n]+权威来源发布与检索硬门[^\n]+每个 release 恰好绑定售前 \/ 活动 \/ 售后 \/ 产品四个不可变来源版本[^\n]+永久暂停整步 fail-closed[^\n]+静态机器合同已同批对齐，运行能力尚未实现[^\n]+Ddev 后迁移、代码、真 PG \/ API \/ 客户端实现与测试任务/
   );
-  assert.match(ledger, /\| 外部责任包 \| \*\*13\/14 Pass\*\* \|/);
-  assert.match(ledger, /\| Scope 检查 \| \*\*14\/15 Pass\*\* \|/);
+  assert.match(ledger, /\| 外部责任包 \| \*\*11\/14 Pass\*\* \|/);
+  assert.match(ledger, /\| Scope 检查 \| \*\*11\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*空\*\* \|/);
-  assert.match(ledger, /合计 27\/29/);
-  assert.match(ledger, /## G0-09 权威来源登记（两域候选文件已创建，主源 \/ 版本 \/ ACL \/ 质量待补 · 未签发）/);
+  assert.match(ledger, /合计 22\/29/);
+  assert.match(ledger, /## G0-09 权威来源登记（四域唯一业务候选已冻结，受控版本 \/ ACL \/ EVD 待补 · 未签发）/);
   assert.match(ledger, /DEC-045[^\n]+资料整理阶段收尾[^\n]+DEV-M0 开工准备窗口[^\n]+DEC-DDEV-01[^\n]+产品功能代码不得开始/);
   assert.match(ledger, /售前、活动、售后、产品每类必须恰好 1 个 `canonical`/);
   assert.match(
     ledger,
-    /\| 售前 `presale` \|[^\n]+OPEN · PRECONFIRM[^\n]+候选文件已在受控空间创建[^\n]+尚未由 Content Lead 指定 `canonical \/ current`[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+权限收紧未落地[^\n]+\|/
+    /\| 售前 `presale` \|[^\n]+DEC-053 · FROZEN CANDIDATE[^\n]+唯一业务候选已定[^\n]+尚未升级为 `canonical \/ current`[^\n]+81 \/ 79 \/ 2[^\n]+质量 EVD \/ 整体签发待补[^\n]+\|/
   );
   assert.match(
     ledger,
-    /\| 售后 `aftersale` \|[^\n]+OPEN · PRECONFIRM[^\n]+候选文件已在受控空间创建[^\n]+尚未由 Content Lead 指定 `canonical \/ current`[^\n]+尚无 `SRC-\* \/ srcv_\*`[^\n]+权限收紧未落地[^\n]+\|/
+    /\| 售后 `aftersale` \|[^\n]+DEC-053 · FROZEN CANDIDATE[^\n]+唯一业务候选已定[^\n]+尚未升级为 `canonical \/ current`[^\n]+223 \/ 223 \/ 0[^\n]+公司业务号码[^\n]+质量 EVD \/ 整体签发待补[^\n]+\|/
   );
   const sourceAclEvidence = new Map([
-    ["售前 `presale`", /组织外访问能力仍为允许[^|]+权限收紧未落地[^|]+现行 ACL EVD 待补/],
-    ["活动 `campaign`", /独立 ACL EVD 仍待补/],
-    ["售后 `aftersale`", /组织外访问能力仍为允许[^|]+权限收紧未落地[^|]+旧售后 ACL 收据[^|]+历史 \/ 不匹配[^|]+不计当前覆盖/],
-    ["产品 `product`", /ACL 4\/4 已核验：`EVD-FEISHU-ACL-PRODUCT-20260810`/],
+    ["售前 `presale`", /新候选 ACL EVD 待补/],
+    ["活动 `campaign`", /新候选 ACL EVD 待补/],
+    ["售后 `aftersale`", /新候选 ACL EVD 待补[^|]+旧 ACL 收据只作历史 \/ 不匹配记录/],
+    ["产品 `product`", /新候选 ACL EVD 待补[^|]+旧产品 ACL EVD 不复用/],
   ]);
   for (const [domain, aclEvidence] of sourceAclEvidence) {
     const line = ledger.split("\n").find((entry) => entry.includes(`| ${domain} |`));
@@ -417,8 +417,9 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     assert.match(line, aclEvidence);
     assert.doesNotMatch(line, /https?:\/\//);
   }
-  assert.match(ledger, /SRC-60D6B23861F4FBF5[^\n]+srcv_88af65aa70c894aa[^\n]+632 源行、631 条规范化/);
-  assert.match(ledger, /SRC-04A9A86874258A6A[^\n]+srcv_76b9165b2fe31908[^\n]+67 源行、66 条规范化、1 条跳过/);
+  assert.match(ledger, /产品 \/ 活动旧现行 `SRC-\* \/ srcv_\*` 与新候选不是同一冻结版本/);
+  assert.match(ledger, /旧 `632 \/ 631 \/ 1` 现行版本只保留历史[^\n]+106 \/ 106 \/ 0/);
+  assert.match(ledger, /旧 8 月 `canonical \/ current` 仅保留历史[^\n]+4 \/ 4 \/ 0/);
   const receiptHeading = "### G0-09 机器可核验关闭收据（公开安全投影）";
   const receiptHeader = "| domain | source_ref | source_version_id | snapshot_evd | acl_evd | total_rows | importable_rows | quarantined_rows | quality_evd | final_approver_role | overall_approval_evd | readiness |";
   const receiptLines = ledger.split("\n");
@@ -431,13 +432,20 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   );
   assert.deepEqual(receiptRows.map((row) => row[0]), ["presale", "campaign", "aftersale", "product"]);
   assert.equal(receiptRows.every((row) => row.length === 12), true, "四域关闭收据每行必须对齐 12 列");
+  assert.equal(receiptRows.every((row) => row[1] === "待新候选映射"), true, "旧来源映射不得复用到新候选");
+  assert.deepEqual(
+    receiptRows.map((row) => row.slice(5, 8)),
+    [["81", "79", "2"], ["4", "4", "0"], ["223", "223", "0"], ["106", "106", "0"]],
+    "四域业务分母必须冻结，且不因此伪造质量 EVD"
+  );
   assert.equal(receiptRows.every((row) => row[10] === "待补"), true, "整体签发 EVD 不得提前伪造");
   assert.equal(receiptRows.every((row) => row[11] === "INCOMPLETE"), true, "当前四域收据必须全部 fail-closed");
   assert.match(
     ledger,
     /只有四行都变为 `READY`[^\n]+每域 `total_rows = importable_rows \+ quarantined_rows`[^\n]+G0-09、Scope #9 与四行 `overall_approval_evd` 使用同一个形如 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD` 的整体签发收据[^\n]+机器状态才允许关闭/
   );
-  assert.equal((ledger.match(/EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812/g) ?? []).length >= 4, true);
+  assert.equal((ledger.match(/EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812/g) ?? []).length >= 1, true);
+  assert.match(ledger, /不能复用旧版本号、旧快照或旧批准 EVD/);
   assert.match(ledger, /EVD-FEISHU-ACL-AFTERSALE-20260810[^\n]+历史 \/ 不匹配[^\n]+不进入当前关闭收据/);
   assert.equal((ledger.match(/EVD-FEISHU-ACL-PRODUCT-20260810/g) ?? []).length >= 1, true);
   assert.match(ledger, /飞书 URL、doc \/ wiki \/ file token、真实标题.*不得进入 Git/);
@@ -469,14 +477,14 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
   );
   assert.match(
     ledger,
-    /售前、售后候选文件已完成受控只读排查[^\n]+链接分享均已关闭[^\n]+组织外访问能力仍为允许[^\n]+不继承父级权限[^\n]+API 收紧后复读仍为允许[^\n]+没有权限写入成功[^\n]+未生成 `EVD-\*`[^\n]+原售后 ACL 收据[^\n]+历史 \/ 不匹配证据[^\n]+不计覆盖[^\n]+当前只有产品 1\/4 来源具备可归属的 ACL EVD[^\n]+不把 G0-09 改为 Pass[^\n]+不改变 Scope #9、计数或 Ddev/
+    /产品旧现行来源的 ACL 受控证据已保存[^\n]+不能证明 `DEC-053` 新产品候选的 ACL[^\n]+`DEC-052`[^\n]+历史记录[^\n]+企业工作簿四个新候选[^\n]+形成可关联的新 ACL EVD[^\n]+同一工作簿可由一份证据覆盖四域[^\n]+明确列出四个子表与同一版本[^\n]+新候选 0\/4 具备可归属的 ACL EVD[^\n]+不把 G0-09 改为 Pass[^\n]+不改变 Scope #9、计数或 Ddev/
   );
   assert.match(
     ledger,
     /`EVD-FEISHU-ACL-AFTERSALE-20260810`[^\n]+历史 \/ 不匹配收据[^\n]+不进入当前关闭收据[^\n]+不能替代售前、活动、售后现行来源缺失的 ACL EVD/
   );
   assert.match(ledger, /`lifecycle_status`：`current \/ suspended`[^\n]+暂停是生命周期，不得混作权威等级/);
-  assert.equal((ledger.match(/已定：本类恰好 1 个 `canonical`/g) ?? []).length, 2);
+  assert.equal((ledger.match(/DEC-053 · FROZEN CANDIDATE/g) ?? []).length, 4);
   assert.match(ledger, /最终售前、活动、售后、产品每类必须恰好 1 个 `canonical`/);
   for (const field of [
     "source_ref",
@@ -497,36 +505,36 @@ test("内容真源与业务验收拆成唯一 A，Owner 与内容治理 SOP 均�
     scope,
     /\| 7 [^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD \| \[x\] \| `EVD-CONTENT-GOVERNANCE-APPROVAL-20260809`[^\n]*\|/
   );
-  assert.match(scope, /> \*\*状态：\*\* v4\.37 /);
+  assert.match(scope, /> \*\*状态：\*\* v4\.39 /);
   const scope9Line = scope.split("\n").find((line) => line.startsWith("| 9 |")) ?? "";
   for (const token of [
     "内容 / 话术 Owner",
     "[ ]",
-    "EVD-G0-09-PRODUCT-CAMPAIGN-SOURCES-20260812",
-    "DEC-052",
-    "更新 `DEC-050` 的创建事实",
     "DEC-049",
-    "候选文件现已创建",
-    "PRECONFIRM",
-    "仍须由 Content Lead 指定各域唯一主源",
-    "组织外访问能力仍为允许",
-    "API 收紧未持久化",
+    "DEC-053",
+    "企业工作簿四个子表",
+    "唯一候选",
+    "81/79/2",
+    "4/4/0",
+    "223/223/0",
+    "适用产品",
+    "106/106/0",
+    "reference / superseded",
     "同一个整体 `EVD-G0-09-AUTHORITY-SOURCES-YYYYMMDD`",
-    "四域公开安全收据必须全部为 `READY`",
-    "两域唯一主源指定与版本 / 快照",
-    "售前 / 活动 / 售后现行 ACL EVD",
-    "四域质量分母",
-    "整体最终签发",
-    "不计完成",
-    "DEC-DDEV-01",
-    "不得 Pass",
-    "产品功能代码不得开始",
+    "四域收据全部为 `READY`",
+    "受控版本映射 / 快照",
+    "对应 ACL",
+    "逐域质量",
+    "整体最终批准 EVD",
+    "不勾选",
+    "DEC-055",
+    "Menokin `PILOT-S0` 合成实现不改变本项",
   ]) {
     assert.ok(scope9Line.includes(token), `Scope #9 缺少收尾边界：${token}`);
   }
   assert.match(
     scope,
-    /\| 飞书上游文档实际权限核验 \|[^\n]+\| \[ \] \|[^\n]+产品：`EVD-FEISHU-ACL-PRODUCT-20260810`[^\n]+售前 \/ 售后候选文件已受控核验[^\n]+组织外访问能力仍为允许[^\n]+权限收紧未落地[^\n]+旧售后 ACL 收据[^\n]+历史 \/ 不匹配[^\n]+当前有效覆盖仍仅 1\/4[^\n]+独立受控管理员 \/ 平台管理员 \|/
+    /\| 飞书上游文档实际权限核验 \|[^\n]+\| \[ \] \|[^\n]+`DEC-053` 四域新候选位于同一企业工作簿[^\n]+旧产品 `EVD-FEISHU-ACL-PRODUCT-20260810`[^\n]+只作历史[^\n]+当前新候选有效 ACL 覆盖为 0\/4[^\n]+一份受控 EVD 覆盖四域[^\n]+明确四个子表[^\n]+独立受控管理员 \/ 平台管理员 \|/
   );
   assert.match(
     scope,
@@ -605,8 +613,8 @@ test("Ddev 为空时双仓职责保持隔离，绿地签发不冒充其他 G0 Pa
   );
   assert.match(ledger, /\| 最终结论 \| \[x\] 绿地隔离通过[^\n]+`EVD-G0-08-GREENFIELD-ISOLATION-20260810`[^\n]+只关闭 G0-08 \/ Scope #8/);
   assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+现有 v3 合成原型[^\n]+不计正式 DEV-M0/);
-  assert.match(ledger, /\| 外部责任包 \| \*\*13\/14 Pass\*\* \|/);
-  assert.match(ledger, /\| Scope 检查 \| \*\*14\/15 Pass\*\* \|/);
+  assert.match(ledger, /\| 外部责任包 \| \*\*11\/14 Pass\*\* \|/);
+  assert.match(ledger, /\| Scope 检查 \| \*\*11\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*空\*\* \|/);
 
   assert.match(scope, /\| 8 \|[^\n]+\| \[x\] \| `EVD-G0-08-GREENFIELD-ISOLATION-20260810` \|/);
@@ -638,7 +646,7 @@ test("Ddev 为空时双仓职责保持隔离，绿地签发不冒充其他 G0 Pa
 
   const ready = implementation.split("### Ready for DEV-M0")[1]?.split("### Done for DEV-M0")[0] ?? "";
   const doneM0 = implementation.split("### Done for DEV-M0")[1]?.split("### Done for each DEV milestone")[0] ?? "";
-  assert.match(implementation, /2026-08-21 · v1\.21/);
+  assert.match(implementation, /2026-08-30 · v1\.22/);
   assert.match(implementation, /两个独立 Git 仓不存在“跨仓原子提交”/);
   assert.match(implementation, /contract_set_id[\s\S]+source_git_sha[\s\S]+openapi[\s\S]+database/);
   assert.match(implementation, /export_customer_agent_contract_set\.mjs[\s\S]+完整 40 位[\s\S]+不读当前工作树[\s\S]+拒绝覆盖/);
@@ -696,7 +704,7 @@ test("评测按平台场景分层，单一简单场景不能包办总分", async
   assert.match(scope, /六类风险负例为信息不足、内容冲突 \/ 过期、跨平台、错 SKU、越权承诺、敏感信息/);
   assert.match(scope, /缺分层或只报总分不得验收/);
   assert.match(scope, /任一分层未达线即失败，不能用总体均值抵扣/);
-  assert.match(scope, /Scope 与验收 v4\.37/);
+  assert.match(scope, /Scope 与验收 v4\.39/);
 });
 
 test("一期 Dashboard 明确区分业务工单分析与内部话术优化待办", async () => {
@@ -863,7 +871,7 @@ test("PRD --update 拒绝可见契约破坏，并自动同步受控状态轴", a
     pilotMaxPeople: 5,
     pilotWeeks: 2,
     pilotTasksPerPersonWeek: 5,
-    scopePass: 14,
+    scopePass: 11,
     scopeTotal: 15,
   });
   assert.deepEqual(manifest.contracts.fee, {

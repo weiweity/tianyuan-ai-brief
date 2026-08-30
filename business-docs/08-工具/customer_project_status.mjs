@@ -608,9 +608,29 @@ export function deriveProjectStatus({
     scopeEvidence: scopeRowById["9"]?.["外部证据 ID / 备注"] || "",
     passed: gateById["G0-09"] === "Pass",
   });
+  if (gateById["G0-03"] === "Pass") {
+    const gateEvidence = gateRowById["G0-03"]?.["完成证据"] || "";
+    const scopeEvidence5 = scopeRowById["5"]?.["外部证据 ID / 备注"] || "";
+    const scopeEvidence6 = scopeRowById["6"]?.["外部证据 ID / 备注"] || "";
+    if (
+      !/^EVD-G0-03-MENOKIN-APPLICABILITY-\d{8}$/.test(gateEvidence) ||
+      scopeEvidence5 !== gateEvidence ||
+      scopeEvidence6 !== gateEvidence
+    ) {
+      throw new Error("G0-03 与 Scope #5/#6 必须使用同一 Menokin 适用性增量证据 EVD-G0-03-MENOKIN-APPLICABILITY-YYYYMMDD");
+    }
+  }
+  if (gateById["G0-13"] === "Pass") {
+    const gateEvidence = gateRowById["G0-13"]?.["完成证据"] || "";
+    const scopeEvidence = scopeRowById["14"]?.["外部证据 ID / 备注"] || "";
+    if (
+      !/^EVD-G0-13-MENOKIN-EVALUATION-FREEZE-\d{8}$/.test(gateEvidence) ||
+      scopeEvidence !== gateEvidence
+    ) {
+      throw new Error("G0-13 与 Scope #14 必须使用同一 Menokin 评测冻结证据 EVD-G0-13-MENOKIN-EVALUATION-FREEZE-YYYYMMDD");
+    }
+  }
   for (const [gateId, scopeId, expectedEvidenceId] of [
-    ["G0-03", "5", "EVD-G0-03-BUSINESS-BASELINE-20260812"],
-    ["G0-03", "6", "EVD-G0-03-BUSINESS-BASELINE-20260812"],
     ["G0-12", "13", "EVD-G0-12-OPS-DEPLOYMENT-20260810"],
   ]) {
     if (gateById[gateId] !== "Pass") continue;

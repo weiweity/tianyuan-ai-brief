@@ -259,7 +259,7 @@ const projectCode = sharedSurface.project.code;
 const d0 = sharedSurface.project.date;
 const g0Target = requiredMatch(
   sourceById.ledger,
-  /\*\*G0 决策日：\*\*\s*目标\s*([^\n]+)/,
+  /\*\*G0 决策日：\*\*\s*目标\s*(\d{4}-\d{2}-\d{2})/,
   "G0 目标日"
 );
 const meetingPackDeadline = requiredMatch(
@@ -419,14 +419,15 @@ const governanceBoundaries = ddevReady
       allowed: row["08-04 起可以做"],
       forbidden: row["Ddev 前禁止"],
     }));
-const nextOpenGate = externalGates
+const openGates = externalGates
   .filter((row) => row["状态"] !== "Pass")
-  .sort((left, right) => left["截止"].localeCompare(right["截止"]))[0];
+  .sort((left, right) => left["截止"].localeCompare(right["截止"]));
+const nextOpenGate = openGates[0];
 const nextOpenGateDate = nextOpenGate
-  ? `${nextOpenGate["截止"]}${nextOpenGate["状态"].startsWith("逾期") ? " · 已逾期" : ""}`
+  ? nextOpenGate["截止"]
   : shortDate(g0Target);
-const openGateSummary = nextOpenGate
-  ? `当前未关闭的 G0 责任包为 ${nextOpenGate.ID}「${nextOpenGate["责任包"]}」`
+const openGateSummary = openGates.length > 0
+  ? `当前未关闭的 G0 责任包共 ${openGates.length} 项：${openGates.map((gate) => `${gate.ID}「${gate["责任包"]}」`).join("、")}`
   : "当前无未关闭的 G0 责任包";
 const openGateAction = nextOpenGate
   ? `${nextOpenGate.ID}「${nextOpenGate["责任包"]}」`
@@ -475,7 +476,7 @@ if (ddevReady) {
 } else if (designStage) {
   headline = {
     title: "需求分析关已通过；架构设计关 PASS-WITH-CONDITIONS，实现设计关 Pass · 文档包 Ready。",
-    summary: `技术设计第 1～3 关已收口；${roleAcceptanceSummary}。当前仍停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，代码开发未开始。${openGateSummary}，须按该责任包的完成证据收口；真实数据逐批审核和运行负例仍走后续独立门。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
+    summary: `技术设计第 1～3 关已收口；${roleAcceptanceSummary}。当前仍停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，代码开发未开始。${openGateSummary}，须按这些责任包的完成证据逐项收口；真实数据逐批审核和运行负例仍走后续独立门。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
     nextDate: nextOpenGateDate,
     nextTitle: nextOpenGate?.["责任包"] || "组织授权门 / G0 补证",
     nextOutput: nextOpenGate?.["完成证据"] || "未关闭 G0 责任包与 Scope 检查证据",
@@ -598,7 +599,7 @@ const payload = {
       : projectPaused
         ? "当前处于暂停 / 整改，不进入 Ddev。"
         : designStage
-          ? `实现设计关已通过；当前补组织授权与 G0 证据，${shortDate(g0Target)} 前不倒推开工。`
+          ? `实现设计关已通过；原 G0 目标 ${shortDate(g0Target)} 已逾期，当前按未闭合责任包逐项收口，不用过期日期倒推开工。`
           : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
   },
   prelaunchChecklist: ddevReady
@@ -660,7 +661,7 @@ const payload = {
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
         : designStage
-          ? `技术设计第 1～3 关已收口；${roleAcceptanceSummary}，当前仍是独立的第 3→4 关组织授权门。${openGateSummary}，只按其完成证据与未关闭 Scope 检查补证；真实数据逐批审核和运行负例按后续门取证，不以职责接受或文档通过代替开发授权。`
+          ? `技术设计第 1～3 关已收口；${roleAcceptanceSummary}，当前仍是独立的第 3→4 关组织授权门。${openGateSummary}，按这些责任包的完成证据与未关闭 Scope 检查逐项补证；真实数据逐批审核和运行负例按后续门取证，不以职责接受或文档通过代替开发授权。`
           : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
     controlsLabel: ddevReady || awaitingDdev || projectPaused || designStage ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady

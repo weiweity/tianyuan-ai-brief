@@ -9,6 +9,7 @@ import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createSafeResultsDir } from "../../sites/tests/support/safe-results-dir.mjs";
+import { deriveProjectStatus } from "./customer_project_status.mjs";
 import {
   resolveCustomerProjectQaPaths,
   resolveCustomerProjectWorkspace,
@@ -203,24 +204,44 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.equal(payload.status.paidSpend, "按已批准 cap 执行");
   }
   if (mode === "public-template") {
+    const [charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+      readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
+      readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
+      readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
+      readFile(path.join(projectDir, "03-Scope与验收.md"), "utf8"),
+      readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
+      readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
+      readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+    ]);
+    const projectStatus = deriveProjectStatus({
+      charter,
+      schedule,
+      ledger,
+      scope,
+      cost,
+      architecture,
+      implementation,
+    });
     assert.match(html, /项目已批准/);
-    assert.equal(payload.status.externalPass, 13);
-    assert.equal(payload.status.externalTotal, 14);
-    assert.equal(payload.status.scopePass, 14);
-    assert.equal(payload.status.scopeTotal, 15);
+    assert.equal(payload.status.externalPass, projectStatus.externalPass);
+    assert.equal(payload.status.externalTotal, projectStatus.externalTotal);
+    assert.equal(payload.status.scopePass, projectStatus.scopePass);
+    assert.equal(payload.status.scopeTotal, projectStatus.scopeTotal);
     assert.equal(payload.status.direction, "已记录");
     assert.equal(payload.status.approval, "已批准");
     assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
     assert.match(payload.headline.title, /需求分析关已通过.*PASS-WITH-CONDITIONS.*实现设计关 Pass.*文档包 Ready/);
     assert.match(payload.headline.summary, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*G0 \/ Ddev 均未授权.*代码开发未开始.*Ddev 不成立/);
-    assert.match(payload.headline.summary, /当前未关闭的 G0 责任包为 G0-09/);
+    assert.match(payload.headline.summary, /当前未关闭的 G0 责任包共 3 项/);
+    for (const gateId of ["G0-03", "G0-09", "G0-13"]) assert.match(payload.headline.summary, new RegExp(gateId));
     assert.doesNotMatch(payload.headline.summary, /待签发的业务基线|费用与部署运行方案/);
     assert.match(payload.headline.nowTitle, /组织授权门与 G0 缺口/);
     assert.match(payload.headline.nowSummary, /实现设计关已通过.*不可开始产品功能开发/);
-    assert.match(payload.headline.scheduleTitle, /实现设计关已通过.*组织授权与 G0 证据/);
+    assert.match(payload.headline.scheduleTitle, /实现设计关已通过.*原 G0 目标 08-14 已逾期.*未闭合责任包.*不用过期日期倒推开工/);
     assert.match(payload.meeting.title, /组织授权补证.*不能宣布代码开工/);
     assert.match(payload.meeting.positioning, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*不以职责接受或文档通过代替开发授权/);
-    assert.match(payload.meeting.positioning, /当前未关闭的 G0 责任包为 G0-09/);
+    assert.match(payload.meeting.positioning, /当前未关闭的 G0 责任包共 3 项/);
+    for (const gateId of ["G0-03", "G0-09", "G0-13"]) assert.match(payload.meeting.positioning, new RegExp(gateId));
     assert.doesNotMatch(payload.meeting.positioning, /只补业务基线|费用、部署运行/);
     assert.equal(payload.meeting.copyTitle, "客服 Agent 组织授权门清单");
     const nextOpenGate = payload.gates
