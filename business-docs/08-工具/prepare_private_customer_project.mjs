@@ -22,6 +22,8 @@ const files = [
   "09-客服Agent需求会汇报.html",
   "20-设计-进行中/37-架构SSOT-v1.md",
   "20-设计-进行中/46-实现设计-开工包.md",
+  "90-评审/2026-08-31_G0正式签发记录.md",
+  "90-评审/2026-08-31_Ddev正式签发记录.md",
 ];
 const brandFiles = [
   "assets/brand/logo.png",

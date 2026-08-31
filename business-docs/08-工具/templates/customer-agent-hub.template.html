@@ -453,12 +453,13 @@
 
     .number-list li {
       display: grid;
-      grid-template-columns: 36px 1fr;
+      grid-template-columns: 36px minmax(0, 1fr);
       gap: var(--space-3);
       align-items: start;
       min-height: 64px;
       padding: 12px 0;
       border-bottom: 1px solid var(--line);
+      overflow-wrap: anywhere;
       counter-increment: item;
     }
 
@@ -600,8 +601,10 @@
 
     .state-pill {
       display: inline-flex;
-      flex: 0 0 auto;
+      flex: 0 1 auto;
       align-items: center;
+      justify-content: center;
+      max-width: 100%;
       min-height: 28px;
       padding: 3px 9px;
       border-radius: 999px;
@@ -609,6 +612,9 @@
       background: var(--warn-bg);
       font-size: 12px;
       font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      text-align: center;
     }
 
     .state-pill.ok {
@@ -2348,7 +2354,7 @@ __PRETEXT_VENDOR__
         value: `${data.status.scopePass} / ${data.status.scopeTotal}`,
         label: "范围检查",
       },
-      { value: data.status.resourceBaseline, label: "开发资源" },
+      { value: data.status.development, label: "产品开发" },
       { value: data.status.ddev, label: "开发开工许可" },
     ];
     document.querySelector("#status-strip").replaceChildren(

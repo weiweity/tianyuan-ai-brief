@@ -1,10 +1,10 @@
 # 20 · 设计阶段（已收口 · 稳定兼容路径）
 
-> **更新：** 2026-08-30 · **实现设计已通过；Menokin 为唯一试点；目录名仅为兼容旧链接；现行设计与历史草案已分离；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
+> **更新：** 2026-08-31 · **实现设计已通过；Menokin 为唯一试点；G0 / Ddev 已 Pass，DEV-M0 进行中且 W0 已完成；目录名仅为兼容旧链接；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
 > **架构北极星：** [`37-架构SSOT-v1.md`](37-架构SSOT-v1.md)\
 > **历史交叉验证快照：** [`2026-08-06_架构交叉验证终裁快照.md`](../90-评审/2026-08-06_架构交叉验证终裁快照.md)（非现行 SSOT）\
 > **Codex 交叉检查（冻结评审证据）：** [`2026-08-10_Codex交叉检查报告.md`](../90-评审/2026-08-10_Codex交叉检查报告.md)\
-> **实现设计开工包：** [`46-实现设计-开工包.md`](46-实现设计-开工包.md)（实现设计关 Pass · 文档包 Ready；Ddev 未授权）\
+> **实现设计开工包：** [`46-实现设计-开工包.md`](46-实现设计-开工包.md)（实现设计关 Pass · 文档包 Ready；Ddev 已授权 DEV-M0）\
 > **CR-002 增量设计：** [`47-CR-002搜索复制证据闭环.md`](47-CR-002搜索复制证据闭环.md) · **测试计划：** [`48-CR-002测试计划.md`](48-CR-002测试计划.md)\
 > **CR-003 训练预埋：** [`49-CR-003一期训练预埋与多教师蒸馏.md`](49-CR-003一期训练预埋与多教师蒸馏.md) · **测试计划：** [`50-CR-003测试计划.md`](50-CR-003测试计划.md) · **合成制品：** [`training-artifacts/`](training-artifacts/)\
 > **CR-004 权威来源硬门：** `26 / 31 / 37 / 39 / 41 / 46 / 33 / OpenAPI` 同批冻结；每个发布版本绑定售前、活动、售后、产品四类不可变来源版本，导入、发布、回滚、检索均 fail-closed；**当前仅为静态合同，不代表运行能力已实现**\
@@ -32,8 +32,8 @@ python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-�
 | **架构** | **PASS-WITH-CONDITIONS（含 CR-002、CR-003、CR-004、DEC-042 与扩展治理静态增量；不等于 G0、Ddev 或运行就绪）** |
 | PG15 设计前置验证 | **PASS-WITH-LIMITATION（current schema v1.12 reference DDL local preflight only）**：本机隔离 PostgreSQL 15.18 已对 ENG-T1 修正后的 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 完成 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、幂等与原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 **NOT_CERTIFIED / NOT_IMPLEMENTED**；本地证据目录被 Git ignore，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15` |
 | **实现设计** | **Pass · 文档包 Ready（技术设计已收口；不等于开发授权）** |
-| **组织授权门（不计入八关）** | **Current · G0 未签 / Ddev 未授权；Menokin 适用性复核后外部责任包 11/14、Scope 11/15；G0-03/G0-09/G0-13 与 Scope #5/#6/#9/#14 开放** |
-| 代码开发 / 单元测试 / 系统测试 / 发布 / 运维 | **Not started** |
+| **组织授权门（不计入八关）** | **Pass · 开发准备证据 29/29；G0 / Ddev 已分别签发；当前只放行 DEV-M0** |
+| 开发 / 测试 / 发布 / 运维 | **正式 `DEV-M0 · IN_PROGRESS`，`W0` 已完成、`W1` 待执行；真实数据、系统接入、部署与生产仍 Not started / NO-GO** |
 
 ## 文档树
 
@@ -62,4 +62,4 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/test_arch_ssot_invariants.py
 # 期望：summary fail=0（总数以当前测试输出为准）
 ```
 
-当前结论：**技术第 1～3 关已通过；Menokin `PILOT-S0 · SYNTHETIC` 可按单独边界推进，但正式项目仍停在第 3→4 关之间的组织授权门。G0 待签、Ddev 未授权、正式 DEV-M0 未开始；真实数据、外部教师调用、训练、模型发布与真实 Pilot 均为 NO-GO。**
+当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目已进入 `DEV-M0 · IN_PROGRESS`，`W0` 已完成，下一切片为 `W1`。真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**

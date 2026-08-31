@@ -204,7 +204,17 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.equal(payload.status.paidSpend, "按已批准 cap 执行");
   }
   if (mode === "public-template") {
-    const [charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+    const [
+      charter,
+      schedule,
+      ledger,
+      scope,
+      cost,
+      architecture,
+      implementation,
+      g0Authorization,
+      ddevAuthorization,
+    ] = await Promise.all([
       readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
       readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
       readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
@@ -212,6 +222,8 @@ await check("HTML 文件存在且为只读生成视图", async () => {
       readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
       readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
       readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+      readFile(path.join(projectDir, "90-评审/2026-08-31_G0正式签发记录.md"), "utf8"),
+      readFile(path.join(projectDir, "90-评审/2026-08-31_Ddev正式签发记录.md"), "utf8"),
     ]);
     const projectStatus = deriveProjectStatus({
       charter,
@@ -221,6 +233,8 @@ await check("HTML 文件存在且为只读生成视图", async () => {
       cost,
       architecture,
       implementation,
+      g0Authorization,
+      ddevAuthorization,
     });
     assert.match(html, /项目已批准/);
     assert.equal(payload.status.externalPass, projectStatus.externalPass);
@@ -230,27 +244,24 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.equal(payload.status.direction, "已记录");
     assert.equal(payload.status.approval, "已批准");
     assert.match(payload.status.paidSpend, /新增付费授权 = 0/);
-    assert.match(payload.headline.title, /需求分析关已通过.*PASS-WITH-CONDITIONS.*实现设计关 Pass.*文档包 Ready/);
-    assert.match(payload.headline.summary, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*G0 \/ Ddev 均未授权.*代码开发未开始.*Ddev 不成立/);
-    assert.match(payload.headline.summary, /当前未关闭的 G0 责任包共 3 项/);
-    for (const gateId of ["G0-03", "G0-09", "G0-13"]) assert.match(payload.headline.summary, new RegExp(gateId));
-    assert.doesNotMatch(payload.headline.summary, /待签发的业务基线|费用与部署运行方案/);
-    assert.match(payload.headline.nowTitle, /组织授权门与 G0 缺口/);
-    assert.match(payload.headline.nowSummary, /实现设计关已通过.*不可开始产品功能开发/);
-    assert.match(payload.headline.scheduleTitle, /实现设计关已通过.*原 G0 目标 08-14 已逾期.*未闭合责任包.*不用过期日期倒推开工/);
-    assert.match(payload.meeting.title, /组织授权补证.*不能宣布代码开工/);
-    assert.match(payload.meeting.positioning, /技术设计第 1～3 关已收口.*第 3→4 关组织授权门.*不以职责接受或文档通过代替开发授权/);
-    assert.match(payload.meeting.positioning, /当前未关闭的 G0 责任包共 3 项/);
-    for (const gateId of ["G0-03", "G0-09", "G0-13"]) assert.match(payload.meeting.positioning, new RegExp(gateId));
-    assert.doesNotMatch(payload.meeting.positioning, /只补业务基线|费用、部署运行/);
-    assert.equal(payload.meeting.copyTitle, "客服 Agent 组织授权门清单");
-    const nextOpenGate = payload.gates
-      .filter((gate) => gate.status !== "Pass")
-      .sort((left, right) => left.due.localeCompare(right.due))[0];
-    assert.ok(nextOpenGate, "公开模板必须保留至少一个未关闭 G0 门禁");
-    assert.equal(payload.headline.nextTitle, nextOpenGate.title);
-    assert.equal(payload.headline.nextOutput, nextOpenGate.evidence);
-    assert.match(payload.headline.nextOutput, /待补|待写|待确认|EVD|证据/);
+    assert.equal(payload.status.g0, "Pass");
+    assert.equal(payload.status.ddev, "2026-08-31");
+    assert.equal(payload.status.development, "开发中");
+    assert.match(payload.headline.title, /DEV-M0 已开工.*W0 已完成/);
+    assert.match(payload.headline.summary, /DEV-M0 正在进行.*W0 已完成.*W1 mechanical move.*不得进入下一里程碑/);
+    assert.match(payload.headline.nowTitle, /DEV-M0 进行中.*W1/);
+    assert.match(payload.headline.nowSummary, /W0 已完成.*W1 mechanical move.*不激活未授权 runtime/);
+    assert.match(payload.headline.scheduleTitle, /DEV-M0 已开始.*W0 已完成.*单人全栈 \/ FDE/);
+    assert.match(payload.meeting.title, /DEV-M0 已开始.*W1/);
+    assert.match(payload.meeting.positioning, /DEV-M0 实施与证据复核会.*W0 已完成.*W1.*CR \/ DEC/);
+    assert.equal(payload.meeting.copyTitle, "客服 Agent 当前推进清单");
+    assert.equal(payload.gates.every((gate) => gate.status === "Pass"), true);
+    assert.equal(payload.headline.nextTitle, "DEV-M0-W1 · mechanical move");
+    assert.match(payload.headline.nextOutput, /W1 行为等价证据.*不跨入下一里程碑/);
+    assert.equal(payload.schedule.length, 5);
+    assert.equal(payload.schedule[0].title, "DEV-M0 · W0 已完成");
+    assert.equal(payload.schedule[0].date, "2026-08-31");
+    assert.match(payload.schedule[0].action, /下一切片 W1 mechanical move.*台账与实施计划/);
     assert.equal(payload.governance.fee.find((item) => item.current)?.id, "B");
     assert.equal(payload.governance.fee.find((item) => item.current)?.selected, true);
     assert.match(payload.governance.fee.find((item) => item.id === "B")?.title || "", /当前路径/);
@@ -329,13 +340,17 @@ await check("HTML 文件存在且为只读生成视图", async () => {
       payload.scopeChecks.find((item) => String(item.id) === "13")?.evidence,
       "EVD-G0-12-OPS-DEPLOYMENT-20260810"
     );
-    assert.equal(payload.prelaunchChecklist.length, 5);
-    assert.match(payload.prelaunchChecklist[2], /G0-09/);
-    assert.doesNotMatch(payload.prelaunchChecklist[2], /业务基线、权威来源、费用、部署运行/);
-    assert.doesNotMatch(payload.headline.summary, /\b(?:Owner|Scope)\b/);
+    assert.equal(payload.prelaunchChecklist.length, 4);
+    assert.match(payload.prelaunchChecklist[0], /保持 W0 基线.*行为不漂移/);
+    assert.match(payload.prelaunchChecklist[1], /执行 W1 mechanical move.*冻结计划内工作/);
+    assert.match(payload.prelaunchChecklist[2], /受影响测试.*构建.*workspace.*E2E.*行为等价/);
+    assert.match(payload.prelaunchChecklist[3], /development \/ test.*合成数据.*不启用真实数据.*下一里程碑/);
+    assert.match(payload.governance.allowed[0].allowed, /只做已签 Ddev、Scope、费用与环境边界内的 WBS/);
+    assert.match(payload.governance.allowed[0].forbidden, /自动代发.*未经 CR \/ DEC 的新增范围/);
+    assert.match(payload.governance.allowed[1].forbidden, /未授权的生产发布/);
     assert.doesNotMatch(payload.meeting.positioning, /\b(?:Owner|PRD)\b/);
     assert.doesNotMatch(payload.meeting.copyTitle, /\bPRD\b/);
-    assert.equal(payload.governance.forbiddenTitle, "开发开工许可前禁止");
+    assert.equal(payload.governance.forbiddenTitle, "持续禁止");
   }
   assert.doesNotMatch(payload.meeting.director.join("\n"), /外包推进节奏/);
   assert.match(html, /Ddev/);
@@ -460,26 +475,26 @@ try {
       return `${structure.scrollWidth}/${structure.clientWidth}`;
     });
 
-    await check(`${viewport.name} · 开发资源与动态真源一致`, async () => {
+    await check(`${viewport.name} · 产品开发与动态真源一致`, async () => {
       const statusStrip = await page.evaluate(() => {
         const payload = JSON.parse(document.querySelector("#hub-data").textContent);
         const items = [...document.querySelectorAll("#status-strip .status-item")].map((item) => ({
           value: item.querySelector(".status-value")?.textContent?.trim() || "",
           label: item.querySelector(".status-label")?.textContent?.trim() || "",
         }));
-        return { expected: payload.status.resourceBaseline, items };
+        return { expected: payload.status.development, items };
       });
       assert.equal(statusStrip.items.length, 6, "状态条应保持 6 格");
       assert.deepEqual(
-        statusStrip.items.filter((item) => item.label === "开发资源"),
-        [{ value: statusStrip.expected, label: "开发资源" }]
+        statusStrip.items.filter((item) => item.label === "产品开发"),
+        [{ value: statusStrip.expected, label: "产品开发" }]
       );
       assert.equal(
         statusStrip.items.some((item) => item.label === "工作方向"),
         false,
         "状态条不应重复 hero 中的工作方向"
       );
-      return `开发资源 · ${statusStrip.expected}`;
+      return `产品开发 · ${statusStrip.expected}`;
     });
 
     await check(`${viewport.name} · 控制台、请求与性能`, async () => {
