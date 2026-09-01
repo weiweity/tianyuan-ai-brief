@@ -351,26 +351,23 @@ function synchronizeStatusAxes(html, projectStatus) {
   return synchronized;
 }
 
-function deriveDevelopmentProjection(projectStatus, ledger) {
-  const developmentRow = ledger
-    .split(/\r?\n/)
-    .find((line) => line.startsWith("| 产品开发 |"));
-  if (!developmentRow) throw new Error("PRD 当前台账缺少产品开发状态行");
-
+function deriveDevelopmentProjection(projectStatus) {
   const activeStates = new Set(["开发中", "已开始", "进行中"]);
   if (activeStates.has(projectStatus.development)) {
-    const milestone = developmentRow.match(/`(DEV-M\d+)\s*·\s*IN_PROGRESS`/i)?.[1];
-    const completedSlice = developmentRow.match(/`(W\d+)`[^；。|]*已完成/)?.[1];
-    const nextSlice = developmentRow.match(/下一切片为\s*`(W\d+)`\s+([^。|]+)/);
+    const progress = projectStatus.developmentProgress;
+    const milestone = progress.milestone;
+    const completedSlicesLabel = progress.completedSlices.join("、");
+    const nextActionLabel = progress.nextSlice
+      ? `${progress.nextSlice} ${progress.nextSliceName}`
+      : progress.nextAction;
     if (!milestone) throw new Error("PRD 产品开发状态行缺少 DEV-M* · IN_PROGRESS");
-    if (!completedSlice) throw new Error("PRD 产品开发状态行缺少已完成的 W* 切片");
-    if (!nextSlice) throw new Error("PRD 产品开发状态行缺少下一 W* 切片");
+    if (!completedSlicesLabel) throw new Error("PRD 产品开发状态行缺少已完成的 W* 切片");
+    if (!nextActionLabel) throw new Error("PRD 产品开发状态行缺少下一切片或下一动作");
     return {
       active: true,
       milestone,
-      completedSlice,
-      nextSlice: nextSlice[1],
-      nextSliceName: nextSlice[2].trim(),
+      completedSlicesLabel,
+      nextActionLabel,
     };
   }
 
@@ -385,16 +382,16 @@ function deriveDevelopmentProjection(projectStatus, ledger) {
   };
 }
 
-function synchronizeDevelopmentSummary(html, projectStatus, ledger) {
-  const development = deriveDevelopmentProjection(projectStatus, ledger);
+function synchronizeDevelopmentSummary(html, projectStatus) {
+  const development = deriveDevelopmentProjection(projectStatus);
   let eyebrow;
   let heroNote;
   let confirmedFact;
 
   if (development.active) {
     eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 进行中`;
-    heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlice} 已完成，下一切片为 ${development.nextSlice} ${development.nextSliceName}；仍未部署、未接真实数据、未进入真实试点。`;
-    confirmedFact = `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 已开始，${development.completedSlice} 已完成。`;
+    heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlicesLabel} 已完成，下一动作是 ${development.nextActionLabel}；仍未部署、未接真实数据、未进入真实试点。`;
+    confirmedFact = `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 已开始，${development.completedSlicesLabel} 已完成。`;
   } else if (projectStatus.ddevReady) {
     eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 待开工`;
     heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已放行但产品开发仍为${development.state}；软件未部署、未接真实数据、未试点。`;
@@ -792,8 +789,8 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts, deve
   if (development.active) {
     for (const expected of [
       `${development.milestone} 已开始`,
-      `${development.completedSlice} 已完成`,
-      `${development.nextSlice} ${development.nextSliceName}`,
+      `${development.completedSlicesLabel} 已完成`,
+      development.nextActionLabel,
     ]) {
       requireText(developmentShell, expected, `当前开发投影 ${expected}`);
     }
@@ -962,7 +959,7 @@ function buildManifest(html, sources, statusSources) {
   });
   const facts = derivePrdFacts(sourceById, projectStatus);
   const demandMeetingDate = facts.d0;
-  const development = deriveDevelopmentProjection(projectStatus, sourceById.ledger);
+  const development = deriveDevelopmentProjection(projectStatus);
   validatePrdContract(html, projectStatus, demandMeetingDate, facts, development);
   const manifestSources = sources.map(
     ({ text: _text, sourcePath: _sourcePath, mode: _mode, ...source }) => source
@@ -1067,11 +1064,7 @@ if (checkOnly === update) {
   const g0SynchronizedPrd = synchronizeG0Summary(statusSynchronizedPrd, projectStatus);
   const ddevSynchronizedPrd = synchronizeDdevSummary(g0SynchronizedPrd, projectStatus);
   const startCopySynchronizedPrd = synchronizeDdevStartCopy(ddevSynchronizedPrd);
-  const developmentSynchronizedPrd = synchronizeDevelopmentSummary(
-    startCopySynchronizedPrd,
-    projectStatus,
-    sourceById.ledger
-  );
+  const developmentSynchronizedPrd = synchronizeDevelopmentSummary(startCopySynchronizedPrd, projectStatus);
   const contractSynchronizedPrd = synchronizeFeeSummary(developmentSynchronizedPrd, projectStatus);
   const portable = computePortableHtml(
     contractSynchronizedPrd,

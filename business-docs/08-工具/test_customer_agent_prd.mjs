@@ -203,7 +203,15 @@ await check("关键业务口径完整", async () => {
       `历史日期下限 ${projectStatus.earliestDdev.slice(5)}`
     );
     if (["开发中", "已开始", "进行中"].includes(projectStatus.development)) {
-      requiredFacts.push("DEV-M0 已开始", "W0 已完成", "W1 mechanical move");
+      const progress = projectStatus.developmentProgress;
+      const nextAction = progress.nextSlice
+        ? `${progress.nextSlice} ${progress.nextSliceName}`
+        : progress.nextAction;
+      requiredFacts.push(
+        `${progress.milestone} 已开始`,
+        `${progress.completedSlices.join("、")} 已完成`,
+        nextAction
+      );
       assert.doesNotMatch(visible, /软件(?:尚)?未开发/, "当前 PRD 已进入开发中，不得残留“软件未开发”");
     }
   }

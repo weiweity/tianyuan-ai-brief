@@ -1,13 +1,13 @@
 # 天元 · AI 赋能项目工作区
 
-**客服架构设计关已于 2026-08-06 以 PASS-WITH-CONDITIONS（静态设计）收口，实现设计关已 Pass · 文档包 Ready；CR-004 与 DEC-042 静态增量已纳入设计包。** 当前推进项是第 3→4 关之间的组织授权门：G0 未签、Ddev 未授权、代码开发未开始。2026-08-10 供应链上海启动会作为独立 P1 并行准备。\
-两端 **Ddev 未成立** 前不写产品功能代码。仓储 / 人事只进需求池。
+**客服需求、架构与实现设计三关均已收口；架构结论保持 PASS-WITH-CONDITIONS（静态设计），实现设计为 Pass · 文档包 Ready。G0 与 Ddev 已分别签发 Pass。** 当前进入技术第 4 关代码开发，产品实施仓处于 `DEV-M0 · IN_PROGRESS`，`W0` workspace scaffold 与 `W1` desktop mechanical move 已完成并合并；下一能力是合同开发与 codegen / runtime validation，仍须单独授权。供应链保持独立 P1。\
+当前只放行 `DEV-M0` 的 `development / test` 与合成数据；真实数据、飞书运行接入、RAGFlow 真实索引、Pilot、生产发布、付费调用与自动发送均未获授权。仓储 / 人事只进需求池。
 
 ## 项目组合
 
 | 板块 | 当前阶段 | 下一步 |
 |------|----------|--------|
-| **客服 Agent** | **P0 · 架构 PASS-WITH-CONDITIONS · 实现设计 Pass · Ready** | 组织授权门：Demo / G0 补证 → Ddev 决策；代码未开始 |
+| **客服 Agent** | **P0 · 设计已收口 · G0 / Ddev Pass · DEV-M0 进行中** | `W0`、`W1` 已完成；下一 DEV-M0 能力待单独授权，不跨入 `DEV-M1` |
 | **供应链 · 备案** | **P1 · 会前准备** | **08-10 上海启动会** → 纪要 + 启动结论 |
 | 仓储 / 人事等 | 需求池 | 不排期 |
 | 设计组 · PSD/AI | 调研反馈（8/07） | 设计负责人过目；非 FDE 立项 |
@@ -22,6 +22,7 @@
 | **08-10 上海启动会** | **[启动会预告](business-docs/02-供应链项目/2026-08-10_上海启动会预告.md)** |
 | **看 D0 启动会结论** | **[2026-08-04 D0 纪要](business-docs/01-客服Agent项目/2026-08-04_D0启动会纪要.md)** |
 | **客服设计目录（已收口）** | **[客服 Agent 设计阶段](business-docs/01-客服Agent项目/20-设计-进行中/README.md)** |
+| **客服当前开发阶段** | **[DEV-M0 开发目录](business-docs/01-客服Agent项目/30-开发-进行中/README.md)** |
 | 看客服项目全景 | [客服 Agent 项目导航](business-docs/01-客服Agent项目/README.md) |
 | 回看需求阶段基线 | [需求阶段归档索引](business-docs/01-客服Agent项目/10-需求-已完成/README.md) |
 | 进入供应链板块 | [供应链项目导航](business-docs/02-供应链项目/README.md) |
@@ -47,7 +48,7 @@ ai-赋能立项/
 ## 五条硬规则
 
 1. 客服与供应链 **不共用** 项目台账、预算、WBS、指标、验收或 Ddev；
-2. 技术第 3 关通过不等于开发开工；客服 **Ddev 成立前** 只做合同维护、小实验和组织授权补证；
-3. **冲突周先保客服**（约 08-12 demo、08-14 G0），供应链可压缩或顺延；
+2. 技术第 3 关通过不等于开发开工；客服当前开工依据是另行签发的 G0 + Ddev，且只放行 `DEV-M0`；
+3. 客服与供应链保持独立优先级和门禁；发生资源冲突时以最新项目驾驶舱和显式决策为准；
 4. `local-private/` 只有 Git 发布隔离（`.git/info/exclude`），**不是文件系统物理隔离，也不是当前私密项目或真实客户 PII 的长期存放区**；真实姓名、客户内容、内部链接、精确费用与安全细节须用 `prepare_private_customer_project.mjs` 迁到仓外受控目录或公司受控系统。
 5. 当前 origin 为 Public 不代表整个 `business-docs/` 默认可发布；本轮客服设计 changeset（整个 `20-设计-进行中/`，含 CR-002/003、training artifacts、OpenAPI/SQL/HTML/SVG）及对应导航、生成视图、generator/tests、依赖锁和支持文件全部服从 `DEC-PUBLISH-01`，未有 exact-file 批准清单时禁止 `git add .`。

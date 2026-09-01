@@ -1,6 +1,6 @@
 # 20 · 设计阶段（已收口 · 稳定兼容路径）
 
-> **更新：** 2026-08-31 · **实现设计已通过；Menokin 为唯一试点；G0 / Ddev 已 Pass，DEV-M0 进行中且 W0 已完成；目录名仅为兼容旧链接；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
+> **更新：** 2026-09-01 · **需求、架构与实现设计均已收口；Menokin 为唯一试点；G0 / Ddev 已 Pass，DEV-M0 进行中且 W0、W1 已完成；目录名是 Ddev 签发时冻结的合同兼容路径，不代表设计仍在进行；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
 > **架构北极星：** [`37-架构SSOT-v1.md`](37-架构SSOT-v1.md)\
 > **历史交叉验证快照：** [`2026-08-06_架构交叉验证终裁快照.md`](../90-评审/2026-08-06_架构交叉验证终裁快照.md)（非现行 SSOT）\
 > **Codex 交叉检查（冻结评审证据）：** [`2026-08-10_Codex交叉检查报告.md`](../90-评审/2026-08-10_Codex交叉检查报告.md)\
@@ -18,6 +18,8 @@
 > **本机直达：** `http://127.0.0.1:8766/架构图-PlantUML浏览器.html` · `http://127.0.0.1:8766/openapi.v1.yaml`\
 > **局域网预览：** `http://<本机IP>:8766/架构图-PlantUML浏览器.html`（需本机已起静态服务）
 
+> **路径说明：** `03` Scope、`04` 费用、`37` 架构与 `46` 实现设计共同进入 Ddev 授权投影，其中多处冻结了本目录路径。路径改名若同时修正文档会触发重新签发；只移动文件又会制造失效链接和合同集漂移。因此本目录保留为签名兼容路径，阶段状态统一读取项目导航、`00–06` 真源与动态视图。
+
 从仓库根目录启动 8766 静态服务：
 
 ```bash
@@ -33,7 +35,7 @@ python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-�
 | PG15 设计前置验证 | **PASS-WITH-LIMITATION（current schema v1.12 reference DDL local preflight only）**：本机隔离 PostgreSQL 15.18 已对 ENG-T1 修正后的 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 完成 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、幂等与原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 **NOT_CERTIFIED / NOT_IMPLEMENTED**；本地证据目录被 Git ignore，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15` |
 | **实现设计** | **Pass · 文档包 Ready（技术设计已收口；不等于开发授权）** |
 | **组织授权门（不计入八关）** | **Pass · 开发准备证据 29/29；G0 / Ddev 已分别签发；当前只放行 DEV-M0** |
-| 开发 / 测试 / 发布 / 运维 | **正式 `DEV-M0 · IN_PROGRESS`，`W0` 已完成、`W1` 待执行；真实数据、系统接入、部署与生产仍 Not started / NO-GO** |
+| 开发 / 测试 / 发布 / 运维 | **正式 `DEV-M0 · IN_PROGRESS`，`W0`、`W1` 已完成，下一能力待单独授权；真实数据、系统接入、部署与生产仍 Not started / NO-GO** |
 
 ## 文档树
 
@@ -62,4 +64,4 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/test_arch_ssot_invariants.py
 # 期望：summary fail=0（总数以当前测试输出为准）
 ```
 
-当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目已进入 `DEV-M0 · IN_PROGRESS`，`W0` 已完成，下一切片为 `W1`。真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**
+当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目已进入 `DEV-M0 · IN_PROGRESS`，`W0`、`W1` 已完成，下一能力待单独授权。真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**

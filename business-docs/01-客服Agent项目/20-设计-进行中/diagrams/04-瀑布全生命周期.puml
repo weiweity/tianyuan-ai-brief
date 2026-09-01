@@ -54,16 +54,17 @@ note right
   EVD-G0-SIGN-20260831 · EVD-DDEV-AUTH-20260831
   即时只放行 DEV-M0
   外部责任包 14/14 · Scope 15/15
-  产品仓 DEV-M0 已开始 · W0 已完成
-  下一步：W1 mechanical move
+  产品仓 DEV-M0 已开始 · W0 / W1 已完成
+  下一步：合同开发授权与 codegen / runtime validation（待单独授权）
 end note
 
 |代码开发|
 :代码开发\n产出：API · 壳 · 迁移脚本;
 note right
-  **DEV-M0 IN_PROGRESS · W0 COMPLETE**
+  **DEV-M0 IN_PROGRESS · W0 / W1 COMPLETE**
   workspace scaffold/迁移前基线已完成
-  下一切片：W1 根 Electron 应用机械迁移
+  下一动作：合同开发授权与 codegen / runtime validation
+  未授权前不实施
   API/worker/正式migration/合同runtime仍未实现
 end note
 

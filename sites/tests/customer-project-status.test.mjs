@@ -453,11 +453,11 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   const status = deriveProjectStatus(sources);
   const currentVersions = currentSourceVersions(sources);
   const signedVersions = authorizationSourceVersions(sources);
-  assert.equal(currentVersions.charter, "v3.36");
+  assert.equal(currentVersions.charter, "v3.37");
   assert.equal(signedVersions.charter, "v3.35");
-  assert.equal(currentVersions.schedule, "v3.29");
+  assert.equal(currentVersions.schedule, "v3.30");
   assert.equal(signedVersions.schedule, "v3.28");
-  assert.equal(currentVersions.ledger, "v3.74");
+  assert.equal(currentVersions.ledger, "v3.75");
   assert.equal(signedVersions.ledger, "v3.72");
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -478,12 +478,13 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓已进入 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，下一切片为 W1 mechanical move。证据 EVD-DEV-M0-W0-20260831；当前仍为未提交工作树，不表示 DEV-M0 已完成",
+    detail: "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，证据 EVD-DEV-M0-W0-20260831；W1 desktop mechanical move 已完成并通过 PR #9 合并，证据 EVD-DEV-M0-W1-20260831；下一动作：合同开发授权与 codegen / runtime validation（待单独授权）。DEV-M0 退出证据未齐，不表示 DEV-M0 已完成",
     milestone: "DEV-M0",
-    completedSlices: ["W0"],
-    nextSlice: "W1",
-    nextSliceName: "mechanical move",
-    evidenceIds: ["EVD-DEV-M0-W0-20260831"],
+    completedSlices: ["W0", "W1"],
+    nextSlice: "",
+    nextSliceName: "",
+    nextAction: "合同开发授权与 codegen / runtime validation（待单独授权）",
+    evidenceIds: ["EVD-DEV-M0-W0-20260831", "EVD-DEV-M0-W1-20260831"],
   });
   assert.equal(isChecked("[X]"), true);
   assert.equal(status.d0Completed, true);
@@ -1074,7 +1075,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions, { schedule: "v3.16" }),
-      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.29 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.30 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "冻结输入清单",
@@ -1094,7 +1095,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions).replace(/^01 /, "010 "),
-      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.29 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.30 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "允许环境与数据",

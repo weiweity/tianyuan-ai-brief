@@ -149,9 +149,9 @@ try {
     assert.match(authorizationGate, /只即时放行 DEV-M0/);
     assert.match(
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
-      /DEV-M0 · 进行中（W0 已完成）/
+      /DEV-M0 · 进行中（W0、W1 已完成）/
     );
-    assert.match(bodyText, /W1 mechanical move/);
+    assert.match(bodyText, /合同开发授权与 codegen \/ runtime validation/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

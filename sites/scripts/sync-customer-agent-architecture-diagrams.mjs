@@ -45,12 +45,20 @@ function readDevelopmentShell(projectStatus) {
   assert.ok(progress && typeof progress === "object", "项目状态缺少结构化产品开发进度");
   if (progress.category === "active") {
     const completed = progress.completedSlices.join("、");
+    const hasNumberedNextSlice = Boolean(progress.nextSlice);
+    const nextAction = hasNumberedNextSlice
+      ? `${progress.nextSlice} ${progress.nextSliceName}`
+      : progress.nextAction;
     return {
       category: progress.category,
       gateClass: "partial",
       codeStatus: `${progress.milestone} · 进行中（${completed} 已完成）`,
-      currentSummary: `${progress.milestone} 已进入开发中，${completed} 已完成；下一切片为 ${progress.nextSlice} ${progress.nextSliceName}。`,
-      footerStatus: `${progress.milestone} · IN_PROGRESS，${completed} 已完成、${progress.nextSlice} ${progress.nextSliceName} 待执行`,
+      currentSummary: hasNumberedNextSlice
+        ? `${progress.milestone} 已进入开发中，${completed} 已完成；下一切片为 ${nextAction}。`
+        : `${progress.milestone} 已进入开发中，${completed} 已完成；下一动作是 ${nextAction}。`,
+      footerStatus: hasNumberedNextSlice
+        ? `${progress.milestone} · IN_PROGRESS，${completed} 已完成、${nextAction} 待执行`
+        : `${progress.milestone} · IN_PROGRESS，${completed} 已完成、${nextAction} 待单独授权`,
     };
   }
   if (progress.category === "completed") {

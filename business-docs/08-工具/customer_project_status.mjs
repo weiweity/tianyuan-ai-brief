@@ -520,6 +520,7 @@ function deriveDevelopmentProgress(development, detail) {
       completedSlices: [],
       nextSlice: "",
       nextSliceName: "",
+      nextAction: "",
       evidenceIds,
     };
   }
@@ -529,8 +530,9 @@ function deriveDevelopmentProgress(development, detail) {
     ...normalizedDetail.matchAll(/\b(W\d+)\b[^。；|]*?已完成/gi),
   ].map((match) => match[1].toUpperCase());
   const next = normalizedDetail.match(/下一切片为\s*(W\d+)\s+([^。；|]+)/i);
-  if (!milestone || completedSlices.length === 0 || !next) {
-    throw new Error("产品开发进行中时必须写明 DEV-M* · IN_PROGRESS、已完成 W* 与下一切片");
+  const nextAction = normalizedDetail.match(/下一动作(?:为|是|：|:)\s*([^。；|]+)/i)?.[1]?.trim() || "";
+  if (!milestone || completedSlices.length === 0 || Boolean(next) === Boolean(nextAction)) {
+    throw new Error("产品开发进行中时必须写明 DEV-M* · IN_PROGRESS、已完成 W*，以及下一切片或下一动作");
   }
   return {
     category,
@@ -538,8 +540,9 @@ function deriveDevelopmentProgress(development, detail) {
     detail: normalizedDetail,
     milestone,
     completedSlices: [...new Set(completedSlices)],
-    nextSlice: next[1].toUpperCase(),
-    nextSliceName: next[2].trim(),
+    nextSlice: next?.[1]?.toUpperCase() || "",
+    nextSliceName: next?.[2]?.trim() || "",
+    nextAction,
     evidenceIds,
   };
 }

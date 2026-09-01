@@ -324,7 +324,7 @@ test("内容真源由单工作簿收口，G0 与 Ddev 保持独立签发证据",
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.74 · 2026-08-31/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.75 · 2026-08-31/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/
@@ -501,7 +501,7 @@ test("Ddev 已签时双仓职责仍保持隔离，历史绿地证据不冒充开
     /阶段边界[^\n]+Ddev 后 \/ Pilot Ready 前[^\n]+不计入 G0-11 \/ G0-15[^\n]+G0 前只签策略、方案、Owner、目标与证据入口/
   );
   assert.match(ledger, /\| 最终结论 \| \[x\] 绿地隔离通过[^\n]+`EVD-G0-08-GREENFIELD-ISOLATION-20260810`[^\n]+只关闭 G0-08 \/ Scope #8/);
-  assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+原 v3 合成原型[^\n]+不单独计正式 DEV-M0[^\n]+已按 `05` \/ `46` 启动正式 DEV-M0 并完成 `W0`/);
+  assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+原 v3 合成原型[^\n]+不单独计正式 DEV-M0[^\n]+已按 `05` \/ `46` 启动正式 DEV-M0 并完成 `W0`、`W1`/);
   assert.match(ledger, /\| 外部责任包 \| \*\*14\/14 Pass\*\* \|/);
   assert.match(ledger, /\| Scope 检查 \| \*\*15\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*2026-08-31\*\* \|[^\n]+EVD-DDEV-AUTH-20260831/);
@@ -661,7 +661,7 @@ test("执行中心回归内部推进，只向 canonical 09 提供会场入口", 
   assert.doesNotMatch(template, /id="agenda"|data\.meeting\.agenda|进入投影主持|52～60 决定回读/);
 });
 
-test("生命周期导航将 09 保留为需求阶段快照，并把设计目录设为现行主线", async () => {
+test("生命周期导航将 09 保留为需求阶段快照、设计标记为已收口并指向 DEV-M0", async () => {
   const [rootReadme, dashboard, map, projectReadme, inventory, toolReadme, packageText, historicalIndex] = await Promise.all([
     readRepo("README.md"),
     readRepo("business-docs/00-项目驾驶舱.md"),
@@ -677,9 +677,12 @@ test("生命周期导航将 09 保留为需求阶段快照，并把设计目录�
     assert.match(document, /(?:需求|启动会)[^\n]*(?:已完成|快照)|(?:已完成|快照)[^\n]*(?:需求|启动会)/);
   }
   for (const document of [rootReadme, dashboard, map, projectReadme, inventory]) {
-    assert.match(document, /设计(?:阶段|进行中|主线)/);
+    assert.match(document, /设计[^\n]*已收口/);
+    assert.match(document, /DEV-M0/);
     assert.doesNotMatch(document, /开 08-04 启动会（唯一主屏）/);
   }
+  assert.match(map, /20-设计-进行中[^\n]*Ddev (?:签名|签发)[^\n]*兼容路径/);
+  assert.match(projectReadme, /30-开发-进行中/);
   assert.match(toolReadme, /`07\/08` 现行生成视图/);
   assert.match(toolReadme, /`09` D0 冻结快照/);
   assert.match(toolReadme, /D0 生命周期开放[\s\S]*D0 已结束后拒绝直接重写/);

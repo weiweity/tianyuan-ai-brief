@@ -409,11 +409,14 @@ const developmentStopped = developmentProgress.category === "stopped";
 const developmentCompleted = developmentProgress.category === "completed";
 const developmentInterrupted = developmentPaused || developmentStopped;
 const completedSlicesLabel = developmentProgress.completedSlices.join("、");
-const nextSliceLabel = developmentProgress.nextSlice
+const hasNumberedNextSlice = Boolean(developmentProgress.nextSlice);
+const nextActionLabel = hasNumberedNextSlice
   ? `${developmentProgress.nextSlice} ${developmentProgress.nextSliceName}`
-  : "";
+  : developmentProgress.nextAction;
 const activeProgressSummary = developmentActive
-  ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextSliceLabel}。`
+  ? hasNumberedNextSlice
+    ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextActionLabel}。`
+    : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}。`
   : "";
 const awaitingDdev = projectStatus.g0Ready && !ddevReady;
 const awaitingG0Signature = allEvidenceReady && !projectStatus.g0Ready;
@@ -464,9 +467,13 @@ if (ddevReady && developmentInterrupted) {
   headline = {
       title: `${developmentProgress.milestone} 已开工，${completedSlicesLabel} 已完成。`,
       summary: `${activeProgressSummary}${developmentProgress.milestone} 退出证据未齐不得进入下一里程碑。`,
-      nextDate: projectStatus.ddev,
-      nextTitle: `${developmentProgress.milestone}-${developmentProgress.nextSlice} · ${developmentProgress.nextSliceName}`,
-      nextOutput: `${developmentProgress.nextSlice} 行为等价证据 · 不跨入下一里程碑`,
+      nextDate: hasNumberedNextSlice ? projectStatus.ddev : "待授权",
+      nextTitle: hasNumberedNextSlice
+        ? `${developmentProgress.milestone}-${developmentProgress.nextSlice} · ${developmentProgress.nextSliceName}`
+        : "下一 DEV-M0 能力授权",
+      nextOutput: hasNumberedNextSlice
+        ? `${developmentProgress.nextSlice} 行为等价证据 · 不跨入下一里程碑`
+        : `${nextActionLabel} · 授权前不实施`,
     };
 } else if (ddevReady && developmentCompleted) {
   headline = {
@@ -567,8 +574,12 @@ const displaySchedule = developmentInterrupted
           ? {
               date: projectStatus.ddev,
               title: `${developmentProgress.milestone} · ${completedSlicesLabel} 已完成`,
-              action: `下一切片 ${nextSliceLabel}；严格按台账与实施计划推进`,
-              output: `行为等价证据 · 不跨入下一里程碑`,
+              action: hasNumberedNextSlice
+                ? `下一切片 ${nextActionLabel}；严格按台账与实施计划推进`
+                : `下一动作 ${nextActionLabel}；未授权前不实施`,
+              output: hasNumberedNextSlice
+                ? "行为等价证据 · 不跨入下一里程碑"
+                : "授权决定与实施证据 · 不跨入下一里程碑",
             }
           : {
               date: `相对 Ddev 顺延 · 原基线 ${row["保守日期"]}`,
@@ -598,14 +609,18 @@ const displaySchedule = developmentInterrupted
 const ddevNowTitle = developmentInterrupted
   ? `产品开发${developmentProgress.state}；等待恢复 / 终止复核。`
   : developmentActive
-    ? `${developmentProgress.milestone} 进行中；当前推进 ${developmentProgress.nextSlice}。`
+    ? hasNumberedNextSlice
+      ? `${developmentProgress.milestone} 进行中；当前推进 ${developmentProgress.nextSlice}。`
+      : `${developmentProgress.milestone} 进行中；等待下一动作授权。`
     : developmentCompleted
       ? "当前开发切片已完成；等待退出证据复核。"
       : "Ddev 已签；产品开发尚未开始。";
 const ddevNowSummary = developmentInterrupted
   ? "当前暂停 / 停止决定优先于历史 Ddev；只处理原因、修复证据和恢复条件。"
   : developmentActive
-    ? `${completedSlicesLabel} 已完成；${nextSliceLabel} 只按冻结计划执行，不激活未授权 runtime。`
+    ? hasNumberedNextSlice
+      ? `${completedSlicesLabel} 已完成；${nextActionLabel} 只按冻结计划执行，不激活未授权 runtime。`
+      : `${completedSlicesLabel} 已完成；${nextActionLabel} 待单独授权，不激活未授权 runtime。`
     : developmentCompleted
       ? "退出证据和下一门决定未形成前，不进入后续里程碑。"
       : "只可启动 Ddev 已授权的首个切片；每次变更保留测试、回退与决定证据。";
@@ -626,8 +641,10 @@ const ddevChecklist = developmentInterrupted
   : developmentActive
     ? [
         `保持 ${completedSlicesLabel} 基线与既有行为不漂移`,
-        `执行 ${nextSliceLabel}，只做冻结计划内工作`,
-        "复跑受影响测试、构建、workspace 与 E2E，证明行为等价",
+        hasNumberedNextSlice
+          ? `执行 ${nextActionLabel}，只做冻结计划内工作`
+          : `只准备${nextActionLabel}的范围、验收与授权输入；授权前不实施`,
+        "获批后复跑受影响测试、构建、workspace 与 E2E，保留实施证据",
         "保持 development / test + 合成数据；不启用真实数据、运行接入、部署或下一里程碑",
       ]
     : developmentCompleted
@@ -762,7 +779,9 @@ const payload = {
       ? developmentInterrupted
         ? `产品开发${developmentProgress.state}，先复核再决定是否恢复。`
         : developmentActive
-          ? `${developmentProgress.milestone} 已开始，下一步只推进 ${developmentProgress.nextSlice}。`
+          ? hasNumberedNextSlice
+            ? `${developmentProgress.milestone} 已开始，下一步只推进 ${developmentProgress.nextSlice}。`
+            : `${developmentProgress.milestone} 已开始，${completedSlicesLabel} 已完成；下一动作待授权。`
           : developmentCompleted
             ? "当前开发切片已完成，先复核退出证据。"
             : "Ddev 已签，先确认首个切片再开工。"
@@ -779,7 +798,9 @@ const payload = {
       ? developmentInterrupted
         ? `这是产品开发${developmentProgress.state}复核会；历史 Ddev 不自动恢复开发，必须形成恢复或终止决定。`
         : developmentActive
-          ? `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextSliceLabel} 只按冻结计划执行，任何新增范围、付费或部署边界仍须走 CR / DEC。`
+          ? hasNumberedNextSlice
+            ? `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 只按冻结计划执行，任何新增范围、付费或部署边界仍须走 CR / DEC。`
+            : `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 尚未授权，任何新增范围、付费或部署边界仍须走 CR / DEC。`
           : developmentCompleted
             ? "这是退出证据复核会；下一里程碑仍须按既有门禁形成独立决定。"
             : "这是 Ddev 后首个切片准备会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
