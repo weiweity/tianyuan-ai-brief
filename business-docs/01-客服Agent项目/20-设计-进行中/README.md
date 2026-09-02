@@ -1,6 +1,6 @@
 # 20 · 设计阶段（已收口 · 稳定兼容路径）
 
-> **更新：** 2026-09-01 · **需求、架构与实现设计均已收口；Menokin 为唯一试点；G0 / Ddev 已 Pass，DEV-M0 进行中且 W0、W1 已完成；目录名是 Ddev 签发时冻结的合同兼容路径，不代表设计仍在进行；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
+> **更新：** 2026-09-02 · **需求、架构与实现设计均已收口；Menokin 为唯一试点；G0 / Ddev 已 Pass，DEV-M0 进行中且 W0～W3 已完成；目录名是 Ddev 签发时冻结的合同兼容路径，不代表设计仍在进行；CR-002、CR-003、CR-004、DEC-042 与扩展治理已纳入静态增量复核**\
 > **架构北极星：** [`37-架构SSOT-v1.md`](37-架构SSOT-v1.md)\
 > **历史交叉验证快照：** [`2026-08-06_架构交叉验证终裁快照.md`](../90-评审/2026-08-06_架构交叉验证终裁快照.md)（非现行 SSOT）\
 > **Codex 交叉检查（冻结评审证据）：** [`2026-08-10_Codex交叉检查报告.md`](../90-评审/2026-08-10_Codex交叉检查报告.md)\
@@ -8,7 +8,7 @@
 > **CR-002 增量设计：** [`47-CR-002搜索复制证据闭环.md`](47-CR-002搜索复制证据闭环.md) · **测试计划：** [`48-CR-002测试计划.md`](48-CR-002测试计划.md)\
 > **CR-003 训练预埋：** [`49-CR-003一期训练预埋与多教师蒸馏.md`](49-CR-003一期训练预埋与多教师蒸馏.md) · **测试计划：** [`50-CR-003测试计划.md`](50-CR-003测试计划.md) · **合成制品：** [`training-artifacts/`](training-artifacts/)\
 > **CR-004 权威来源硬门：** `26 / 31 / 37 / 39 / 41 / 46 / 33 / OpenAPI` 同批冻结；每个发布版本绑定售前、活动、售后、产品四类不可变来源版本，导入、发布、回滚、检索均 fail-closed；**当前仅为静态合同，不代表运行能力已实现**\
-> **DEC-042 内容资产治理：** `25 / 26 / 31 / 37 / 40 / 46 / 48 / 50 + 33 / OpenAPI` 已冻结稳定 Question 身份/不可变版本与 origin HMAC key version、显式 platform/product scope、版本化 taxonomy、固定角色异人双审、受控 `search_recommendable_scripts`、审核决定与质量 plan/evidence 信任边界、placeholder 客户端内存渲染/二次确认/零持久，以及 postfix 约束：Question hash 纳入 `promoted_by_role`；固定 ASCII 键集按 `COLLATE "C"` 排序的受限治理 hash（非通用 JCS）；`population_manifest_hash` 防同计数换行；semantic asset 先退役留墓碑再删来源 query；完整不可变 snapshot 由客户端按 `[effective_from,effective_to)` 过滤；封闭最小 public mapper 与“来源/租约 denial、内容/质量/hash 标准审计”分流。**人读与静态机器合同已锁，迁移、生成类型、服务端/客户端代码与动态证据尚未实现**\
+> **DEC-042 内容资产治理：** `25 / 26 / 31 / 37 / 40 / 46 / 48 / 50 + 33 / OpenAPI` 已冻结稳定 Question 身份/不可变版本与 origin HMAC key version、显式 platform/product scope、版本化 taxonomy、固定角色异人双审、受控 `search_recommendable_scripts`、审核决定与质量 plan/evidence 信任边界、placeholder 客户端内存渲染/二次确认/零持久，以及 postfix 约束：Question hash 纳入 `promoted_by_role`；固定 ASCII 键集按 `COLLATE "C"` 排序的受限治理 hash（非通用 JCS）；`population_manifest_hash` 防同计数换行；semantic asset 先退役留墓碑再删来源 query；完整不可变 snapshot 由客户端按 `[effective_from,effective_to)` 过滤；封闭最小 public mapper 与“来源/租约 denial、内容/质量/hash 标准审计”分流。**人读与静态机器合同已锁；W2 已完成生成类型与 component runtime validator，W3 只完成 `/health` API/config 骨架；不可变 migration、PostgreSQL、业务服务端/客户端代码与动态业务证据尚未实现**\
 > **扩展治理：** `37 §3.1` 变更分级 · `39 §0.3` 签名客户端 N/N-1 · `41 §1.3 E` 只读 PlatformAdapter · `46 §6.1.1` 迁移兼容矩阵；**不新增端口、路由或表，不代表运行验证已完成**\
 > **架构图 + 瀑布关卡：** [`40-架构图与关卡状态.md`](40-架构图与关卡状态.md)\
 > **架构图看板（推荐打开）：** [`架构图-PlantUML浏览器.html`](架构图-PlantUML浏览器.html) · 首图 **1期开发框架** · 源码 [`diagrams/`](diagrams/)\
@@ -35,7 +35,7 @@ python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-�
 | PG15 设计前置验证 | **PASS-WITH-LIMITATION（current schema v1.12 reference DDL local preflight only）**：本机隔离 PostgreSQL 15.18 已对 ENG-T1 修正后的 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 完成 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、幂等与原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 **NOT_CERTIFIED / NOT_IMPLEMENTED**；本地证据目录被 Git ignore，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15` |
 | **实现设计** | **Pass · 文档包 Ready（技术设计已收口；不等于开发授权）** |
 | **组织授权门（不计入八关）** | **Pass · 开发准备证据 29/29；G0 / Ddev 已分别签发；当前只放行 DEV-M0** |
-| 开发 / 测试 / 发布 / 运维 | **正式 `DEV-M0 · IN_PROGRESS`，`W0`、`W1` 已完成，下一能力待单独授权；真实数据、系统接入、部署与生产仍 Not started / NO-GO** |
+| 开发 / 测试 / 发布 / 运维 | **正式 `DEV-M0 · IN_PROGRESS`，`W0`～`W3` 已完成，W4 不可变 migration / PostgreSQL 深模块待单独开工授权；真实数据、系统接入、部署与生产仍 Not started / NO-GO** |
 
 ## 文档树
 
@@ -45,7 +45,7 @@ python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-�
 | **47 / 48** | CR-002 自动事实增量 SSOT / 测试计划；取消旧在线结果回填，根问题 / 操作分账，修改 / 发送 / 正确性离线三维抽样 |
 | **49 / 50** | CR-003 一期训练合同预埋 / 测试计划；`0/14/30`、双审晋级、问答解耦、train/G1a/G1b 隔离、多教师替换与预算 / 删除门 |
 | **CR-004（跨 26 / 31 / 37 / 39 / 41 / 46 / 33 / OpenAPI）** | 权威来源系统硬门：不可变来源版本 + 每个 release 四域 binding；非当前权威、已暂停、域不匹配、hash 不一致或来源集合不完整时整单拒绝，离线 lease 过期停止检索 |
-| **DEC-042（跨 25 / 26 / 31 / 37 / 40 / 46 / 48 / 50 + 33 / OpenAPI）** | 内容资产人读与静态机器合同：稳定 Question、显式 scope/请求 product context、taxonomy/risk 审核、受控 search、审核/质量证据信任边界与 placeholder；postfix 锁定 promoted role 入受限治理 hash、固定 ASCII+C 排序、population manifest、semantic 退役墓碑、完整 snapshot+客户端半开过滤、封闭最小 public mapper及审计分流。46/48/50 已拆 DEV-M0～M3 任务/负例，迁移、生成类型、runtime 与动态 EVD 仍未实现 |
+| **DEC-042（跨 25 / 26 / 31 / 37 / 40 / 46 / 48 / 50 + 33 / OpenAPI）** | 内容资产人读与静态机器合同：稳定 Question、显式 scope/请求 product context、taxonomy/risk 审核、受控 search、审核/质量证据信任边界与 placeholder；postfix 锁定 promoted role 入受限治理 hash、固定 ASCII+C 排序、population manifest、semantic 退役墓碑、完整 snapshot+客户端半开过滤、封闭最小 public mapper及审计分流。46/48/50 已拆 DEV-M0～M3 任务/负例；W2 已完成生成类型与 component runtime validator，W3 只完成 `/health` API/config 骨架，migration、PostgreSQL、业务 runtime 与动态 EVD 仍未实现 |
 | [`training-artifacts/`](training-artifacts/) | 单一 schema、空模板、纯合成 fixture；不含真实数据、教师真实输出或模型权重 |
 | **90 · 2026-08-10** | [`Codex 交叉检查终版报告`](../90-评审/2026-08-10_Codex交叉检查报告.md)：冻结的 P0/P1/P2、证据等级与残余门禁评审；非现行实现规范 |
 | **44（已归档）** | 2026-08-06 架构交叉验证快照；现行规则已吸收至 37 / 39 / 41 / 43 |
@@ -64,4 +64,4 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/test_arch_ssot_invariants.py
 # 期望：summary fail=0（总数以当前测试输出为准）
 ```
 
-当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目已进入 `DEV-M0 · IN_PROGRESS`，`W0`、`W1` 已完成，下一能力待单独授权。真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**
+当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目已进入 `DEV-M0 · IN_PROGRESS`，`W0`～`W3` 已完成，W4 不可变 migration / PostgreSQL 深模块待单独开工授权。真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**
