@@ -5,7 +5,6 @@
   "resource_alias": "customer-agent-workbook",
   "source_ref": "SRC-92847D5B505F17C4",
   "workbook_version_ref": "WBV-531DD7AA4BA2B97B",
-  "workbook_sha256": "c1615a68d75677eec9d15c8adccf9e6928beae8a92fd739ea171c399393fcf9b",
   "snapshot_evd": "EVD-G0-09-WORKBOOK-CLOSURE-20260830",
   "acl_evd": "EVD-G0-09-ACL-OWNER-BASELINE-20260830",
   "quality_evd": "EVD-G0-09-WORKBOOK-CLOSURE-20260830",

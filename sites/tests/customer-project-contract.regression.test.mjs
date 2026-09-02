@@ -324,7 +324,7 @@ test("内容真源由单工作簿收口，G0 与 Ddev 保持独立签发证据",
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.75 · 2026-08-31/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.76 · 2026-09-02/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/

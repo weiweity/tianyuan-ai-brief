@@ -1131,6 +1131,7 @@ async function runFileAudit(browser, viewport, useLegacyEntry) {
     assert.doesNotMatch(await page.locator("body").innerText(), /ERR_FILE_NOT_FOUND|无法访问您的文件/);
     await page.locator("#open-execution-center").click();
     await page.waitForFunction(() => document.title === "客服 Agent 一期 · 项目执行中心");
+    await page.locator(".meeting-unavailable").waitFor();
     assert.equal(await page.locator("a[data-meeting-link]").count(), 0, "便携 Hub 不得导航到相邻 09 文件");
     assert.match(await page.locator("body").innerText(), /请回到项目目录，打开 09-客服Agent需求会汇报\.html/);
     assert.equal(fileURLToPath(new URL(page.url())), projectPrdPath);

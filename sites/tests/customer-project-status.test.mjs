@@ -453,11 +453,11 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   const status = deriveProjectStatus(sources);
   const currentVersions = currentSourceVersions(sources);
   const signedVersions = authorizationSourceVersions(sources);
-  assert.equal(currentVersions.charter, "v3.37");
+  assert.equal(currentVersions.charter, "v3.38");
   assert.equal(signedVersions.charter, "v3.35");
-  assert.equal(currentVersions.schedule, "v3.30");
+  assert.equal(currentVersions.schedule, "v3.31");
   assert.equal(signedVersions.schedule, "v3.28");
-  assert.equal(currentVersions.ledger, "v3.75");
+  assert.equal(currentVersions.ledger, "v3.76");
   assert.equal(signedVersions.ledger, "v3.72");
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -478,12 +478,12 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，证据 EVD-DEV-M0-W0-20260831；W1 desktop mechanical move 已完成并通过 PR #9 合并，证据 EVD-DEV-M0-W1-20260831；下一动作：合同开发授权与 codegen / runtime validation（待单独授权）。DEV-M0 退出证据未齐，不表示 DEV-M0 已完成",
+    detail: "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，证据 EVD-DEV-M0-W0-20260831；W1 desktop mechanical move 已完成并通过 PR #9 合并，证据 EVD-DEV-M0-W1-20260831；下一动作：合同开发授权与 codegen / runtime validation。DEV-M0 退出证据未齐，不表示 DEV-M0 已完成",
     milestone: "DEV-M0",
     completedSlices: ["W0", "W1"],
     nextSlice: "",
     nextSliceName: "",
-    nextAction: "合同开发授权与 codegen / runtime validation（待单独授权）",
+    nextAction: "合同开发授权与 codegen / runtime validation",
     evidenceIds: ["EVD-DEV-M0-W0-20260831", "EVD-DEV-M0-W1-20260831"],
   });
   assert.equal(isChecked("[X]"), true);
@@ -521,6 +521,61 @@ test("正式 G0 / Ddev 记录绑定项目、证据、Owner 与带时区签发时
       `Ddev ${label}`
     );
   }
+});
+
+test("正式 G0 / Ddev 记录拒绝冲突结论、无效时区时间和倒序签发", async () => {
+  const conflictingG0 = await currentSources({ g0: "signed", ddev: "signed" });
+  conflictingG0.g0Authorization += "\n> **结论：** `FAIL`\n";
+  assert.throws(
+    () => deriveProjectStatus(conflictingG0),
+    /G0 正式签发结论必须且只能出现一次/
+  );
+
+  const conflictingDdev = await currentSources({ g0: "signed", ddev: "signed" });
+  conflictingDdev.ddevAuthorization += "\n> **结论：** `FAIL`\n";
+  assert.throws(
+    () => deriveProjectStatus(conflictingDdev),
+    /Ddev 正式签发结论必须且只能出现一次/
+  );
+
+  const invalidTimestamp = await currentSources({ g0: "signed", ddev: "signed" });
+  invalidTimestamp.g0Authorization = replaceAuthorizationField(
+    invalidTimestamp.g0Authorization,
+    "签发时间",
+    "2026-08-31 99:99:99 +9999"
+  );
+  assert.throws(
+    () => deriveProjectStatus(invalidTimestamp),
+    /G0 正式签发时间必须是有效带时区时间/
+  );
+
+  const outOfOrder = await currentSources({ g0: "signed", ddev: "signed" });
+  outOfOrder.ledger = replaceDdevDecisionRow(
+    outOfOrder.ledger,
+    "签发时间",
+    "2026-08-31 01:30:00 +0900"
+  );
+  outOfOrder.ddevAuthorization = replaceAuthorizationField(
+    outOfOrder.ddevAuthorization,
+    "签发时间",
+    "2026-08-31 01:30:00 +0900"
+  );
+  assert.throws(
+    () => deriveProjectStatus(outOfOrder),
+    /DEC-DDEV-01 签发时间必须严格晚于 G0 评审签发时间/
+  );
+});
+
+test("同一完成分句可解析多个 W 切片，下一动作授权修饰不进入动作值", async () => {
+  const sources = await currentSources({ g0: "signed", ddev: "signed" });
+  sources.ledger = replaceStatusDetail(
+    sources.ledger,
+    "产品开发",
+    "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0、W1 已完成；下一动作：合同开发授权（待单独授权）。"
+  );
+  const progress = deriveProjectStatus(sources).developmentProgress;
+  assert.deepEqual(progress.completedSlices, ["W0", "W1"]);
+  assert.equal(progress.nextAction, "合同开发授权");
 });
 
 test("授权敏感投影漂移必须重新签发，动态开发状态可以独立推进", async () => {
@@ -1075,7 +1130,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions, { schedule: "v3.16" }),
-      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.30 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.31 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "冻结输入清单",
@@ -1095,7 +1150,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions).replace(/^01 /, "010 "),
-      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.30 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.31 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "允许环境与数据",
@@ -1219,6 +1274,35 @@ test("门禁 ID、状态和已勾 Scope 的证据必须可追溯", async () => {
   const smuggledEvidence = await currentSources();
   smuggledEvidence.scope = replaceScopeCheck(smuggledEvidence.scope, "5", true, "原始链接 https://example.invalid EVD-SCOPE-01");
   assert.throws(() => deriveProjectStatus(smuggledEvidence), /Scope #5.*可追溯/);
+
+  for (const placeholder of [
+    "EVD-PENDING",
+    "EVD-DRAFT-20260902",
+    "EVD-CANDIDATE-20260902",
+    "EVD-TBD",
+    "EVD-TODO-20260902",
+    "EVD-INCOMPLETE",
+    "EVD-READY",
+  ]) {
+    const placeholderEvidence = await currentSources({ g0: "signed", ddev: "signed" });
+    placeholderEvidence.ledger = replaceGateStatus(
+      placeholderEvidence.ledger,
+      "G0-10",
+      "Pass",
+      placeholder
+    );
+    placeholderEvidence.scope = replaceScopeCheck(
+      placeholderEvidence.scope,
+      "10",
+      true,
+      placeholder
+    );
+    assert.throws(
+      () => deriveProjectStatus(placeholderEvidence),
+      /G0-10 标记 Pass 时必须填写可追溯实际证据/,
+      placeholder
+    );
+  }
 });
 
 test("RACI 人员代号与签发证据不得夹带姓名或原始链接", async () => {
@@ -1472,7 +1556,7 @@ test("正式 G0 Fail 也必须有完整签发记录，不能用空表制造结�
     ["G0 签发", "Fail"],
   ]) sources.ledger = replaceStatus(sources.ledger, label, value);
   for (const [label, value] of [
-    ["评审时间", "2026-08-14 15:00"],
+    ["评审时间", "2026-08-14 15:00:00 +0800"],
     ["评审输入版本", g0InputVersionText(versions)],
     ["G0-02～15", "Pass 13 / 14；Fail 1 / 14"],
     ["Scope 检查", "Pass 14 / 15；Fail 1 / 15"],

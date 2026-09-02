@@ -416,7 +416,7 @@ const nextActionLabel = hasNumberedNextSlice
 const activeProgressSummary = developmentActive
   ? hasNumberedNextSlice
     ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextActionLabel}。`
-    : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}。`
+    : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}（待单独授权）。`
   : "";
 const awaitingDdev = projectStatus.g0Ready && !ddevReady;
 const awaitingG0Signature = allEvidenceReady && !projectStatus.g0Ready;

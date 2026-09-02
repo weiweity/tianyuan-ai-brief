@@ -254,7 +254,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.75" in ledger
+    assert "v3.76" in ledger
     _assert_same_line(
         ledger,
         "DEC-058",
@@ -279,7 +279,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "DEC-DDEV-01",
     )
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.75 · 2026-08-31")
+    assert footer.startswith("*G0 责任与证据台账 v3.76 · 2026-09-02")
     assert footer.endswith("*")
     for token in (
         "Menokin",
@@ -347,7 +347,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     schedule = (DESIGN.parent / "01-总排期与阶段门禁.md").read_text(encoding="utf-8")
     delivery = (DESIGN.parent / "05-全栈交付计划.md").read_text(encoding="utf-8")
     cost = (DESIGN.parent / "04-费用与成本控制.md").read_text(encoding="utf-8")
-    assert "排期版本：** v3.30" in schedule
+    assert "排期版本：** v3.31" in schedule
     _assert_same_line(schedule, "DEC-DDEV-01", "Ddev 生效当日", "才可进入", "DEV-M0")
     _assert_same_line(schedule, "证据等级", "EVD-G0-14-WBS-CAPACITY-20260813", "公司受控系统归档", "不单独使 G0-14 / Scope #15 Pass")
     _assert_same_line(schedule, "一期部署与交付目标", "2026-08-31", "内部目标，不是对外硬承诺")
@@ -1260,7 +1260,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # G0-09 governance evidence is closed; runtime claims remain unimplemented and separately gated.
-    assert "v3.75" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger
+    assert "v3.76" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger
     g009_line = next(line for line in ledger.splitlines() if line.startswith("| G0-09 |"))
     for token in (
         "**Pass**",

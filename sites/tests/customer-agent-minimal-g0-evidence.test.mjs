@@ -22,6 +22,7 @@ test("DEC-058 单人开发前证据保持四域完整且不携带原始内容", 
   assert.equal(snapshot.raw_content_persisted, false);
   assert.match(snapshot.source_ref, /^SRC-[A-Z0-9]{12,32}$/);
   assert.match(snapshot.workbook_version_ref, /^WBV-[A-Z0-9]{16,32}$/);
+  assert.equal(Object.hasOwn(snapshot, "workbook_sha256"), false);
   assert.equal(snapshot.snapshot_evd, "EVD-G0-09-WORKBOOK-CLOSURE-20260830");
   assert.equal(snapshot.quality_evd, snapshot.snapshot_evd);
   assert.equal(snapshot.acl_evd, "EVD-G0-09-ACL-OWNER-BASELINE-20260830");
@@ -46,6 +47,7 @@ test("DEC-058 单人开发前证据保持四域完整且不携带原始内容", 
   assert.doesNotMatch(snapshotText, /https?:\/\//i);
   assert.doesNotMatch(snapshotText, /(?:^|[^\d])1[3-9]\d{9}(?:[^\d]|$)/);
   assert.doesNotMatch(snapshotText, /"(?:token|url|raw_content|members?|phone|mobile)"\s*:/i);
+  assert.doesNotMatch(snapshotText, /\b[0-9a-f]{64}\b/i);
 
   assert.match(decision, /`DEC-058`/);
   assert.match(decision, /外部责任包为 `14\/14`，Scope 为 `15\/15`/);
@@ -54,6 +56,8 @@ test("DEC-058 单人开发前证据保持四域完整且不携带原始内容", 
   assert.match(businessBaseline, /Tests\s+52 passed \(52\)/);
   assert.match(workbookClosure, /EVD-G0-09-AUTHORITY-SOURCES-20260830/);
   assert.match(workbookClosure, /四个逻辑域共用一个物理版本/);
+  assert.doesNotMatch(workbookClosure, /\b[0-9a-f]{64}\b/i);
+  assert.doesNotMatch(workbookClosure, /workbook_sha256|内容摘要 SHA-256/i);
   assert.match(aclBaseline, /组合关闭 G0-09 \/ Scope #9/);
   assert.doesNotMatch(aclBaseline, /G0-09 \/ Scope #9 继续 `INCOMPLETE`/);
 });
