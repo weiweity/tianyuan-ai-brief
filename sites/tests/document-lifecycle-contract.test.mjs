@@ -29,6 +29,12 @@ test("文档生命周期规则保留当前源、历史冻结与生成视图边�
     assert.match(lifecycle, new RegExp(marker.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")));
   }
 
+  const reviewedAt = lifecycle.match(/当前复核：(\d{4}-\d{2}-\d{2})/)?.[1];
+  const verifiedThrough = lifecycle.match(/截至 (\d{4}-\d{2}-\d{2})，本地已核实：/)?.[1];
+  assert.ok(reviewedAt, "生命周期文档必须声明当前复核日期");
+  assert.ok(verifiedThrough, "生命周期文档必须声明本轮核对截止日期");
+  assert.equal(verifiedThrough, reviewedAt, "本轮核对截止日期必须与当前复核日期一致");
+
   assert.match(projectReadme, /文档生命周期与动态视图规则\.md/);
   assert.match(surfacesSync, /meetingLifecycleClosed/);
   assert.match(surfacesSync, /verifyFrozenMeetingSnapshot/);

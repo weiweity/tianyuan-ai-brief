@@ -160,7 +160,7 @@ note over API,DB
   DEC-042：人读+schema v1.12/OpenAPI 1.11.0静态机器合同已锁
   role hash·ASCII+C·population manifest·semantic tombstone
   完整snapshot+客户端[from,to)·封闭最小mapper已锁
-  迁移/生成类型/服务端客户端代码/动态证据未实现
+  W2类型/validator、W3 /health骨架完成；迁移/PG/业务代码/动态证据未实现
   G0 / Scope / Ddev 不变
 end note
 
