@@ -322,6 +322,8 @@ export function buildCustomerProjectSurfaceModel(sourceById) {
     cost: sourceById.cost,
     architecture: sourceById.architecture,
     implementation: sourceById.implementation,
+    g0Authorization: sourceById.g0Authorization,
+    ddevAuthorization: sourceById.ddevAuthorization,
   });
   const agenda = assertMeetingAgendaConsistency(sourceById.ledger, sourceById.cadence).map(
     (row) => ({

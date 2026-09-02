@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 function stripMarkdown(value) {
   return String(value ?? "")
     .trim()
@@ -48,11 +50,66 @@ function required(value, label) {
   return value;
 }
 
+function sha256(value) {
+  return createHash("sha256").update(String(value), "utf8").digest("hex");
+}
+
+function projectionDigest(value) {
+  return sha256(JSON.stringify(value));
+}
+
+function selectFields(rows, fields) {
+  return rows.map((row) =>
+    Object.fromEntries(fields.map((field) => [field, String(row[field] ?? "")]))
+  );
+}
+
+function projectCodeFromCharter(charter) {
+  return required(
+    String(charter || "").match(/^>\s*\*\*项目代号：\*\*\s*([A-Z][A-Z0-9-]{2,})\s*$/mi)?.[1],
+    "项目代号"
+  );
+}
+
 function isValidIsoDate(value) {
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return false;
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
   return date.toISOString().slice(0, 10) === value;
+}
+
+function parseAuthorizationTimestamp(value, label) {
+  const text = String(value || "").trim();
+  const match = text.match(
+    /^(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+([+-])(\d{2})(\d{2})$/
+  );
+  if (!match || !isValidIsoDate(match[1])) {
+    throw new Error(`${label}必须是有效带时区时间（YYYY-MM-DD HH:mm:ss +HHMM）`);
+  }
+  const [, date, hourText, minuteText, secondText, offsetSign, offsetHourText, offsetMinuteText] =
+    match;
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const offsetHour = Number(offsetHourText);
+  const offsetMinute = Number(offsetMinuteText);
+  if (
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 14 ||
+    offsetMinute > 59 ||
+    (offsetHour === 14 && offsetMinute !== 0)
+  ) {
+    throw new Error(`${label}必须是有效带时区时间（YYYY-MM-DD HH:mm:ss +HHMM）`);
+  }
+  const [year, month, day] = date.split("-").map(Number);
+  const localTimestamp = Date.UTC(year, month - 1, day, hour, minute, second);
+  const offsetMinutes = (offsetHour * 60 + offsetMinute) * (offsetSign === "+" ? 1 : -1);
+  return {
+    value: text,
+    instantMs: localTimestamp - offsetMinutes * 60_000,
+  };
 }
 
 function parseCount(value, label) {
@@ -63,6 +120,15 @@ function parseCount(value, label) {
 
 const PERSON_CODE_PATTERN = /^(?:USR|ROLE)-[A-Za-z0-9_-]+$/;
 const EVIDENCE_ID_PATTERN = /^EVD-[A-Za-z0-9_-]+$/;
+const RESERVED_EVIDENCE_SEGMENTS = new Set([
+  "PENDING",
+  "DRAFT",
+  "CANDIDATE",
+  "TBD",
+  "TODO",
+  "INCOMPLETE",
+  "READY",
+]);
 
 function splitControlledIds(value) {
   return String(value || "")
@@ -75,9 +141,19 @@ function isPersonCode(value) {
   return PERSON_CODE_PATTERN.test(String(value || "").trim());
 }
 
+function isConcreteEvidenceId(value) {
+  const id = String(value || "").trim();
+  if (!EVIDENCE_ID_PATTERN.test(id)) return false;
+  const segments = id
+    .slice("EVD-".length)
+    .split(/[-_]/)
+    .map((segment) => segment.toUpperCase());
+  return !segments.some((segment) => RESERVED_EVIDENCE_SEGMENTS.has(segment));
+}
+
 function isEvidenceIdList(value) {
   const ids = splitControlledIds(value);
-  return ids.length > 0 && ids.every((id) => EVIDENCE_ID_PATTERN.test(id));
+  return ids.length > 0 && ids.every(isConcreteEvidenceId);
 }
 
 function parsePersonWithEvidence(value, label) {
@@ -85,9 +161,11 @@ function parsePersonWithEvidence(value, label) {
   if (
     parts.length < 2 ||
     !isPersonCode(parts[0]) ||
-    !parts.slice(1).every((item) => EVIDENCE_ID_PATTERN.test(item))
+    !parts.slice(1).every(isConcreteEvidenceId)
   ) {
-    throw new Error(`${label} 必须严格使用人员 / 角色代号加 EVD-* ID，不得夹带姓名或链接`);
+    throw new Error(
+      `${label} 必须严格使用人员 / 角色代号加实际 EVD-* ID，不得夹带姓名或链接，也不得使用占位证据`
+    );
   }
   return parts[0];
 }
@@ -114,7 +192,7 @@ function parseMoney(value, label) {
 
 function requireEvidenceId(value, label) {
   if (!isEvidenceIdList(value)) {
-    throw new Error(`${label} 必须填写 EVD-* 证据 ID；原始链接只存受控系统`);
+    throw new Error(`${label} 必须填写非占位 EVD-* 实际证据 ID；原始链接只存受控系统`);
   }
 }
 
@@ -220,11 +298,26 @@ function validateG009ClosureReceipt({ ledger, gateEvidence, scopeEvidence, passe
       }
     }
   }
-  if (!passed) return;
+  if (!passed) return rows;
   const incomplete = rows.find((row) => row.readiness !== "READY");
   if (incomplete) {
     throw new Error(`G0-09 Pass 时四域关闭收据必须全部 READY；${incomplete.domain} 仍为 ${incomplete.readiness}`);
   }
+  for (const field of [
+    "source_ref",
+    "snapshot_evd",
+    "acl_evd",
+    "quality_evd",
+    "overall_approval_evd",
+  ]) {
+    if (new Set(rows.map((row) => row[field])).size !== 1) {
+      throw new Error(`DEC-058 L1 单工作簿关闭时四域必须共用同一个 ${field}`);
+    }
+  }
+  if (new Set(rows.map((row) => row.source_version_id)).size !== rows.length) {
+    throw new Error("DEC-058 单工作簿的四个逻辑域必须使用四个独立 source_version_id");
+  }
+  return rows;
 }
 
 function parseSignedCount(value, label) {
@@ -261,6 +354,288 @@ function implementationSourceVersion(text) {
     "46 实现设计",
     /^>\s*\*\*日期：\*\*[^\n]*?·\s*(v\d+(?:\.\d+)*)(?=[（\s\\]|$)/gmi
   );
+}
+
+function compareSourceVersions(left, right, label) {
+  const parse = (value) => {
+    const match = String(value || "").match(/^v(\d+(?:\.\d+)*)$/i);
+    if (!match) throw new Error(`${label}版本格式无效：${value || "缺失"}`);
+    return match[1].split(".").map(Number);
+  };
+  const leftParts = parse(left);
+  const rightParts = parse(right);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (difference !== 0) return Math.sign(difference);
+  }
+  return 0;
+}
+
+function assertSignedBaselineVersion({ context, signedVersion, currentVersion, formalVersion }) {
+  const signedMatchesFormal = signedVersion && formalVersion && signedVersion === formalVersion;
+  const currentIncludesBaseline =
+    currentVersion && formalVersion && compareSourceVersions(currentVersion, formalVersion, context) >= 0;
+  if (!signedMatchesFormal || !currentIncludesBaseline) {
+    throw new Error(
+      `${context}版本 ${signedVersion || "缺失"} 与当前真源 ${currentVersion || "缺失"} 不一致（正式签发基线 ${formalVersion || "缺失"}）`
+    );
+  }
+}
+
+function uniqueAuthorizationValue(text, label, pattern) {
+  const matches = [...String(text || "").matchAll(pattern)];
+  if (matches.length !== 1 || !matches[0][1]) {
+    throw new Error(`${label}必须且只能出现一次`);
+  }
+  return matches[0][1].trim();
+}
+
+function parseAuthorizationProjectionSha(text, label) {
+  const value = uniqueAuthorizationValue(
+    text,
+    `${label}授权投影 SHA-256`,
+    /^>\s*\*\*授权投影 SHA-256：\*\*\s*`([0-9a-f]{64})`\s*$/gmi
+  );
+  return value;
+}
+
+function parseG0Authorization(text) {
+  const decisionId = uniqueAuthorizationValue(
+    text,
+    "G0 正式签发决策 ID",
+    /^>\s*\*\*决策 ID：\*\*\s*`([A-Z0-9-]+)`\s*$/gmi
+  );
+  const conclusion = uniqueAuthorizationValue(
+    text,
+    "G0 正式签发结论",
+    /^>\s*\*\*结论：\*\*\s*`([A-Z]+)`\s*$/gmi
+  ).toUpperCase();
+  if (decisionId !== "DEC-G0-01" || conclusion !== "PASS") {
+    throw new Error("G0 正式签发记录必须是 DEC-G0-01=PASS");
+  }
+  const rows = parseTable(getSection(text, "## 1. 冻结输入"), "G0 正式签发基线");
+  const byInput = Object.fromEntries(rows.map((row) => [row["输入"], row["签发版本"]]));
+  const countRows = parseTable(getSection(text, "## 2. 门禁计数"), "G0 正式签发计数");
+  const countByCheck = Object.fromEntries(countRows.map((row) => [row["检查面"], row]));
+  const signedTimestamp = parseAuthorizationTimestamp(
+    uniqueAuthorizationValue(
+      text,
+      "G0 正式签发时间",
+      /^>\s*\*\*签发时间：\*\*[ \t]*([^\n]+?)[ \t]*$/gmi
+    ),
+    "G0 正式签发时间"
+  );
+  return {
+    projectCode: uniqueAuthorizationValue(
+      text,
+      "G0 正式签发项目代号",
+      /^>\s*\*\*项目：\*\*[^\n]*`([A-Z][A-Z0-9-]{2,})`[^\n]*$/gmi
+    ),
+    evidenceId: uniqueAuthorizationValue(
+      text,
+      "G0 正式签发证据 ID",
+      /^>\s*\*\*证据 ID：\*\*\s*`(EVD-G0-[A-Za-z0-9_-]+)`\s*$/gmi
+    ),
+    owner: uniqueAuthorizationValue(
+      text,
+      "G0 正式签发 Owner",
+      /^>\s*\*\*签发 Owner：\*\*\s*`((?:USR|ROLE)-[A-Za-z0-9_-]+)`\s*$/gmi
+    ),
+    signedAt: signedTimestamp.value,
+    signedAtInstantMs: signedTimestamp.instantMs,
+    projectionSha256: parseAuthorizationProjectionSha(text, "G0 正式签发记录"),
+    externalCount: required(countByCheck["G0-02～15"], "G0 正式签发记录·G0-02～15 计数"),
+    scopeCount: required(countByCheck["Scope #1～15"], "G0 正式签发记录·Scope 计数"),
+    versions: {
+      章程: required(byInput["项目章程"], "G0 正式签发记录·项目章程"),
+      台账: required(byInput["G0 责任与证据台账"], "G0 正式签发记录·台账"),
+      Scope: required(byInput["Scope 与验收"], "G0 正式签发记录·Scope"),
+      排期: required(byInput["总排期与阶段门禁"], "G0 正式签发记录·排期"),
+    },
+  };
+}
+
+function parseDdevAuthorization(text) {
+  const decisionId = uniqueAuthorizationValue(
+    text,
+    "Ddev 正式签发决策 ID",
+    /^>\s*\*\*决策：\*\*\s*`([A-Z0-9-]+)`\s*$/gmi
+  );
+  const conclusion = uniqueAuthorizationValue(
+    text,
+    "Ddev 正式签发结论",
+    /^>\s*\*\*结论：\*\*\s*`([A-Z]+)`(?:\s*·[^\n]*)?$/gmi
+  ).toUpperCase();
+  if (decisionId !== "DEC-DDEV-01" || conclusion !== "PASS") {
+    throw new Error("Ddev 正式签发记录必须是 DEC-DDEV-01=PASS");
+  }
+  const readVersion = (documentId, label) =>
+    uniqueSourceVersion(
+      text,
+      `Ddev 正式签发记录·${documentId} ${label}`,
+      new RegExp("`" + documentId + "`\\s*" + label + "\\s*(v\\d+(?:\\.\\d+)*)", "gi")
+    );
+  const signedTimestamp = parseAuthorizationTimestamp(
+    uniqueAuthorizationValue(
+      text,
+      "Ddev 正式签发时间",
+      /^>\s*\*\*签发时间：\*\*[ \t]*([^\n]+?)[ \t]*$/gmi
+    ),
+    "Ddev 正式签发时间"
+  );
+  return {
+    projectCode: uniqueAuthorizationValue(
+      text,
+      "Ddev 正式签发项目代号",
+      /^>\s*\*\*项目：\*\*[^\n]*`([A-Z][A-Z0-9-]{2,})`[^\n]*$/gmi
+    ),
+    evidenceId: uniqueAuthorizationValue(
+      text,
+      "Ddev 正式签发证据 ID",
+      /^>\s*\*\*授权证据：\*\*\s*`(EVD-DDEV-[A-Za-z0-9_-]+)`\s*$/gmi
+    ),
+    owner: uniqueAuthorizationValue(
+      text,
+      "Ddev 正式签发 Owner",
+      /^>\s*\*\*签发 Owner：\*\*\s*`((?:USR|ROLE)-[A-Za-z0-9_-]+)`\s*$/gmi
+    ),
+    signedAt: signedTimestamp.value,
+    signedAtInstantMs: signedTimestamp.instantMs,
+    projectionSha256: parseAuthorizationProjectionSha(text, "Ddev 正式签发记录"),
+    versions: {
+      "01": readVersion("01", "排期"),
+      "03": readVersion("03", "Scope"),
+      "04": readVersion("04", "费用"),
+      "37": readVersion("37", "架构"),
+      "46": readVersion("46", "实现设计"),
+    },
+  };
+}
+
+export function authorizationProjectionDigests({
+  charter,
+  ledger,
+  scope,
+  cost,
+  architecture,
+  implementation,
+}) {
+  const projectCode = projectCodeFromCharter(charter);
+  const gateRows = parseTable(getSection(ledger, "## 2. G0 硬门禁"), "G0 硬门禁")
+    .filter((row) => /^G0-\d{2}$/.test(row.ID));
+  const scopeRows = parseTable(
+    getSection(scope, "## A. 进入 Scope 冻结（③）检查表"),
+    "Scope 冻结检查"
+  );
+  const raciRows = parseTable(getSection(ledger, "## 5. RACI 具名区"), "RACI 具名区");
+  const g009Rows = parseTable(
+    getSection(ledger, G009_CLOSURE_HEADING),
+    "G0-09 机器可核验关闭收据"
+  );
+  const feeStatus = deriveFeeStatus(cost);
+  const g0 = projectionDigest({
+    schema: "customer-agent-g0-authorization-projection.v1",
+    projectCode,
+    gates: selectFields(gateRows, ["ID", "责任包", "状态", "完成证据"]),
+    scope: selectFields(scopeRows, ["#", "条件", "完成", "外部证据 ID / 备注"]),
+    raci: selectFields(raciRows, [
+      "角色",
+      "人员代号",
+      "代理人代号",
+      "接受职责证据 ID",
+      "状态",
+      "生效日期",
+      "固定职责",
+      "职责分离",
+    ]),
+    g009: selectFields(g009Rows, G009_CLOSURE_FIELDS),
+    fee: {
+      feePathCode: feeStatus.feePathCode,
+      feeSelected: feeStatus.feeSelected,
+      paidSpend: feeStatus.paidSpend,
+      feeDecisionDate: feeStatus.feeDecisionDate,
+    },
+  });
+
+  const ddevRows = parseTable(
+    getSection(ledger, "### DEC-DDEV-01 · 一期开发授权记录"),
+    "DEC-DDEV-01 开发授权记录"
+  );
+  const ddev = projectionDigest({
+    schema: "customer-agent-ddev-authorization-projection.v1",
+    projectCode,
+    g0ProjectionSha256: g0,
+    decision: selectFields(ddevRows, ["字段", "签发值"]),
+    signedDocuments: {
+      scopeSha256: sha256(scope),
+      costSha256: sha256(cost),
+      architectureSha256: sha256(architecture),
+      implementationSha256: sha256(implementation),
+    },
+  });
+  return { g0, ddev };
+}
+
+function deriveDevelopmentProgress(development, detail) {
+  const normalizedDetail = stripMarkdown(detail);
+  const categories = {
+    "未开始": "not-started",
+    "未开发": "not-started",
+    "暂停": "paused",
+    "已暂停": "paused",
+    "停止": "stopped",
+    "已停止": "stopped",
+    "开发中": "active",
+    "已开始": "active",
+    "进行中": "active",
+    "已完成": "completed",
+  };
+  const category = categories[development];
+  if (!category) throw new Error(`产品开发不是受控状态：${development}`);
+  const evidenceIds = [...new Set(normalizedDetail.match(/EVD-[A-Za-z0-9_-]+/g) || [])];
+  if (category !== "active") {
+    return {
+      category,
+      state: development,
+      detail: normalizedDetail,
+      milestone: "",
+      completedSlices: [],
+      nextSlice: "",
+      nextSliceName: "",
+      nextAction: "",
+      evidenceIds,
+    };
+  }
+
+  const milestone = normalizedDetail.match(/\b(DEV-M\d+)\s*·\s*IN_PROGRESS\b/i)?.[1]?.toUpperCase() || "";
+  const completedSlices = normalizedDetail
+    .split(/[。；|]/)
+    .flatMap((clause) => {
+      const completedAt = clause.indexOf("已完成");
+      if (completedAt < 0) return [];
+      return (clause.slice(0, completedAt).match(/\bW\d+\b/gi) || []).map((slice) =>
+        slice.toUpperCase()
+      );
+    });
+  const next = normalizedDetail.match(/下一切片为\s*(W\d+)\s+([^。；|]+)/i);
+  const nextAction = (
+    normalizedDetail.match(/下一动作(?:为|是|：|:)\s*([^。；|]+)/i)?.[1]?.trim() || ""
+  ).replace(/\s*[（(]\s*待单独授权\s*[）)]\s*$/u, "");
+  if (!milestone || completedSlices.length === 0 || Boolean(next) === Boolean(nextAction)) {
+    throw new Error("产品开发进行中时必须写明 DEV-M* · IN_PROGRESS、已完成 W*，以及下一切片或下一动作");
+  }
+  return {
+    category,
+    state: development,
+    detail: normalizedDetail,
+    milestone,
+    completedSlices: [...new Set(completedSlices)],
+    nextSlice: next?.[1]?.toUpperCase() || "",
+    nextSliceName: next?.[2]?.trim() || "",
+    nextAction,
+    evidenceIds,
+  };
 }
 
 function outcome(value, passValues) {
@@ -387,11 +762,15 @@ export function deriveProjectStatus({
   cost,
   architecture,
   implementation,
+  g0Authorization,
+  ddevAuthorization,
 }) {
+  const projectCode = projectCodeFromCharter(charter);
   const architectureVersion = architectureSourceVersion(architecture);
   const implementationVersion = implementationSourceVersion(implementation);
   const statusRows = parseTable(getSection(ledger, "## 1. 当前状态"), "当前状态");
   const statusMap = Object.fromEntries(statusRows.map((row) => [row["项目项"], row["状态"]]));
+  const statusRowMap = Object.fromEntries(statusRows.map((row) => [row["项目项"], row]));
   const allowedSummary = {
     "工作方向登记": ["已记录", "未记录", "Fail"],
     "公司正式批准": ["未完成", "进行中", "已完成", "已批准", "Pass", "Fail"],
@@ -560,6 +939,10 @@ export function deriveProjectStatus({
   if (activeDevelopment.has(development) && !ddevReady) {
     throw new Error("产品开发状态不得在 Ddev 未成立时向前推进");
   }
+  const developmentProgress = deriveDevelopmentProgress(
+    development,
+    statusRowMap["产品开发"]?.["说明"] || ""
+  );
   const scopeFeeReady = isChecked(scopeRows.find((row) => row["#"] === "11")?.["完成"]);
   if (feeStatus.feePathCode === "C" && (scopeFeeReady || g0Ready || ddevReady)) {
     throw new Error("C 暂停路径不得通过 Scope #11、签发 G0 或成立 Ddev");
@@ -693,13 +1076,19 @@ export function deriveProjectStatus({
   }
   const g0Failed = statusMap["G0 签发"] === "Fail";
   let g0ReviewDate = "";
+  let g0ReviewInstantMs = null;
   let g0EvidencePackage = "";
+  let g0AuthorizationRecord = null;
   if (g0Ready || g0Failed) {
     const signRows = parseTable(getSection(ledger, "### G0 签发记录"), "G0 签发记录");
     const signMap = Object.fromEntries(signRows.map((row) => [row["字段"], row["填写"]]));
-    const reviewDate = String(signMap["评审时间"] || "").match(/\d{4}-\d{2}-\d{2}/)?.[0];
-    if (!reviewDate || !isValidIsoDate(reviewDate)) throw new Error("G0 已签发时必须填写有效评审时间");
+    const reviewTimestamp = parseAuthorizationTimestamp(
+      signMap["评审时间"],
+      "G0 已签发时评审时间"
+    );
+    const reviewDate = reviewTimestamp.value.slice(0, 10);
     g0ReviewDate = reviewDate;
+    g0ReviewInstantMs = reviewTimestamp.instantMs;
     if (g0Ready) {
       for (const row of raciRows) {
         if (row["生效日期"] > reviewDate) {
@@ -723,9 +1112,23 @@ export function deriveProjectStatus({
       Scope: sourceVersion(scope, "Scope", "状态"),
       排期: sourceVersion(schedule, "排期", "排期版本"),
     };
-    for (const [label, current] of Object.entries(currentVersions)) {
-      if (signedVersions[label] !== current) {
-        throw new Error(`G0 签发输入 ${label} 版本 ${signedVersions[label] || "缺失"} 与当前真源 ${current} 不一致`);
+    if (g0Ready) {
+      g0AuthorizationRecord = parseG0Authorization(g0Authorization);
+      for (const [label, currentVersion] of Object.entries(currentVersions)) {
+        assertSignedBaselineVersion({
+          context: `G0 签发输入 ${label} `,
+          signedVersion: signedVersions[label],
+          currentVersion,
+          formalVersion: g0AuthorizationRecord.versions[label],
+        });
+      }
+    } else {
+      for (const [label, currentVersion] of Object.entries(currentVersions)) {
+        if (signedVersions[label] !== currentVersion) {
+          throw new Error(
+            `G0 Fail 签发输入 ${label} 版本 ${signedVersions[label] || "缺失"} 与当前真源 ${currentVersion} 不一致`
+          );
+        }
       }
     }
     const externalSigned = parseSignedCount(signMap["G0-02～15"], "G0-02～15");
@@ -737,12 +1140,14 @@ export function deriveProjectStatus({
     if (scopeSigned.pass !== computedScopePass || scopeSigned.passTotal !== 15 || scopeSigned.fail !== 15 - computedScopePass || scopeSigned.failTotal !== 15) {
       throw new Error("G0 签发记录的 Scope 计数与明细不一致");
     }
-    const reviewerCodes = [];
-    for (const field of ["业务审核人", "IT / 安全审核人", "预算审核人", "项目审核人"]) {
-      const reviewer = String(signMap[field] || "");
-      reviewerCodes.push(parsePersonWithEvidence(reviewer, `G0 已签发时 ${field}`));
+    const g0Signer = parsePersonWithEvidence(
+      String(signMap["签发 Owner"] || ""),
+      "G0 已签发时签发 Owner"
+    );
+    const projectOwnerRow = raciRows.find((row) => row["角色"] === "项目负责人");
+    if (![projectOwnerRow?.["人员代号"], projectOwnerRow?.["代理人代号"]].includes(g0Signer)) {
+      throw new Error("G0 签发 Owner 必须来自 RACI 项目负责人的主责或代理");
     }
-    if (new Set(reviewerCodes).size !== reviewerCodes.length) throw new Error("G0 四类审核人必须职责分离");
     const conclusion = String(signMap["结论"] || "");
     const passChecked = /\[[xX]\]\s*Pass/.test(conclusion);
     const failChecked = /\[[xX]\]\s*Fail/.test(conclusion);
@@ -754,6 +1159,44 @@ export function deriveProjectStatus({
     if (g0Failed && (!blockers || /_{2,}|待填/.test(blockers))) throw new Error("G0 Fail 时必须填写阻塞行动项");
     requireEvidenceId(signMap["证据包 ID"], "G0 证据包");
     g0EvidencePackage = String(signMap["证据包 ID"] || "").trim();
+    if (g0Ready) {
+      const formalExternalPass = parseCount(g0AuthorizationRecord.externalCount.Pass, "G0 正式签发外部 Pass");
+      const formalExternalFail = parseCount(g0AuthorizationRecord.externalCount.Fail, "G0 正式签发外部 Fail");
+      const formalScopePass = parseCount(g0AuthorizationRecord.scopeCount.Pass, "G0 正式签发 Scope Pass");
+      const formalScopeFail = parseCount(g0AuthorizationRecord.scopeCount.Fail, "G0 正式签发 Scope Fail");
+      if (
+        g0AuthorizationRecord.projectCode !== projectCode ||
+        g0AuthorizationRecord.evidenceId !== g0EvidencePackage ||
+        g0AuthorizationRecord.owner !== g0Signer ||
+        g0AuthorizationRecord.signedAt !== reviewTimestamp.value ||
+        g0AuthorizationRecord.signedAtInstantMs !== reviewTimestamp.instantMs
+      ) {
+        throw new Error("G0 正式签发记录必须与项目、证据包、签发 Owner 和评审时间一致");
+      }
+      if (
+        formalExternalPass.pass !== externalSigned.pass ||
+        formalExternalPass.total !== externalSigned.passTotal ||
+        formalExternalFail.pass !== externalSigned.fail ||
+        formalExternalFail.total !== externalSigned.failTotal ||
+        formalScopePass.pass !== scopeSigned.pass ||
+        formalScopePass.total !== scopeSigned.passTotal ||
+        formalScopeFail.pass !== scopeSigned.fail ||
+        formalScopeFail.total !== scopeSigned.failTotal
+      ) {
+        throw new Error("G0 正式签发记录的门禁计数必须与台账签发记录一致");
+      }
+      const projection = authorizationProjectionDigests({
+        charter,
+        ledger,
+        scope,
+        cost,
+        architecture,
+        implementation,
+      }).g0;
+      if (g0AuthorizationRecord.projectionSha256 !== projection) {
+        throw new Error(`G0 授权投影已漂移，必须重新签发（当前 ${projection}）`);
+      }
+    }
     const signedDdev = String(signMap.Ddev || "").trim();
     if (ddevReady && signedDdev !== ddev) throw new Error("G0 签发记录 Ddev 必须与当前状态一致");
     if (!ddevReady && signedDdev && !/^(?:待签发|未成立)$/.test(signedDdev)) throw new Error("Ddev 未成立时签发记录不得填写其他值");
@@ -804,6 +1247,7 @@ export function deriveProjectStatus({
       "37": { label: "架构", version: architectureVersion },
       "46": { label: "实现设计", version: implementationVersion },
     };
+    const ddevAuthorizationRecord = parseDdevAuthorization(ddevAuthorization);
     for (const [documentId, { label, version: currentVersion }] of Object.entries(currentFrozenVersions)) {
       const signedMatches = [
         ...frozenInputs.matchAll(
@@ -814,9 +1258,12 @@ export function deriveProjectStatus({
         ),
       ];
       const signedVersion = signedMatches.length === 1 ? signedMatches[0][1] : "";
-      if (!currentVersion || signedVersion !== currentVersion) {
-        throw new Error(`DEC-DDEV-01 冻结输入 ${documentId} 版本 ${signedVersion || "缺失"} 与当前真源 ${currentVersion || "缺失"} 不一致`);
-      }
+      assertSignedBaselineVersion({
+        context: `DEC-DDEV-01 冻结输入 ${documentId} `,
+        signedVersion,
+        currentVersion,
+        formalVersion: ddevAuthorizationRecord.versions[documentId],
+      });
     }
 
     const environmentAndData = String(ddevDecisionMap["允许环境与数据"] || "");
@@ -845,26 +1292,49 @@ export function deriveProjectStatus({
     if (reviewDate < effectiveDate) throw new Error("DEC-DDEV-01 复核日不得早于生效日");
     if (!g0ReviewDate || effectiveDate < g0ReviewDate) throw new Error("DEC-DDEV-01 生效日不得早于 G0 评审日");
 
-    const signers = String(ddevDecisionMap["最终签发角色"] || "");
-    const signerPatterns = [
-      ["业务", "客服业务 Owner", /业务[:：]\s*((?:USR|ROLE)-[A-Za-z0-9_-]+)\s*\/\s*(EVD-[A-Za-z0-9_-]+)/],
-      ["IT / 安全", "IT / 安全责任人", /IT\s*\/\s*安全[:：]\s*((?:USR|ROLE)-[A-Za-z0-9_-]+)\s*\/\s*(EVD-[A-Za-z0-9_-]+)/],
-      ["预算", "预算责任人", /预算[:：]\s*((?:USR|ROLE)-[A-Za-z0-9_-]+)\s*\/\s*(EVD-[A-Za-z0-9_-]+)/],
-      ["项目", "项目负责人", /项目[:：]\s*((?:USR|ROLE)-[A-Za-z0-9_-]+)\s*\/\s*(EVD-[A-Za-z0-9_-]+)/],
-    ];
-    const signerCodes = signerPatterns.map(([label, raciRole, pattern]) => {
-      const match = signers.match(pattern);
-      if (!match) throw new Error(`DEC-DDEV-01 缺少${label}签发人代号与 EVD-*`);
-      const raciRow = raciRows.find((row) => row["角色"] === raciRole);
-      if (![raciRow?.["人员代号"], raciRow?.["代理人代号"]].includes(match[1])) {
-        throw new Error(`DEC-DDEV-01 ${label}签发人必须来自 RACI ${raciRole} 的主责或代理`);
-      }
-      return match[1];
-    });
-    if (new Set(signerCodes).size !== signerCodes.length) throw new Error("DEC-DDEV-01 四类最终签发人必须职责分离");
+    const ddevSigner = parsePersonWithEvidence(
+      String(ddevDecisionMap["最终签发 Owner"] || ""),
+      "DEC-DDEV-01 最终签发 Owner"
+    );
+    const projectOwnerRow = raciRows.find((row) => row["角色"] === "项目负责人");
+    if (![projectOwnerRow?.["人员代号"], projectOwnerRow?.["代理人代号"]].includes(ddevSigner)) {
+      throw new Error("DEC-DDEV-01 最终签发 Owner 必须来自 RACI 项目负责人的主责或代理");
+    }
     const authorizationEvidence = String(ddevDecisionMap["授权证据"] || "").trim();
     if (!/^EVD-DDEV-[A-Za-z0-9_-]+$/.test(authorizationEvidence)) {
       throw new Error("DEC-DDEV-01 PASS 时必须填写 EVD-DDEV-* 授权证据");
+    }
+    requireEvidenceId(authorizationEvidence, "DEC-DDEV-01 授权证据");
+    const signedTimestamp = parseAuthorizationTimestamp(
+      ddevDecisionMap["签发时间"],
+      "DEC-DDEV-01 PASS 时签发时间"
+    );
+    if (
+      typeof g0ReviewInstantMs !== "number" ||
+      signedTimestamp.instantMs <= g0ReviewInstantMs
+    ) {
+      throw new Error("DEC-DDEV-01 签发时间必须严格晚于 G0 评审签发时间");
+    }
+    if (
+      ddevAuthorizationRecord.projectCode !== projectCode ||
+      ddevAuthorizationRecord.evidenceId !== authorizationEvidence ||
+      ddevAuthorizationRecord.evidenceId !== frozenEvidence ||
+      ddevAuthorizationRecord.owner !== ddevSigner ||
+      ddevAuthorizationRecord.signedAt !== signedTimestamp.value ||
+      ddevAuthorizationRecord.signedAtInstantMs !== signedTimestamp.instantMs
+    ) {
+      throw new Error("Ddev 正式签发记录必须与项目、授权证据、签发 Owner 和签发时间一致");
+    }
+    const ddevProjection = authorizationProjectionDigests({
+      charter,
+      ledger,
+      scope,
+      cost,
+      architecture,
+      implementation,
+    }).ddev;
+    if (ddevAuthorizationRecord.projectionSha256 !== ddevProjection) {
+      throw new Error(`Ddev 授权投影已漂移，必须重新签发（当前 ${ddevProjection}）`);
     }
   }
   const status = {
@@ -881,6 +1351,10 @@ export function deriveProjectStatus({
     g0: required(statusMap["G0 签发"], "G0 签发"),
     ddev,
     development,
+    developmentProgress,
+    projectCode,
+    g0Evidence: g0EvidencePackage,
+    ddevEvidence: ddevReady ? String(ddevDecisionMap["授权证据"] || "").trim() : "",
     resourceBaseline,
     health: required(statusMap["健康度"], "健康度"),
     ...feeStatus,

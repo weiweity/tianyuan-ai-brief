@@ -164,7 +164,17 @@ await check("关键业务口径完整", async () => {
     "不让客服人员选择技术框架",
   ];
   if (mode === "public-template") {
-    const [charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+    const [
+      charter,
+      schedule,
+      ledger,
+      scope,
+      cost,
+      architecture,
+      implementation,
+      g0Authorization,
+      ddevAuthorization,
+    ] = await Promise.all([
       readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
       readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
       readFile(path.join(projectDir, "02-G0责任与证据台账.md"), "utf8"),
@@ -172,6 +182,8 @@ await check("关键业务口径完整", async () => {
       readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
       readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
       readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+      readFile(path.join(projectDir, "90-评审/2026-08-31_G0正式签发记录.md"), "utf8"),
+      readFile(path.join(projectDir, "90-评审/2026-08-31_Ddev正式签发记录.md"), "utf8"),
     ]);
     const projectStatus = deriveProjectStatus({
       charter,
@@ -181,13 +193,27 @@ await check("关键业务口径完整", async () => {
       cost,
       architecture,
       implementation,
+      g0Authorization,
+      ddevAuthorization,
     });
     requiredFacts.push(
-      `G0 ${projectStatus.g0}`,
+      `当前${projectStatus.g0}`,
       `${projectStatus.externalPass} / ${projectStatus.externalTotal}`,
       `${projectStatus.scopePass} / ${projectStatus.scopeTotal}`,
       `历史日期下限 ${projectStatus.earliestDdev.slice(5)}`
     );
+    if (["开发中", "已开始", "进行中"].includes(projectStatus.development)) {
+      const progress = projectStatus.developmentProgress;
+      const nextAction = progress.nextSlice
+        ? `${progress.nextSlice} ${progress.nextSliceName}`
+        : progress.nextAction;
+      requiredFacts.push(
+        `${progress.milestone} 已开始`,
+        `${progress.completedSlices.join("、")} 已完成`,
+        nextAction
+      );
+      assert.doesNotMatch(visible, /软件(?:尚)?未开发/, "当前 PRD 已进入开发中，不得残留“软件未开发”");
+    }
   }
   const missing = requiredFacts.filter((fact) => !visible.includes(fact));
   assert.deepEqual(missing, [], `缺少关键口径：${missing.join("、")}`);
@@ -201,7 +227,18 @@ await check("关键业务口径完整", async () => {
 });
 
 await check("状态轴文字与视觉类同源", async () => {
-  const [html, charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+  const [
+    html,
+    charter,
+    schedule,
+    ledger,
+    scope,
+    cost,
+    architecture,
+    implementation,
+    g0Authorization,
+    ddevAuthorization,
+  ] = await Promise.all([
     readFile(targetPath, "utf8"),
     readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
     readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
@@ -210,6 +247,8 @@ await check("状态轴文字与视觉类同源", async () => {
     readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
     readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
     readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+    readFile(path.join(projectDir, "90-评审/2026-08-31_G0正式签发记录.md"), "utf8"),
+    readFile(path.join(projectDir, "90-评审/2026-08-31_Ddev正式签发记录.md"), "utf8"),
   ]);
   const projectStatus = deriveProjectStatus({
     charter,
@@ -219,6 +258,8 @@ await check("状态轴文字与视觉类同源", async () => {
     cost,
     architecture,
     implementation,
+    g0Authorization,
+    ddevAuthorization,
   });
   const expectedClasses = expectedStatusAxisClasses(projectStatus);
   for (const [axis, expectedClass] of Object.entries(expectedClasses)) {
@@ -244,7 +285,18 @@ await check("状态轴文字与视觉类同源", async () => {
 });
 
 await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
-  const [html, charter, schedule, ledger, scope, cost, architecture, implementation] = await Promise.all([
+  const [
+    html,
+    charter,
+    schedule,
+    ledger,
+    scope,
+    cost,
+    architecture,
+    implementation,
+    g0Authorization,
+    ddevAuthorization,
+  ] = await Promise.all([
     readFile(targetPath, "utf8"),
     readFile(path.join(projectDir, "00-项目章程.md"), "utf8"),
     readFile(path.join(projectDir, "01-总排期与阶段门禁.md"), "utf8"),
@@ -253,6 +305,8 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
     readFile(path.join(projectDir, "04-费用与成本控制.md"), "utf8"),
     readFile(path.join(projectDir, "20-设计-进行中/37-架构SSOT-v1.md"), "utf8"),
     readFile(path.join(projectDir, "20-设计-进行中/46-实现设计-开工包.md"), "utf8"),
+    readFile(path.join(projectDir, "90-评审/2026-08-31_G0正式签发记录.md"), "utf8"),
+    readFile(path.join(projectDir, "90-评审/2026-08-31_Ddev正式签发记录.md"), "utf8"),
   ]);
   const projectStatus = deriveProjectStatus({
     charter,
@@ -262,6 +316,8 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
     cost,
     architecture,
     implementation,
+    g0Authorization,
+    ddevAuthorization,
   });
   const ddevMatches = [
     ...html.matchAll(
@@ -276,6 +332,7 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
   const total = projectStatus.externalTotal + projectStatus.scopeTotal;
   assert.deepEqual(
     {
+      state: attributes["data-state"],
       externalPass: attributes["data-external-pass"],
       externalTotal: attributes["data-external-total"],
       scopePass: attributes["data-scope-pass"],
@@ -284,6 +341,7 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
       total: attributes["data-total"],
     },
     {
+      state: projectStatus.ddev,
       externalPass: String(projectStatus.externalPass),
       externalTotal: String(projectStatus.externalTotal),
       scopePass: String(projectStatus.scopePass),
@@ -302,6 +360,13 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
     ddevVisible.includes(`Scope 检查 ${projectStatus.scopePass} / ${projectStatus.scopeTotal}`),
     "Ddev 摘要的 Scope 计数不同源"
   );
+  assert.ok(ddevVisible.includes(`G0 ${projectStatus.g0}`), "Ddev 摘要的 G0 状态不同源");
+  assert.ok(ddevVisible.includes(`Ddev ${projectStatus.ddev}`), "Ddev 摘要的 Ddev 状态不同源");
+  if (projectStatus.ddevReady) {
+    assert.ok(ddevVisible.includes("G0 与 DEC-DDEV-01 已分别签发"), "Ddev 已成立时缺少已签发说明");
+    assert.ok(ddevVisible.includes("当前只放行 DEV-M0"), "Ddev 已成立时缺少 DEV-M0 授权边界");
+    assert.equal(ddevVisible.includes("后方可建立 Ddev"), false, "Ddev 已成立后不得保留待签文案");
+  }
 
   const visible = visibleHtmlText(html);
   assert.ok(visible.includes(`当前只完成 ${completed} / ${total} 项准备`), "Ddev 完成总计不同源");

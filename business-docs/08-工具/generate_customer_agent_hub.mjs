@@ -259,8 +259,8 @@ const projectCode = sharedSurface.project.code;
 const d0 = sharedSurface.project.date;
 const g0Target = requiredMatch(
   sourceById.ledger,
-  /\*\*G0 决策日：\*\*\s*目标\s*(\d{4}-\d{2}-\d{2})/,
-  "G0 目标日"
+  /\*\*G0 决策日：\*\*\s*(?:原)?目标\s*(\d{4}-\d{2}-\d{2})/,
+  "G0 历史目标日"
 );
 const meetingPackDeadline = requiredMatch(
   sourceById.cadence,
@@ -402,14 +402,36 @@ const allEvidenceReady =
   projectStatus.externalPass === projectStatus.externalTotal &&
   projectStatus.scopePass === projectStatus.scopeTotal;
 const ddevReady = projectStatus.ddevReady;
+const developmentProgress = projectStatus.developmentProgress;
+const developmentActive = developmentProgress.category === "active";
+const developmentPaused = developmentProgress.category === "paused";
+const developmentStopped = developmentProgress.category === "stopped";
+const developmentCompleted = developmentProgress.category === "completed";
+const developmentInterrupted = developmentPaused || developmentStopped;
+const completedSlicesLabel = developmentProgress.completedSlices.join("、");
+const hasNumberedNextSlice = Boolean(developmentProgress.nextSlice);
+const nextActionLabel = hasNumberedNextSlice
+  ? `${developmentProgress.nextSlice} ${developmentProgress.nextSliceName}`
+  : developmentProgress.nextAction;
+const activeProgressSummary = developmentActive
+  ? hasNumberedNextSlice
+    ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextActionLabel}。`
+    : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}（待单独授权）。`
+  : "";
 const awaitingDdev = projectStatus.g0Ready && !ddevReady;
+const awaitingG0Signature = allEvidenceReady && !projectStatus.g0Ready;
 const designStage = projectStatus.stage === "设计阶段 / G0";
 const currentFeePath = projectStatus.feePathCode;
 const approvalFailed = projectStatus.approval === "Fail";
 const problemFitFailed = ["Fail", "未通过"].includes(projectStatus.problemFit);
 const g0Failed = projectStatus.g0 === "Fail";
-const projectPaused = currentFeePath === "C" || approvalFailed || problemFitFailed || g0Failed;
-const governanceBoundaries = ddevReady
+const projectPaused = currentFeePath === "C" || approvalFailed || problemFitFailed || g0Failed || developmentInterrupted;
+const governanceBoundaries = developmentInterrupted
+  ? [
+      { allowed: "只做暂停 / 停止原因复核、修复验证与恢复决定准备", forbidden: "继续 WBS、扩大范围、接入真实数据或恢复开发" },
+      { allowed: "保留现状、证据与回退入口", forbidden: "用仍有效的历史 Ddev 绕过当前暂停 / 停止决定" },
+    ]
+  : ddevReady
   ? [
       { allowed: "只做已签 Ddev、Scope、费用与环境边界内的 WBS", forbidden: "自动代发、越权访问或未经 CR / DEC 的新增范围" },
       { allowed: "按测试、审计、监控与回退门禁迭代", forbidden: "未留测试证据、未演练回退或未授权的生产发布" },
@@ -429,18 +451,46 @@ const nextOpenGateDate = nextOpenGate
 const openGateSummary = openGates.length > 0
   ? `当前未关闭的 G0 责任包共 ${openGates.length} 项：${openGates.map((gate) => `${gate.ID}「${gate["责任包"]}」`).join("、")}`
   : "当前无未关闭的 G0 责任包";
-const openGateAction = nextOpenGate
-  ? `${nextOpenGate.ID}「${nextOpenGate["责任包"]}」`
+const openGateAction = openGates.length > 0
+  ? openGates.map((gate) => `${gate.ID}「${gate["责任包"]}」`).join("、")
   : "未关闭的 G0 责任包";
 let headline;
-if (ddevReady) {
+if (ddevReady && developmentInterrupted) {
   headline = {
-      title: "Ddev 已成立，按授权边界推进。",
-      summary: `公司批准、问题适配、${projectStatus.externalTotal} 项外部责任包与 ${projectStatus.scopeTotal} 项 Scope 已按真源更新；后续只按已签 Ddev 与费用路径执行。`,
-      nextDate: projectStatus.ddev,
-      nextTitle: "按 Ddev 推进",
-      nextOutput: "WBS · 测试证据 · 回退记录",
+    title: `产品开发${developmentProgress.state}，不得按历史 Ddev 自动恢复。`,
+    summary: developmentProgress.detail || `当前产品开发为${developmentProgress.state}；只允许处理恢复条件与复核证据。`,
+    nextDate: "待复核",
+    nextTitle: `${developmentProgress.state}复核`,
+    nextOutput: "原因 · 修复证据 · 恢复 / 终止决定",
+  };
+} else if (ddevReady && developmentActive) {
+  headline = {
+      title: `${developmentProgress.milestone} 已开工，${completedSlicesLabel} 已完成。`,
+      summary: `${activeProgressSummary}${developmentProgress.milestone} 退出证据未齐不得进入下一里程碑。`,
+      nextDate: hasNumberedNextSlice ? projectStatus.ddev : "待授权",
+      nextTitle: hasNumberedNextSlice
+        ? `${developmentProgress.milestone}-${developmentProgress.nextSlice} · ${developmentProgress.nextSliceName}`
+        : "下一 DEV-M0 能力授权",
+      nextOutput: hasNumberedNextSlice
+        ? `${developmentProgress.nextSlice} 行为等价证据 · 不跨入下一里程碑`
+        : `${nextActionLabel} · 授权前不实施`,
     };
+} else if (ddevReady && developmentCompleted) {
+  headline = {
+    title: "当前产品开发切片已完成，等待退出证据与下一门决定。",
+    summary: developmentProgress.detail || "开发已完成；在退出证据和下一里程碑授权形成前不得扩大范围。",
+    nextDate: "待复核",
+    nextTitle: "退出证据复核",
+    nextOutput: "测试 · 回退 · 决定证据",
+  };
+} else if (ddevReady) {
+  headline = {
+    title: "Ddev 已成立，产品开发尚未开始。",
+    summary: developmentProgress.detail || `公司批准、问题适配、${projectStatus.externalTotal} 项外部责任包与 ${projectStatus.scopeTotal} 项 Scope 已按真源更新；只可按已签 Ddev 与费用路径启动首个切片。`,
+    nextDate: projectStatus.ddev,
+    nextTitle: "DEV-M0 首个切片",
+    nextOutput: "WBS · 测试证据 · 回退记录",
+  };
 } else if (currentFeePath === "C") {
   headline = {
     title: "C 暂停路径已记录，不进入开发。",
@@ -473,10 +523,10 @@ if (ddevReady) {
     nextTitle: "G0 整改复审",
     nextOutput: "阻塞行动项 · 复审证据 · 新结论",
   };
-} else if (designStage) {
+} else if (designStage && !allEvidenceReady) {
   headline = {
     title: "需求分析关已通过；架构设计关 PASS-WITH-CONDITIONS，实现设计关 Pass · 文档包 Ready。",
-    summary: `技术设计第 1～3 关已收口；${roleAcceptanceSummary}。当前仍停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，代码开发未开始。${openGateSummary}，须按这些责任包的完成证据逐项收口；真实数据逐批审核和运行负例仍走后续独立门。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
+    summary: `技术设计第 1～3 关已收口；${roleAcceptanceSummary}。当前仍停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，正式 DEV-M0 代码开发未开始；按现行批准，PILOT-S0 合成阶段可分账继续。${openGateSummary}；当前只推进 ${openGateAction}，真实数据逐批审核和运行负例仍走后续独立门。跨团队责任 ${projectStatus.externalPass}/${projectStatus.externalTotal}、范围检查 ${projectStatus.scopePass}/${projectStatus.scopeTotal} 未全部通过前，Ddev 不成立。`,
     nextDate: nextOpenGateDate,
     nextTitle: nextOpenGate?.["责任包"] || "组织授权门 / G0 补证",
     nextOutput: nextOpenGate?.["完成证据"] || "未关闭 G0 责任包与 Scope 检查证据",
@@ -500,29 +550,44 @@ if (ddevReady) {
 } else if (!projectStatus.g0Ready) {
   headline = {
           title: "G0 证据已齐，等待正式签发。",
-          summary: `外部责任包 ${projectStatus.externalPass}/${projectStatus.externalTotal}、Scope ${projectStatus.scopePass}/${projectStatus.scopeTotal} 已通过；仍须正式签发 G0 与 Ddev，不能由计数自动放行。`,
-          nextDate: shortDate(g0Target),
+          summary: `外部责任包 ${projectStatus.externalPass}/${projectStatus.externalTotal}、Scope ${projectStatus.scopePass}/${projectStatus.scopeTotal} 已通过；仍须先正式签发 G0，再单独签发 Ddev，不能由计数自动放行。`,
+          nextDate: "待签",
           nextTitle: "G0 正式签发",
-          nextOutput: "签发结论 · 审核人 · 证据包哈希 · Ddev",
+          nextOutput: "项目负责人 · 签发结论 · EVD-G0-* 证据包",
         };
 } else {
   headline = {
-    title: "G0 已签发，等待 Ddev 到达可执行日期。",
-    summary: `G0 已正式签发，但开发授权不能早于 ${projectStatus.earliestDdev}；Ddev 未填写前仍不得开发。`,
-    nextDate: shortDate(projectStatus.earliestDdev),
+    title: "G0 已签发，等待 Ddev 正式签发。",
+    summary: `G0 已正式签发；${projectStatus.earliestDdev} 只是历史日期下限，不是当前开工预测。Ddev 未填写并签发前仍不得进入正式 DEV-M0。`,
+    nextDate: "待签",
     nextTitle: "Ddev 正式签发",
     nextOutput: "Ddev 日期 · 授权证据 ID · 授权范围 · 费用路径",
   };
 }
 
-const displaySchedule = ddevReady
+const displaySchedule = developmentInterrupted
+  ? [{ date: headline.nextDate, title: headline.nextTitle, action: headline.summary, output: headline.nextOutput }]
+  : ddevReady
   ? projectStatus.resourceBaseline === "单人全栈 / FDE"
-    ? soloDeliveryScheduleRows.map((row) => ({
-        date: `相对 Ddev 顺延 · 原基线 ${row["保守日期"]}`,
-        title: row["里程碑"],
-        action: "单人串行交付；不承诺最小小队日期",
-        output: "按实际容量更新 DEC / CR",
-      }))
+    ? soloDeliveryScheduleRows.map((row, index) =>
+        developmentActive && index === 0
+          ? {
+              date: projectStatus.ddev,
+              title: `${developmentProgress.milestone} · ${completedSlicesLabel} 已完成`,
+              action: hasNumberedNextSlice
+                ? `下一切片 ${nextActionLabel}；严格按台账与实施计划推进`
+                : `下一动作 ${nextActionLabel}；未授权前不实施`,
+              output: hasNumberedNextSlice
+                ? "行为等价证据 · 不跨入下一里程碑"
+                : "授权决定与实施证据 · 不跨入下一里程碑",
+            }
+          : {
+              date: `相对 Ddev 顺延 · 原基线 ${row["保守日期"]}`,
+              title: row["里程碑"],
+              action: "单人串行交付；不承诺最小小队日期",
+              output: "按实际容量更新 DEC / CR",
+            }
+      )
     : deliveryScheduleRows.map((row) => ({
         date: `相对 Ddev 顺延 · 原基线 ${row["日期"]}`,
         title: row["阶段"],
@@ -530,15 +595,61 @@ const displaySchedule = ddevReady
         output: row["出口"],
       }))
   : awaitingDdev
-    ? [{ date: shortDate(projectStatus.earliestDdev), title: "Ddev 正式签发", action: "核对签发日期、授权证据 ID、范围、环境和费用路径", output: "Ddev · 授权边界 · 开发起始条件" }]
+    ? [{ date: "待签", title: "Ddev 正式签发", action: "核对签发日期、授权证据 ID、范围、环境和费用路径", output: "Ddev · 授权边界 · 开发起始条件" }]
   : projectPaused
     ? [{ date: headline.nextDate, title: headline.nextTitle, action: headline.summary, output: headline.nextOutput }]
+    : awaitingG0Signature
+      ? [{ date: "待签", title: "G0 正式签发", action: "由项目负责人填写评审时间、唯一结论与证据包", output: "EVD-G0-* · Pass / Fail" }]
     : scheduleRows.map((row) => ({
         date: row["日期"],
         title: row["主题"],
         action: humanizeMeetingText(row["主要动作"]),
         output: humanizeMeetingText(row["当日输出"]),
       }));
+const ddevNowTitle = developmentInterrupted
+  ? `产品开发${developmentProgress.state}；等待恢复 / 终止复核。`
+  : developmentActive
+    ? hasNumberedNextSlice
+      ? `${developmentProgress.milestone} 进行中；当前推进 ${developmentProgress.nextSlice}。`
+      : `${developmentProgress.milestone} 进行中；等待下一动作授权。`
+    : developmentCompleted
+      ? "当前开发切片已完成；等待退出证据复核。"
+      : "Ddev 已签；产品开发尚未开始。";
+const ddevNowSummary = developmentInterrupted
+  ? "当前暂停 / 停止决定优先于历史 Ddev；只处理原因、修复证据和恢复条件。"
+  : developmentActive
+    ? hasNumberedNextSlice
+      ? `${completedSlicesLabel} 已完成；${nextActionLabel} 只按冻结计划执行，不激活未授权 runtime。`
+      : `${completedSlicesLabel} 已完成；${nextActionLabel} 待单独授权，不激活未授权 runtime。`
+    : developmentCompleted
+      ? "退出证据和下一门决定未形成前，不进入后续里程碑。"
+      : "只可启动 Ddev 已授权的首个切片；每次变更保留测试、回退与决定证据。";
+const ddevScheduleTitle = developmentInterrupted
+  ? `产品开发${developmentProgress.state}；当前不执行 WBS。`
+  : developmentActive
+    ? `${developmentProgress.milestone} 已开始；${completedSlicesLabel} 已完成，后续按${projectStatus.resourceBaseline}基线串行推进。`
+    : developmentCompleted
+      ? "当前开发切片已完成；等待退出证据和下一门决定。"
+      : `Ddev 已签；按${projectStatus.resourceBaseline}基线启动首个切片。`;
+const ddevChecklist = developmentInterrupted
+  ? [
+      `确认产品开发${developmentProgress.state}的原因与影响范围`,
+      "保留当前证据、回退入口和未完成工作清单",
+      "完成修复验证并形成明确恢复 / 终止决定",
+      "决定生效前不得继续 WBS、真实接入、部署或下一里程碑",
+    ]
+  : developmentActive
+    ? [
+        `保持 ${completedSlicesLabel} 基线与既有行为不漂移`,
+        hasNumberedNextSlice
+          ? `执行 ${nextActionLabel}，只做冻结计划内工作`
+          : `只准备${nextActionLabel}的范围、验收与授权输入；授权前不实施`,
+        "获批后复跑受影响测试、构建、workspace 与 E2E，保留实施证据",
+        "保持 development / test + 合成数据；不启用真实数据、运行接入、部署或下一里程碑",
+      ]
+    : developmentCompleted
+      ? ["汇总退出证据", "复核测试与回退结果", "形成下一里程碑决定", "决定前不扩大范围"]
+      : ["确认首个切片输入与边界", "建立最小 WBS", "保留测试与回退证据", "不提前进入后续里程碑"];
 const payload = {
   schemaVersion: 1,
   runtime: {
@@ -574,42 +685,61 @@ const payload = {
     ...headline,
     principle: "系统辅助 → 坐席核对 → 人工处理 → 记录结果",
     nowTitle: ddevReady
-      ? "按 Ddev、WBS 和证据链推进。"
+      ? ddevNowTitle
       : awaitingDdev
         ? "G0 已签，等待 Ddev 正式授权。"
       : projectPaused
         ? "按暂停或整改条件行动，不越过门禁。"
+        : awaitingG0Signature
+          ? "只签 G0；不要把 Ddev 合并代签。"
         : designStage
-          ? "按组织授权门与 G0 缺口推进。"
+          ? "继续 PILOT-S0 合成实现，并推进可执行 G0 缺口。"
           : "先把启动会资料和责任清单准备好。",
     nowSummary: ddevReady
-      ? "只做 Ddev 已授权范围；每次变更保留测试、回退与决定证据。"
+      ? ddevNowSummary
       : awaitingDdev
         ? `不得早于 ${projectStatus.earliestDdev} 开发；Ddev 日期与授权证据 ID 未填写前继续保持未开发。`
       : projectPaused
         ? "只补解除阻塞所需证据；不得开发、付费调用、部署或承诺试点。"
+        : awaitingG0Signature
+          ? "开发前证据已 29/29；只准备并完成 G0 正式签发，不提前签 Ddev 或进入 DEV-M0。"
         : designStage
-          ? "实现设计关已通过；可维护现行合同、原型、评测与回退设计并补授权证据，不可开始产品功能开发。"
+          ? "PILOT-S0 合成工作可按批准边界继续；正式 DEV-M0、真实数据、飞书运行接入与部署仍未授权。"
           : "只做能帮助需求确认和开发前总检查的工作，不提前创建产品代码。",
     actionLabel: ddevReady || projectPaused || designStage ? "当前行动" : awaitingDdev ? "Ddev 签发前" : "8 月 4 日前",
     scheduleTitle: ddevReady
-      ? `Ddev 已签；按${projectStatus.resourceBaseline}基线相对顺延，不把原日期当最新承诺。`
+      ? ddevScheduleTitle
       : awaitingDdev
         ? "G0 已签，Ddev 未成立；不提前开工。"
       : projectPaused
         ? "当前处于暂停 / 整改，不进入 Ddev。"
+        : awaitingG0Signature
+          ? "G0 证据已齐，等待项目负责人单独签发；签发后再处理另一条 DEC-DDEV-01 记录。"
         : designStage
-          ? `实现设计关已通过；原 G0 目标 ${shortDate(g0Target)} 已逾期，当前按未闭合责任包逐项收口，不用过期日期倒推开工。`
+          ? `实现设计关已通过；原 G0 目标 ${shortDate(g0Target)} 已逾期，当前按 PILOT-S0 合成实现与可执行未闭合责任包分账推进，不用过期日期倒推正式开工。`
           : `${shortDate(d0)} 到 ${shortDate(g0Target)}，先完成需求确认和开发前总检查。`,
   },
   prelaunchChecklist: ddevReady
-    ? allowedRows.map((row) => row["08-04 起可以做"]).filter(Boolean).slice(0, 8)
+    ? ddevChecklist
     : awaitingDdev
       ? ["核对 G0 签发结论与证据包哈希", "确认 Ddev 最早日期与授权证据 ID", "冻结授权 Scope、费用路径、环境和负责人", "Ddev 未填写前保持产品开发未开始"]
     : projectPaused
       ? ["记录失败或暂停原因", "具名补证 Owner 与截止日", "冻结开发、付费调用、部署和试点承诺", "达到解除条件后重新评审"]
+    : awaitingG0Signature
+      ? [
+          "冻结章程、台账、Scope 与排期当前版本",
+          "由项目负责人填写 G0 评审时间、唯一结论与 EVD-G0-* 证据包",
+          "G0 通过后再单独填写 DEC-DDEV-01；当前不得合并代签",
+          "Ddev 未成立前保持正式 DEV-M0、真实数据、飞书运行接入与部署未授权",
+        ]
     : designStage
-      ? ["维持实现设计基线与 CR 变更链无漂移", "核对 13 角色职责接受包与专项批准分账", `补齐 ${openGateAction} 与未关闭 Scope 检查的完成证据；真实数据逐批审核与运行安全负例按后续门单独取证`, "签发 G0 与 Ddev 时记录日期、范围和证据 ID", "Ddev 未成立前保持产品开发未开始"]
+      ? [
+          "维持实现设计基线与 CR 变更链无漂移",
+          "继续 PILOT-S0 · SYNTHETIC，只做本地合成 UI、交互、状态、测试与构建",
+          `补齐 ${openGateAction} 与对应未关闭 Scope 检查的完成证据`,
+          "G0-09 当前只补来源映射、版本快照、逐域质量与整体批准；真实数据或生产接入前另过 PROD-ACL-01",
+          "Ddev 未成立前保持正式 DEV-M0、真实数据、飞书运行接入与部署未授权",
+        ]
       : prelaunchChecklist.map(humanizeMeetingText).slice(0, 8),
   schedule: displaySchedule,
   gates: externalGates.map((row) => ({
@@ -646,22 +776,42 @@ const payload = {
   ],
   meeting: {
     title: ddevReady
-      ? "按授权推进，也不能越过门禁。"
+      ? developmentInterrupted
+        ? `产品开发${developmentProgress.state}，先复核再决定是否恢复。`
+        : developmentActive
+          ? hasNumberedNextSlice
+            ? `${developmentProgress.milestone} 已开始，下一步只推进 ${developmentProgress.nextSlice}。`
+            : `${developmentProgress.milestone} 已开始，${completedSlicesLabel} 已完成；下一动作待授权。`
+          : developmentCompleted
+            ? "当前开发切片已完成，先复核退出证据。"
+            : "Ddev 已签，先确认首个切片再开工。"
       : awaitingDdev
         ? "可以准备 Ddev，不能提前开工。"
       : projectPaused
         ? "可以开复审会，不能绕过暂停结论。"
+        : awaitingG0Signature
+          ? "可以签发 G0，不能把 29/29 计数当成自动开发授权。"
         : designStage
-          ? "可以推进组织授权补证，不能宣布代码开工。"
+          ? "可以推进 PILOT-S0 合成实现与可执行组织授权补证，不能宣布正式 DEV-M0 开工。"
           : "可以开启动会，不能宣布开工。",
     positioning: ddevReady
-      ? "这是 Ddev 后推进与证据复核会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
+      ? developmentInterrupted
+        ? `这是产品开发${developmentProgress.state}复核会；历史 Ddev 不自动恢复开发，必须形成恢复或终止决定。`
+        : developmentActive
+          ? hasNumberedNextSlice
+            ? `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 只按冻结计划执行，任何新增范围、付费或部署边界仍须走 CR / DEC。`
+            : `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 尚未授权，任何新增范围、付费或部署边界仍须走 CR / DEC。`
+          : developmentCompleted
+            ? "这是退出证据复核会；下一里程碑仍须按既有门禁形成独立决定。"
+            : "这是 Ddev 后首个切片准备会；任何新增范围、付费或部署边界仍须走 CR / DEC。"
       : awaitingDdev
         ? "这是 G0 已签后的 Ddev 授权会；签发日期、授权证据 ID、范围与费用边界未落档前不得开发。"
       : projectPaused
         ? "这是失败 / 暂停后的复审准备会；只确认解除条件，不默认恢复 G0 或开发。"
+        : awaitingG0Signature
+          ? "这是 G0 正式签发会：开发前证据已 14/14 + 15/15；由项目负责人单独填写时间、结论和证据包。G0 通过后仍需另签 DEC-DDEV-01。"
         : designStage
-          ? `技术设计第 1～3 关已收口；${roleAcceptanceSummary}，当前仍是独立的第 3→4 关组织授权门。${openGateSummary}，按这些责任包的完成证据与未关闭 Scope 检查逐项补证；真实数据逐批审核和运行负例按后续门取证，不以职责接受或文档通过代替开发授权。`
+          ? `技术设计第 1～3 关已收口；${roleAcceptanceSummary}，当前仍是独立的第 3→4 关组织授权门。${openGateSummary}；当前只处理 ${openGateAction} 与对应 Scope，PILOT-S0 继续保持纯合成。真实数据逐批审核和运行负例按后续门取证，不以职责接受或文档通过代替开发授权。`
           : "这是项目启动与建议校准会：有证据就决定，缺证据就明确负责人和日期；不是需求文档终审、开发前总检查通过或开发开工会。",
     controlsLabel: ddevReady || awaitingDdev || projectPaused || designStage ? "当前行动角色筛选" : "会前准备角色筛选",
     copyTitle: ddevReady
@@ -670,6 +820,8 @@ const payload = {
         ? "客服 Agent Ddev 签发清单"
       : projectPaused
         ? "客服 Agent 暂停 / 整改复审清单"
+        : awaitingG0Signature
+          ? "客服 Agent G0 正式签发清单"
         : designStage
           ? "客服 Agent 组织授权门清单"
           : "客服 Agent 一期启动会会前准备",

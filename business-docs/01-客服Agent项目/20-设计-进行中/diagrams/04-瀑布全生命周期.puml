@@ -50,18 +50,22 @@ note right
   DEC-042 已拆 DEV-M0/M1 任务与退出负例
   postfix约束已拆实现与负例；当前仍仅文档包
   placeholder内存渲染/二次确认/零持久纳入 DEV-M3
-  **下一停留点：3→4 组织授权门（不计入八关）**
-  G0 未签发 · Ddev 未授权
-  13角色职责接受、G0-08绿地隔离、G0-10范围冻结、G0-11安全边界、G0-12部署运维、G0-13评测冻结与G0-15运行交接方案已归档
-  Menokin证据适用性复核 · 外部责任包 11/14 · Scope 11/15 · 正式不开代码
+  **组织授权门：G0 / Ddev 已 Pass（不计入八关）**
+  EVD-G0-SIGN-20260831 · EVD-DDEV-AUTH-20260831
+  即时只放行 DEV-M0
+  外部责任包 14/14 · Scope 15/15
+  产品仓 DEV-M0 已开始 · W0 / W1 已完成
+  下一步：合同开发授权与 codegen / runtime validation（待单独授权）
 end note
 
 |代码开发|
 :代码开发\n产出：API · 壳 · 迁移脚本;
 note right
-  **等待授权 · 未开始**
-  33/OpenAPI 静态合同已锁
-  迁移/生成类型/产品代码均未实现
+  **DEV-M0 IN_PROGRESS · W0 / W1 COMPLETE**
+  workspace scaffold/迁移前基线已完成
+  下一动作：合同开发授权与 codegen / runtime validation
+  未授权前不实施
+  API/worker/正式migration/合同runtime仍未实现
 end note
 
 |单元测试|

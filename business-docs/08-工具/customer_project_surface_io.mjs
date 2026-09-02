@@ -25,6 +25,16 @@ export const CUSTOMER_PROJECT_STATUS_SOURCE_DEFINITIONS = Object.freeze([
     file: "20-设计-进行中/46-实现设计-开工包.md",
     label: "46 实现设计开工包",
   },
+  {
+    id: "g0Authorization",
+    file: "90-评审/2026-08-31_G0正式签发记录.md",
+    label: "G0 正式签发记录",
+  },
+  {
+    id: "ddevAuthorization",
+    file: "90-评审/2026-08-31_Ddev正式签发记录.md",
+    label: "Ddev 正式签发记录",
+  },
 ]);
 
 export function sha256(value) {

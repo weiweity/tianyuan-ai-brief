@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import http from "node:http";
-import { mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { chromium } from "playwright";
+
+import { loadCustomerProjectSources } from "../../business-docs/08-工具/customer_project_surface_io.mjs";
+import { buildCustomerProjectSurfaceModel } from "../../business-docs/08-工具/customer_project_surface_model.mjs";
 
 import {
   buildArchitectureProvenance,
@@ -14,6 +17,7 @@ import {
   upsertArchitectureProvenance,
 } from "./architecture-diagram-provenance.mjs";
 import { replaceEmbeddedSvg } from "./architecture-diagram-embedding.mjs";
+import { synchronizeBoardStatusShell } from "./customer-agent-architecture-board-status.mjs";
 import { architectureDiagrams } from "./customer-agent-architecture-diagrams.manifest.mjs";
 
 const sitesDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -111,6 +115,10 @@ async function calculateRendererSha256() {
 }
 
 const rendererSha256 = await calculateRendererSha256();
+const projectDir = path.join(repoRoot, "business-docs", "01-客服Agent项目");
+const canonicalProjectDir = await realpath(projectDir);
+const projectSources = await loadCustomerProjectSources({ projectDir, canonicalProjectDir });
+const { projectStatus } = buildCustomerProjectSurfaceModel(projectSources.byId);
 const { server, origin } = await startRendererServer();
 let browser;
 try {
@@ -121,7 +129,7 @@ try {
 
   const currentBoard = await readFile(boardPath, "utf8");
   const previousProvenance = parseArchitectureProvenance(currentBoard);
-  let board = currentBoard;
+  let board = synchronizeBoardStatusShell(currentBoard, projectStatus);
   const differences = [];
   const renderedDiagrams = [];
   const provenanceDiagrams = [];

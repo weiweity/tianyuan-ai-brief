@@ -1,29 +1,29 @@
 # 37 · 客服 Agent 架构 SSOT v1
 
-> **状态：** **ARCHITECTURE DESIGN FROZEN · PASS-WITH-CONDITIONS（静态设计）· 2026-08-10**（当前 v1.16；v1.13 已冻结 DEC-042 人读基线，v1.14 对齐受控检索、审核与质量证据不变量，v1.15 完成 postfix 安全收口，v1.16 登记当前 reference DDL 本地隔离 PG15 预检及证据边界；实现/迁移仍待 Ddev）\
+> **状态：** **ARCHITECTURE DESIGN FROZEN · PASS-WITH-CONDITIONS（静态设计）· 2026-08-10**（当前 v1.16；v1.13 已冻结 DEC-042 人读基线，v1.14 对齐受控检索、审核与质量证据不变量，v1.15 完成 postfix 安全收口，v1.16 登记当前 reference DDL 本地隔离 PG15 预检及证据边界；实现/迁移须在已签 Ddev 的 DEV-M0 及后续逐里程碑补证）\
 > **效力：** 架构北极星。与现行 [`31`](31-产品契约-v1.md) / [`32`](32-ADR-一期技术栈.md) / [`33`](33-schema-v1-草案.sql) / [`25`](25-PRD草案-客服Agent一期.md)，以及历史输入 [34 · 技术栈计划](../99-历史/2026-08-06-架构设计收口/34-技术栈计划-autoplan.md) / [36 · 冲 10 分方案](../99-历史/2026-08-06-架构设计收口/36-冲10分方案.md) 冲突时 **以本文为准**。\
 > **图与关卡：** [`40-架构图与关卡状态.md`](40-架构图与关卡状态.md)\
 > **NFR（拓展/并发/AI 可写/防改崩）：** [`41-NFR扩展并发与防改崩.md`](41-NFR扩展并发与防改崩.md)\
 > **历史交叉终裁快照：** [`2026-08-06_架构交叉验证终裁快照.md`](../90-评审/2026-08-06_架构交叉验证终裁快照.md)（**HISTORICAL / NON-NORMATIVE**；仅作当时评审追溯，不再提供任何规范性合同输入）\
-> **阶段：** 需求分析关已通过；**架构设计关 PASS-WITH-CONDITIONS（静态设计）**；**实现设计关 `Pass · 文档包 Ready`**；当前停在独立的第 3→4 关组织授权门，G0 / Ddev 均未授权，代码开发未开始。\
-> **不是：** G0 组织签发、Ddev 生产授权、运行时代码实现、压测认证。
+> **阶段：** 需求分析关已通过；**架构设计关 PASS-WITH-CONDITIONS（静态设计）**；**实现设计关 `Pass · 文档包 Ready`**；独立组织授权门已通过：G0=`EVD-G0-SIGN-20260831`，Ddev=`EVD-DDEV-AUTH-20260831`；当前为 `DEV-M0 · IN_PROGRESS`，`W0` 已完成，下一切片为 `W1`。\
+> **不是：** 生产授权、运行时代码实现、压测认证；Ddev 不放行真实数据、真实飞书接入、Pilot 或部署。
 > **CR-002 增量：** [`47-CR-002搜索复制证据闭环.md`](47-CR-002搜索复制证据闭环.md)；只扩展既有 search / events / Dashboard，不替换本文，不影响 CR-001 `work_order_*`。
 > **CR-003 预埋：** [`49-CR-003一期训练预埋与多教师蒸馏.md`](49-CR-003一期训练预埋与多教师蒸馏.md) / [`50-CR-003测试计划.md`](50-CR-003测试计划.md) / [`training-artifacts/`](training-artifacts/)；一期只冻结离线合同、空模板与纯合成 fixture，不新增 public 训练 API，不授权真实数据、teacher、训练或付费。
 > **CR-004 来源治理：** 每个 release 恰好绑定售前/活动/售后/产品四域不可变来源版本；canonical/current 由 `content_current` + release bindings 唯一推导；来源暂停永久只追加，全链 fail-closed；人读合同与 33/OpenAPI 静态机器合同由同一 CR-004 changeset 对齐，迁移、生成类型、服务端/客户端代码与动态运行证据仍未实现。
-> **ENG-T1 合同修正：** `announce_ack` 的来源门/离线租约拒绝与 current/snapshot 一致，主事务回滚后必须经 runtime wrapper 独立幂等提交最小 source denial audit；adoption/escalation 公共请求为 closed schema。该修正只闭合静态合同冲突，不授权 runtime、Ddev、部署或 Pilot。
-> **DEC-042 内容资产治理：** 稳定 Question 身份/版本、显式平台与商品范围、版本化 intent taxonomy、风险审核、受控占位符、受限治理快照 hash 与分层质量门的人读合同，已与 schema v1.12（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）静态机器合同同批对齐；迁移、生成类型、代码与动态证据仍待 Ddev 后实现，不改变 G0、项目 Scope 或 Ddev 状态。
+> **ENG-T1 合同修正：** `announce_ack` 的来源门/离线租约拒绝与 current/snapshot 一致，主事务回滚后必须经 runtime wrapper 独立幂等提交最小 source denial audit；adoption/escalation 公共请求为 closed schema。该修正只闭合静态合同冲突，不替代已签 Ddev，也不授权 DEV-M0 以外的 runtime、部署或 Pilot。
+> **DEC-042 内容资产治理：** 稳定 Question 身份/版本、显式平台与商品范围、版本化 intent taxonomy、风险审核、受控占位符、受限治理快照 hash 与分层质量门的人读合同，已与 schema v1.12（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）静态机器合同同批对齐；迁移、生成类型、代码与动态证据须从已签 Ddev 放行的 DEV-M0 起逐里程碑实现，G0、Scope 与 Ddev 均不替代运行证明，也不扩大当前授权边界。
 
 ---
 
 ### 证据等级：为什么叫“静态设计通过”
 
-“静态”修饰的是**架构关的证据等级**，不是架构完成度，也不表示架构关只能停在文档。当前 SSOT、API、DDL、NFR、架构图与关卡语义已经一致，所以**架构设计关已通过；实现设计关也已完成文档级收口**。当前下一关是独立的组织授权门，不是代码开发。2026-08-07 与 2026-08-10 的本机 PostgreSQL 15.18 结果只覆盖各自旧 hash。2026-08-21 已对 ENG-T1 修正后的当前 `schema.v1.12` clean-install reference DDL 按 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 重跑本地隔离 PostgreSQL 15.18 预检，结果为 `PASS-WITH-LIMITATION`，证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。该结果只证明 reference DDL 前置形状与 ACK wrapper 合同，不能写成迁移、应用运行态、托管库或生产态通过。
+“静态”修饰的是**架构关的证据等级**，不是架构完成度，也不表示架构关只能停在文档。当前 SSOT、API、DDL、NFR、架构图与关卡语义已经一致，所以**架构设计关已通过；实现设计关也已完成文档级收口**。独立组织授权门现已通过，代码开发已进入 `DEV-M0`，`W0` 已完成，下一切片为 `W1`。2026-08-07 与 2026-08-10 的本机 PostgreSQL 15.18 结果只覆盖各自旧 hash。2026-08-21 已对 ENG-T1 修正后的当前 `schema.v1.12` clean-install reference DDL 按 SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801` 重跑本地隔离 PostgreSQL 15.18 预检，结果为 `PASS-WITH-LIMITATION`，证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`。该结果只证明 reference DDL 前置形状与 ACK wrapper 合同，不能写成迁移、应用运行态、托管库或生产态通过。
 
 | 已经通过 | 仍须在后续关卡补证 |
 |----------|--------------------|
 | 架构边界、九端口、数据模型、状态机、NFR 目标、图文与静态合同门禁；当前 `schema.v1.12` clean-install reference DDL（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）已在本机隔离 PG15.18 通过 clean-install（40 tables / 2 views / 143 functions）、ACL 8/8、约束 3/3、ACK runtime wrapper 正向/幂等/异体冲突、完整幂等重跑与 COMMIT 前故障原子回滚；证据 `EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795`，旧 SHA 结果仅作历史追溯 | **仍待补证：** immutable migration / N/N-1 / application runtime / managed PostgreSQL / backup-restore / concurrency-deadlock / production；真飞书 OAuth/RBAC；API/worker/E2E；压测与故障注入；RPO/RTO；Windows Electron 真机与生产安全。这些仍 `NOT_CERTIFIED / NOT_IMPLEMENTED` |
 
-因此当前结论是：**Architecture Design = PASS-WITH-CONDITIONS；Implementation Design = Pass · Document Package Ready；Organization Gate / G0 / Ddev = NOT AUTHORIZED；Code Development = NOT STARTED；Current Schema v1.12 Reference DDL Local PG15 Preflight = PASS-WITH-LIMITATION；Immutable Migration / N/N-1 / Application Runtime / Managed PG / Backup-Restore / Concurrency-Deadlock / Production = NOT_CERTIFIED / NOT_IMPLEMENTED；Runtime / Production Readiness = NO-GO。** 预检证据保存在本地 Git ignored 目录，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15`。Ddev 未授权前不得用当前结论启动业务编码、部署、试点或付费调用。
+因此当前结论是：**Architecture Design = PASS-WITH-CONDITIONS；Implementation Design = Pass · Document Package Ready；Organization Gate / G0 / Ddev = PASS；Code Development = DEV-M0 IN PROGRESS / W0 COMPLETE；Current Schema v1.12 Reference DDL Local PG15 Preflight = PASS-WITH-LIMITATION；Immutable Migration / N/N-1 / Application Runtime / Managed PG / Backup-Restore / Concurrency-Deadlock / Production = NOT_CERTIFIED / NOT_IMPLEMENTED；Runtime / Production Readiness = NO-GO。** 预检证据保存在本地 Git ignored 目录，fresh clone 须按 [08 工具入口](../../08-工具/README.md) 重跑 `npm --prefix sites run preflight:customer-agent-pg15`。已签 Ddev 只允许从 DEV-M0 开始合成数据开发；真实数据、飞书运行接入、试点、付费调用与部署仍未授权。
 
 ## 0. 北极星（必须先读）
 
@@ -163,7 +163,7 @@ INV-MIGRATION-COMPAT: 迁移按 expand→backfill→validate→contract；fresh 
 | **B · 过渡性** | 新旧字段/实现并存，采用 expand/backfill/validate，N 与 N-1 客户端均可工作 | 必须有弃用周期、迁移兼容矩阵与旧应用回退证据 |
 | **C · 破坏性** | 新 major API、独立 ADR、Scope/安全/费用与 Owner 决策 | 删除/改名/改义、增加必填请求、SoR 迁移、多租户、聊天正文、写回或自动发送 |
 
-本节只冻结“怎么安全扩展”，不批准任何新增功能。客户端弃用周期详见 39 §0.3，平台上下文适配器详见 41 §1.3，数据库兼容矩阵与 DEV-M0 证据详见 46 §6.1.1 / §11 / §12。当前仍是 G0 待签、Ddev 未授权；`schema.v1.12` reference DDL 的本地隔离 PG15 预检已 `PASS-WITH-LIMITATION`，但 immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 `NOT_CERTIFIED / NOT_IMPLEMENTED`。
+本节只冻结“怎么安全扩展”，不批准任何新增功能。客户端弃用周期详见 39 §0.3，平台上下文适配器详见 41 §1.3，数据库兼容矩阵与 DEV-M0 证据详见 46 §6.1.1 / §11 / §12。当前 G0 / Ddev 已 Pass，`DEV-M0` 已开始且 `W0` 已完成；`schema.v1.12` reference DDL 的本地隔离 PG15 预检已 `PASS-WITH-LIMITATION`，但 immutable migration / N/N-1 / application runtime / managed PG / backup-restore / concurrency-deadlock / production 仍 `NOT_CERTIFIED / NOT_IMPLEMENTED`。
 
 ---
 
@@ -212,7 +212,7 @@ announcements(release_id, title, summary)
 | 有效期 | 检索 **永远** `published AND in effective window`；空 from/to 语义：from 缺省 -∞，to 缺省 +∞；**禁止关闭过滤** |
 | 演示数据 | seed **必须**在有效窗内；可另备过期行 **仅测过滤** |
 
-CR-004 的 import、publish、rollback、search 任一环节都必须对来源治理 fail-closed：来源未登记或仅供 `reference`、四域绑定缺失/重复、来源版本不匹配、存在永久暂停记录或拒绝审计不可持久化时，不得降级为普通 no-hit 或部分发布。离线租约是客户端本地 search 的附加硬门：到期后不得继续使用旧快照，不作用于 import/publish/rollback。本节与 33/OpenAPI 构成同批静态合同；对应 migration、生成类型、服务端/客户端行为和动态测试证据仍待 Ddev 后里程碑落地。
+CR-004 的 import、publish、rollback、search 任一环节都必须对来源治理 fail-closed：来源未登记或仅供 `reference`、四域绑定缺失/重复、来源版本不匹配、存在永久暂停记录或拒绝审计不可持久化时，不得降级为普通 no-hit 或部分发布。离线租约是客户端本地 search 的附加硬门：到期后不得继续使用旧快照，不作用于 import/publish/rollback。本节与 33/OpenAPI 构成同批静态合同；对应 migration、生成类型、服务端/客户端行为和动态测试证据须按已签 Ddev 从 DEV-M0 起逐里程碑落地。
 
 ---
 

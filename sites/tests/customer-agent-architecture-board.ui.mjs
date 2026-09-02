@@ -142,17 +142,17 @@ try {
       .innerText();
     assert.match(
       authorizationGate,
-      /当前推进项 · 费用路径与 G0-14 WBS \/ 成本包已签发；G0 未签发、Ddev 未授权/
+      /通过 · 外部责任包 14\/14、Scope 15\/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）/
     );
-    assert.match(authorizationGate, /外部责任包 13\/14、Scope 14\/15/);
-    assert.match(bodyText, /EVD-G0-11-SECURITY-BOUNDARY-20260810/);
-    assert.match(bodyText, /EVD-G0-12-OPS-DEPLOYMENT-20260810/);
-    assert.match(authorizationGate, /DEC-DDEV-01=PASS/);
+    assert.match(bodyText, /EVD-G0-SIGN-20260831/);
+    assert.match(bodyText, /EVD-DDEV-AUTH-20260831/);
     assert.match(authorizationGate, /只即时放行 DEV-M0/);
     assert.match(
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
-      /等待授权 · 未开始/
+      /DEV-M0 · 进行中（W0、W1 已完成）/
     );
+    assert.match(bodyText, /合同开发授权与 codegen \/ runtime validation/);
+    assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {
       await page.locator(`#tab-${id}`).click();

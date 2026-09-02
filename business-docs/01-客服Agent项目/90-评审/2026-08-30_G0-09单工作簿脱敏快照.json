@@ -1,0 +1,63 @@
+{
+  "schema_version": "customer-agent-g009-l1-snapshot.v2",
+  "observed_at": "2026-08-30T23:15:33+08:00",
+  "identity_mode": "user",
+  "resource_alias": "customer-agent-workbook",
+  "source_ref": "SRC-92847D5B505F17C4",
+  "workbook_version_ref": "WBV-531DD7AA4BA2B97B",
+  "snapshot_evd": "EVD-G0-09-WORKBOOK-CLOSURE-20260830",
+  "acl_evd": "EVD-G0-09-ACL-OWNER-BASELINE-20260830",
+  "quality_evd": "EVD-G0-09-WORKBOOK-CLOSURE-20260830",
+  "overall_approval_evd": "EVD-G0-09-AUTHORITY-SOURCES-20260830",
+  "raw_content_persisted": false,
+  "domains": [
+    {
+      "domain": "presale",
+      "source_version_id": "srcv_52af2c0a648a7f8c",
+      "sheet_alias": "售前",
+      "range": "A1:C82",
+      "required_columns": ["快捷短语", "产品话术"],
+      "total_rows": 81,
+      "importable_rows": 79,
+      "quarantined_rows": 2,
+      "readiness": "READY"
+    },
+    {
+      "domain": "campaign",
+      "source_version_id": "srcv_2eb1831b70eddfbc",
+      "sheet_alias": "活动",
+      "range": "A1:B5",
+      "required_columns": ["快捷短语", "产品话术"],
+      "total_rows": 4,
+      "importable_rows": 4,
+      "quarantined_rows": 0,
+      "channels": ["千牛", "抖音"],
+      "product_scope": "storewide",
+      "effective_from": "2026-09-01",
+      "effective_to_exclusive": "2026-10-01",
+      "readiness": "READY"
+    },
+    {
+      "domain": "aftersale",
+      "source_version_id": "srcv_8e163328604d0765",
+      "sheet_alias": "售后",
+      "range": "A1:C224",
+      "required_columns": ["快捷短语", "产品话术"],
+      "total_rows": 223,
+      "importable_rows": 223,
+      "quarantined_rows": 0,
+      "readiness": "READY"
+    },
+    {
+      "domain": "product",
+      "source_version_id": "srcv_c5d5b8e6a761893d",
+      "sheet_alias": "产品话术",
+      "range": "A1:C107",
+      "required_columns": ["适用产品", "快捷短语", "产品话术"],
+      "total_rows": 106,
+      "importable_rows": 106,
+      "quarantined_rows": 0,
+      "readiness": "READY"
+    }
+  ]
+}

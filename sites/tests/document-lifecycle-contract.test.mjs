@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -37,4 +37,24 @@ test("文档生命周期规则保留当前源、历史冻结与生成视图边�
   assert.match(diagramsSync, /架构图-PlantUML浏览器\.html/);
   assert.match(diagramsSync, /PlantUML 产物未同步/);
   assert.ok(projectRoot.endsWith("business-docs/01-客服Agent项目"));
+});
+
+test("归档后的 G0-09 决定仍能解析其相对文档链接", async () => {
+  const archiveDir = path.join(
+    projectRoot,
+    "99-历史/2026-08-30-G0-09企业级权限取证方案"
+  );
+  const documents = [
+    "2026-08-30_G0-09四域共用ACL-EVD草案.md",
+    "2026-08-30_G0-09管理员取证暂停与S0分账决定.md",
+  ];
+
+  for (const document of documents) {
+    const documentPath = path.join(archiveDir, document);
+    const content = await readFile(documentPath, "utf8");
+    for (const match of content.matchAll(/\[[^\]]*\]\(([^)]+\.md)\)/g)) {
+      const target = path.resolve(path.dirname(documentPath), decodeURIComponent(match[1]));
+      await assert.doesNotReject(access(target), `${document} -> ${match[1]}`);
+    }
+  }
 });

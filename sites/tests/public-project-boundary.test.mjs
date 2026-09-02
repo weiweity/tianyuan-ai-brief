@@ -48,12 +48,6 @@ function isOutsideRepo(candidate) {
   return relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
 }
 
-function replaceRequired(text, before, after, label) {
-  const count = text.split(before).length - 1;
-  assert.equal(count, 1, `${label} 应唯一命中，实际 ${count}`);
-  return text.replace(before, after);
-}
-
 async function collectFiles(root) {
   const entries = await readdir(root, { withFileTypes: true });
   const nested = await Promise.all(
@@ -75,193 +69,174 @@ async function artifactState(paths) {
   );
 }
 
-async function advancePrivateFixture(target) {
+function replaceSummaryStatus(ledger, label, value) {
+  return ledger.replace(
+    new RegExp(`^(\\| ${label.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")} \\|) [^|]+(\\|)`, "m"),
+    `$1 **${value}** $2`
+  );
+}
+
+function replaceG0SignRow(ledger, label, value) {
+  const marker = "### G0 签发记录";
+  const start = ledger.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 G0 签发记录");
+  return ledger.slice(0, start) + ledger.slice(start).replace(
+    new RegExp(`^(\\| ${label.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")} \\|) [^|]*(\\|)`, "m"),
+    `$1 ${value} $2`
+  );
+}
+
+function replaceDdevDecisionRow(ledger, label, value) {
+  const marker = "### DEC-DDEV-01 · 一期开发授权记录";
+  const start = ledger.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 DEC-DDEV-01 开发授权记录");
+  return ledger.slice(0, start) + ledger.slice(start).replace(
+    new RegExp(`^(\\| ${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\|) [^|]*(\\|)`, "m"),
+    `$1 ${value} $2`
+  );
+}
+
+function asPreparedDdevFixture(ledger) {
+  let updated = replaceSummaryStatus(ledger, "项目阶段", "G0 已通过 / 待 Ddev");
+  updated = replaceSummaryStatus(updated, "Ddev", "空");
+  updated = replaceSummaryStatus(updated, "产品开发", "未开始");
+  updated = replaceG0SignRow(updated, "Ddev", "未成立");
+  const marker = "### DEC-DDEV-01 · 一期开发授权记录";
+  const start = updated.indexOf(marker);
+  assert.ok(start >= 0, "测试夹具缺少 DEC-DDEV-01 开发授权记录");
+  updated = updated.slice(0, start) + updated.slice(start).replace(
+    /^> \*\*当前状态：\*\*[^\n]*$/m,
+    "> **当前状态：** `PREPARED` · **G0 SIGNED / DDEV NOT AUTHORIZED**。"
+  );
+  for (const [label, value] of [
+    ["结论", ""],
+    ["G0 依据", ""],
+    ["冻结输入清单", ""],
+    ["允许环境与数据", ""],
+    ["费用边界", ""],
+    ["生效时间 / 复核日", ""],
+    ["最终签发 Owner", ""],
+    ["授权证据", ""],
+  ]) updated = replaceDdevDecisionRow(updated, label, value);
+  return updated;
+}
+
+function asUnsignedG0Fixture(ledger) {
+  let updated = asPreparedDdevFixture(ledger);
+  updated = replaceSummaryStatus(updated, "项目阶段", "设计阶段 / G0");
+  updated = replaceSummaryStatus(updated, "G0 签发", "待签发");
+  updated = updated.replace(
+    /^> \*\*当前状态：\*\* `PREPARED`[^\n]*$/m,
+    "> **当前状态：** `PREPARED` · **EVIDENCE READY / G0 NOT SIGNED / NOT AUTHORIZED**。"
+  );
+  for (const [label, value] of [
+    ["评审时间", ""],
+    ["评审输入版本", "章程 v____ / 台账 v____ / Scope v____ / 排期 v____"],
+    ["G0-02～15", "Pass ____ / 14；Fail ____ / 14"],
+    ["Scope 检查", "Pass ____ / 15；Fail ____ / 15"],
+    ["签发 Owner", ""],
+    ["结论", "[ ] Pass　[ ] Fail"],
+    ["阻塞行动项", ""],
+    ["证据包 ID", ""],
+    ["Ddev", "仅 Pass 时填写：____；否则必须为空"],
+  ]) updated = replaceG0SignRow(updated, label, value);
+  return updated;
+}
+
+async function assertPrivateFixtureEvidenceReady(target) {
   const g003Evidence = "EVD-G0-03-MENOKIN-APPLICABILITY-20260830";
-  const g009ClosureEvidence = "EVD-G0-09-AUTHORITY-SOURCES-20260830";
+  const g009Evidence = "EVD-G0-09-AUTHORITY-SOURCES-20260830";
+  const g009ClosureEvidence = "EVD-G0-09-WORKBOOK-CLOSURE-20260830";
+  const g009AclEvidence = "EVD-G0-09-ACL-OWNER-BASELINE-20260830";
   const g013Evidence = "EVD-G0-13-MENOKIN-EVALUATION-FREEZE-20260830";
-  const readmePath = path.join(target, "README.md");
-  const charterPath = path.join(target, "00-项目章程.md");
-  const ledgerPath = path.join(target, "02-G0责任与证据台账.md");
-  const scopePath = path.join(target, "03-Scope与验收.md");
-  const prdPath = path.join(target, "07-客服Agent立项PRD.html");
+  const sourceRef = "SRC-92847D5B505F17C4";
+  const sourceVersionIds = new Map([
+    ["presale", "srcv_52af2c0a648a7f8c"],
+    ["campaign", "srcv_2eb1831b70eddfbc"],
+    ["aftersale", "srcv_8e163328604d0765"],
+    ["product", "srcv_c5d5b8e6a761893d"],
+  ]);
+  const [charter, readme, ledger, scope, prd] = await Promise.all([
+    readFile(path.join(target, "00-项目章程.md"), "utf8"),
+    readFile(path.join(target, "README.md"), "utf8"),
+    readFile(path.join(target, "02-G0责任与证据台账.md"), "utf8"),
+    readFile(path.join(target, "03-Scope与验收.md"), "utf8"),
+    readFile(path.join(target, "07-客服Agent立项PRD.html"), "utf8"),
+  ]);
 
-  const charter = replaceRequired(
-    await readFile(charterPath, "utf8"),
-    "外部责任包 **11/14**、Scope **11/15**",
-    "外部责任包 **14/14**、Scope **15/15**",
-    "私有章程门禁汇总"
-  );
-  await writeFile(charterPath, charter, "utf8");
+  assert.match(charter, /G0-02～15 \*\*14\/14 Pass\*\*[、，]Scope \*\*15\/15 Pass\*\*/);
+  assert.match(readme, /外部责任包 14\/14、Scope 15\/15（合计 29\/29）/);
 
-  const readme = replaceRequired(
-    await readFile(readmePath, "utf8"),
-    "外部责任包 11/14、Scope 11/15（合计 22/29）",
-    "外部责任包 14/14、Scope 15/15（合计 29/29）",
-    "私有 README 门禁汇总"
-  );
-  await writeFile(readmePath, readme, "utf8");
+  const gateLines = ledger.split(/\r?\n/);
+  const summary = gateLines.find((line) => line.startsWith("| 外部责任包 |"));
+  const scopeSummary = gateLines.find((line) => line.startsWith("| Scope 检查 |"));
+  const g0Summary = gateLines.find((line) => line.startsWith("| G0 签发 |"));
+  const ddevSummary = gateLines.find((line) => line.startsWith("| Ddev |"));
+  assert.ok(summary, "私有台账缺少外部责任包汇总");
+  assert.ok(scopeSummary, "私有台账缺少 Scope 汇总");
+  assert.ok(g0Summary, "私有台账缺少 G0 签发汇总");
+  assert.ok(ddevSummary, "私有台账缺少 Ddev 汇总");
+  assert.equal(summary.split("|")[2].replace(/\*\*/g, "").trim(), "14/14 Pass");
+  assert.equal(scopeSummary.split("|")[2].replace(/\*\*/g, "").trim(), "15/15 Pass");
+  assert.equal(g0Summary.split("|")[2].replace(/\*\*/g, "").trim(), "Pass");
+  assert.equal(ddevSummary.split("|")[2].replace(/\*\*/g, "").trim(), "2026-08-31");
+  assert.match(ledger, /EVD-G0-SIGN-20260831/);
+  assert.match(ledger, /EVD-DDEV-AUTH-20260831/);
 
-  const gateLines = (await readFile(ledgerPath, "utf8")).split(/\r?\n/);
-  const summaryIndex = gateLines.findIndex((line) => line.startsWith("| 外部责任包 |"));
-  assert.notEqual(summaryIndex, -1, "私有台账缺少外部责任包汇总");
-  const summaryCells = gateLines[summaryIndex].split("|");
-  assert.equal(
-    summaryCells[2].replace(/\*\*/g, "").trim(),
-    "11/14 Pass",
-    "私有台账必须从当前 11/14 基线推进"
-  );
-  summaryCells[2] = " **14/14 Pass** ";
-  summaryCells[3] = " G0-02～G0-15 已完成；等待正式 G0 签发（职责接受与草案不等于 Pass） ";
-  gateLines[summaryIndex] = summaryCells.join("|");
-  const priorityIndex = gateLines.findIndex((line) => line.startsWith("| 业务问题优先级 |"));
-  assert.notEqual(priorityIndex, -1, "私有台账缺少业务问题优先级汇总");
-  const priorityCells = gateLines[priorityIndex].split("|");
-  priorityCells[2] = " **已核验** ";
-  priorityCells[3] = ` Menokin 适用性已由 \`${g003Evidence}\` 签发 `;
-  gateLines[priorityIndex] = priorityCells.join("|");
-  const scopeSummaryIndex = gateLines.findIndex((line) => line.startsWith("| Scope 检查 |"));
-  assert.notEqual(scopeSummaryIndex, -1, "私有台账缺少 Scope 汇总");
-  const scopeSummaryCells = gateLines[scopeSummaryIndex].split("|");
-  assert.equal(scopeSummaryCells[2].replace(/\*\*/g, "").trim(), "11/15 Pass");
-  scopeSummaryCells[2] = " **15/15 Pass** ";
-  scopeSummaryCells[3] = " #1～#15 已确认；等待正式 G0 签发 ";
-  gateLines[scopeSummaryIndex] = scopeSummaryCells.join("|");
   for (const [gateId, evidence] of [
     ["G0-03", g003Evidence],
-    ["G0-09", g009ClosureEvidence],
+    ["G0-09", g009Evidence],
     ["G0-13", g013Evidence],
   ]) {
-    const gateIndex = gateLines.findIndex((line) => line.startsWith(`| ${gateId} |`));
-    assert.notEqual(gateIndex, -1, `私有台账缺少 ${gateId}`);
-    const gateCells = gateLines[gateIndex].split("|");
-    assert.equal(gateCells.length, 9, `${gateId} 表格结构异常`);
-    assert.equal(
-      gateCells[6].replace(/\*\*/g, "").trim(),
-      "进行中",
-      `${gateId} 应从进行中基线推进`
+    const gate = gateLines.find((line) => line.startsWith(`| ${gateId} |`));
+    assert.ok(gate, `私有台账缺少 ${gateId}`);
+    const cells = gate.split("|");
+    assert.equal(cells.length, 9, `${gateId} 表格结构异常`);
+    assert.equal(cells[6].replace(/\*\*/g, "").trim(), "Pass", `${gateId} 未收口`);
+    assert.equal(cells[7].replace(/`/g, "").trim(), evidence, `${gateId} EVD 不一致`);
+  }
+
+  const receiptCounts = new Map([
+    ["presale", [81, 79, 2]],
+    ["campaign", [4, 4, 0]],
+    ["aftersale", [223, 223, 0]],
+    ["product", [106, 106, 0]],
+  ]);
+  for (const [domain, counts] of receiptCounts) {
+    const receipt = gateLines.find((line) => line.startsWith(`| ${domain} |`));
+    assert.ok(receipt, `私有台账缺少 ${domain} G0-09 关闭收据`);
+    const cells = receipt.split("|").map((cell) => cell.trim());
+    assert.equal(cells.length, 14, `${domain} G0-09 关闭收据结构异常`);
+    assert.deepEqual(
+      [cells[2], cells[3], cells[4], cells[5]],
+      [sourceRef, sourceVersionIds.get(domain), g009ClosureEvidence, g009AclEvidence],
+      `${domain} 必须复用物理工作簿证据并保留独立逻辑版本`
     );
-    gateCells[6] = " **Pass** ";
-    gateCells[7] = ` \`${evidence}\` `;
-    gateLines[gateIndex] = gateCells.join("|");
+    assert.deepEqual(cells.slice(6, 9).map(Number), counts, `${domain} 质量分母不一致`);
+    assert.equal(cells[9], g009ClosureEvidence);
+    assert.equal(cells[10], "ROLE-CONTENT-LEAD");
+    assert.equal(cells[11], g009Evidence);
+    assert.equal(cells[12], "READY");
   }
 
-  // 仅用于仓外私有迁移测试：使用不透明代号、脱敏计数和 EVD 收据，
-  // 不写入 URL、token、真实标题、原始快照 SHA、成员名单或审批原文。
-  const readyReceiptRows = [
-    {
-      domain: "presale",
-      sourceRef: "SRC-1A7C9E4B2D8F6H3K",
-      sourceVersionId: "srcv_2b8d4f6a1c3e7b90",
-      snapshotEvd: "EVD-G0-09-PRESALE-SNAPSHOT-20260830",
-      aclEvd: "EVD-FEISHU-ACL-PRESALE-20260830",
-      totalRows: 81,
-      importableRows: 79,
-      quarantinedRows: 2,
-      qualityEvd: "EVD-G0-09-PRESALE-QUALITY-20260830",
-    },
-    {
-      domain: "campaign",
-      sourceRef: "SRC-04A9A86874258A6A",
-      sourceVersionId: "srcv_76b9165b2fe31908",
-      snapshotEvd: "EVD-G0-09-CAMPAIGN-SNAPSHOT-20260830",
-      aclEvd: "EVD-FEISHU-ACL-CAMPAIGN-20260830",
-      totalRows: 4,
-      importableRows: 4,
-      quarantinedRows: 0,
-      qualityEvd: "EVD-G0-09-CAMPAIGN-QUALITY-20260830",
-    },
-    {
-      domain: "aftersale",
-      sourceRef: "SRC-8C2E6G4J9L1N5Q7S",
-      sourceVersionId: "srcv_5d9a1c3e7b2f6d80",
-      snapshotEvd: "EVD-G0-09-AFTERSALE-SNAPSHOT-20260830",
-      aclEvd: "EVD-FEISHU-ACL-AFTERSALE-20260830",
-      totalRows: 223,
-      importableRows: 223,
-      quarantinedRows: 0,
-      qualityEvd: "EVD-G0-09-AFTERSALE-QUALITY-20260830",
-    },
-    {
-      domain: "product",
-      sourceRef: "SRC-60D6B23861F4FBF5",
-      sourceVersionId: "srcv_88af65aa70c894aa",
-      snapshotEvd: "EVD-G0-09-PRODUCT-SNAPSHOT-20260830",
-      aclEvd: "EVD-FEISHU-ACL-PRODUCT-20260830",
-      totalRows: 106,
-      importableRows: 106,
-      quarantinedRows: 0,
-      qualityEvd: "EVD-G0-09-PRODUCT-QUALITY-20260830",
-    },
-  ];
-  for (const row of readyReceiptRows) {
-    const receiptIndex = gateLines.findIndex((line) => line.startsWith(`| ${row.domain} |`));
-    assert.notEqual(receiptIndex, -1, `私有台账缺少 ${row.domain} G0-09 关闭收据`);
-    const receiptCells = gateLines[receiptIndex].split("|");
-    assert.equal(receiptCells.length, 14, `${row.domain} G0-09 关闭收据结构异常`);
-    assert.equal(receiptCells[12].trim(), "INCOMPLETE", `${row.domain} 收据应从 INCOMPLETE 推进`);
-    gateLines[receiptIndex] = [
-      "",
-      ` ${row.domain} `,
-      ` ${row.sourceRef} `,
-      ` ${row.sourceVersionId} `,
-      ` ${row.snapshotEvd} `,
-      ` ${row.aclEvd} `,
-      ` ${row.totalRows} `,
-      ` ${row.importableRows} `,
-      ` ${row.quarantinedRows} `,
-      ` ${row.qualityEvd} `,
-      " ROLE-CONTENT-LEAD ",
-      ` ${g009ClosureEvidence} `,
-      " READY ",
-      "",
-    ].join("|");
-  }
-  const ledger = gateLines.join("\n");
-  await writeFile(ledgerPath, ledger, "utf8");
-
-  const scopeLines = (await readFile(scopePath, "utf8")).split(/\r?\n/);
+  const scopeLines = scope.split(/\r?\n/);
   for (const [scopeId, evidence] of [
     ["5", g003Evidence],
     ["6", g003Evidence],
-    ["9", g009ClosureEvidence],
+    ["9", g009Evidence],
     ["14", g013Evidence],
   ]) {
-    const scopeIndex = scopeLines.findIndex((line) => line.startsWith(`| ${scopeId} |`));
-    assert.notEqual(scopeIndex, -1, `私有 Scope 缺少 #${scopeId}`);
-    const scopeCells = scopeLines[scopeIndex].split("|");
-    assert.equal(scopeCells[4].trim(), "[ ]", `Scope #${scopeId} 必须从未完成基线推进`);
-    scopeCells[4] = " [X] ";
-    scopeCells[5] = ` \`${evidence}\` `;
-    scopeLines[scopeIndex] = scopeCells.join("|");
+    const row = scopeLines.find((line) => line.startsWith(`| ${scopeId} |`));
+    assert.ok(row, `私有 Scope 缺少 #${scopeId}`);
+    const cells = row.split("|");
+    assert.match(cells[4].trim(), /^\[[xX]\]$/, `Scope #${scopeId} 未完成`);
+    assert.equal(cells[5].replace(/`/g, "").trim(), evidence, `Scope #${scopeId} EVD 不一致`);
   }
-  await writeFile(scopePath, scopeLines.join("\n"), "utf8");
 
-  let prd = await readFile(prdPath, "utf8");
-  prd = replaceRequired(
-    prd,
-    "外部责任包 · 11 / 14",
-    "外部责任包 · 14 / 14",
-    "PRD 外部责任包状态轴"
-  );
-  prd = replaceRequired(
-    prd,
-    "外部责任包 11 / 14；Scope 检查 11 / 15；",
-    "外部责任包 14 / 14；Scope 检查 15 / 15；",
-    "PRD Ddev 门禁摘要"
-  );
-  prd = replaceRequired(
-    prd,
-    "Scope · 11 / 15",
-    "Scope · 15 / 15",
-    "PRD Scope 状态轴"
-  );
-  prd = replaceRequired(
-    prd,
-    "当前只完成 22 / 29 项准备",
-    "当前只完成 29 / 29 项准备",
-    "PRD 总准备计数"
-  );
-  await writeFile(prdPath, prd, "utf8");
+  assert.match(prd, /外部责任包 · 14 \/ 14/);
+  assert.match(prd, /Scope · 15 \/ 15/);
+  assert.match(prd, /29 \/ 29 项准备/);
+  assert.match(prd, /Ddev · 2026-08-31/);
 }
 
 function qaEvidenceDirectory(run, expectedRoot, label) {
@@ -598,7 +573,7 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
     });
     assert.equal(isOutsideRepo(qaPaths.rootPath), true);
   }
-  await advancePrivateFixture(target);
+  await assertPrivateFixtureEvidenceReady(target);
   const sync = spawnSync(process.execPath, [surfaceSync], {
     cwd: repoRoot,
     env,
@@ -762,7 +737,7 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
   const acceptedLedger = await readFile(privateLedgerPath, "utf8");
   const acceptedSurfaceBytes = await Promise.all(managedSurfaces.map((filePath) => readFile(filePath)));
   try {
-    const candidateLines = acceptedLedger.split(/\r?\n/);
+    const candidateLines = asUnsignedG0Fixture(acceptedLedger).split(/\r?\n/);
     const designRoleIndex = candidateLines.findIndex((line) => line.startsWith("| 设计负责人 |"));
     assert.notEqual(designRoleIndex, -1, "私有台账缺少设计负责人 RACI 行");
     const designRoleCells = candidateLines[designRoleIndex].split("|");
@@ -799,8 +774,14 @@ test("真实状态可迁到仓外私有工作区，工具链拒绝覆盖并完�
       1,
       "只有回退为候选的设计负责人应待接受职责"
     );
-    assert.match(candidatePayload.headline.summary, /12\/13 个角色已接受职责，其余仍待受控确认/);
-    assert.match(candidatePayload.meeting.positioning, /12\/13 个角色已接受职责，其余仍待受控确认/);
+    assert.match(
+      candidatePayload.headline.summary,
+      /外部责任包 14\/14、Scope 15\/15 已通过；仍须先正式签发 G0/
+    );
+    assert.match(
+      candidatePayload.meeting.positioning,
+      /G0 正式签发会：开发前证据已 14\/14 \+ 15\/15；由项目负责人单独填写时间、结论和证据包/
+    );
   } finally {
     await writeFile(privateLedgerPath, acceptedLedger, "utf8");
     const restoreSync = spawnSync(process.execPath, [surfaceSync], {

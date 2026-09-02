@@ -38,6 +38,16 @@ const statusSourceDefinitions = [
     file: "20-设计-进行中/46-实现设计-开工包.md",
     label: "46 实现设计开工包",
   },
+  {
+    id: "g0Authorization",
+    file: "90-评审/2026-08-31_G0正式签发记录.md",
+    label: "G0 正式签发记录",
+  },
+  {
+    id: "ddevAuthorization",
+    file: "90-评审/2026-08-31_Ddev正式签发记录.md",
+    label: "Ddev 正式签发记录",
+  },
 ];
 
 const demandMeetingDirections = Object.freeze([
@@ -341,6 +351,77 @@ function synchronizeStatusAxes(html, projectStatus) {
   return synchronized;
 }
 
+function deriveDevelopmentProjection(projectStatus) {
+  const activeStates = new Set(["开发中", "已开始", "进行中"]);
+  if (activeStates.has(projectStatus.development)) {
+    const progress = projectStatus.developmentProgress;
+    const milestone = progress.milestone;
+    const completedSlicesLabel = progress.completedSlices.join("、");
+    const nextActionLabel = progress.nextSlice
+      ? `${progress.nextSlice} ${progress.nextSliceName}`
+      : progress.nextAction;
+    if (!milestone) throw new Error("PRD 产品开发状态行缺少 DEV-M* · IN_PROGRESS");
+    if (!completedSlicesLabel) throw new Error("PRD 产品开发状态行缺少已完成的 W* 切片");
+    if (!nextActionLabel) throw new Error("PRD 产品开发状态行缺少下一切片或下一动作");
+    return {
+      active: true,
+      milestone,
+      completedSlicesLabel,
+      nextActionLabel,
+    };
+  }
+
+  if (projectStatus.development === "已完成") {
+    throw new Error("PRD 尚未定义产品开发已完成后的阶段投影；请先更新阶段合同");
+  }
+
+  return {
+    active: false,
+    milestone: "DEV-M0",
+    state: projectStatus.development,
+  };
+}
+
+function synchronizeDevelopmentSummary(html, projectStatus) {
+  const development = deriveDevelopmentProjection(projectStatus);
+  let eyebrow;
+  let heroNote;
+  let confirmedFact;
+
+  if (development.active) {
+    eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 进行中`;
+    heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlicesLabel} 已完成，下一动作是 ${development.nextActionLabel}；仍未部署、未接真实数据、未进入真实试点。`;
+    confirmedFact = `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 已开始，${development.completedSlicesLabel} 已完成。`;
+  } else if (projectStatus.ddevReady) {
+    eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 待开工`;
+    heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已放行但产品开发仍为${development.state}；软件未部署、未接真实数据、未试点。`;
+    confirmedFact = `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 仍为${development.state}。`;
+  } else {
+    eyebrow = "项目已批准 · 一期建议待客服校准 · 尚未开发";
+    heroNote = "项目已批准进入需求与方案阶段，批准凭证已归档；这不等于一期功能或开发已经批准。项目侧推荐“证据型客服助理 + 灰度前影子回放”，仍须客服确认、修正或否决；软件未开发、未部署、未试点。";
+    confirmedFact = "项目已批准，2026-08-04 召开一期启动会；软件尚未开发。";
+  }
+
+  let synchronized = replaceUnique(
+    html,
+    /<p\b(?=[^>]*\bclass=["'][^"']*\beyebrow\b[^"']*["'])[^>]*>[\s\S]*?<\/p>/i,
+    `<p class="eyebrow" data-current-development="eyebrow">${escapeHtmlText(eyebrow)}</p>`,
+    "当前开发状态眉标"
+  );
+  synchronized = replaceUnique(
+    synchronized,
+    /<p\b(?=[^>]*\bclass=["'][^"']*\bhero-note\b[^"']*["'])[^>]*>[\s\S]*?<\/p>/i,
+    `<p class="hero-note" data-current-development="summary">\n          ${escapeHtmlText(heroNote)}\n        </p>`,
+    "当前开发状态说明"
+  );
+  return replaceUnique(
+    synchronized,
+    /<li\b(?=[^>]*\bdata-evidence-grade=["']fact["'])[^>]*>[\s\S]*?<span\b[^>]*\bclass=["']index["'][^>]*>\s*已确认\s*<\/span>\s*<span\b[^>]*>[\s\S]*?项目已批准[\s\S]*?<\/span>\s*<\/li>/i,
+    `<li data-evidence-grade="fact" data-current-development="fact"><span class="index">已确认</span><span>${escapeHtmlText(confirmedFact)}</span></li>`,
+    "当前开发状态事实"
+  );
+}
+
 function replaceUnique(source, pattern, replacement, label) {
   if (pattern.global) throw new Error(`内部错误：${label} 的替换规则不得预设 global`);
   const matches = [...source.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))];
@@ -348,6 +429,24 @@ function replaceUnique(source, pattern, replacement, label) {
     throw new Error(`PRD ${label}必须唯一，实际 ${matches.length} 处`);
   }
   return source.replace(pattern, replacement);
+}
+
+function synchronizeG0Summary(html, projectStatus) {
+  const g0Pattern =
+    /(<([a-z][\w:-]*)\b[^>]*\bdata-contract\s*=\s*(["'])g0\3[^>]*>)([\s\S]*?)(<\/\2>)/gi;
+  const matches = [...html.matchAll(g0Pattern)];
+  if (matches.length !== 1) {
+    throw new Error(`PRD data-contract=g0 必须唯一，实际 ${matches.length} 处`);
+  }
+  const [current, currentOpenTag, , , currentContent, closeTag] = matches[0];
+  const openTag = setHtmlAttribute(currentOpenTag, "data-state", projectStatus.g0);
+  const content = replaceUnique(
+    currentContent,
+    /当前(?:未签发|待签发|已签发|Pass|Fail)/i,
+    `当前${escapeHtmlText(projectStatus.g0)}`,
+    "G0 当前状态"
+  );
+  return html.replace(current, `${openTag}${content}${closeTag}`);
 }
 
 function synchronizeDdevSummary(html, projectStatus) {
@@ -361,7 +460,7 @@ function synchronizeDdevSummary(html, projectStatus) {
   const [current, currentOpenTag, , , currentContent, closeTag] = ddevMatches[0];
   const completed = projectStatus.externalPass + projectStatus.scopePass;
   const total = projectStatus.externalTotal + projectStatus.scopeTotal;
-  let openTag = currentOpenTag;
+  let openTag = setHtmlAttribute(currentOpenTag, "data-state", projectStatus.ddev);
   for (const [name, value] of [
     ["data-external-pass", projectStatus.externalPass],
     ["data-external-total", projectStatus.externalTotal],
@@ -384,6 +483,27 @@ function synchronizeDdevSummary(html, projectStatus) {
     /Scope 检查\s*\d+\s*\/\s*\d+/i,
     `Scope 检查 ${projectStatus.scopePass} / ${projectStatus.scopeTotal}`,
     "Ddev Scope 检查摘要"
+  );
+  content = replaceUnique(
+    content,
+    /G0\s+(?:未签发|待签发|已签发|Pass|Fail)/i,
+    `G0 ${escapeHtmlText(projectStatus.g0)}`,
+    "Ddev 摘要中的 G0 状态"
+  );
+  content = replaceUnique(
+    content,
+    /Ddev\s+(?:未成立|待签发|\d{4}-\d{2}-\d{2})/i,
+    `Ddev ${escapeHtmlText(projectStatus.ddev)}`,
+    "Ddev 摘要中的 Ddev 状态"
+  );
+  const authorizationCopy = projectStatus.ddevReady
+    ? "G0 与 DEC-DDEV-01 已分别签发；当前只放行 DEV-M0，后续里程碑仍按退出证据推进"
+    : "全部通过并分别签发 G0 与 DEC-DDEV-01 后方可建立 Ddev";
+  content = replaceUnique(
+    content,
+    /(?:全部通过并分别签发 G0 与 DEC-DDEV-01 后方可建立 Ddev|G0 与 DEC-DDEV-01 已分别签发；当前只放行 DEV-M0，后续里程碑仍按退出证据推进)/i,
+    authorizationCopy,
+    "Ddev 授权状态说明"
   );
   if (/编码从下一个可用工作日开始。?/i.test(content)) {
     content = replaceUnique(
@@ -539,7 +659,10 @@ function derivePrdFacts(sourceById, projectStatus) {
   const scheduleD0 = required(schedule.match(/\*\*项目启动日 D0：\*\*\s*(\d{4}-\d{2}-\d{2})/)?.[1], "排期 D0");
   assertSame("D0", d0, scheduleD0);
 
-  const g0Date = required(ledger.match(/\*\*G0 决策日：\*\*\s*目标\s*(\d{4}-\d{2}-\d{2})/)?.[1], "G0 决策日");
+  const g0Date = required(
+    ledger.match(/\*\*G0 决策日：\*\*\s*(?:原)?目标\s*(\d{4}-\d{2}-\d{2})/)?.[1],
+    "G0 历史目标日"
+  );
   const charterG0Date = required(
     charter.match(/\| G0 决策 \| \*\*目标 (\d{4}-\d{2}-\d{2})\*\* \|/)?.[1],
     "章程 G0 决策日"
@@ -604,7 +727,7 @@ function derivePrdFacts(sourceById, projectStatus) {
   };
 }
 
-function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
+function validatePrdContract(html, projectStatus, demandMeetingDate, facts, development) {
   const { statusAxes } = projectStatus;
   const statusAxisClasses = deriveStatusAxisClasses(projectStatus);
   for (const [axis, copy] of Object.entries(statusAxes)) {
@@ -652,6 +775,28 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts) {
   );
   requireText(html, "项目已批准", "已批准事实");
   requireText(html, "不等于一期功能或开发已经批准", "批准边界");
+  const developmentShell = ["eyebrow", "summary", "fact"]
+    .map((part) =>
+      visibleText(
+        markedElement(
+          html,
+          `data-current-development\\s*=\\s*["']${part}["']`,
+          `当前开发状态 ${part}`
+        )
+      )
+    )
+    .join(" ");
+  if (development.active) {
+    for (const expected of [
+      `${development.milestone} 已开始`,
+      `${development.completedSlicesLabel} 已完成`,
+      development.nextActionLabel,
+    ]) {
+      requireText(developmentShell, expected, `当前开发投影 ${expected}`);
+    }
+    requirePattern(developmentShell, /仍未部署[、，].*未接真实数据.*未进入真实试点/, "开发中仍保持真实运行边界");
+    requirePattern(developmentShell, /^(?!.*(?:软件未开发|软件尚未开发)).*$/s, "开发中投影不得残留未开发文案");
+  }
   if (projectStatus.approvalReady) {
     requirePattern(html, /批准凭证已归档|EVD-CUSTOMER-APPROVAL-20260801/, "已批准状态必须展示归档证据语义");
   } else if (projectStatus.approval === "Fail") {
@@ -809,10 +954,13 @@ function buildManifest(html, sources, statusSources) {
     cost: sourceById.cost,
     architecture: sourceById.architecture,
     implementation: sourceById.implementation,
+    g0Authorization: sourceById.g0Authorization,
+    ddevAuthorization: sourceById.ddevAuthorization,
   });
   const facts = derivePrdFacts(sourceById, projectStatus);
   const demandMeetingDate = facts.d0;
-  validatePrdContract(html, projectStatus, demandMeetingDate, facts);
+  const development = deriveDevelopmentProjection(projectStatus);
+  validatePrdContract(html, projectStatus, demandMeetingDate, facts, development);
   const manifestSources = sources.map(
     ({ text: _text, sourcePath: _sourcePath, mode: _mode, ...source }) => source
   );
@@ -909,11 +1057,15 @@ if (checkOnly === update) {
     cost: sourceById.cost,
     architecture: sourceById.architecture,
     implementation: sourceById.implementation,
+    g0Authorization: sourceById.g0Authorization,
+    ddevAuthorization: sourceById.ddevAuthorization,
   });
   const statusSynchronizedPrd = synchronizeStatusAxes(prdSnapshot.text, projectStatus);
-  const ddevSynchronizedPrd = synchronizeDdevSummary(statusSynchronizedPrd, projectStatus);
+  const g0SynchronizedPrd = synchronizeG0Summary(statusSynchronizedPrd, projectStatus);
+  const ddevSynchronizedPrd = synchronizeDdevSummary(g0SynchronizedPrd, projectStatus);
   const startCopySynchronizedPrd = synchronizeDdevStartCopy(ddevSynchronizedPrd);
-  const contractSynchronizedPrd = synchronizeFeeSummary(startCopySynchronizedPrd, projectStatus);
+  const developmentSynchronizedPrd = synchronizeDevelopmentSummary(startCopySynchronizedPrd, projectStatus);
+  const contractSynchronizedPrd = synchronizeFeeSummary(developmentSynchronizedPrd, projectStatus);
   const portable = computePortableHtml(
     contractSynchronizedPrd,
     hubSnapshot.text,
