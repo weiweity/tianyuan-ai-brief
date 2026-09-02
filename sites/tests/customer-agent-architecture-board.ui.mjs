@@ -115,7 +115,7 @@ try {
     );
     assert.match(
       bodyText,
-      /immutable migration[^\n]*N\/N-1[^\n]*application runtime[^\n]*managed PG[^\n]*NOT_CERTIFIED/
+      /W4[^\n]*migration[^\n]*N-only[^\n]*N-1[^\n]*application runtime[^\n]*managed PG[^\n]*NOT_CERTIFIED/
     );
     assert.match(
       evidenceText,
@@ -149,9 +149,9 @@ try {
     assert.match(authorizationGate, /只即时放行 DEV-M0/);
     assert.match(
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
-      /DEV-M0 · 进行中（W0、W1、W2、W3 已完成）/
+      /DEV-M0 · 进行中（W0、W1、W2、W3、W4 已完成）/
     );
-    assert.match(bodyText, /DEV-M0-W4 不可变 migration \/ PostgreSQL 深模块/);
+    assert.match(bodyText, /DEV-M0-W5 runtime adapter \/ service readiness/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

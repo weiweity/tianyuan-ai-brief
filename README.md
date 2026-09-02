@@ -1,13 +1,13 @@
 # 天元 · AI 赋能项目工作区
 
-**客服需求、架构与实现设计三关均已收口；架构结论保持 PASS-WITH-CONDITIONS（静态设计），实现设计为 Pass · 文档包 Ready。G0 与 Ddev 已分别签发 Pass。** 当前进入技术第 4 关代码开发，产品实施仓处于 `DEV-M0 · IN_PROGRESS`，`W0`～`W3` 已完成并合并；下一切片是 W4 不可变 migration / PostgreSQL 深模块，仍须单独开工授权。供应链保持独立 P1。\
+**客服需求、架构与实现设计三关均已收口；架构结论保持 PASS-WITH-CONDITIONS（静态设计），实现设计为 Pass · 文档包 Ready。G0 与 Ddev 已分别签发 Pass。** 当前进入技术第 4 关代码开发，产品实施仓处于 `DEV-M0 · IN_PROGRESS`，`W0`～`W4` 已完成并合并；W4 已落地不可变 migration / PostgreSQL 15 控制面，下一切片是 W5 runtime adapter / service readiness，仍须单独开工授权。供应链保持独立 P1。\
 当前只放行 `DEV-M0` 的 `development / test` 与合成数据；真实数据、飞书运行接入、RAGFlow 真实索引、Pilot、生产发布、付费调用与自动发送均未获授权。仓储 / 人事只进需求池。
 
 ## 项目组合
 
 | 板块 | 当前阶段 | 下一步 |
 |------|----------|--------|
-| **客服 Agent** | **P0 · 设计已收口 · G0 / Ddev Pass · DEV-M0 进行中** | `W0`～`W3` 已完成；W4 不可变 migration / PostgreSQL 深模块待单独开工授权，不跨入 `DEV-M1` |
+| **客服 Agent** | **P0 · 设计已收口 · G0 / Ddev Pass · DEV-M0 进行中** | `W0`～`W4` 已完成；W5 runtime adapter / service readiness 待单独开工授权，不跨入 `DEV-M1` |
 | **供应链 · 备案** | **P1 · 会前准备** | **08-10 上海启动会** → 纪要 + 启动结论 |
 | 仓储 / 人事等 | 需求池 | 不排期 |
 | 设计组 · PSD/AI | 调研反馈（8/07） | 设计负责人过目；非 FDE 立项 |

@@ -203,8 +203,8 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "实现设计文档 Ready",
         "DEV-M0",
         "开发中",
-        "`W0`～`W3` 已完成",
-        "W4 不可变 migration / PostgreSQL 深模块开工授权",
+        "`W0`～`W4` 已完成",
+        "W5 runtime adapter / service readiness 开工授权",
     )
 
     ledger_path = DESIGN.parent / "02-G0责任与证据台账.md"
@@ -218,7 +218,8 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "CR-004",
         "静态合同已选择",
         "独立的单工作簿证据已关闭 G0-09 / Scope #9",
-        "运行能力仍待 Ddev 后实现",
+        "W4 已实现受锁 DDL",
+        "业务 API / 客户端运行能力仍待后续切片实现",
     )
     _assert_same_line(
         ledger,
@@ -254,7 +255,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.77" in ledger
+    assert "v3.78" in ledger
     _assert_same_line(
         ledger,
         "DEC-058",
@@ -279,7 +280,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "DEC-DDEV-01",
     )
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.77 · 2026-09-02")
+    assert footer.startswith("*G0 责任与证据台账 v3.78 · 2026-09-03")
     assert footer.endswith("*")
     for token in (
         "Menokin",
@@ -288,8 +289,8 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "EVD-G0-SIGN-20260831",
         "EVD-DDEV-AUTH-20260831",
         "DEV-M0 · IN_PROGRESS",
-        "`W0`～`W3` 已完成",
-        "W4 不可变 migration / PostgreSQL 深模块待单独开工授权",
+        "`W0`～`W4` 已完成",
+        "W5 runtime adapter / service readiness 待单独开工授权",
         "后置门",
     ):
         assert token in footer, f"ledger footer missing: {token}"
@@ -347,7 +348,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     schedule = (DESIGN.parent / "01-总排期与阶段门禁.md").read_text(encoding="utf-8")
     delivery = (DESIGN.parent / "05-全栈交付计划.md").read_text(encoding="utf-8")
     cost = (DESIGN.parent / "04-费用与成本控制.md").read_text(encoding="utf-8")
-    assert "排期版本：** v3.32" in schedule
+    assert "排期版本：** v3.33" in schedule
     _assert_same_line(schedule, "DEC-DDEV-01", "Ddev 生效当日", "才可进入", "DEV-M0")
     _assert_same_line(schedule, "证据等级", "EVD-G0-14-WBS-CAPACITY-20260813", "公司受控系统归档", "不单独使 G0-14 / Scope #15 Pass")
     _assert_same_line(schedule, "一期部署与交付目标", "2026-08-31", "内部目标，不是对外硬承诺")
@@ -356,7 +357,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
     assert "G0-14 · 单人 FDE 可签 WBS 草案" in schedule
     assert "Ddev → DEV-M0 → M1 → M2 → M3 → M4 → G1a → Pilot Ready → 连续两周 Pilot → G1b / M4" in schedule
     assert "每周最多安排 **4 个净工程日**" in schedule
-    assert "全栈交付计划 v2.19" in delivery
+    assert "全栈交付计划 v2.20" in delivery
     _assert_same_line(delivery, "两个分域闭环", "G0 / Ddev 已 Pass", "正式开发已进入 `DEV-M0`")
     assert "正式开发仍须 Ddev" not in delivery
     assert "G0-15 · 已批准的运行交接方案" in delivery
@@ -1260,7 +1261,10 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # G0-09 governance evidence is closed; runtime claims remain unimplemented and separately gated.
-    assert "v3.77" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger
+    assert "v3.78" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger and "DEC-066" in ledger
+    cr004_history_line = next(line for line in ledger.splitlines() if line.startswith("| 2026-08-09 | CR-004 |"))
+    assert "W4" not in cr004_history_line and "DEC-066" not in cr004_history_line
+    assert "运行能力尚未实现" in cr004_history_line and "DEC-039" in cr004_history_line
     g009_line = next(line for line in ledger.splitlines() if line.startswith("| G0-09 |"))
     for token in (
         "**Pass**",
@@ -1963,7 +1967,7 @@ def test_architecture_diagrams_three_kinds() -> None:
 
 def test_waterfall_gate_status() -> None:
     t = _read("40-架构图与关卡状态.md")
-    _assert_same_line(t, "状态", "2026-09-02", "v1.29", "G0 / Ddev 已 Pass", "DEV-M0", "W0～W3 已完成")
+    _assert_same_line(t, "状态", "2026-09-03", "v1.30", "G0 / Ddev 已 Pass", "DEV-M0", "W0～W4 已完成")
     for gate in ("1 需求分析", "2 架构设计", "3 实现设计", "4 代码开发", "5 单元测试", "6 系统测试", "7 上线发布", "8 生产运维"):
         assert gate in t, f"missing gate {gate}"
     assert "组织授权门（不计入八关）" in t
@@ -1985,8 +1989,10 @@ def test_waterfall_gate_status() -> None:
     )
     _assert_same_line(
         t,
-        "immutable migration",
-        "N/N-1",
+        "2026-09-03 产品仓 W4",
+        "`0001..0009`",
+        "N-only",
+        "`N/A`",
         "application runtime",
         "managed PG",
         "backup-restore",
@@ -2156,7 +2162,7 @@ def test_waterfall_gate_status() -> None:
         "EVD-DDEV-AUTH-20260831",
         "当前只即时放行 DEV-M0",
     )
-    _assert_same_line(t, "4 代码开发", "DEV-M0", "In progress", "W0～W3 complete", "W2", "W3", "PR #10 / #11", "W4", "PostgreSQL")
+    _assert_same_line(t, "4 代码开发", "DEV-M0", "In progress", "W0～W4 complete", "W2", "W3", "W4", "PR #10 / #11 / #13", "W5", "runtime adapter")
     assert "真 PG、OAuth" not in t45
     _assert_same_line(t45, "修补后也不自签 10", "上一发布版本升级", "托管 PG", "并发/死锁", "备份恢复", "生产环境")
     publish = _between(t45, "## 10. DEC-PUBLISH-01", "**签字式结论：**")
@@ -2297,8 +2303,8 @@ def test_waterfall_gate_status() -> None:
     _assert_same_line(d04, "组织授权门", "G0 / Ddev 已 Pass", "不计入八关")
     _assert_same_line(d04, "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
     _assert_same_line(d04, "即时只放行", "DEV-M0")
-    _assert_same_line(d04, "DEV-M0 IN_PROGRESS", "W0 / W1 / W2 / W3 COMPLETE")
-    _assert_same_line(d04, "下一动作", "W4不可变migration/PostgreSQL深模块")
+    _assert_same_line(d04, "DEV-M0 IN_PROGRESS", "W0 / W1 / W2 / W3 / W4 COMPLETE")
+    _assert_same_line(d04, "下一动作", "W5 runtime adapter/service readiness")
     assert "未授权前不实施" in d04
     _assert_same_line(d04, "当前 schema v1.12 reference DDL", "PG15", "PASS-WITH-LIMITATION")
     _assert_same_line(d04, "managed", "backup", "concurrency", "production", "NOT_CERTIFIED")
@@ -2405,9 +2411,9 @@ def test_extension_compatibility_contracts_are_executable() -> None:
     _assert_same_line(auth_mapping, "auth", "/v1/notices/*", "子能力", "不增加第十端口")
     _assert_same_line(implementation, "CONTRACT", "native_integration", "403+零写入", "notices 归 auth 子能力")
 
-    _assert_same_line(navigation, "更新", "2026-09-02", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
+    _assert_same_line(navigation, "更新", "2026-09-03", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
     _assert_same_line(navigation, "扩展治理", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "不新增端口、路由或表")
-    _assert_same_line(gate_board, "状态", "2026-09-02", "v1.29", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
+    _assert_same_line(gate_board, "状态", "2026-09-03", "v1.30", "CR-002", "CR-003", "CR-004", "DEC-042", "扩展治理")
     _assert_same_line(gate_board, "2026-08-09 扩展治理收口", "N/N-1", "PlatformAdapter", "数据库变更", "不新增第十端口")
     _assert_same_line(gate_board, "| v1.4 |", "2026-08-09", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "NOT_CERTIFIED")
 
@@ -2551,17 +2557,21 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     ):
         assert re.search(invariant, t), f"architecture board missing DEC-042 invariant: {invariant}"
     _assert_same_line(t, "扩展治理", "静态已冻结", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "不新增端口、路由或表")
-    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M0", "W0、W1、W2、W3 已完成", "DEV-M0-W4", "PostgreSQL 深模块", "待单独授权")
+    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M0", "W0、W1、W2、W3、W4 已完成", "DEV-M0-W5", "runtime adapter / service readiness", "待单独授权")
     _assert_same_line(t, "组织门禁", "G0 / Ddev Pass")
+    _assert_same_line(t, "架构关", "Ddev 已独立签发", "真实问法", "Pilot", "上线仍须后续独立签发")
+    _assert_same_line(t, "小白说明", "Ddev 已签发", "W2～W4", "API / desktop 接库", "端到端运行能力")
+    assert "必须等 Ddev 授权后完成迁移" not in t
+    assert "迁移/runtime/托管PG/恢复/并发/生产仍未认证" not in t
     _assert_same_line(
         t,
         "组织门禁",
         "EVD-G0-SIGN-20260831",
         "EVD-DDEV-AUTH-20260831",
         "DEV-M0",
-        "W0、W1、W2、W3 已完成",
-        "DEV-M0-W4",
-        "PostgreSQL 深模块",
+        "W0、W1、W2、W3、W4 已完成",
+        "DEV-M0-W5",
+        "runtime adapter / service readiness",
         "待单独授权",
     )
     _assert_same_line(t, "外部责任包 14/14", "Scope 15/15", "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
@@ -2601,7 +2611,8 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
         t,
     )
     assert "组织授权门（不计入八关）" in t
-    assert "DEV-M0 · 进行中（W0、W1、W2、W3 已完成）" in t
+    assert "DEV-M0 · 进行中（W0、W1、W2、W3、W4 已完成）" in t
+    _assert_same_line(t, "<footer>", "W4 migration / PG15 控制面 N-only 已验证", "真实 N-1 为 N/A", "业务 runtime")
     assert "DEV-M0 Ready · 未开始" not in t
     assert "八端口" not in t, "board prose must not revive the superseded eight-port architecture"
     assert "8 个端口" not in t and "8 个功能入口" not in t
@@ -2725,8 +2736,8 @@ def test_architecture_docs_and_diagram_sources_stay_aligned() -> None:
     assert "本项目状态：通过 · 文档包 Ready" in d04
     _assert_same_line(d04, "组织授权门", "G0 / Ddev 已 Pass", "不计入八关")
     _assert_same_line(d04, "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
-    assert "DEV-M0 IN_PROGRESS · W0 / W1 / W2 / W3 COMPLETE" in d04
-    assert "下一动作：W4不可变migration/PostgreSQL深模块" in d04
+    assert "DEV-M0 IN_PROGRESS · W0 / W1 / W2 / W3 / W4 COMPLETE" in d04
+    assert "下一动作：W5 runtime adapter/service readiness" in d04
     assert "未授权前不实施" in d04
 
     assert re.search(r"Search\s+-[^\n]*->\s+Policy\s*:", d02), "search must read phase1 policy"
