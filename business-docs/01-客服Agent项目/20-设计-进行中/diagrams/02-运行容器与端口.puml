@@ -83,8 +83,9 @@ legend right
   clean<=500全审；501..5000抽10%(100..300)；>2%扩30%；>5%阻断
   placeholder值/渲染正文零落库；事件只绑模板四元组
   schema v1.12 / OpenAPI 1.11.0 静态合同已锁
-  W2生成类型/validator完成；W3仅/health骨架完成
-  migration/业务runtime/动态EVD未实现；当前真PG NOT_CERTIFIED
+  W2类型/validator + W3 /health + W4 migration/PG15控制面完成
+  W4仅N-only；真实N-1=N/A（无前一签名基线）
+  API/desktop接库、业务runtime/动态EVD未实现；managed/production未认证
   CR-003: DeepSeek teacher另批；GLM distill Ban
   import 原文 + outbox + TS worker = 一期 Must
   work_order_* 与 iteration_task* 分表 / 分 API / 分权限

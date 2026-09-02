@@ -453,11 +453,11 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   const status = deriveProjectStatus(sources);
   const currentVersions = currentSourceVersions(sources);
   const signedVersions = authorizationSourceVersions(sources);
-  assert.equal(currentVersions.charter, "v3.39");
+  assert.equal(currentVersions.charter, "v3.40");
   assert.equal(signedVersions.charter, "v3.35");
-  assert.equal(currentVersions.schedule, "v3.32");
+  assert.equal(currentVersions.schedule, "v3.33");
   assert.equal(signedVersions.schedule, "v3.28");
-  assert.equal(currentVersions.ledger, "v3.77");
+  assert.equal(currentVersions.ledger, "v3.78");
   assert.equal(signedVersions.ledger, "v3.72");
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -478,12 +478,12 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，证据 EVD-DEV-M0-W0-20260831；W1 desktop mechanical move 已完成并通过 PR #9 合并，证据 EVD-DEV-M0-W1-20260831；W2 contract codegen / runtime validation 已完成并通过 PR #10 合并，合并头 1a77297d51ce3cf3a0a551290675c60c941be4b6；W3 API / config bootstrap 已完成并通过 PR #11 合并，合并头 2758dba5bebefc3fce87fdc73cffb6a7122bbea7；下一动作：DEV-M0-W4 不可变 migration / PostgreSQL 深模块（待单独授权）。DEV-M0 退出证据未齐，不表示 DEV-M0 已完成",
+    detail: "产品实施仓处于 DEV-M0 · IN_PROGRESS；W0 workspace scaffold 与迁移前基线已完成，证据 EVD-DEV-M0-W0-20260831；W1 desktop mechanical move 已完成并通过 PR #9 合并，证据 EVD-DEV-M0-W1-20260831；W2 contract codegen / runtime validation 已完成并通过 PR #10 合并，合并头 1a77297d51ce3cf3a0a551290675c60c941be4b6；W3 API / config bootstrap 已完成并通过 PR #11 合并，合并头 2758dba5bebefc3fce87fdc73cffb6a7122bbea7；W4 immutable migration / PostgreSQL 15 control plane 已完成并通过 PR #13 合并，合并头 33c40b86504e205e37d92d915405ae55be34c361；下一动作：DEV-M0-W5 runtime adapter / service readiness（待单独授权）。DEV-M0 退出证据未齐，不表示 DEV-M0 已完成",
     milestone: "DEV-M0",
-    completedSlices: ["W0", "W1", "W2", "W3"],
+    completedSlices: ["W0", "W1", "W2", "W3", "W4"],
     nextSlice: "",
     nextSliceName: "",
-    nextAction: "DEV-M0-W4 不可变 migration / PostgreSQL 深模块",
+    nextAction: "DEV-M0-W5 runtime adapter / service readiness",
     evidenceIds: ["EVD-DEV-M0-W0-20260831", "EVD-DEV-M0-W1-20260831"],
   });
   assert.equal(isChecked("[X]"), true);
@@ -1130,7 +1130,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions, { schedule: "v3.16" }),
-      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.32 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.33 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "冻结输入清单",
@@ -1150,7 +1150,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions).replace(/^01 /, "010 "),
-      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.32 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.33 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "允许环境与数据",

@@ -38,8 +38,8 @@ note right
   旧 c1e74c EVD：仅历史，不外推当前 schema
   DEC-042 schema v1.12 / OpenAPI 1.11.0 静态合同：LOCKED
   W2类型/validator + W3 API/config /health：COMPLETE
-  迁移/N/N-1/业务runtime/动态EVD：NOT_IMPLEMENTED
-  managed/backup/concurrency/production：NOT_CERTIFIED
+  W4 0001..0009 migration/PG15控制面：COMPLETE · N-only PASS · 真实N-1 N/A
+  API/desktop接库/业务runtime/动态EVD：NOT_IMPLEMENTED；managed/backup/concurrency/production：NOT_CERTIFIED
   *升级/并发/生产/真机仍未认证；本地预检不替代这些证据
 end note
 
@@ -55,25 +55,25 @@ note right
   EVD-G0-SIGN-20260831 · EVD-DDEV-AUTH-20260831
   即时只放行 DEV-M0
   外部责任包 14/14 · Scope 15/15
-  产品仓 DEV-M0 已开始 · W0 / W1 / W2 / W3 已完成
-  下一步：W4 不可变 migration / PostgreSQL 深模块（待单独开工授权）
+  产品仓 DEV-M0 已开始 · W0 / W1 / W2 / W3 / W4 已完成
+  下一步：W5 runtime adapter / service readiness（待单独开工授权）
 end note
 
 |代码开发|
 :代码开发\n产出：API · 壳 · 迁移脚本;
 note right
-  **DEV-M0 IN_PROGRESS · W0 / W1 / W2 / W3 COMPLETE**
+  **DEV-M0 IN_PROGRESS · W0 / W1 / W2 / W3 / W4 COMPLETE**
   workspace/机械迁移 + 合同codegen/validator已完成
   API/config仅完成loopback /health骨架
-  下一动作：W4不可变migration/PostgreSQL深模块
+  W4 migration/PG15控制面已完成；下一动作：W5 runtime adapter/service readiness
   未授权前不实施
-  业务API/worker/正式migration/PostgreSQL仍未实现
+  API/desktop接库、业务API/worker仍未实现
 end note
 
 |单元测试|
 :单元测试\n产出：INV / 端口单测绿;
 note right
-  W2/W3切片级单测已绿
+  W2/W3/W4切片级单测与隔离PG15集成门已绿
   技术第5关仍待独立进关
 end note
 
