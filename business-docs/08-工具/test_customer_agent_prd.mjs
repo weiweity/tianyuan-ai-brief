@@ -207,9 +207,15 @@ await check("关键业务口径完整", async () => {
       const nextAction = progress.nextSlice
         ? `${progress.nextSlice} ${progress.nextSliceName}`
         : progress.nextAction;
+      const milestoneLabel = progress.milestoneState === "COMPLETE"
+        ? `${progress.milestone} 已完成`
+        : `${progress.milestone} 已开始`;
+      const slicesLabel = progress.milestoneState === "COMPLETE"
+        ? `${progress.completedSlices.join("、")} 已收口`
+        : `${progress.completedSlices.join("、")} 已完成`;
       requiredFacts.push(
-        `${progress.milestone} 已开始`,
-        `${progress.completedSlices.join("、")} 已完成`,
+        milestoneLabel,
+        slicesLabel,
         nextAction
       );
       assert.doesNotMatch(visible, /软件(?:尚)?未开发/, "当前 PRD 已进入开发中，不得残留“软件未开发”");

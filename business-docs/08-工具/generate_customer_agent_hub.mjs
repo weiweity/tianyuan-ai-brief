@@ -408,13 +408,17 @@ const developmentPaused = developmentProgress.category === "paused";
 const developmentStopped = developmentProgress.category === "stopped";
 const developmentCompleted = developmentProgress.category === "completed";
 const developmentInterrupted = developmentPaused || developmentStopped;
+const activeMilestoneCompleted =
+  developmentActive && developmentProgress.milestoneState === "COMPLETE";
 const completedSlicesLabel = developmentProgress.completedSlices.join("、");
 const hasNumberedNextSlice = Boolean(developmentProgress.nextSlice);
 const nextActionLabel = hasNumberedNextSlice
   ? `${developmentProgress.nextSlice} ${developmentProgress.nextSliceName}`
   : developmentProgress.nextAction;
 const activeProgressSummary = developmentActive
-  ? hasNumberedNextSlice
+  ? activeMilestoneCompleted
+    ? `${developmentProgress.milestone} 已完成，${completedSlicesLabel} 已收口；下一动作：${nextActionLabel}（待单独授权）。`
+    : hasNumberedNextSlice
     ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextActionLabel}。`
     : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}（待单独授权）。`
   : "";
@@ -465,10 +469,16 @@ if (ddevReady && developmentInterrupted) {
   };
 } else if (ddevReady && developmentActive) {
   headline = {
-      title: `${developmentProgress.milestone} 已开工，${completedSlicesLabel} 已完成。`,
-      summary: `${activeProgressSummary}${developmentProgress.milestone} 退出证据未齐不得进入下一里程碑。`,
+      title: activeMilestoneCompleted
+        ? `${developmentProgress.milestone} 已完成，${completedSlicesLabel} 已收口。`
+        : `${developmentProgress.milestone} 已开工，${completedSlicesLabel} 已完成。`,
+      summary: activeMilestoneCompleted
+        ? `${activeProgressSummary}下一里程碑未授权前不得扩大范围。`
+        : `${activeProgressSummary}${developmentProgress.milestone} 退出证据未齐不得进入下一里程碑。`,
       nextDate: hasNumberedNextSlice ? projectStatus.ddev : "待授权",
-      nextTitle: hasNumberedNextSlice
+      nextTitle: activeMilestoneCompleted
+        ? "下一里程碑授权"
+        : hasNumberedNextSlice
         ? `${developmentProgress.milestone}-${developmentProgress.nextSlice} · ${developmentProgress.nextSliceName}`
         : "下一 DEV-M0 能力授权",
       nextOutput: hasNumberedNextSlice
@@ -609,7 +619,9 @@ const displaySchedule = developmentInterrupted
 const ddevNowTitle = developmentInterrupted
   ? `产品开发${developmentProgress.state}；等待恢复 / 终止复核。`
   : developmentActive
-    ? hasNumberedNextSlice
+    ? activeMilestoneCompleted
+      ? `${developmentProgress.milestone} 已完成；等待下一里程碑授权。`
+      : hasNumberedNextSlice
       ? `${developmentProgress.milestone} 进行中；当前推进 ${developmentProgress.nextSlice}。`
       : `${developmentProgress.milestone} 进行中；等待下一动作授权。`
     : developmentCompleted
@@ -627,7 +639,9 @@ const ddevNowSummary = developmentInterrupted
 const ddevScheduleTitle = developmentInterrupted
   ? `产品开发${developmentProgress.state}；当前不执行 WBS。`
   : developmentActive
-    ? `${developmentProgress.milestone} 已开始；${completedSlicesLabel} 已完成，后续按${projectStatus.resourceBaseline}基线串行推进。`
+    ? activeMilestoneCompleted
+      ? `${developmentProgress.milestone} 已完成；${nextActionLabel} 待单独授权，后续按${projectStatus.resourceBaseline}基线串行推进。`
+      : `${developmentProgress.milestone} 已开始；${completedSlicesLabel} 已完成，后续按${projectStatus.resourceBaseline}基线串行推进。`
     : developmentCompleted
       ? "当前开发切片已完成；等待退出证据和下一门决定。"
       : `Ddev 已签；按${projectStatus.resourceBaseline}基线启动首个切片。`;
@@ -779,7 +793,9 @@ const payload = {
       ? developmentInterrupted
         ? `产品开发${developmentProgress.state}，先复核再决定是否恢复。`
         : developmentActive
-          ? hasNumberedNextSlice
+          ? activeMilestoneCompleted
+            ? `${developmentProgress.milestone} 已完成，${completedSlicesLabel} 已收口；下一里程碑待授权。`
+            : hasNumberedNextSlice
             ? `${developmentProgress.milestone} 已开始，下一步只推进 ${developmentProgress.nextSlice}。`
             : `${developmentProgress.milestone} 已开始，${completedSlicesLabel} 已完成；下一动作待授权。`
           : developmentCompleted
@@ -798,7 +814,9 @@ const payload = {
       ? developmentInterrupted
         ? `这是产品开发${developmentProgress.state}复核会；历史 Ddev 不自动恢复开发，必须形成恢复或终止决定。`
         : developmentActive
-          ? hasNumberedNextSlice
+          ? activeMilestoneCompleted
+            ? `这是 ${developmentProgress.milestone} 退出结果与下一里程碑授权复核会；${completedSlicesLabel} 已收口，${nextActionLabel} 尚未授权，任何新增范围、付费或部署边界仍须走 CR / DEC。`
+            : hasNumberedNextSlice
             ? `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 只按冻结计划执行，任何新增范围、付费或部署边界仍须走 CR / DEC。`
             : `这是 ${developmentProgress.milestone} 实施与证据复核会；${completedSlicesLabel} 已完成，${nextActionLabel} 尚未授权，任何新增范围、付费或部署边界仍须走 CR / DEC。`
           : developmentCompleted

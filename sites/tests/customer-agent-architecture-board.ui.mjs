@@ -149,9 +149,9 @@ try {
     assert.match(authorizationGate, /只即时放行 DEV-M0/);
     assert.match(
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
-      /DEV-M0 · 进行中（W0、W1、W2、W3、W4 已完成）/
+      /DEV-M0 · 已完成（W0、W1、W2、W3、W4、W5、W6 已收口）/
     );
-    assert.match(bodyText, /DEV-M0-W5 runtime adapter \/ service readiness/);
+    assert.match(bodyText, /DEV-M1 开工评审与授权/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

@@ -608,7 +608,9 @@ function deriveDevelopmentProgress(development, detail) {
     };
   }
 
-  const milestone = normalizedDetail.match(/\b(DEV-M\d+)\s*·\s*IN_PROGRESS\b/i)?.[1]?.toUpperCase() || "";
+  const milestoneMatch = normalizedDetail.match(/\b(DEV-M\d+)\s*·\s*(IN_PROGRESS|COMPLETE)\b/i);
+  const milestone = milestoneMatch?.[1]?.toUpperCase() || "";
+  const milestoneState = milestoneMatch?.[2]?.toUpperCase() || "";
   const completedSlices = normalizedDetail
     .split(/[。；|]/)
     .flatMap((clause) => {
@@ -623,13 +625,14 @@ function deriveDevelopmentProgress(development, detail) {
     normalizedDetail.match(/下一动作(?:为|是|：|:)\s*([^。；|]+)/i)?.[1]?.trim() || ""
   ).replace(/\s*[（(]\s*待单独授权\s*[）)]\s*$/u, "");
   if (!milestone || completedSlices.length === 0 || Boolean(next) === Boolean(nextAction)) {
-    throw new Error("产品开发进行中时必须写明 DEV-M* · IN_PROGRESS、已完成 W*，以及下一切片或下一动作");
+    throw new Error("产品开发进行中时必须写明 DEV-M* · IN_PROGRESS/COMPLETE、已完成 W*，以及下一切片或下一动作");
   }
   return {
     category,
     state: development,
     detail: normalizedDetail,
     milestone,
+    milestoneState,
     completedSlices: [...new Set(completedSlices)],
     nextSlice: next?.[1]?.toUpperCase() || "",
     nextSliceName: next?.[2]?.trim() || "",
