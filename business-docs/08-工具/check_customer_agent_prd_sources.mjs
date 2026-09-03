@@ -356,16 +356,20 @@ function deriveDevelopmentProjection(projectStatus) {
   if (activeStates.has(projectStatus.development)) {
     const progress = projectStatus.developmentProgress;
     const milestone = progress.milestone;
+    const milestoneState = progress.milestoneState;
     const completedSlicesLabel = progress.completedSlices.join("、");
     const nextActionLabel = progress.nextSlice
       ? `${progress.nextSlice} ${progress.nextSliceName}`
       : progress.nextAction;
-    if (!milestone) throw new Error("PRD 产品开发状态行缺少 DEV-M* · IN_PROGRESS");
+    if (!milestone || !["IN_PROGRESS", "COMPLETE"].includes(milestoneState)) {
+      throw new Error("PRD 产品开发状态行缺少 DEV-M* · IN_PROGRESS/COMPLETE");
+    }
     if (!completedSlicesLabel) throw new Error("PRD 产品开发状态行缺少已完成的 W* 切片");
     if (!nextActionLabel) throw new Error("PRD 产品开发状态行缺少下一切片或下一动作");
     return {
       active: true,
       milestone,
+      milestoneState,
       completedSlicesLabel,
       nextActionLabel,
     };
@@ -389,9 +393,14 @@ function synchronizeDevelopmentSummary(html, projectStatus) {
   let confirmedFact;
 
   if (development.active) {
-    eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 进行中`;
-    heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlicesLabel} 已完成，下一动作是 ${development.nextActionLabel}；仍未部署、未接真实数据、未进入真实试点。`;
-    confirmedFact = `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 已开始，${development.completedSlicesLabel} 已完成。`;
+    const milestoneCompleted = development.milestoneState === "COMPLETE";
+    eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} ${milestoneCompleted ? "已完成" : "进行中"}`;
+    heroNote = milestoneCompleted
+      ? `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 产品实施已完成，${development.completedSlicesLabel} 已收口，下一动作是 ${development.nextActionLabel}，仍须单独授权；仍未部署、未接真实数据、未进入真实试点。`
+      : `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlicesLabel} 已完成，下一动作是 ${development.nextActionLabel}；仍未部署、未接真实数据、未进入真实试点。`;
+    confirmedFact = milestoneCompleted
+      ? `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 产品实施与退出证据已完成。`
+      : `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 已开始，${development.completedSlicesLabel} 已完成。`;
   } else if (projectStatus.ddevReady) {
     eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} 待开工`;
     heroNote = `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已放行但产品开发仍为${development.state}；软件未部署、未接真实数据、未试点。`;
@@ -787,11 +796,19 @@ function validatePrdContract(html, projectStatus, demandMeetingDate, facts, deve
     )
     .join(" ");
   if (development.active) {
-    for (const expected of [
-      `${development.milestone} 已开始`,
-      `${development.completedSlicesLabel} 已完成`,
-      development.nextActionLabel,
-    ]) {
+    const milestoneCompleted = development.milestoneState === "COMPLETE";
+    const expectedDevelopmentCopy = milestoneCompleted
+      ? [
+          `${development.milestone} 产品实施已完成`,
+          `${development.completedSlicesLabel} 已收口`,
+          development.nextActionLabel,
+        ]
+      : [
+          `${development.milestone} 已开始`,
+          `${development.completedSlicesLabel} 已完成`,
+          development.nextActionLabel,
+        ];
+    for (const expected of expectedDevelopmentCopy) {
       requireText(developmentShell, expected, `当前开发投影 ${expected}`);
     }
     requirePattern(developmentShell, /仍未部署[、，].*未接真实数据.*未进入真实试点/, "开发中仍保持真实运行边界");

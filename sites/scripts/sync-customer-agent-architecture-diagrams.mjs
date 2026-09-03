@@ -137,9 +137,14 @@ try {
     const sourcePath = path.join(diagramDir, `${baseName}.puml`);
     const outputPath = path.join(svgDir, `${baseName}.svg`);
     const source = await readFile(sourcePath, "utf8");
-    const rendered = normalizeSvg(
-      await page.evaluate((lines) => window.renderPlantUml(lines), source.split(/\r\n|\r|\n/))
-    );
+    let rendered;
+    try {
+      rendered = normalizeSvg(
+        await page.evaluate((lines) => window.renderPlantUml(lines), source.split(/\r\n|\r|\n/))
+      );
+    } catch (error) {
+      throw new Error(`PlantUML 渲染失败：${baseName}：${error.message}`, { cause: error });
+    }
 
     let current = null;
     try {

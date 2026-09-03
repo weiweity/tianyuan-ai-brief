@@ -26,16 +26,23 @@ function readDevelopmentShell(projectStatus) {
   if (progress.category === "active") {
     const completed = progress.completedSlices.join("、");
     const hasNumberedNextSlice = Boolean(progress.nextSlice);
+    const milestoneCompleted = progress.milestoneState === "COMPLETE";
     const nextAction = hasNumberedNextSlice
       ? `${progress.nextSlice} ${progress.nextSliceName}`
       : progress.nextAction;
     return {
       gateClass: "partial",
-      codeStatus: `${progress.milestone} · 进行中（${completed} 已完成）`,
-      currentSummary: hasNumberedNextSlice
+      codeStatus: milestoneCompleted
+        ? `${progress.milestone} · 已完成（${completed} 已收口）`
+        : `${progress.milestone} · 进行中（${completed} 已完成）`,
+      currentSummary: milestoneCompleted
+        ? `${progress.milestone} 产品实施与退出证据已完成；下一动作是${nextAction}（待单独授权）。`
+        : hasNumberedNextSlice
         ? `${progress.milestone} 已进入开发中，${completed} 已完成；下一切片为 ${nextAction}。`
         : `${progress.milestone} 已进入开发中，${completed} 已完成；下一动作是${nextAction}（待单独授权）。`,
-      footerStatus: hasNumberedNextSlice
+      footerStatus: milestoneCompleted
+        ? `${progress.milestone} · COMPLETE，${nextAction} 待单独授权`
+        : hasNumberedNextSlice
         ? `${progress.milestone} · IN_PROGRESS，${completed} 已完成、${nextAction} 待执行`
         : `${progress.milestone} · IN_PROGRESS，${completed} 已完成、${nextAction} 待单独授权`,
     };
