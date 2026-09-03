@@ -130,6 +130,7 @@ async function createFixture({
   const developmentIncrement = [
     "# DEV-M1 Fixture 合同增量",
     "",
+    `> **直接前序机器合同：** DDL ${databaseHash} 与 OpenAPI ${openapiHash}。`,
     `> **DEV-M1 机器合同增量：** DDL ${incrementDatabaseHash} 与 OpenAPI ${incrementOpenapiHash}。`,
     `> **实际产物必须精确匹配：** DDL ${incrementDatabaseHash} 与 OpenAPI ${incrementOpenapiHash}。`,
     "",
@@ -308,7 +309,7 @@ test("来源 SHA、显式预期哈希与规范锚点任一不一致都拒绝出�
           expectedOpenapiSha256: fixture.openapiHash,
           expectedDatabaseSha256: fixture.databaseHash,
         }),
-      /39 API 合同当前声明 与机器文件双哈希不一致/,
+      /39 API 合同冻结声明与 DEV-M1 直接前序机器合同链不一致/,
     );
   });
   await withFixture({ staleIncrementHashes: true }, async (fixture) => {
