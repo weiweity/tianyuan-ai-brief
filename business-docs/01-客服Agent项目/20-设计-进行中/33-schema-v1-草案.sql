@@ -1,4 +1,4 @@
--- schema.v1.13 — 客服 Agent 一期 · PostgreSQL SoR (Architecture SSOT 37 / CR-004 / DEC-042 search-runtime projection closure)
+-- schema.v1.14 — 客服 Agent 一期 · PostgreSQL SoR (Architecture SSOT 37 / CR-004 / DEC-042 search-runtime no-hit closure)
 -- Dialect: PostgreSQL 15+
 -- Client cache (optional SQLite FTS snapshot) is NOT this file — see 33b note in 37 §2.
 -- Phase1 invariants enforced where CHECK can express them. Business work-order analysis
@@ -6879,6 +6879,7 @@ CREATE OR REPLACE FUNCTION search_recommendable_scripts(
   p_product_context_type TEXT DEFAULT NULL,
   p_product_context_ref TEXT DEFAULT NULL
 ) RETURNS TABLE(
+  is_candidate BOOLEAN,
   script_id TEXT,
   script_version INTEGER,
   content_hash TEXT,
@@ -6924,7 +6925,17 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  WITH current_context AS MATERIALIZED (
+    SELECT
+      current_release.current_release_id AS release_id,
+      source_gate.source_binding_hash
+    FROM public.content_current current_release
+    JOIN public.v_release_source_gate source_gate
+      ON source_gate.release_id = current_release.current_release_id
+     AND source_gate.source_gate_ready
+  )
   SELECT
+    candidate.script_id IS NOT NULL,
     candidate.script_id,
     candidate.version,
     candidate.content_hash,
@@ -6945,17 +6956,21 @@ BEGIN
     public.content_public_questions(candidate.questions_json),
     candidate.search_document,
     candidate.search_fallback_text,
-    candidate.release_id,
-    candidate.source_binding_hash
-  FROM public.v_scripts_recommendable candidate
-  WHERE public.content_scope_matches(
-    candidate.platform_scope,
-    candidate.product_scope_type,
-    candidate.product_scope_refs,
-    p_platform,
-    p_product_context_type,
-    p_product_context_ref
-  );
+    current_context.release_id,
+    current_context.source_binding_hash
+  FROM current_context
+  LEFT JOIN LATERAL (
+    SELECT recommendable.*
+    FROM public.v_scripts_recommendable recommendable
+    WHERE public.content_scope_matches(
+      recommendable.platform_scope,
+      recommendable.product_scope_type,
+      recommendable.product_scope_refs,
+      p_platform,
+      p_product_context_type,
+      p_product_context_ref
+    )
+  ) candidate ON TRUE;
 END;
 $$;
 REVOKE ALL ON FUNCTION search_recommendable_scripts(TEXT,TEXT,TEXT) FROM PUBLIC;
@@ -7664,6 +7679,6 @@ GRANT EXECUTE ON FUNCTION public.retry_work_order_import_validation(TEXT,TEXT,BI
 GRANT EXECUTE ON FUNCTION public.finalize_work_order_import_validation(TEXT,TEXT,BIGINT,TEXT,TEXT,JSONB,INTEGER,JSONB) TO app_work_order_worker;
 
 COMMENT ON SCHEMA public IS
-  'CS-AI-C11 schema.v1.13; CR-004 immutable four-domain authoritative-source gate; DEC-042 search-runtime projection closure for scoped reads, public questions, precomputed ranking evidence, question identity/tombstone, dual review and population-bound quality evidence; reference DDL local-preflight status is recorded only by external EVD (not this DDL); immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED; Phase1 rewrite/auto_send/training hard-off';
+  'CS-AI-C11 schema.v1.14; CR-004 immutable four-domain authoritative-source gate; DEC-042 search-runtime no-hit closure for scoped reads, safe current release context, public questions, precomputed ranking evidence, question identity/tombstone, dual review and population-bound quality evidence; reference DDL local-preflight status is recorded only by external EVD (not this DDL); immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED; Phase1 rewrite/auto_send/training hard-off';
 
 COMMIT;

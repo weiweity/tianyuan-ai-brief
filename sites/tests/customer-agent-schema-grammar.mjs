@@ -105,7 +105,7 @@ for (const functionName of [
 assert.doesNotMatch(sql, /CREATE TABLE IF NOT EXISTS iteration_tickets\b/);
 assert.match(sql, /p_job_type NOT IN \('import_validate','work_order_import_validate'\)/);
 
-assert.match(sql, /^-- schema\.v1\.13\b/m);
+assert.match(sql, /^-- schema\.v1\.14\b/m);
 const sourceRegistry = sql.match(
   /CREATE TABLE IF NOT EXISTS authoritative_source_versions \([\s\S]*?\n\);/,
 )?.[0];
@@ -441,7 +441,10 @@ for (const forbiddenSearchField of [
 ]) {
   assert.doesNotMatch(scopedSearchFunction, new RegExp(`candidate\\.${forbiddenSearchField}\\b`));
 }
-assert.match(scopedSearchFunction, /questions JSONB,[\s\S]*?search_document TSVECTOR,[\s\S]*?search_fallback_text TEXT/);
+assert.match(scopedSearchFunction, /is_candidate BOOLEAN,[\s\S]*?questions JSONB,[\s\S]*?search_document TSVECTOR,[\s\S]*?search_fallback_text TEXT/);
+assert.match(scopedSearchFunction, /WITH current_context AS MATERIALIZED/);
+assert.match(scopedSearchFunction, /candidate\.script_id IS NOT NULL/);
+assert.match(scopedSearchFunction, /LEFT JOIN LATERAL/);
 assert.match(scopedSearchFunction, /public\.content_public_questions\(candidate\.questions_json\)/);
 assert.doesNotMatch(scopedSearchFunction, /^\s*candidate\.questions_json,?\s*$/m);
 assert.match(scopedSearchFunction, /candidate\.search_document/);
