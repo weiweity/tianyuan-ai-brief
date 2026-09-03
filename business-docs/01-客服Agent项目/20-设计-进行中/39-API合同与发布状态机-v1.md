@@ -6,7 +6,7 @@
 > **范围：** 一期最小端口语义 + 发布状态机；不得再将本文声称为“等价 OpenAPI”\
 > **实现语言：** TypeScript / Node Application API\
 > **CR-004 机器边界：** 本文人读事务/失败语义与 33/`openapi.v1.yaml` 静态机器合同由同一 CR-004 changeset 对齐；迁移、生成类型、服务端/客户端代码与动态运行证据仍未实现。因此四域来源绑定、永久暂停、拒绝审计与离线租约不得被描述为运行时已拦截。
-> **DEC-042 边界 / ENG-T1 修正：** 稳定 Question 身份/版本、显式 scope、taxonomy、风险审核、占位符与质量门的人读事务合同，以及 ACK 来源/租约拒绝独立审计与 public request closed schema，已与 schema v1.12（SHA-256 `47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）静态机器合同同批对齐；迁移、生成类型、服务端/客户端代码和动态测试仍未实现。对应路由不得仅凭静态合同宣称可用，G0 / Scope / Ddev 不变。
+> **DEC-042 边界 / ENG-T1 修正：** 稳定 Question 身份/版本、显式 scope、taxonomy、风险审核、占位符与质量门的人读事务合同，以及 ACK 来源/租约拒绝独立审计与 public request closed schema，当前 DEV-M1 合同增量已对齐 schema v1.13（SHA-256 `de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02`）/ OpenAPI 1.11.0（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）。v1.13 仅扩展 scope-only 搜索函数的安全返回投影；产品仓必须绑定最终提交 SHA 后再 intake，且不得仅凭治理合同宣称迁移、搜索 runtime 或动态测试可用。
 
 `37` 决定产品红线；`openapi.v1.yaml` 决定线上 wire shape；本文决定机器 schema 难以表达的顺序、事务和强制语义。三者冲突时停止对应路由，同一 PR 修正后才可继续；禁止在运行时实现中自行选一份。
 

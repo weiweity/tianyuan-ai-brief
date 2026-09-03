@@ -1,4 +1,4 @@
--- schema.v1.12 — 客服 Agent 一期 · PostgreSQL SoR (Architecture SSOT 37 / CR-004 / DEC-042 postfix closure)
+-- schema.v1.13 — 客服 Agent 一期 · PostgreSQL SoR (Architecture SSOT 37 / CR-004 / DEC-042 search-runtime projection closure)
 -- Dialect: PostgreSQL 15+
 -- Client cache (optional SQLite FTS snapshot) is NOT this file — see 33b note in 37 §2.
 -- Phase1 invariants enforced where CHECK can express them. Business work-order analysis
@@ -6870,7 +6870,9 @@ WHERE ri.effective_from <= now()
 
 -- The only app_runtime-readable search boundary. Scope is a mandatory function argument, so a caller
 -- cannot accidentally omit a WHERE clause and broaden platform/category/SKU visibility. app_runtime
--- has neither SELECT on this backing view nor on release_items/content_current.
+-- has neither SELECT on this backing view nor on release_items/content_current. The function exposes
+-- only the public question projection plus precomputed search evidence required by SearchBackend;
+-- reviewer/source lineage and the original questions_json remain behind the DEFINER boundary.
 DROP FUNCTION IF EXISTS search_recommendable_scripts(TEXT,TEXT,TEXT);
 CREATE OR REPLACE FUNCTION search_recommendable_scripts(
   p_platform TEXT,
@@ -6894,6 +6896,9 @@ CREATE OR REPLACE FUNCTION search_recommendable_scripts(
   risk_categories TEXT[],
   has_conflict BOOLEAN,
   placeholder_keys TEXT[],
+  questions JSONB,
+  search_document TSVECTOR,
+  search_fallback_text TEXT,
   release_id TEXT,
   source_binding_hash TEXT
 )
@@ -6937,6 +6942,9 @@ BEGIN
     candidate.risk_categories,
     candidate.has_conflict,
     candidate.placeholder_keys,
+    public.content_public_questions(candidate.questions_json),
+    candidate.search_document,
+    candidate.search_fallback_text,
     candidate.release_id,
     candidate.source_binding_hash
   FROM public.v_scripts_recommendable candidate
@@ -7656,6 +7664,6 @@ GRANT EXECUTE ON FUNCTION public.retry_work_order_import_validation(TEXT,TEXT,BI
 GRANT EXECUTE ON FUNCTION public.finalize_work_order_import_validation(TEXT,TEXT,BIGINT,TEXT,TEXT,JSONB,INTEGER,JSONB) TO app_work_order_worker;
 
 COMMENT ON SCHEMA public IS
-  'CS-AI-C11 schema.v1.12; CR-004 immutable four-domain authoritative-source gate; DEC-042 postfix closure for scoped reads, question identity/tombstone, dual review and population-bound quality evidence; reference DDL local-preflight status is recorded only by external EVD (not this DDL); immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED; Phase1 rewrite/auto_send/training hard-off';
+  'CS-AI-C11 schema.v1.13; CR-004 immutable four-domain authoritative-source gate; DEC-042 search-runtime projection closure for scoped reads, public questions, precomputed ranking evidence, question identity/tombstone, dual review and population-bound quality evidence; reference DDL local-preflight status is recorded only by external EVD (not this DDL); immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED; Phase1 rewrite/auto_send/training hard-off';
 
 COMMIT;

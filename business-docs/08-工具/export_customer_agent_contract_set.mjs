@@ -22,7 +22,7 @@ const repositoryRoot = path.resolve(path.dirname(scriptPath), "../..");
 const defaultOutputRoot = path.join(repositoryRoot, "output/customer-agent-contract-sets");
 
 export const CONTRACT_SET_SCHEMA = "customer-agent-contract-set/v1";
-export const CONTRACT_SET_TOOL_VERSION = "1.0.0";
+export const CONTRACT_SET_TOOL_VERSION = "1.1.0";
 
 export const CONTRACT_SOURCE_PATHS = Object.freeze({
   architecture: "business-docs/01-客服Agent项目/20-设计-进行中/37-架构SSOT-v1.md",
@@ -30,6 +30,8 @@ export const CONTRACT_SOURCE_PATHS = Object.freeze({
   nfr: "business-docs/01-客服Agent项目/20-设计-进行中/41-NFR扩展并发与防改崩.md",
   implementation:
     "business-docs/01-客服Agent项目/20-设计-进行中/46-实现设计-开工包.md",
+  developmentIncrement:
+    "business-docs/01-客服Agent项目/30-开发-进行中/01-DEV-M1搜索合同增量.md",
   openapi: "business-docs/01-客服Agent项目/20-设计-进行中/openapi.v1.yaml",
   database: "business-docs/01-客服Agent项目/20-设计-进行中/33-schema-v1-草案.sql",
 });
@@ -144,29 +146,59 @@ function assertLineCarriesHashes(line, label, databaseHash, openapiHash) {
   }
 }
 
+function linesForAnchor(source, label, anchor) {
+  const lines = source.split(/\r?\n/).filter((line) => line.includes(anchor));
+  if (lines.length === 0) throw new Error(`${label} 缺少锚点“${anchor}”`);
+  return lines;
+}
+
+function hashPairFromLine(line, label) {
+  const hashes = line.match(/[0-9a-f]{64}/g) ?? [];
+  if (hashes.length !== 2) {
+    throw new Error(`${label} 必须且只能包含 DDL / OpenAPI 两个 SHA-256：${line.trim()}`);
+  }
+  return { databaseHash: hashes[0], openapiHash: hashes[1] };
+}
+
+function assertFrozenDesignAlignment({ architecture, implementation }) {
+  const architectureLines = linesForAnchor(
+    architecture,
+    "37 架构 SSOT 冻结合同声明",
+    "**DEC-042 内容资产治理：**",
+  );
+  if (architectureLines.length !== 1) {
+    throw new Error("37 架构 SSOT 冻结合同声明必须唯一");
+  }
+  const frozen = hashPairFromLine(architectureLines[0], "37 架构 SSOT 冻结合同声明");
+  for (const anchor of ["机器合同已锁定为", "实际产物必须精确匹配"]) {
+    for (const line of linesForAnchor(implementation, "46 实现设计冻结合同声明", anchor)) {
+      assertLineCarriesHashes(
+        line,
+        `46 ${anchor} 与 Ddev 冻结基线`,
+        frozen.databaseHash,
+        frozen.openapiHash,
+      );
+    }
+  }
+}
+
 export function assertNormativeContractAlignment({
   architecture,
   apiSemantics,
   implementation,
+  developmentIncrement,
   databaseHash,
   openapiHash,
 }) {
-  for (const [label, source, anchor] of [
-    ["37 架构 SSOT 当前合同声明", architecture, "**DEC-042 内容资产治理：**"],
-    ["39 API 合同当前声明", apiSemantics, "**DEC-042 边界 / ENG-T1 修正：**"],
-  ]) {
-    const lines = source.split(/\r?\n/).filter((line) => line.includes(anchor));
-    if (lines.length === 0) throw new Error(`${label} 缺少现行锚点“${anchor}”`);
-    for (const line of lines) {
-      assertLineCarriesHashes(line, label, databaseHash, openapiHash);
-    }
-  }
+  assertFrozenDesignAlignment({ architecture, implementation });
 
-  for (const anchor of ["机器合同已锁定为", "实际产物必须精确匹配"]) {
-    const lines = implementation.split(/\r?\n/).filter((line) => line.includes(anchor));
-    if (lines.length === 0) throw new Error(`46 实现设计缺少“${anchor}”锚点`);
-    for (const line of lines) {
-      assertLineCarriesHashes(line, `46 ${anchor}`, databaseHash, openapiHash);
+  for (const [label, source, anchor] of [
+    ["39 API 合同当前声明", apiSemantics, "**DEC-042 边界 / ENG-T1 修正：**"],
+    ["DEV-M1 开发增量当前声明", developmentIncrement, "**DEV-M1 机器合同增量：**"],
+    ["DEV-M1 开发增量产物声明", developmentIncrement, "**实际产物必须精确匹配：**"],
+  ]) {
+    for (const line of linesForAnchor(source, label, anchor)) {
+      assertLineCarriesHashes(line, label, databaseHash, openapiHash);
     }
   }
 }
@@ -218,6 +250,7 @@ export function loadContractSetFromCommit({
     architecture: sources.architecture,
     apiSemantics: sources.apiSemantics,
     implementation: sources.implementation,
+    developmentIncrement: sources.developmentIncrement,
     databaseHash,
     openapiHash,
   });

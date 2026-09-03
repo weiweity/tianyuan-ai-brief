@@ -72,6 +72,7 @@ async function writeSourceFile(repositoryRoot, sourcePath, content) {
 async function createFixture({
   staleAuthorityHashes = false,
   staleImplementationHashes = false,
+  staleIncrementHashes = false,
 } = {}) {
   const repositoryRoot = await mkdtemp(path.join(tmpdir(), "customer-agent-contract-set-"));
   fixtureGit(repositoryRoot, ["init", "-b", "contract-set-fixture"]);
@@ -99,14 +100,13 @@ async function createFixture({
   const authorityDatabaseHash = staleAuthorityHashes ? "d".repeat(64) : databaseHash;
   const lockedOpenapiHash = staleImplementationHashes ? "a".repeat(64) : openapiHash;
   const lockedDatabaseHash = staleImplementationHashes ? "b".repeat(64) : databaseHash;
+  const incrementOpenapiHash = staleIncrementHashes ? "e".repeat(64) : openapiHash;
+  const incrementDatabaseHash = staleIncrementHashes ? "f".repeat(64) : databaseHash;
   const architecture = [
     "# 37 · Fixture 架构 SSOT v1",
     "",
     "> **状态：** 静态设计（当前 v1.16）",
-    `> **DEC-042 内容资产治理：** 当前合同锁定 DDL ${authorityDatabaseHash} 与 OpenAPI ${authorityOpenapiHash}。`,
-    ...(staleAuthorityHashes
-      ? [`> 历史核对（非现行）：实际文件曾记录 DDL ${databaseHash} 与 OpenAPI ${openapiHash}。`]
-      : []),
+    `> **DEC-042 内容资产治理：** Ddev 冻结合同锁定 DDL ${databaseHash} 与 OpenAPI ${openapiHash}。`,
     "",
   ].join("\n");
   const apiSemantics = [
@@ -127,6 +127,13 @@ async function createFixture({
     `5. 实际产物必须精确匹配 schema SHA ${lockedDatabaseHash} 与 OpenAPI SHA ${lockedOpenapiHash}。`,
     "",
   ].join("\n");
+  const developmentIncrement = [
+    "# DEV-M1 Fixture 合同增量",
+    "",
+    `> **DEV-M1 机器合同增量：** DDL ${incrementDatabaseHash} 与 OpenAPI ${incrementOpenapiHash}。`,
+    `> **实际产物必须精确匹配：** DDL ${incrementDatabaseHash} 与 OpenAPI ${incrementOpenapiHash}。`,
+    "",
+  ].join("\n");
 
   await writeFile(path.join(repositoryRoot, ".gitignore"), "/output/\n", "utf8");
   await writeSourceFile(repositoryRoot, CONTRACT_SOURCE_PATHS.openapi, openapi);
@@ -135,6 +142,11 @@ async function createFixture({
   await writeSourceFile(repositoryRoot, CONTRACT_SOURCE_PATHS.apiSemantics, apiSemantics);
   await writeSourceFile(repositoryRoot, CONTRACT_SOURCE_PATHS.nfr, "# 41 · Fixture NFR\n");
   await writeSourceFile(repositoryRoot, CONTRACT_SOURCE_PATHS.implementation, implementation);
+  await writeSourceFile(
+    repositoryRoot,
+    CONTRACT_SOURCE_PATHS.developmentIncrement,
+    developmentIncrement,
+  );
   fixtureGit(repositoryRoot, [
     "add",
     "--",
@@ -284,7 +296,7 @@ test("来源 SHA、显式预期哈希与规范锚点任一不一致都拒绝出�
           expectedOpenapiSha256: fixture.openapiHash,
           expectedDatabaseSha256: fixture.databaseHash,
         }),
-      /46 机器合同已锁定为 与机器文件双哈希不一致/,
+      /46 机器合同已锁定为 与 Ddev 冻结基线 与机器文件双哈希不一致/,
     );
   });
   await withFixture({ staleAuthorityHashes: true }, async (fixture) => {
@@ -296,7 +308,19 @@ test("来源 SHA、显式预期哈希与规范锚点任一不一致都拒绝出�
           expectedOpenapiSha256: fixture.openapiHash,
           expectedDatabaseSha256: fixture.databaseHash,
         }),
-      /37 架构 SSOT 当前合同声明 与机器文件双哈希不一致/,
+      /39 API 合同当前声明 与机器文件双哈希不一致/,
+    );
+  });
+  await withFixture({ staleIncrementHashes: true }, async (fixture) => {
+    assert.throws(
+      () =>
+        loadContractSetFromCommit({
+          repository: fixture.repositoryRoot,
+          sourceGitSha: fixture.sourceGitSha,
+          expectedOpenapiSha256: fixture.openapiHash,
+          expectedDatabaseSha256: fixture.databaseHash,
+        }),
+      /DEV-M1 开发增量当前声明 与机器文件双哈希不一致/,
     );
   });
 });
