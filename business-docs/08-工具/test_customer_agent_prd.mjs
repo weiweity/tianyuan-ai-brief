@@ -370,7 +370,7 @@ await check("Ddev 摘要计数与 G0 / Scope 真源同源", async () => {
   assert.ok(ddevVisible.includes(`Ddev ${projectStatus.ddev}`), "Ddev 摘要的 Ddev 状态不同源");
   if (projectStatus.ddevReady) {
     assert.ok(ddevVisible.includes("G0 与 DEC-DDEV-01 已分别签发"), "Ddev 已成立时缺少已签发说明");
-    assert.ok(ddevVisible.includes("当前只放行 DEV-M0"), "Ddev 已成立时缺少 DEV-M0 授权边界");
+    assert.ok(ddevVisible.includes("初始即时范围为 DEV-M0"), "Ddev 已成立时缺少初始 DEV-M0 授权边界");
     assert.equal(ddevVisible.includes("后方可建立 Ddev"), false, "Ddev 已成立后不得保留待签文案");
   }
 

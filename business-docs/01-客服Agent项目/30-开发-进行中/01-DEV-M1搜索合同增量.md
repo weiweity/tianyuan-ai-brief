@@ -1,10 +1,12 @@
 # DEV-M1 搜索合同增量
 
-> **状态：** `GOVERNANCE CONTRACT · PRODUCT NOT CONSUMED`
+> **状态：** `PRODUCT CONSUMED · DEV-M1 COMPLETE · RUNTIME NOT ACTIVATED`
 > **适用里程碑：** `DEV-M1`
 > **父基线：** 已签 Ddev 冻结的 `schema.v1.12` / OpenAPI `1.11.0`；本文件不修改、替代或重新签发 37/46 的历史授权投影。
 > **直接前序机器合同：** `schema.v1.13`（SHA-256 `de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02`）/ OpenAPI `1.11.0`（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）；对应 39 的冻结事务语义投影。
 > **DEV-M1 机器合同增量：** `schema.v1.14`（SHA-256 `edf909bf9450b5745a85ced4a75a2e2de3e5b061847562cd3a68c9c7c226da99`）/ OpenAPI `1.11.0`（SHA-256 `06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4`）。
+
+> **消费与退出事实：** 产品仓从治理仓 `1af001b8b0ce95aac0c42f42251a38feb85f3e26` 接收合同集 `cs-ai-c11-openapi-1.11.0-schema-1.14-1af001b8b0ce`；DEV-M1 W0～W5 经 PR #17～#20 合并，最终为 `main@5cf650ca87e0948f6dff6ad0bed6be078017e3f6`。合同锁继续为 `runtime_activated=false`；50 条纯合成 runner 固定 `NOT_SIGNED / NOT_EVALUATED`，不计真实 G1a。
 
 ## W2 no-hit 运行修正（2026-09-03）
 
@@ -31,4 +33,4 @@ DEV-M1 W2 实现发现：既有受控函数只有候选行才携带 `release_id/
 - 治理仓机器合同、架构合同、项目状态与 PG15 预检通过。
 - Ddev 已签投影保持原哈希，不以本增量冒充重新签发。
 - 合同导出器从精确提交读取本文件，并同时校验 39 与本文件中的当前双哈希。
-- 产品仓未完成 intake、migration 和动态测试前，本文件只证明治理合同一致，不证明 Search runtime 已实现。
+- 产品仓已完成 intake、v1.12→v1.13→v1.14 migration、合成 Search + Events 与动态测试；本文件只记录该消费事实，不证明真实来源、desktop、生产 runtime 或真实 G1a 已实现 / 已签发。

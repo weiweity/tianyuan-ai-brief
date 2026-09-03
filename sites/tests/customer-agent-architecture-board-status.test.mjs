@@ -12,8 +12,10 @@ const boardShell = `
 <div class="cv-card" role="listitem"><div class="k">组织门禁</div><div class="v">old</div><div class="d">old</div></div>
 <section class="panel" id="panel-wf"><p class="purpose"><strong>生成状态：</strong>old</p></section>
 <tr><td>代码开发</td><td>按设计真正写程序。</td><td>old</td></tr>
+<p class="cv-note"><strong>小白说明：</strong>old</p>
 <li><strong>G0/Ddev 组织授权门（不计入八关）</strong>：old</li>
 <p><strong>当前推进项：</strong>old</p>
+<tr><th>组织授权门（不计入八关）</th><td><span class="gate todo">old</span></td><td>项目/业务/预算/IT安全</td></tr>
 <tr><th>4 代码开发</th><td><span class="gate todo">old</span></td><td>开发</td></tr>
 <footer>离线单文件 · 当前规范以 37/39/40/46 为准 · old · schema v1.12</footer>
 `;
@@ -53,4 +55,10 @@ test("架构图状态壳对动态文本做 HTML 转义", () => {
     .split("\n")
     .find((line) => line.includes('<span class="next">'));
   assert.equal((currentProgressLine?.match(/待单独授权/g) || []).length, 1);
+  const plainLanguageLine = rendered
+    .split("\n")
+    .find((line) => line.includes('<p class="cv-note">'));
+  assert.match(plainLanguageLine ?? "", /当前证据只覆盖获批的纯合成工程范围/);
+  assert.match(plainLanguageLine ?? "", /&lt;svg onload=&quot;boom\(\)&quot;&gt;/);
+  assert.match(rendered, /初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进/);
 });

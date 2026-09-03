@@ -146,12 +146,12 @@ try {
     );
     assert.match(bodyText, /EVD-G0-SIGN-20260831/);
     assert.match(bodyText, /EVD-DDEV-AUTH-20260831/);
-    assert.match(authorizationGate, /只即时放行 DEV-M0/);
+    assert.match(authorizationGate, /初始即时范围 DEV-M0.*后续里程碑按独立授权与退出证据推进/);
     assert.match(
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
-      /DEV-M0 · 已完成（W0、W1、W2、W3、W4、W5、W6 已收口）/
+      /DEV-M1 · 已完成（W0、W1、W2、W3、W4、W5 已收口）/
     );
-    assert.match(bodyText, /DEV-M1 开工评审与授权/);
+    assert.match(bodyText, /DEC-SEARCH-01 \/ 真实 G1a 准入复核/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

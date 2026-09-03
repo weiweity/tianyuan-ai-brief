@@ -1,7 +1,7 @@
 # 30 · 正式开发阶段（进行中）
 
-> **状态：** `DEV-M0 · COMPLETE` · `W0 / W1 / W2 / W3 / W4 / W5 / W6 COMPLETE`
-> **进入与推进证据：** 设计评审通过、G0 签发、Ddev 成立、`EVD-DEV-M0-W0-20260831`、`EVD-DEV-M0-W1-20260831`、产品仓 PR #10（`1a77297`）、PR #11（`2758dba`）、PR #13（`33c40b8`）、PR #14（`49a574a`）、PR #15（`44b863d`）与 CI run `33729754086`
-> **下一动作：** `DEV-M1` 开工评审与独立授权
+> **状态：** `DEV-M1 · COMPLETE` · `W0 / W1 / W2 / W3 / W4 / W5 COMPLETE`
+> **进入与推进证据：** 设计评审通过、G0 / Ddev、DEV-M0 退出证据，以及产品仓 PR #17（`deef599`）、PR #18（`362e53c`）、PR #19（`530e5bb`）、PR #20（`5cf650c`）与 CI run `33785347931`
+> **下一动作：** `DEC-SEARCH-01` / 真实 G1a 准入复核；通过前不启动 `DEV-M2`
 
-目录名保持技术第 4 关兼容入口。本项目记录仓只保存阶段、决定和证据；产品代码继续只在独立产品实施仓中维护。`W0`～`W6` 与 `DEV-M0` 退出证据已完成，但不自动放行 `DEV-M1`、真实数据、运行接入、部署、Pilot 或付费调用。W6 的 Windows 结果仅是 hosted-runner feasibility smoke，API / desktop 仍未接库。
+目录名保持技术第 4 关兼容入口。本项目记录仓只保存阶段、决定和证据；产品代码继续只在独立产品实施仓中维护。`DEV-M0` 与 `DEV-M1` W0～W5 退出证据已完成，但不自动放行真实 G1a、`DEV-M2`、真实数据、飞书运行接入、desktop adapter、部署、Pilot 或付费调用。DEV-M1 的 50 条结果只证明合成 runner 可执行，固定为 `NOT_SIGNED / NOT_EVALUATED`。
