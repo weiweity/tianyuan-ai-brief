@@ -19,8 +19,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const EXPECTED_SCHEMA_SHA256 =
-  "de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02";
-const VERIFIER_VERSION = "1.3.0";
+  "edf909bf9450b5745a85ced4a75a2e2de3e5b061847562cd3a68c9c7c226da99";
+const VERIFIER_VERSION = "1.4.0";
 const REQUIRED_SCHEMA_COMMENT_FRAGMENTS = [
   "reference DDL local-preflight status is recorded only by external EVD (not this DDL)",
   "immutable migration/N/N-1/application runtime/managed PostgreSQL/backup-restore/concurrency/production remain NOT_CERTIFIED",
@@ -252,8 +252,8 @@ async function main() {
       `schema SHA-256 不匹配：expected ${EXPECTED_SCHEMA_SHA256}, got ${schemaSha}。请先审查并显式升级预检器。`,
     );
   }
-  if (!/^-- schema\.v1\.13\b/m.test(schema)) {
-    throw new Error("schema 版本头不是 v1.13，拒绝使用旧预检口径。");
+  if (!/^-- schema\.v1\.14\b/m.test(schema)) {
+    throw new Error("schema 版本头不是 v1.14，拒绝使用旧预检口径。");
   }
 
   const postgresVersion = await startProcess(binary(pgBin, "postgres"), ["--version"]);
@@ -578,11 +578,76 @@ async function main() {
       aclSideEffects.raw_release_items_read !== false ||
       aclSideEffects.backing_view_read !== false ||
       aclSideEffects.controlled_search_execute !== true ||
+      !aclSideEffects.search_projection.includes("is_candidate boolean") ||
       !aclSideEffects.search_projection.includes("questions jsonb") ||
       !aclSideEffects.search_projection.includes("search_document tsvector") ||
       !aclSideEffects.search_projection.includes("search_fallback_text text")
     ) {
       throw new Error("ACL 副作用/最小读边界校验失败。");
+    }
+
+    // A legal no-hit still needs the current release/source identity for SearchResponse and its
+    // transactional query event. The same function returns one internal sentinel only while the
+    // source gate is ready; suspending any bound source must make the read fail closed with zero rows.
+    await runSql(`
+      BEGIN;
+      SET LOCAL app.publishing = 'on';
+      INSERT INTO public.authoritative_source_versions(
+        source_version_id, source_ref, domain, upstream_version, snapshot_sha256,
+        use_class, owner_role, approval_evd, approved_by, approved_at, review_due_at
+      ) VALUES
+        ('srcv_gate_aftersale','SRC-GATE-AFTERSALE','aftersale','v1',repeat('a',64),'canonical','ROLE-CONTENT-LEAD','EVD-GATE','USR-GATE',now(),now()+interval '1 day'),
+        ('srcv_gate_campaign','SRC-GATE-CAMPAIGN','campaign','v1',repeat('b',64),'canonical','ROLE-CONTENT-LEAD','EVD-GATE','USR-GATE',now(),now()+interval '1 day'),
+        ('srcv_gate_presale','SRC-GATE-PRESALE','presale','v1',repeat('c',64),'canonical','ROLE-CONTENT-LEAD','EVD-GATE','USR-GATE',now(),now()+interval '1 day'),
+        ('srcv_gate_product','SRC-GATE-PRODUCT','product','v1',repeat('d',64),'canonical','ROLE-CONTENT-LEAD','EVD-GATE','USR-GATE',now(),now()+interval '1 day');
+      INSERT INTO public.content_releases(
+        release_id, release_seq, title, status, source_binding_hash, published_by, published_by_role
+      ) VALUES (
+        'rel_gate_nohit', 900001, 'PG15 no-hit gate fixture', 'published',
+        pg_catalog.encode(public.digest(pg_catalog.convert_to(
+          'aftersale:srcv_gate_aftersale|campaign:srcv_gate_campaign|presale:srcv_gate_presale|product:srcv_gate_product',
+          'UTF8'
+        ), 'sha256'), 'hex'),
+        'USR-GATE', 'owner'
+      );
+      INSERT INTO public.release_source_bindings(release_id, domain, source_version_id) VALUES
+        ('rel_gate_nohit','aftersale','srcv_gate_aftersale'),
+        ('rel_gate_nohit','campaign','srcv_gate_campaign'),
+        ('rel_gate_nohit','presale','srcv_gate_presale'),
+        ('rel_gate_nohit','product','srcv_gate_product');
+      INSERT INTO public.content_current(id, current_release_id) VALUES (1, 'rel_gate_nohit');
+      COMMIT;
+    `);
+    const searchReadyNoHit = JSON.parse(
+      await queryScalar(`SET ROLE app_runtime;
+        SELECT pg_catalog.json_build_object(
+          'rows', pg_catalog.count(*),
+          'sentinels', pg_catalog.count(*) FILTER (WHERE NOT is_candidate),
+          'release_ids', pg_catalog.count(DISTINCT release_id),
+          'source_hashes', pg_catalog.count(DISTINCT source_binding_hash)
+        )::text
+        FROM public.search_recommendable_scripts('qianniu','sku','SKU-NO-HIT');
+        RESET ROLE;`),
+    );
+    if (
+      Number(searchReadyNoHit.rows) !== 1 ||
+      Number(searchReadyNoHit.sentinels) !== 1 ||
+      Number(searchReadyNoHit.release_ids) !== 1 ||
+      Number(searchReadyNoHit.source_hashes) !== 1
+    ) {
+      throw new Error("来源门正常时，合法 no-hit 未返回唯一内部上下文哨兵。");
+    }
+    await runSql(
+      "SELECT public.suspend_authoritative_source('srcv_gate_presale','SOURCE_REVOKED','EVD-GATE-SUSPEND','USR-GATE','owner');",
+    );
+    const searchBlockedRows = Number(
+      await queryScalar(`SET ROLE app_runtime;
+        SELECT pg_catalog.count(*)
+        FROM public.search_recommendable_scripts('qianniu','sku','SKU-NO-HIT');
+        RESET ROLE;`),
+    );
+    if (searchBlockedRows !== 0) {
+      throw new Error("来源门异常时，受控搜索函数未失败关闭为零行。");
     }
 
     const announceAckDenialKey = `sda_${"a".repeat(64)}`;
@@ -701,7 +766,7 @@ async function main() {
     const schemaComment = await queryScalar(
       "SELECT COALESCE(obj_description('public'::regnamespace, 'pg_namespace'),'');",
     );
-    const missingSchemaCommentFragments = ["schema.v1.13", ...REQUIRED_SCHEMA_COMMENT_FRAGMENTS].filter(
+    const missingSchemaCommentFragments = ["schema.v1.14", ...REQUIRED_SCHEMA_COMMENT_FRAGMENTS].filter(
       (fragment) => !schemaComment.includes(fragment),
     );
     if (missingSchemaCommentFragments.length > 0) {
@@ -719,6 +784,8 @@ async function main() {
       membershipCount,
       aclTests,
       aclSideEffects,
+      searchReadyNoHit,
+      searchBlockedRows,
       announceAckAuditRows,
       announceAckAuditMismatch,
       constraintTests,
@@ -764,6 +831,7 @@ async function main() {
     { id: "object-extension-inventory", status: "PASS" },
     { id: "capability-role-safety", status: "PASS" },
     { id: "acl-negative-paths", status: "PASS", cases: successfulReport.aclTests.length },
+    { id: "search-no-hit-context-and-source-denial", status: "PASS", cases: 2 },
     { id: "announce-ack-source-denial-wrapper", status: "PASS", cases: 3 },
     { id: "constraint-negative-paths", status: "PASS", cases: successfulReport.constraintTests.length },
     { id: "idempotent-rerun", status: "PASS" },
@@ -784,7 +852,7 @@ async function main() {
       sha256: verifierSha,
       node: process.version,
     },
-    schema: { version: "v1.13", sha256: schemaSha },
+    schema: { version: "v1.14", sha256: schemaSha },
     environment: {
       postgresql: successfulReport.pgVersion,
       encoding: successfulReport.serverEncoding,
@@ -797,7 +865,7 @@ async function main() {
     inventory: successfulReport.inventory,
     checks,
     overall: "PASS_WITH_LIMITATION",
-    certified: ["current schema.v1.13 clean-install reference DDL preflight on isolated PostgreSQL 15"],
+    certified: ["current schema.v1.14 clean-install reference DDL preflight on isolated PostgreSQL 15"],
     not_certified: [
       "immutable migration chain or N/N-1 upgrade",
       "application runtime, API, worker or Electron behavior",
@@ -828,7 +896,7 @@ async function main() {
         `- 执行时间（UTC）：${executedAtUtc}`,
         `- 执行时间（Asia/Shanghai）：${executedAtShanghai}`,
         `- 预检器：\`verify_customer_agent_pg15.mjs\` v${VERIFIER_VERSION} / SHA-256 \`${verifierSha}\``,
-        `- schema：\`v1.13\` / SHA-256 \`${schemaSha}\``,
+        `- schema：\`v1.14\` / SHA-256 \`${schemaSha}\``,
         `- PostgreSQL：${successfulReport.pgVersion}`,
         "- 总结论：**PASS-WITH-LIMITATION**",
         "- 已通过：当前 reference DDL clean install、对象/扩展/角色、ACL 与约束负例、完整二次执行保留数据、COMMIT 前故障的事务原子回滚",
@@ -837,7 +905,7 @@ async function main() {
         "",
         "## 严格边界",
         "",
-        "本证据只证明当前 schema.v1.13 clean-install reference DDL 在本机隔离 PostgreSQL 15 的设计前置预检。它不证明 migration、N/N-1、runtime、托管 PG、备份恢复、并发/死锁、压测或生产就绪，不自动修改 G0/Scope/Ddev。",
+        "本证据只证明当前 schema.v1.14 clean-install reference DDL 在本机隔离 PostgreSQL 15 的设计前置预检。它不证明 migration、N/N-1、runtime、托管 PG、备份恢复、并发/死锁、压测或生产就绪，不自动修改 G0/Scope/Ddev。",
         "",
       ].join("\n"),
     ],
@@ -871,7 +939,7 @@ async function main() {
       [
         "status=PASS",
         "schema=business-docs/01-客服Agent项目/20-设计-进行中/33-schema-v1-草案.sql",
-        "version=v1.13",
+        "version=v1.14",
         `sha256=${schemaSha}`,
         "dialect=PostgreSQL 15+",
         "purpose=clean-install reference DDL preflight only",
@@ -903,6 +971,8 @@ async function main() {
         `runtime_raw_release_items_read=${successfulReport.aclSideEffects.raw_release_items_read}`,
         `runtime_backing_view_read=${successfulReport.aclSideEffects.backing_view_read}`,
         `runtime_controlled_search_execute=${successfulReport.aclSideEffects.controlled_search_execute}`,
+        `search_ready_no_hit_sentinels=${successfulReport.searchReadyNoHit.sentinels}`,
+        `search_source_gate_blocked_rows=${successfulReport.searchBlockedRows}`,
         `announce_ack_denial_audit_rows=${successfulReport.announceAckAuditRows}`,
         `announce_ack_denial_audit_mismatch=${successfulReport.announceAckAuditMismatch.observed_sqlstate}`,
         "",
@@ -941,7 +1011,7 @@ async function main() {
       [
         "status=NOT_CERTIFIED",
         "reason=no immutable migration artifact or prior signed release baseline exists before Ddev/DEV-M0",
-        "verified_now=current schema.v1.13 clean-install reference DDL preflight only",
+        "verified_now=current schema.v1.14 clean-install reference DDL preflight only",
         "not_verified=expand/backfill/validate/contract, N/N-1, runtime, managed PG, backup/restore, production",
         "ddev_authorized=false",
         "g0_scope_counts_changed=false",

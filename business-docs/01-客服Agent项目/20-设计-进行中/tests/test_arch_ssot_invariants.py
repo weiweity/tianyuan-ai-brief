@@ -43,13 +43,14 @@ IMPORT_ISSUE_CODES = {
     "GOVERNANCE_HASH_MISMATCH",
 }
 
-SCHEMA_VERSION = "schema.v1.13"
-SCHEMA_SHA256 = "de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02"
+SCHEMA_VERSION = "schema.v1.14"
+SCHEMA_SHA256 = "edf909bf9450b5745a85ced4a75a2e2de3e5b061847562cd3a68c9c7c226da99"
+DEV_M1_SCHEMA_V1_13_SHA256 = "de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02"
 DEV_M0_SCHEMA_VERSION = "schema.v1.12"
 DEV_M0_SCHEMA_SHA256 = "47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801"
 OPENAPI_VERSION = "1.11.0"
 OPENAPI_SHA256 = "06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4"
-GRAMMAR_SHA256 = "e7a641c2459a54713f58354c4e7b13f122723f871cd5aa278b6bc732dbf4bb3f"
+GRAMMAR_SHA256 = "11a37902e36b5424cb28ee35cd196f63aac3a1d464a94ed504a712e4ce401b12"
 GRAMMAR_SQL_STATEMENTS = 513
 GRAMMAR_FUNCTION_BODIES = 89
 GRAMMAR_DEC042_GUARDS = 20
@@ -553,7 +554,7 @@ def test_api_contract_ports_and_state_machine() -> None:
         t,
         "DEC-042 边界",
         "schema v1.13",
-        SCHEMA_SHA256,
+        DEV_M1_SCHEMA_V1_13_SHA256,
         "OpenAPI 1.11.0",
         OPENAPI_SHA256,
     )
@@ -1793,6 +1794,9 @@ def test_dec_042_content_governance_machine_contract_is_fail_closed_and_complete
         "p_platform TEXT",
         "p_product_context_type TEXT",
         "p_product_context_ref TEXT",
+        "is_candidate BOOLEAN",
+        "candidate.script_id IS NOT NULL",
+        "LEFT JOIN LATERAL",
         "FROM public.v_scripts_recommendable",
         "public.content_scope_matches",
     ):
@@ -1808,7 +1812,7 @@ def test_dec_042_content_governance_machine_contract_is_fail_closed_and_complete
     _assert_same_line(
         development_increment,
         "DEV-M1 机器合同增量",
-        "schema.v1.13",
+        "schema.v1.14",
         SCHEMA_SHA256,
         "OpenAPI `1.11.0`",
         OPENAPI_SHA256,
@@ -2287,7 +2291,7 @@ def test_waterfall_gate_status() -> None:
         for line in anchor_lines:
             assert SCHEMA_SHA256 in line and OPENAPI_SHA256 in line, line
     assert len(_read("openapi.v1.yaml").encode("utf-8")) == 174476
-    assert len(_read("33-schema-v1-草案.sql").encode("utf-8")) == 347137
+    assert len(_read("33-schema-v1-草案.sql").encode("utf-8")) == 347716
 
     contract_set_tool = (
         DESIGN.parent.parent / "08-工具" / "export_customer_agent_contract_set.mjs"
