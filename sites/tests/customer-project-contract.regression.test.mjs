@@ -324,7 +324,7 @@ test("内容真源由单工作簿收口，G0 与 Ddev 保持独立签发证据",
     charter,
     /内容 \/ 话术 Owner \| USR-CONTENT-001 已接受 ROLE-CONTENT-LEAD[^\n]+`EVD-CONTENT-OWNER-ACCEPT-20260809`/
   );
-  assert.match(ledger, /> \*\*版本：\*\* v3\.79 · 2026-09-03/);
+  assert.match(ledger, /> \*\*版本：\*\* v3\.80 · 2026-09-04/);
   assert.match(
     ledger,
     /G0-05[^\n]+\| USR-CONTENT-001 \/ ROLE-CONTENT-LEAD [^\n]+\| \*\*Pass\*\* \| `EVD-CONTENT-OWNER-ACCEPT-20260809`/
@@ -401,7 +401,7 @@ test("内容真源由单工作簿收口，G0 与 Ddev 保持独立签发证据",
   assert.match(ledger, /真实数据、多人协作、飞书运行接入、RAGFlow 真实索引、部署或真实 Pilot 前仍执行 `PROD-ACL-01`/);
   assert.match(
     ledger,
-    /CR-004[^\n]+静态合同已选择[^\n]+单工作簿证据已关闭 G0-09 \/ Scope #9[^\n]+W4 已实现[^\n]+migration \/ PG 控制面[^\n]+业务 API \/ 客户端运行能力仍待后续切片实现/
+    /CR-004[^\n]+静态合同已选择[^\n]+单工作簿证据已关闭 G0-09 \/ Scope #9[^\n]+DEV-M1 已在纯合成 PostgreSQL 15 链路实现[^\n]+search[^\n]+query \/ impression \/ adoption \/ escalation[^\n]+desktop[^\n]+真实 G1a 仍未接入/
   );
   assert.match(
     scope,
@@ -501,7 +501,7 @@ test("Ddev 已签时双仓职责仍保持隔离，历史绿地证据不冒充开
     /阶段边界[^\n]+Ddev 后 \/ Pilot Ready 前[^\n]+不计入 G0-11 \/ G0-15[^\n]+G0 前只签策略、方案、Owner、目标与证据入口/
   );
   assert.match(ledger, /\| 最终结论 \| \[x\] 绿地隔离通过[^\n]+`EVD-G0-08-GREENFIELD-ISOLATION-20260810`[^\n]+只关闭 G0-08 \/ Scope #8/);
-  assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+原 v3 合成原型[^\n]+不单独计正式 DEV-M0[^\n]+已按 `05` \/ `46` 完成正式 DEV-M0 的 `W0`～`W6`[^\n]+DEV-M1\+[^\n]+仍须后续能力门/);
+  assert.match(ledger, /已指定独立 Git 仓 `customer-agent-prototype` 为产品实施仓[^\n]+原 v3 合成原型[^\n]+不单独计正式 DEV-M0[^\n]+已按 `05` \/ `46` 完成 DEV-M0 与 DEV-M1 的合成 \/ 测试范围[^\n]+真实 G1a[^\n]+DEV-M2\+[^\n]+仍须后续能力门/);
   assert.match(ledger, /\| 外部责任包 \| \*\*14\/14 Pass\*\* \|/);
   assert.match(ledger, /\| Scope 检查 \| \*\*15\/15 Pass\*\* \|/);
   assert.match(ledger, /\| Ddev \| \*\*2026-08-31\*\* \|[^\n]+EVD-DDEV-AUTH-20260831/);
@@ -661,7 +661,7 @@ test("执行中心回归内部推进，只向 canonical 09 提供会场入口", 
   assert.doesNotMatch(template, /id="agenda"|data\.meeting\.agenda|进入投影主持|52～60 决定回读/);
 });
 
-test("生命周期导航将 09 保留为需求阶段快照、设计标记为已收口并指向 DEV-M0", async () => {
+test("生命周期导航将 09 保留为需求阶段快照、设计标记为已收口并指向当前开发", async () => {
   const [rootReadme, dashboard, map, projectReadme, inventory, toolReadme, packageText, historicalIndex] = await Promise.all([
     readRepo("README.md"),
     readRepo("business-docs/00-项目驾驶舱.md"),
@@ -678,7 +678,7 @@ test("生命周期导航将 09 保留为需求阶段快照、设计标记为已�
   }
   for (const document of [rootReadme, dashboard, map, projectReadme, inventory]) {
     assert.match(document, /设计[^\n]*已收口/);
-    assert.match(document, /DEV-M0/);
+    assert.match(document, /DEV-M1/);
     assert.doesNotMatch(document, /开 08-04 启动会（唯一主屏）/);
   }
   assert.match(map, /20-设计-进行中[^\n]*Ddev (?:签名|签发)[^\n]*兼容路径/);

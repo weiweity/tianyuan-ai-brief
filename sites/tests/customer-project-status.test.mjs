@@ -453,11 +453,11 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   const status = deriveProjectStatus(sources);
   const currentVersions = currentSourceVersions(sources);
   const signedVersions = authorizationSourceVersions(sources);
-  assert.equal(currentVersions.charter, "v3.41");
+  assert.equal(currentVersions.charter, "v3.42");
   assert.equal(signedVersions.charter, "v3.35");
-  assert.equal(currentVersions.schedule, "v3.34");
+  assert.equal(currentVersions.schedule, "v3.35");
   assert.equal(signedVersions.schedule, "v3.28");
-  assert.equal(currentVersions.ledger, "v3.79");
+  assert.equal(currentVersions.ledger, "v3.80");
   assert.equal(signedVersions.ledger, "v3.72");
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -478,13 +478,13 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓处于 DEV-M0 · COMPLETE；W0、W1、W2、W3、W4、W5、W6 已完成；W5 runtime pool / service readiness 通过 PR #14 合并为 49a574a9ff763c64550d87b9e97cf033caf12f90；W6 退出收口通过 PR #15 合并为 44b863d90dde8db1479f774206a5bf98f57c4560，候选头 15566eb9ce6573493d0cefc49c054fdf4b13164c 的 CI run 33729754086 三条 lane 全绿。下一动作：DEV-M1 开工评审与授权（待单独授权）。真实数据、飞书运行接入、业务九端口、部署与 Pilot 均未放行",
-    milestone: "DEV-M0",
+    detail: "产品实施仓处于 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成；PR #17（deef599777ebc954c5a76949ab21ade07df65805）、#18（362e53c8eaf4995774eeb0c46660c54c316ecd04）、#19（530e5bb9221f5adb62987f18879f6080c18849bd）、#20（5cf650ca87e0948f6dff6ad0bed6be078017e3f6）已合并；最终候选头 f13ac13 的 CI run 33785347931 三条 lane 全绿。W5 合成 runner 为 50/50、expected hit 38/38、expected no-hit 12/12、禁返 0、后端错误 0，但固定为 NOT_SIGNED / NOT_EVALUATED。下一动作：DEC-SEARCH-01 / 真实 G1a 准入复核（待单独授权）。DEV-M2、真实数据、飞书运行接入、desktop adapter、部署与 Pilot 均未放行",
+    milestone: "DEV-M1",
     milestoneState: "COMPLETE",
-    completedSlices: ["W0", "W1", "W2", "W3", "W4", "W5", "W6"],
+    completedSlices: ["W0", "W1", "W2", "W3", "W4", "W5"],
     nextSlice: "",
     nextSliceName: "",
-    nextAction: "DEV-M1 开工评审与授权",
+    nextAction: "DEC-SEARCH-01 / 真实 G1a 准入复核",
     evidenceIds: [],
   });
   assert.equal(isChecked("[X]"), true);
@@ -1131,7 +1131,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions, { schedule: "v3.16" }),
-      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.34 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.35 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "冻结输入清单",
@@ -1151,7 +1151,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions).replace(/^01 /, "010 "),
-      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.34 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.35 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "允许环境与数据",

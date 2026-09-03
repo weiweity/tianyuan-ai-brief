@@ -506,11 +506,11 @@ function synchronizeDdevSummary(html, projectStatus) {
     "Ddev 摘要中的 Ddev 状态"
   );
   const authorizationCopy = projectStatus.ddevReady
-    ? "G0 与 DEC-DDEV-01 已分别签发；当前只放行 DEV-M0，后续里程碑仍按退出证据推进"
+    ? "G0 与 DEC-DDEV-01 已分别签发；初始即时范围为 DEV-M0，后续里程碑按独立授权与退出证据推进"
     : "全部通过并分别签发 G0 与 DEC-DDEV-01 后方可建立 Ddev";
   content = replaceUnique(
     content,
-    /(?:全部通过并分别签发 G0 与 DEC-DDEV-01 后方可建立 Ddev|G0 与 DEC-DDEV-01 已分别签发；当前只放行 DEV-M0，后续里程碑仍按退出证据推进)/i,
+    /(?:全部通过并分别签发 G0 与 DEC-DDEV-01 后方可建立 Ddev|G0 与 DEC-DDEV-01 已分别签发；(?:当前只放行 DEV-M0|初始即时范围为 DEV-M0)，后续里程碑(?:仍)?按(?:独立授权与)?退出证据推进)/i,
     authorizationCopy,
     "Ddev 授权状态说明"
   );

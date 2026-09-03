@@ -86,7 +86,7 @@ function readAuthorizationShell(projectStatus) {
       : projectStatus.g0Ready
         ? "G0 Pass / 待 Ddev"
         : "G0 / Ddev 未完成",
-    summary: `${counts}；${g0}，${ddev}${projectStatus.ddevReady ? "；只即时放行 DEV-M0" : ""}`,
+    summary: `${counts}；${g0}，${ddev}${projectStatus.ddevReady ? "；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进" : ""}`,
   };
 }
 
@@ -95,7 +95,7 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   const authorization = readAuthorizationShell(projectStatus);
   assert.ok(["pass", "partial", "todo"].includes(development.gateClass));
   const currentGate = projectStatus.ddevReady ? "第 4 关代码开发" : "第 3→4 关组织授权门";
-  const currentSummary = `${authorization.summary}；${development.currentSummary}${projectStatus.ddevReady ? "DEV-M1、真实数据、飞书运行接入、Pilot 与生产仍未放行。" : ""}`;
+  const currentSummary = `${authorization.summary}；${development.currentSummary}${projectStatus.ddevReady ? "真实数据、飞书运行接入、Pilot 与生产仍未放行。" : ""}`;
   const developmentSpan = `<span class="gate ${development.gateClass}" data-current-development>代码开发：${escapeHtml(development.codeStatus)}</span>`;
 
   if (/data-current-development/.test(board)) {
@@ -122,7 +122,7 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   board = replaceUnique(
     board,
     /<div class="cv-card" role="listitem"><div class="k">组织门禁<\/div><div class="v">[\s\S]*?<\/div><div class="d">[\s\S]*?<\/div><\/div>/g,
-    () => `<div class="cv-card" role="listitem"><div class="k">组织门禁</div><div class="v">${escapeHtml(authorization.value)}</div><div class="d">${escapeHtml(`${authorization.summary}。${development.currentSummary}${projectStatus.ddevReady ? "只有 DEV-M0 已放行，DEV-M1 及真实运行能力仍须后续门禁。" : "未获 Ddev 前不得开始正式代码开发。"}`)}</div></div>`,
+    () => `<div class="cv-card" role="listitem"><div class="k">组织门禁</div><div class="v">${escapeHtml(authorization.value)}</div><div class="d">${escapeHtml(`${authorization.summary}。${development.currentSummary}${projectStatus.ddevReady ? "下一里程碑、真实 G1a 及真实运行能力仍须后续门禁。" : "未获 Ddev 前不得开始正式代码开发。"}`)}</div></div>`,
     "组织门禁状态卡"
   );
   board = replaceUnique(
@@ -139,8 +139,14 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   );
   board = replaceUnique(
     board,
+    /<p class="cv-note"><strong>小白说明：<\/strong>[\s\S]*?<\/p>/g,
+    () => `<p class="cv-note"><strong>小白说明：</strong>${projectStatus.ddevReady ? `Ddev 已签发，${escapeHtml(development.currentSummary)}` : "施工图已经锁定，但组织授权门尚未通过。"}当前证据只覆盖获批的纯合成工程范围；真实来源、飞书运行接入、desktop adapter、Pilot 与生产仍须后续独立门禁。</p>`,
+    "小白版当前开发说明"
+  );
+  board = replaceUnique(
+    board,
     /<li><strong>G0\/Ddev 组织授权门（不计入八关）<\/strong>：[\s\S]*?<\/li>/g,
-    () => `<li><strong>G0/Ddev 组织授权门（不计入八关）</strong>：它位于第 3 关与第 4 关之间，${authorization.passed ? "现已通过" : "当前尚未全部通过"}；${escapeHtml(authorization.summary)}。${escapeHtml(development.currentSummary)}G0-15 与 Ddev 均不授权真实数据、飞书运行链路、Pilot、生产发布、付费调用、自动发送或 DEV-M1。</li>`,
+    () => `<li><strong>G0/Ddev 组织授权门（不计入八关）</strong>：它位于第 3 关与第 4 关之间，${authorization.passed ? "现已通过" : "当前尚未全部通过"}；${escapeHtml(authorization.summary)}。${escapeHtml(development.currentSummary)}G0-15 与 Ddev 均不自动授权下一里程碑、真实 G1a、真实数据、飞书运行链路、Pilot、生产发布、付费调用或自动发送。</li>`,
     "小白版组织授权说明"
   );
   board = replaceUnique(
@@ -151,6 +157,12 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   );
   board = replaceUnique(
     board,
+    /<tr><th>组织授权门（不计入八关）<\/th><td><span class="gate (?:pass|partial|todo)">[\s\S]*?<\/span><\/td><td>项目\/业务\/预算\/IT安全<\/td><\/tr>/g,
+    () => `<tr><th>组织授权门（不计入八关）</th><td><span class="gate ${authorization.passed ? "pass" : "todo"}">${authorization.passed ? "通过" : "未通过"} · ${escapeHtml(authorization.summary)}</span></td><td>项目/业务/预算/IT安全</td></tr>`,
+    "瀑布状态表组织授权门"
+  );
+  board = replaceUnique(
+    board,
     /<tr><th>4 代码开发<\/th><td><span class="gate (?:pass|partial|todo)">[\s\S]*?<\/span><\/td><td>开发<\/td><\/tr>/g,
     () => `<tr><th>4 代码开发</th><td><span class="gate ${development.gateClass}">${escapeHtml(development.codeStatus)}</span></td><td>开发</td></tr>`,
     "瀑布状态表代码开发行"
@@ -158,7 +170,7 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   board = replaceUnique(
     board,
     /(<footer>离线单文件[\s\S]*?当前规范以 37\/39\/40\/46 为准 · )[\s\S]*?( · schema v1\.12)/g,
-    (_match, prefix, suffix) => `${prefix}${escapeHtml(authorization.summary)} · 代码开发当前为 ${escapeHtml(development.footerStatus)}${projectStatus.ddevReady ? "；DEV-M1 与真实运行能力未放行" : ""}${suffix}`,
+    (_match, prefix, suffix) => `${prefix}${escapeHtml(authorization.summary)} · 代码开发当前为 ${escapeHtml(development.footerStatus)}${projectStatus.ddevReady ? "；下一里程碑与真实运行能力未自动放行" : ""}${suffix}`,
     "页脚产品开发状态"
   );
   return board;

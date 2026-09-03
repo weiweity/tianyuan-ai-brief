@@ -37,11 +37,11 @@ note right
   当前 schema v1.12 reference DDL 本地 PG15 预检：PASS-WITH-LIMITATION
   旧 c1e74c EVD：仅历史，不外推当前 schema
   DEC-042 schema v1.12 / OpenAPI 1.11.0 静态合同：LOCKED
-  W2类型/validator + W3 API/config /health：COMPLETE
-  W4 0001..0009 migration/PG15控制面：COMPLETE · N-only PASS · 真实N-1 N/A
-  W5 pool + /ready：COMPLETE
-  W6 CI + 非部署候选边界：COMPLETE
-  desktop接库/业务九端口/动态EVD：NOT_IMPLEMENTED；managed/backup/concurrency/production：NOT_CERTIFIED
+  DEV-M0 W2类型/validator + W3 API/config /health：COMPLETE
+  DEV-M0 W4 migration/PG15 + W5 pool/ready + W6 CI：COMPLETE
+  DEV-M1 mock auth/policy + SearchBackend + Search/Events：COMPLETE
+  DEV-M1 50条纯合成runner：50/50 · NOT_SIGNED / NOT_EVALUATED
+  desktop接库/真实来源/动态EVD：NOT_IMPLEMENTED；managed/backup/concurrency/production：NOT_CERTIFIED
   *升级/并发/生产/真机仍未认证；本地预检不替代这些证据
 end note
 
@@ -55,28 +55,27 @@ note right
   placeholder内存渲染/二次确认/零持久纳入 DEV-M3
   **组织授权门：G0 / Ddev 已 Pass（不计入八关）**
   EVD-G0-SIGN-20260831 · EVD-DDEV-AUTH-20260831
-  即时只放行 DEV-M0
+  初始即时只放行 DEV-M0；后续里程碑独立授权
   外部责任包 14/14 · Scope 15/15
-  产品仓 DEV-M0 COMPLETE · W0..W6 已收口
-  下一步：DEV-M1 开工评审与独立授权
+  产品仓 DEV-M0 与 DEV-M1 COMPLETE
+  下一步：DEC-SEARCH-01 / 真实 G1a 准入复核
 end note
 
 |代码开发|
 :代码开发\n产出：API · 壳 · 迁移脚本;
 note right
-  **DEV-M0 COMPLETE · W0..W6 COMPLETE**
-  workspace/机械迁移 + 合同codegen/validator已完成
-  API/config、migration/PG15与基础设施/ready已完成
-  W6 clean-checkout CI/Windows smoke完成
-  非部署候选边界已完成
-  DEV-M1未授权前不实施
-  desktop接库、业务九端口/worker仍未实现
+  **DEV-M0 与 DEV-M1 COMPLETE**
+  DEV-M0 workspace/合同/migration/runtime/CI 已完成
+  DEV-M1 mock auth/policy + 受控SearchBackend已完成
+  Search + Events事务与合成runner已完成
+  runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED
+  desktop、真实来源、DEV-M2与生产仍未放行
 end note
 
 |单元测试|
 :单元测试\n产出：INV / 端口单测绿;
 note right
-  DEV-M0完整pnpm check、PG15集成与Windows feasibility smoke已绿
+  DEV-M1完整pnpm check、PG15集成与Windows feasibility smoke已绿
   技术第5关仍待独立进关
 end note
 
