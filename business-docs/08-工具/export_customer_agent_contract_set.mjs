@@ -193,13 +193,42 @@ export function assertNormativeContractAlignment({
   assertFrozenDesignAlignment({ architecture, implementation });
 
   for (const [label, source, anchor] of [
-    ["39 API 合同当前声明", apiSemantics, "**DEC-042 边界 / ENG-T1 修正：**"],
     ["DEV-M1 开发增量当前声明", developmentIncrement, "**DEV-M1 机器合同增量：**"],
     ["DEV-M1 开发增量产物声明", developmentIncrement, "**实际产物必须精确匹配：**"],
   ]) {
     for (const line of linesForAnchor(source, label, anchor)) {
       assertLineCarriesHashes(line, label, databaseHash, openapiHash);
     }
+  }
+
+  // 39 is a frozen human-readable transaction contract. A runtime-discovered machine-only
+  // correction must not rewrite it; instead the live development increment carries both the
+  // predecessor lineage and the current machine hash. Require those two independent documents
+  // to agree on the predecessor so an arbitrary stale 39 hash cannot silently pass export.
+  const apiLines = linesForAnchor(
+    apiSemantics,
+    "39 API 合同冻结声明",
+    "**DEC-042 边界 / ENG-T1 修正：**",
+  );
+  const predecessorLines = linesForAnchor(
+    developmentIncrement,
+    "DEV-M1 直接前序机器合同声明",
+    "**直接前序机器合同：**",
+  );
+  if (apiLines.length !== 1 || predecessorLines.length !== 1) {
+    throw new Error("39 与 DEV-M1 直接前序机器合同声明必须各自唯一");
+  }
+  const apiPair = hashPairFromLine(apiLines[0], "39 API 合同冻结声明");
+  const predecessorPair = hashPairFromLine(
+    predecessorLines[0],
+    "DEV-M1 直接前序机器合同声明",
+  );
+  if (
+    apiPair.databaseHash !== predecessorPair.databaseHash
+    || apiPair.openapiHash !== predecessorPair.openapiHash
+    || apiPair.openapiHash !== openapiHash
+  ) {
+    throw new Error("39 API 合同冻结声明与 DEV-M1 直接前序机器合同链不一致");
   }
 }
 
