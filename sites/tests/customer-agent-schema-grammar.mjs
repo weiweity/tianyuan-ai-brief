@@ -105,7 +105,7 @@ for (const functionName of [
 assert.doesNotMatch(sql, /CREATE TABLE IF NOT EXISTS iteration_tickets\b/);
 assert.match(sql, /p_job_type NOT IN \('import_validate','work_order_import_validate'\)/);
 
-assert.match(sql, /^-- schema\.v1\.12\b/m);
+assert.match(sql, /^-- schema\.v1\.13\b/m);
 const sourceRegistry = sql.match(
   /CREATE TABLE IF NOT EXISTS authoritative_source_versions \([\s\S]*?\n\);/,
 )?.[0];
@@ -438,12 +438,14 @@ for (const forbiddenSearchField of [
   "primary_review_evd",
   "secondary_reviewer_role",
   "secondary_review_evd",
-  "questions_json",
-  "search_document",
-  "search_fallback_text",
 ]) {
   assert.doesNotMatch(scopedSearchFunction, new RegExp(`candidate\\.${forbiddenSearchField}\\b`));
 }
+assert.match(scopedSearchFunction, /questions JSONB,[\s\S]*?search_document TSVECTOR,[\s\S]*?search_fallback_text TEXT/);
+assert.match(scopedSearchFunction, /public\.content_public_questions\(candidate\.questions_json\)/);
+assert.doesNotMatch(scopedSearchFunction, /^\s*candidate\.questions_json,?\s*$/m);
+assert.match(scopedSearchFunction, /candidate\.search_document/);
+assert.match(scopedSearchFunction, /candidate\.search_fallback_text/);
 assert.match(sql, /WHERE ri\.effective_from <= now\(\)[\s\S]*?now\(\) < ri\.effective_to/);
 assert.doesNotMatch(sql, /ri\.effective_to\s*>=\s*now\(\)|now\(\)\s*<=\s*ri\.effective_to/);
 assert.match(sql, /v_scripts_recommendable[\s\S]*?content_questions_source_assets_are_active\(ri\.questions_json\)/);
@@ -1085,7 +1087,10 @@ const hasExplicitSearchProjection = (candidate) => {
     reader &&
       /RETURNS TABLE\(/.test(reader) &&
       !/RETURNS SETOF|candidate\.\*/.test(reader) &&
-      !/candidate\.(?:primary_reviewer_id|secondary_reviewer_id|search_document|questions_json)/.test(reader),
+      !/candidate\.(?:primary_reviewer_id|secondary_reviewer_id)/.test(reader) &&
+      /public\.content_public_questions\(candidate\.questions_json\)/.test(reader) &&
+      /candidate\.search_document/.test(reader) &&
+      /candidate\.search_fallback_text/.test(reader),
   );
 };
 expectRejectedMutation(

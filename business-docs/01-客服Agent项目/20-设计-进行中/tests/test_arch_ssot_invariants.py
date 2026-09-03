@@ -12,6 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 
 DESIGN = Path(__file__).resolve().parents[1]
+DEVELOPMENT = DESIGN.parent / "30-开发-进行中"
 HISTORY = DESIGN.parent / "99-历史" / "2026-08-06-架构设计收口"
 IMPORT_ISSUE_CODES = {
     "MISSING_REQUIRED_FIELD",
@@ -42,11 +43,13 @@ IMPORT_ISSUE_CODES = {
     "GOVERNANCE_HASH_MISMATCH",
 }
 
-SCHEMA_VERSION = "schema.v1.12"
-SCHEMA_SHA256 = "47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801"
+SCHEMA_VERSION = "schema.v1.13"
+SCHEMA_SHA256 = "de8b7d9bdcac4ecad844025a47228ba339dad47d61861d261c492cb16a1aea02"
+DEV_M0_SCHEMA_VERSION = "schema.v1.12"
+DEV_M0_SCHEMA_SHA256 = "47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801"
 OPENAPI_VERSION = "1.11.0"
 OPENAPI_SHA256 = "06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4"
-GRAMMAR_SHA256 = "b0465b4e0af917eab4064339a4fda292c767db075ea8138f97ebf5156a16680f"
+GRAMMAR_SHA256 = "e7a641c2459a54713f58354c4e7b13f122723f871cd5aa278b6bc732dbf4bb3f"
 GRAMMAR_SQL_STATEMENTS = 513
 GRAMMAR_FUNCTION_BODIES = 89
 GRAMMAR_DEC042_GUARDS = 20
@@ -61,6 +64,12 @@ def _read(name: str) -> str:
 def _read_history(name: str) -> str:
     p = HISTORY / name
     assert p.is_file(), f"missing archived document {p}"
+    return p.read_text(encoding="utf-8")
+
+
+def _read_development(name: str) -> str:
+    p = DEVELOPMENT / name
+    assert p.is_file(), f"missing development increment {p}"
     return p.read_text(encoding="utf-8")
 
 
@@ -543,7 +552,7 @@ def test_api_contract_ports_and_state_machine() -> None:
     _assert_same_line(
         t,
         "DEC-042 边界",
-        "schema v1.12",
+        "schema v1.13",
         SCHEMA_SHA256,
         "OpenAPI 1.11.0",
         OPENAPI_SHA256,
@@ -1429,6 +1438,7 @@ def test_dec_042_content_governance_machine_contract_is_fail_closed_and_complete
     model = _read("26-话术库与自动事实数据模型.md")
     contract = _read("39-API合同与发布状态机-v1.md")
     ssot = _read("37-架构SSOT-v1.md")
+    development_increment = _read_development("01-DEV-M1搜索合同增量.md")
     gate_board = _read("40-架构图与关卡状态.md")
     ledger = (DESIGN.parent / "02-G0责任与证据台账.md").read_text(encoding="utf-8")
     scope = (DESIGN.parent / "03-Scope与验收.md").read_text(encoding="utf-8")
@@ -1793,8 +1803,17 @@ def test_dec_042_content_governance_machine_contract_is_fail_closed_and_complete
     assert not re.search(r"GRANT\s+SELECT\s+ON[^;]*\bv_scripts_recommendable\b[^;]*TO\s+app_runtime", acl, flags=re.I | re.S)
     assert not re.search(r"GRANT\s+SELECT\s+ON[^;]*\brelease_items\b[^;]*TO\s+app_runtime", acl, flags=re.I | re.S)
 
-    # Static machine alignment is not runtime proof; signed G0/Ddev still authorizes only the current milestone boundary.
-    _assert_same_line(ssot, "DEC-042", "schema v1.12", "OpenAPI 1.11.0", "迁移", "动态证据", "G0", "Scope", "Ddev")
+    # The Ddev-signed design remains immutable; the current machine increment lives in development.
+    _assert_same_line(ssot, "DEC-042", "schema v1.12", DEV_M0_SCHEMA_SHA256, "OpenAPI 1.11.0", "G0", "Scope", "Ddev")
+    _assert_same_line(
+        development_increment,
+        "DEV-M1 机器合同增量",
+        "schema.v1.13",
+        SCHEMA_SHA256,
+        "OpenAPI `1.11.0`",
+        OPENAPI_SHA256,
+    )
+    _assert_same_line(development_increment, "不修改、替代或重新签发", "37/46", "历史授权投影")
     _assert_same_line(gate_board, "3 实现设计", "Pass", "Ready", "不等于开发授权")
     _assert_same_line(
         gate_board,
@@ -1981,7 +2000,7 @@ def test_waterfall_gate_status() -> None:
         t,
         "PG 证据校正",
         "schema.v1.12",
-        SCHEMA_SHA256,
+        DEV_M0_SCHEMA_SHA256,
         "本机隔离 PostgreSQL 15.18",
         "PASS-WITH-LIMITATION",
         "EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795",
@@ -2019,6 +2038,7 @@ def test_waterfall_gate_status() -> None:
     )
     t45 = _read("../90-评审/2026-08-10_Codex交叉检查报告.md")
     t46 = _read("46-实现设计-开工包.md")
+    development_increment = _read_development("01-DEV-M1搜索合同增量.md")
     _assert_same_line(t45, "日期", "2026-08-13", "v1.41")
     _assert_same_line(t45, "责任入口复核", "13 个角色", "唯一 RACI", "七类 Owner")
     _assert_same_line(
@@ -2217,7 +2237,7 @@ def test_waterfall_gate_status() -> None:
         "- [x]",
         "Ddev 前",
         "schema.v1.12",
-        SCHEMA_SHA256,
+        DEV_M0_SCHEMA_SHA256,
         "本机隔离 PG15.18",
         "静态设计预检",
         "PASS-WITH-LIMITATION",
@@ -2260,9 +2280,14 @@ def test_waterfall_gate_status() -> None:
         anchor_lines = [line for line in t46.splitlines() if anchor in line]
         assert anchor_lines, f"missing implementation hash anchor: {anchor}"
         for line in anchor_lines:
+            assert DEV_M0_SCHEMA_SHA256 in line and OPENAPI_SHA256 in line, line
+    for anchor in ("DEV-M1 机器合同增量", "实际产物必须精确匹配"):
+        anchor_lines = [line for line in development_increment.splitlines() if anchor in line]
+        assert anchor_lines, f"missing development increment hash anchor: {anchor}"
+        for line in anchor_lines:
             assert SCHEMA_SHA256 in line and OPENAPI_SHA256 in line, line
     assert len(_read("openapi.v1.yaml").encode("utf-8")) == 174476
-    assert len(_read("33-schema-v1-草案.sql").encode("utf-8")) == 346632
+    assert len(_read("33-schema-v1-草案.sql").encode("utf-8")) == 347137
 
     contract_set_tool = (
         DESIGN.parent.parent / "08-工具" / "export_customer_agent_contract_set.mjs"
@@ -2584,7 +2609,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     _assert_same_line(
         t,
         "当前 schema v1.12",
-        SCHEMA_SHA256,
+        DEV_M0_SCHEMA_SHA256,
         "OpenAPI 1.11.0",
         OPENAPI_SHA256,
         "PASS-WITH-LIMITATION",
