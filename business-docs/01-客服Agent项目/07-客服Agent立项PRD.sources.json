@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "0691a64d37b36712dffba8f83ffb95678fc86480b2cb645ab0367b3438a94440"
+    "sha256": "10274bc5a1288f61c2fd95925c1f989198970c0374c49dad7c9c54569afb966f"
   },
   "sources": [
     {
@@ -39,7 +39,7 @@
       "id": "delivery",
       "file": "05-全栈交付计划.md",
       "label": "全栈交付计划",
-      "sha256": "c93004ee4cc12c4a3328dc08859cccd80d68d2017ce9402c62c63e1fa1af1124"
+      "sha256": "2e68416a2c1c9a1121687e27a11169f979259eef27c162770248b51688421056"
     },
     {
       "id": "cadence",
@@ -48,7 +48,7 @@
       "sha256": "ed8ce2f10f07126967468f8f05dd08c5e7b89730e7a624fa9f2c3c20b5c58615"
     }
   ],
-  "sourceHash": "4b1ce6a123c0f7c3df9cd32e196a64f1f804501d79f1518a49d41acfbe6d3c32",
+  "sourceHash": "63e8b10b8617f840b5a17fe382a6b028ca31e38e15be7939fd10bf3095e9a7e2",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",
