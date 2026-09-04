@@ -1,10 +1,10 @@
 # 30 · 正式开发阶段（进行中）
 
-> **状态：** `G1A-E0 T1～T3 · COMPLETE · MERGED` · `DEV-M1 W0 / W1 / W2 / W3 / W4 / W5 COMPLETE`
-> **进入与推进证据：** 设计评审通过、G0 / Ddev、DEV-M0 退出证据，产品仓 PR #17～#20 的 DEV-M1 收口，以及 PR #21（`main@be33c0e`）与 post-merge CI run `33849888116`
-> **下一动作：** 在仓外准备 T4 四域真实快照、20+12+18 评测集、DLP/删除计划与独立盲审锁；未获单独授权前不装载、不运行
+> **状态：** `DEV-M1 COMPLETE` · `G1A-E0 T1～T3 COMPLETE · MERGED` · `T4 READY` · `T5 NOT STARTED`
+> **进入与推进证据：** 设计评审、G0 / Ddev、DEV-M0 / DEV-M1 退出证据；产品仓 comparison v2 合同 PR #23（`main@b0a52d9`）与 CI run `33889553752`；仓外 `EVD-G1A-DATA-01`、`EVD-G1A-EVALSET-01`、`EVD-G1A-BLIND-01`、`EVD-G1A-COMPARISON-02`、`EVD-G1A-HOST-01`、`EVD-G1A-PACKAGE-01`
+> **下一动作：** 展示 T5 最终 dry-run 后，另行授权一次受控离线运行；当前不运行、不签发 T6
 
-目录名保持技术第 4 关兼容入口。本项目记录仓只保存阶段、决定和证据；产品代码继续只在独立产品实施仓中维护。`DEV-M0` 与 `DEV-M1` W0～W5 退出证据已完成；G1A-E0 T1～T3 又通过产品仓 PR #21 合并到 `main@be33c0e`，`pnpm test:g1a:e0` 38/38、API 115/115，合并后 CI run `33849888116` 三条 lane 全绿，通过仓外包校验、隔离 PG15、同一 SearchBackend、零事件、脱敏报告与正反清理。该结果仍固定为 `NOT_SIGNED / NOT_EVALUATED`，不自动放行真实 G1a、`DEV-M2`、真实资料、飞书运行接入、desktop adapter、部署、Pilot 或付费调用。
+目录名保持技术第 4 关兼容入口。本项目记录仓只保存阶段、决定和证据；产品代码继续只在独立产品实施仓中维护。`DEV-M0`、`DEV-M1` W0～W5 与 G1A-E0 T1～T3 退出证据已完成；comparison v2 合同已通过 PR #23 合并。仓外 T4 输入包以四个 0600 成员装配，实际产品解析器静态校验通过；宿主网络沙箱与异常残留回收只以纯合成数据预演通过。T5 尚未运行，结果仍固定为 `NOT_SIGNED / NOT_EVALUATED`，不自动放行真实 G1a、`DEV-M2`、飞书运行接入、desktop adapter、部署、Pilot 或付费调用。
 
 当前决定与执行入口：
 

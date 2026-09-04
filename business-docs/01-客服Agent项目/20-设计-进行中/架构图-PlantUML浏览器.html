@@ -551,7 +551,7 @@
       <span class="gate pass">架构设计：通过 · PASS-WITH-CONDITIONS（含 CR-002、CR-003、CR-004、DEC-042 与扩展治理静态增量）</span>
       <span class="gate pass">实现设计：通过 · 文档包 Ready</span>
       <span class="gate partial" data-current-development>代码开发：DEV-M1 · 已完成（W0、W1、W2、W3、W4、W5 已收口）</span>
-      <span class="next">当前推进项：第 4 关代码开发；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</span>
+      <span class="next">当前推进项：第 4 关代码开发；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</span>
     </div>
     <details class="banner usage-details">
       <summary>操作说明与离线演示信息</summary>
@@ -574,11 +574,11 @@
           <div class="cv-card" role="listitem"><div class="k">机器基线</div><div class="v">v1.12 / 1.11.0</div><div class="d">schema 513 statements / 89 function bodies / 20 guards；双 SHA 已冻结，但不等于迁移、类型或 runtime 已完成。</div></div>
           <div class="cv-card" role="listitem"><div class="k">图文边界</div><div class="v">手写壳与 SVG 分账</div><div class="d">本证据卡属于 HTML 手写外壳；PlantUML 源和内嵌 SVG 是独立生成链，未重生成前不冒充 8/8 图形一致性。</div></div>
           <div class="cv-card" role="listitem"><div class="k">扩展治理</div><div class="v">静态已冻结</div><div class="d">签名客户端 N/N-1、只读 PlatformAdapter、迁移兼容矩阵；不新增端口、路由或表。W4 migration / PG 控制面已验证，真实 N-1、PlatformAdapter 与业务 runtime 仍待后续切片。</div></div>
-          <div class="cv-card" role="listitem"><div class="k">组织门禁</div><div class="v">G0 / Ddev Pass</div><div class="d">外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进。DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。下一里程碑、真实 G1a 及真实运行能力仍须后续门禁。</div></div>
+          <div class="cv-card" role="listitem"><div class="k">组织门禁</div><div class="v">G0 / Ddev Pass</div><div class="d">外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进。DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。下一里程碑、真实 G1a 及真实运行能力仍须后续门禁。</div></div>
           <div class="cv-card" role="listitem"><div class="k">架构关</div><div class="v">已通过</div><div class="d">PASS-WITH-CONDITIONS（静态设计）；Ddev 已独立签发，真实问法、Pilot 与上线仍须后续独立签发。</div></div>
         </div>
         <p class="cv-note"><strong>证据口径：</strong>ENG-T1 修正后的当前 schema v1.12（SHA-256 <code>47b667958e522a28df1c04d7c79a56c930bfe0ac04598321824b55744ac4a801</code>）与 OpenAPI 1.11.0（SHA-256 <code>06698f233702591c8f981c7b08ebac4b7d5bc5cc2d69d36014ef2a9f5a6802e4</code>）已锁定静态机器合同；本机隔离 PG15.18 的 reference DDL 预检为 <strong>PASS-WITH-LIMITATION</strong>，证据 <code>EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795</code>，包含 ACK runtime wrapper 的正向、幂等与异体冲突检查。旧 ed5f9822 / c1e74c EVD 仅为历史证据。产品仓 W4 已另行完成 <code>0001..0009</code> immutable migration / PG15 控制面与 N-only 隔离验证；真实 N-1 为 N/A。application runtime、managed PG、backup-restore、concurrency-deadlock 与 production 仍为 NOT_CERTIFIED / NOT_IMPLEMENTED。CR-004 / DEC-042 / ENG-T1 的业务运行硬门尚未实现；压测、真实服务联调与真实设备表现也须分别补证。</p>
-        <p class="cv-note"><strong>小白说明：</strong>Ddev 已签发，DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。当前证据只覆盖获批的纯合成工程范围；真实来源、飞书运行接入、desktop adapter、Pilot 与生产仍须后续独立门禁。</p>
+        <p class="cv-note"><strong>小白说明：</strong>Ddev 已签发，DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。当前证据只覆盖获批的纯合成工程范围；真实来源、飞书运行接入、desktop adapter、Pilot 与生产仍须后续独立门禁。</p>
 
         <h2>NFR 四维设计清单（非运行认证）</h2>
         <table>
@@ -701,7 +701,7 @@
 
 </section>
 <section class="panel" id="panel-wf" data-id="wf" data-on="false" role="tabpanel" aria-labelledby="tab-wf" hidden>
-      <p class="purpose"><strong>生成状态：</strong>本 Tab 已由当前 PlantUML 与项目状态真源确定性重生成并通过对齐检查：<strong>实现设计已通过；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</strong></p>
+      <p class="purpose"><strong>生成状态：</strong>本 Tab 已由当前 PlantUML 与项目状态真源确定性重生成并通过对齐检查：<strong>实现设计已通过；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</strong></p>
   <p class="purpose"><strong>这张图要干嘛：</strong>需求分析→实现设计→开发→测试→发布→运维。</p>
   <div class="zoom-toolbar" data-zoom-for="wf">
     <button type="button" data-act="out" title="缩小">−</button>
@@ -970,7 +970,7 @@
     <h4>和 Demo / G0 的关系（避免误会）</h4>
     <ul>
       <li><strong>业务 Demo</strong>：给业务看一眼能不能用，挂在旁边，不能反过来改架构北极星。</li>
-      <li><strong>G0/Ddev 组织授权门（不计入八关）</strong>：它位于第 3 关与第 4 关之间，现已通过；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进。DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。G0-15 与 Ddev 均不自动授权下一里程碑、真实 G1a、真实数据、飞书运行链路、Pilot、生产发布、付费调用或自动发送。</li>
+      <li><strong>G0/Ddev 组织授权门（不计入八关）</strong>：它位于第 3 关与第 4 关之间，现已通过；外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进。DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。G0-15 与 Ddev 均不自动授权下一里程碑、真实 G1a、真实数据、飞书运行链路、Pilot、生产发布、付费调用或自动发送。</li>
     </ul>
   </div></div><div class="float-body" data-explain-for="views" data-on="false" hidden><div class="explain">
     <h3>怎么看这张图（小白版 · 从上到下）</h3>
@@ -1107,7 +1107,7 @@
 
     <h2>瀑布八关</h2>
     <p>需求分析 → 架构设计 → 实现设计 → 代码开发 → 单元测试 → 系统测试 → 上线发布 → 生产运维</p>
-    <p><strong>当前推进项：</strong>第 4 关代码开发。外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</p>
+    <p><strong>当前推进项：</strong>第 4 关代码开发。外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进；DEV-M1 产品实施与退出证据已完成；下一动作是T5 最终 dry-run 与独立运行授权（待单独授权）。真实数据、飞书运行接入、Pilot 与生产仍未放行。</p>
     <table>
       <thead><tr><th>关卡</th><th>状态</th><th>主责</th></tr></thead>
       <tbody>
@@ -1134,7 +1134,7 @@
       </tbody>
     </table>
 
-    <footer>离线单文件 · 放大/缩小/适应全图/拖拽 · 历史快照仅作非规范证据 · 当前规范以 37/39/40/46 为准 · 外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进 · 代码开发当前为 DEV-M1 · COMPLETE，T4 仓外真实快照、20+12+18 评测集、DLP/删除计划与盲审锁 待单独授权；下一里程碑与真实运行能力未自动放行 · schema v1.12 / OpenAPI 1.11.0 静态合同已锁；W4 migration / PG15 控制面 N-only 已验证，真实 N-1 为 N/A，业务 runtime / 托管 PG / 恢复 / 并发 / 生产仍未认证 · 无外网请求</footer>
+    <footer>离线单文件 · 放大/缩小/适应全图/拖拽 · 历史快照仅作非规范证据 · 当前规范以 37/39/40/46 为准 · 外部责任包 14/14、Scope 15/15；G0=PASS（EVD-G0-SIGN-20260831），Ddev=PASS（EVD-DDEV-AUTH-20260831）；初始即时范围 DEV-M0，后续里程碑按独立授权与退出证据推进 · 代码开发当前为 DEV-M1 · COMPLETE，T5 最终 dry-run 与独立运行授权 待单独授权；下一里程碑与真实运行能力未自动放行 · schema v1.12 / OpenAPI 1.11.0 静态合同已锁；W4 migration / PG15 控制面 N-only 已验证，真实 N-1 为 N/A，业务 runtime / 托管 PG / 恢复 / 并发 / 生产仍未认证 · 无外网请求</footer>
   </div>
 <script>
 (function () {
