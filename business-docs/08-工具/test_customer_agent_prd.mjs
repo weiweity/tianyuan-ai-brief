@@ -216,7 +216,9 @@ await check("关键业务口径完整", async () => {
       requiredFacts.push(
         milestoneLabel,
         slicesLabel,
-        nextAction
+        nextAction,
+        "T4 READY",
+        "T5 NOT STARTED"
       );
       assert.doesNotMatch(visible, /软件(?:尚)?未开发/, "当前 PRD 已进入开发中，不得残留“软件未开发”");
     }

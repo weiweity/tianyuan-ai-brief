@@ -579,6 +579,7 @@ export function authorizationProjectionDigests({
 
 function deriveDevelopmentProgress(development, detail) {
   const normalizedDetail = stripMarkdown(detail);
+  const gateStatusLabel = deriveGateStatusLabel(normalizedDetail);
   const categories = {
     "未开始": "not-started",
     "未开发": "not-started",
@@ -604,6 +605,7 @@ function deriveDevelopmentProgress(development, detail) {
       nextSlice: "",
       nextSliceName: "",
       nextAction: "",
+      gateStatusLabel,
       evidenceIds,
     };
   }
@@ -637,8 +639,16 @@ function deriveDevelopmentProgress(development, detail) {
     nextSlice: next?.[1]?.toUpperCase() || "",
     nextSliceName: next?.[2]?.trim() || "",
     nextAction,
+    gateStatusLabel,
     evidenceIds,
   };
+}
+
+export function deriveGateStatusLabel(detail) {
+  const normalizedDetail = stripMarkdown(String(detail || ""));
+  const markers = [...normalizedDetail.matchAll(/\b(T\d+)\s+(READY|COMPLETE|NOT[ _]STARTED|NOT[ _]SIGNED)\b/gi)]
+    .map((match) => `${match[1].toUpperCase()} ${match[2].toUpperCase().replaceAll("_", " ")}`);
+  return [...new Set(markers)].join(" · ");
 }
 
 function outcome(value, passValues) {

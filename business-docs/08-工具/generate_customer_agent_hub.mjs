@@ -415,9 +415,10 @@ const hasNumberedNextSlice = Boolean(developmentProgress.nextSlice);
 const nextActionLabel = hasNumberedNextSlice
   ? `${developmentProgress.nextSlice} ${developmentProgress.nextSliceName}`
   : developmentProgress.nextAction;
+const gateStatusLabel = developmentProgress.gateStatusLabel;
 const activeProgressSummary = developmentActive
   ? activeMilestoneCompleted
-    ? `${developmentProgress.milestone} 已完成，${completedSlicesLabel} 已收口；下一动作：${nextActionLabel}（待单独授权）。`
+    ? `${developmentProgress.milestone} 已完成，${completedSlicesLabel} 已收口；${gateStatusLabel ? `当前 ${gateStatusLabel}；` : ""}下一动作：${nextActionLabel}（待单独授权）。`
     : hasNumberedNextSlice
     ? `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一切片为 ${nextActionLabel}。`
     : `${developmentProgress.milestone} 正在进行，${completedSlicesLabel} 已完成；下一动作：${nextActionLabel}（待单独授权）。`

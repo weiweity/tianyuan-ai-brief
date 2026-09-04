@@ -372,6 +372,7 @@ function deriveDevelopmentProjection(projectStatus) {
       milestoneState,
       completedSlicesLabel,
       nextActionLabel,
+      gateStatusLabel: progress.gateStatusLabel,
     };
   }
 
@@ -396,7 +397,7 @@ function synchronizeDevelopmentSummary(html, projectStatus) {
     const milestoneCompleted = development.milestoneState === "COMPLETE";
     eyebrow = `项目已批准 · G0 / Ddev 已签发 · ${development.milestone} ${milestoneCompleted ? "已完成" : "进行中"}`;
     heroNote = milestoneCompleted
-      ? `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 产品实施已完成，${development.completedSlicesLabel} 已收口，下一动作是 ${development.nextActionLabel}，仍须单独授权；仍未部署、未接真实数据、未进入真实试点。`
+      ? `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 产品实施已完成，${development.completedSlicesLabel} 已收口；${development.gateStatusLabel ? `当前 ${development.gateStatusLabel}；` : ""}下一动作是 ${development.nextActionLabel}，仍须单独授权；仍未部署、未接真实数据、未进入真实试点。`
       : `项目最初获批进入需求与方案阶段，批准凭证已归档；这项初始批准不等于一期功能或开发已经批准。G0 与 Ddev 后续已分别签发，当前 ${development.milestone} 已进入开发中，${development.completedSlicesLabel} 已完成，下一动作是 ${development.nextActionLabel}；仍未部署、未接真实数据、未进入真实试点。`;
     confirmedFact = milestoneCompleted
       ? `项目已批准，2026-08-04 召开一期启动会；G0 / Ddev 已签发，${development.milestone} 产品实施与退出证据已完成。`

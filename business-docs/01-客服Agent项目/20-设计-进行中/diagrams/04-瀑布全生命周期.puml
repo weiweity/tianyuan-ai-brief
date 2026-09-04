@@ -41,8 +41,8 @@ note right
   DEV-M0 W4 migration/PG15 + W5 pool/ready + W6 CI：COMPLETE
   DEV-M1 mock auth/policy + SearchBackend + Search/Events：COMPLETE
   DEV-M1 50条纯合成runner：50/50 · NOT_SIGNED / NOT_EVALUATED
-  DEC-SEARCH-01：PASS-WITH-CONDITIONS；G1A-E0 T1～T3已合并
-  真实G1a：NOT_STARTED；DEV-M2：NO-GO
+  DEC-SEARCH-01：PASS-WITH-CONDITIONS；comparison v2已合并
+  G1a T4：READY；T5：NOT_STARTED；DEV-M2：NO-GO
   desktop接库/真实来源/动态EVD：NOT_IMPLEMENTED；managed/backup/concurrency/production：NOT_CERTIFIED
   *升级/并发/生产/真机仍未认证；本地预检不替代这些证据
 end note
@@ -61,9 +61,10 @@ note right
   外部责任包 14/14 · Scope 15/15
   产品仓 DEV-M0 与 DEV-M1 COMPLETE
   DEC-SEARCH-01：PASS-WITH-CONDITIONS
-  G1A-E0 T1～T3：COMPLETE · MERGED · 38/38
-  下一步：T4仓外真实证据包
-  真实G1a：NOT_STARTED；DEV-M2：NO-GO
+  G1A-E0 T1～T3 + comparison v2：COMPLETE · MERGED · 44/44
+  T4输入包：READY · STATICALLY_VERIFIED
+  下一步：T5最终dry-run与独立运行授权
+  真实G1a：NOT_EVALUATED；DEV-M2：NO-GO
 end note
 
 |代码开发|
@@ -74,7 +75,7 @@ note right
   DEV-M1 mock auth/policy + 受控SearchBackend已完成
   Search + Events事务与合成runner已完成
   runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED
-  G1A-E0 T1～T3已合并；真实G1a尚未运行
+  G1A-E0 T1～T3与comparison v2已合并；T4输入包READY；T5尚未运行
   desktop、真实来源、DEV-M2与生产仍未放行
 end note
 
