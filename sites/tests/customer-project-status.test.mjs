@@ -478,13 +478,14 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3 已合并；comparison v2 合同经 PR #23 / CI run 33889553752 三路全绿并合并到 main@b0a52d9a63b8f1585cd5f22a2b1d335bab55792f。仓外 T4 已形成六项 EVD，四成员 v2 包通过实际产品解析器静态校验，纯合成宿主网络沙箱/异常残留回收预演通过；T5 未运行，仍固定为 NOT_SIGNED / NOT_EVALUATED。下一动作：T5 最终 dry-run 与独立运行授权。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
+    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3 已合并；comparison v2 合同经 PR #23 / CI run 33889553752 三路全绿并合并到 main@b0a52d9a63b8f1585cd5f22a2b1d335bab55792f。T4 READY：仓外六项 EVD、四成员 v2 包、实际产品解析器静态校验和纯合成宿主网络沙箱/异常残留回收预演均已完成；T5 NOT STARTED：尚未运行，仍固定为 NOT_SIGNED / NOT_EVALUATED。下一动作：T5 最终 dry-run 与独立运行授权。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
     milestone: "DEV-M1",
     milestoneState: "COMPLETE",
     completedSlices: ["W0", "W1", "W2", "W3", "W4", "W5"],
     nextSlice: "",
     nextSliceName: "",
     nextAction: "T5 最终 dry-run 与独立运行授权",
+    gateStatusLabel: "T4 READY · T5 NOT STARTED",
     evidenceIds: [],
   });
   assert.equal(isChecked("[X]"), true);

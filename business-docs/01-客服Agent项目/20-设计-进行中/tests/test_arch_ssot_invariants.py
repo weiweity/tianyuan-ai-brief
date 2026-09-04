@@ -2340,10 +2340,11 @@ def test_waterfall_gate_status() -> None:
     _assert_same_line(d04, "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
     _assert_same_line(d04, "即时只放行", "DEV-M0")
     _assert_same_line(d04, "产品仓 DEV-M0 与 DEV-M1 COMPLETE")
-    _assert_same_line(d04, "G1A-E0 T1～T3", "COMPLETE", "MERGED", "38/38")
-    _assert_same_line(d04, "下一步", "T4仓外真实证据包")
+    _assert_same_line(d04, "G1A-E0 T1～T3 + comparison v2", "COMPLETE", "MERGED", "44/44")
+    _assert_same_line(d04, "T4输入包", "READY", "STATICALLY_VERIFIED")
+    _assert_same_line(d04, "下一步", "T5最终dry-run与独立运行授权")
     _assert_same_line(d04, "DEC-SEARCH-01", "PASS-WITH-CONDITIONS")
-    _assert_same_line(d04, "真实G1a", "NOT_STARTED", "DEV-M2", "NO-GO")
+    _assert_same_line(d04, "真实G1a", "NOT_EVALUATED", "DEV-M2", "NO-GO")
     assert "runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED" in d04
     _assert_same_line(d04, "当前 schema v1.12 reference DDL", "PG15", "PASS-WITH-LIMITATION")
     _assert_same_line(d04, "managed", "backup", "concurrency", "production", "NOT_CERTIFIED")
@@ -2776,9 +2777,10 @@ def test_architecture_docs_and_diagram_sources_stay_aligned() -> None:
     _assert_same_line(d04, "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
     assert "产品仓 DEV-M0 与 DEV-M1 COMPLETE" in d04
     assert "DEC-SEARCH-01：PASS-WITH-CONDITIONS" in d04
-    assert "G1A-E0 T1～T3：COMPLETE · MERGED · 38/38" in d04
-    assert "下一步：T4仓外真实证据包" in d04
-    assert "真实G1a：NOT_STARTED；DEV-M2：NO-GO" in d04
+    assert "G1A-E0 T1～T3 + comparison v2：COMPLETE · MERGED · 44/44" in d04
+    assert "T4输入包：READY · STATICALLY_VERIFIED" in d04
+    assert "下一步：T5最终dry-run与独立运行授权" in d04
+    assert "真实G1a：NOT_EVALUATED；DEV-M2：NO-GO" in d04
     assert "runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED" in d04
 
     assert re.search(r"Search\s+-[^\n]*->\s+Policy\s*:", d02), "search must read phase1 policy"

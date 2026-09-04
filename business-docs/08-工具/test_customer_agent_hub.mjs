@@ -248,7 +248,7 @@ await check("HTML 文件存在且为只读生成视图", async () => {
     assert.equal(payload.status.ddev, "2026-08-31");
     assert.equal(payload.status.development, "开发中");
     assert.match(payload.headline.title, /DEV-M1 已完成.*W0、W1、W2、W3、W4、W5 已收口/);
-    assert.match(payload.headline.summary, /DEV-M1 已完成.*W0、W1、W2、W3、W4、W5 已收口.*T5 最终 dry-run 与独立运行授权.*待单独授权.*下一里程碑未授权/);
+    assert.match(payload.headline.summary, /DEV-M1 已完成.*T4 READY · T5 NOT STARTED.*T5 最终 dry-run 与独立运行授权.*下一里程碑未授权/);
     assert.match(payload.headline.nowTitle, /DEV-M1 已完成.*等待下一里程碑授权/);
     assert.match(payload.headline.nowSummary, /W0、W1、W2、W3、W4、W5 已完成.*T5 最终 dry-run 与独立运行授权.*待单独授权.*不激活未授权 runtime/);
     assert.match(payload.headline.scheduleTitle, /DEV-M1 已完成.*T5 最终 dry-run 与独立运行授权.*待单独授权.*单人全栈 \/ FDE/);
