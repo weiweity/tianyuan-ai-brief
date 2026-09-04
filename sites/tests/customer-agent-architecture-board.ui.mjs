@@ -151,7 +151,10 @@ try {
       await page.getByRole("row", { name: /4 代码开发/ }).innerText(),
       /DEV-M1 · 已完成（W0、W1、W2、W3、W4、W5 已收口）/
     );
-    assert.match(bodyText, /DEC-SEARCH-01 \/ 真实 G1a 准入复核/);
+    assert.match(
+      bodyText,
+      /T4 仓外真实快照、20\+12\+18 评测集、DLP\/删除计划与盲审锁（待单独授权）/
+    );
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {
