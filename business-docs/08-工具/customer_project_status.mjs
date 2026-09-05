@@ -646,8 +646,16 @@ function deriveDevelopmentProgress(development, detail) {
 
 export function deriveGateStatusLabel(detail) {
   const normalizedDetail = stripMarkdown(String(detail || ""));
-  const markers = [...normalizedDetail.matchAll(/\b(T\d+)\s+(READY|COMPLETE|NOT[ _]STARTED|NOT[ _]SIGNED)\b/gi)]
-    .map((match) => `${match[1].toUpperCase()} ${match[2].toUpperCase().replaceAll("_", " ")}`);
+  const markers = [
+    ...normalizedDetail.matchAll(
+      /\b(T\d+)\s+(ATTEMPTED\s*\/\s*BLOCKED|READY|COMPLETE|ATTEMPTED|BLOCKED|NOT[ _]STARTED|NOT[ _]SIGNED)\b/gi
+    ),
+  ].map((match) =>
+    `${match[1].toUpperCase()} ${match[2]
+      .toUpperCase()
+      .replaceAll("_", " ")
+      .replace(/\s*\/\s*/g, " / ")}`
+  );
   return [...new Set(markers)].join(" · ");
 }
 
