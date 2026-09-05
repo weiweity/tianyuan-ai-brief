@@ -31,6 +31,7 @@
 | **转交设计负责人（PSD/AI）** | **[方案页](business-docs/03-设计组-PSD与AI调研/index.html)** · **[过程说明](business-docs/03-设计组-PSD与AI调研/research-story.html)** · [一页纸](business-docs/03-设计组-PSD与AI调研/00-一页纸_给设计负责人.md) |
 | 回看 7 月 31 日汇报 | [归档网址](https://weiweity.github.io/tianyuan-ai-brief/) · [归档说明](archive/README.md) |
 | 回看客服启动会快照 | [客服 Agent 会议网址](https://weiweity.github.io/tianyuan-ai-brief/customer-agent/) |
+| 查公共站点发布与质量门禁 | [公共站点发布区](sites/README.md) |
 | 查全部文档 | [业务文档地图](business-docs/README.md) |
 
 ## 目录原则
