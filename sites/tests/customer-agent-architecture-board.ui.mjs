@@ -153,9 +153,9 @@ try {
     );
     assert.match(
       bodyText,
-      /T5 重试 dry-run 与独立重试授权（待单独授权）/
+      /33 条逐条风险审定与版本化新包准备（待单独授权）/
     );
-    assert.match(bodyText, /T4 READY · T5 ATTEMPTED \/ BLOCKED/);
+    assert.match(bodyText, /T4 BLOCKED · T5 ATTEMPTED \/ BLOCKED/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

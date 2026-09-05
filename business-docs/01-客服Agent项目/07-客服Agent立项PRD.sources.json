@@ -2,26 +2,26 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "86b59bd882e96b7a550f8eaf48dfffb44a39f16885e3c12b3df37fc4e8de0685"
+    "sha256": "9a4d5147a4c73970e95e53279925b76ac8e99c6038807640e50eed708f8378b7"
   },
   "sources": [
     {
       "id": "charter",
       "file": "00-项目章程.md",
       "label": "项目章程",
-      "sha256": "ffc310152a82a3bf47b0a94f233faf6d86c405136441827f74b798068051ac33"
+      "sha256": "ec1eeb0ad2e2c38a4b9257bf0d387bc6770d5c83b436245f7497b67de3211968"
     },
     {
       "id": "schedule",
       "file": "01-总排期与阶段门禁.md",
       "label": "总排期与阶段门禁",
-      "sha256": "1e7053419cfaaa050ea801ac201b3b5807e8ee71ff5804a1fac2daf20c482dec"
+      "sha256": "3ae1b3cac5fa8a4fa669e75575c9246658a65ca9c7326feefe8971d1357f0120"
     },
     {
       "id": "ledger",
       "file": "02-G0责任与证据台账.md",
       "label": "G0 责任与证据台账",
-      "sha256": "06592341d7854888aae6212c0dbf989013a6a769da324b7ac8ad2501c0b904fd"
+      "sha256": "f12b0283f52614ee550342864d318c2f5d07c95870721cb9ff0923b06cef575f"
     },
     {
       "id": "scope",
@@ -39,16 +39,16 @@
       "id": "delivery",
       "file": "05-全栈交付计划.md",
       "label": "全栈交付计划",
-      "sha256": "823b6fab8c934210a701beaf81c7c34b9d9d3279261512357308829a05f326c6"
+      "sha256": "a7809c125ba069017a5af5d374f328d46c2bd7960ad59403cf721ba339248af8"
     },
     {
       "id": "cadence",
       "file": "06-启动会与周推进.md",
       "label": "启动会与周推进",
-      "sha256": "304f3732635e985c791f66c03690da3bbff704cad29298e69db4adadc533c931"
+      "sha256": "dd602ba9840bd36c0344e64eb28dc0f209a2af8bdc5c36322a8396c7e21cc9a5"
     }
   ],
-  "sourceHash": "5b32fff1f859df64f6e9cf56a55f25a5bca78621a696c6d8a2a54f3f293651b3",
+  "sourceHash": "670abf46a59a03dacb01fb1bc0457a1e0bd653de9532ea20d28a96eeaa5b9974",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",

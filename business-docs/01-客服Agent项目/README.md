@@ -3,10 +3,10 @@
 > **工作项目：** 客服 Agent（CS-AI-C11）
 > **当前阶段：** 技术第 2 关 **架构设计 PASS-WITH-CONDITIONS（静态设计）** · 技术第 3 关 **实现设计 Pass · 文档包 Ready** · 组织授权门 **G0 / Ddev 已 Pass**
 > **当前产物：** D0 纪要、需求基线、架构 SSOT、CR-002 自动事实闭环、CR-003 训练合同预埋、CR-004 权威来源硬门、DEC-042 内容资产与质量门静态合同、Codex 交叉检查报告、实现设计开工包
-> **开发状态：** `DEV-M1 · COMPLETE`；`DEC-SEARCH-01=PASS-WITH-CONDITIONS`。产品仓 comparison v2 合同已通过 PR #23 合并到 `main@b0a52d9`；真实 G1a 为 `T4 READY · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`，`DEV-M2` 仍待后续独立准入
+> **开发状态：** `DEV-M1 · COMPLETE`；`DEC-SEARCH-01=PASS-WITH-CONDITIONS`。产品仓 comparison v2 合同已通过 PR #23 合并到 `main@b0a52d9`；真实 G1a 为 `T4 BLOCKED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`，`DEV-M2` 仍待后续独立准入
 > **当前试点：** Menokin（唯一）；产品仓合成实现归入同一试点 `PILOT-S0 · SYNTHETIC`
 > **组合优先级：** P0
-> **更新：** 2026-09-05 · 外部责任包 14/14、Scope 15/15（合计 29/29），G0 / Ddev 已 Pass；设计阶段、`DEV-M0` 与 `DEV-M1-W0`～`W5` 已完成。G1a T4 受控包已装配并通过静态校验；首次 T5 在评测前被沙箱阻塞，下一步为 T5 重试 dry-run 与独立重试授权
+> **更新：** 2026-09-05 · 外部责任包 14/14、Scope 15/15（合计 29/29），G0 / Ddev 已 Pass；设计阶段、`DEV-M0` 与 `DEV-M1-W0`～`W5` 已完成。G1a T4 受控包已装配并通过静态校验；首次 T5 在评测前被沙箱阻塞，下一步为 33 条逐条风险审定与版本化新包准备
 
 这是客服 Agent 唯一现行项目目录。根目录保留稳定的项目真源和生成契约，生命周期文档按阶段存放。
 
@@ -56,7 +56,7 @@
 | 00 | 项目管理 | 持续 | 章程、排期、台账、费用、周推进、D0 纪要 |
 | 10 | 需求 | **已完成** | 需求基线、Scope、PRD、启动会主持稿 |
 | 20 | 设计 | **已完成 · 架构 PASS-WITH-CONDITIONS · 实现设计 Pass · Ready** | PRD、产品契约、架构 SSOT、API/DDL/NFR、图板与实现设计包 |
-| 30 | 开发 | **DEV-M1 已收口 · G1a T4 READY / T5 ATTEMPTED / BLOCKED** | 下一门为 T5 重试 dry-run 与独立重试授权；G1a 签发和 DEV-M2 不放行 |
+| 30 | 开发 | **DEV-M1 已收口 · G1a T4 BLOCKED / T5 ATTEMPTED / BLOCKED** | 下一门为 33 条逐条风险审定与版本化新包准备；G1a 签发和 DEV-M2 不放行 |
 | 40 | 测试 | 待开始 | 版本化测试证据 |
 | 50 | 发布 | 待开始 | 3–5 名内部坐席受控灰度 |
 | 60 | 运营 | 待开始 | 话术治理、效果、稳定性、费用和二期语料 |
@@ -87,7 +87,7 @@ D0（2026-08-04）已召开：项目正式启动，三期方向与试点规模�
 
 状态分两条轴读取：技术八关以 `40/46` 为准，需求、架构和实现设计三关已通过，第 4 关代码开发中的 `DEV-M0` 与 `DEV-M1` 已完成；组织授权状态以 `00–06` 为准，当前机器值为 `Ddev / 开发期`。`DEV-M1` 完成不表示技术第 4 关全部完成，也不自动放行真实 G1a 或 `DEV-M2`。
 
-`DEV-M0` 与 `DEV-M1` 已在独立产品仓完成，新增付费保持 0。T4 只允许仓外、批准脱敏、受控只读/复制与静态验证；产品运行时仍未接真实数据。首次 T5 在任何 case 执行前被宿主沙箱阻塞，失败证据只证明未评测与清理完成；共享来源修复经 PR #24 合并至 `main@4dbee4b`，合并后 CI run `33930030132` 三路全绿；仍只具备合成验证证据，修复后真实重试尚未执行，状态固定为 `NOT_SIGNED / NOT_EVALUATED`。飞书运行接入、凭证、遥测、部署、真实 Pilot、生产承诺以及 `DEV-M2+` 均须后续门禁或里程碑退出证据。
+`DEV-M0` 与 `DEV-M1` 已在独立产品仓完成，新增付费保持 0。T4 只允许仓外、批准脱敏、受控只读/复制与静态验证；产品运行时仍未接真实数据。首次 T5 在任何 case 执行前被宿主沙箱阻塞，失败证据只证明未评测与清理完成；共享来源修复经 PR #24 合并至 `main@4dbee4b`，合并后 CI run `33930030132` 三路全绿；仍只具备合成验证证据，后续 Attempt06/07 仍失败关闭，33 条风险组合须重新审定，状态固定为 `NOT_SIGNED / NOT_EVALUATED`。飞书运行接入、凭证、遥测、部署、真实 Pilot、生产承诺以及 `DEV-M2+` 均须后续门禁或里程碑退出证据。
 
 CR-003 归类为**一期设计阶段的训练合同预埋**：只冻结 schema、空模板、纯合成 fixture、隔离与晋级规则；不代表已开发、使用真实数据、调用外部教师、启动训练或发布模型。
 
@@ -118,4 +118,4 @@ DEC-042 归类为**内容资产身份、范围与质量的实现设计增量**�
 - 新阶段产物放入对应生命周期目录；会议、评审、测试证据带日期；被替代的设计草案迁入 `99-历史/`。
 - `local-private/` 只有 Git 发布隔离，不是文件系统物理隔离；真实客户 PII 与私密项目须通过 `prepare_private_customer_project.mjs` 迁到仓外受控目录。
 
-*客服 Agent 项目导航 v3.27 · 2026-09-05 · 设计阶段已收口；`20-设计-进行中/` 仅作为 Ddev 签名兼容路径。`DEV-M1 · COMPLETE`，`DEC-SEARCH-01=PASS-WITH-CONDITIONS`；仓外 G1a 为 `T4 READY · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`。下一门是 T5 重试 dry-run 与独立重试授权；G1a 签字、`DEV-M2`、运行接入、部署与 Pilot 仍未授权。*
+*客服 Agent 项目导航 v3.27 · 2026-09-05 · 设计阶段已收口；`20-设计-进行中/` 仅作为 Ddev 签名兼容路径。`DEV-M1 · COMPLETE`，`DEC-SEARCH-01=PASS-WITH-CONDITIONS`；仓外 G1a 为 `T4 BLOCKED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`。下一门是 33 条逐条风险审定与版本化新包准备；G1a 签字、`DEV-M2`、运行接入、部署与 Pilot 仍未授权。*
