@@ -92,6 +92,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     ok(sql(extensionSql));
     const contentHashSql = await readFile(new URL('owner-acceptance.content-hash.v1.sql', candidate), 'utf8');
     ok(sql(contentHashSql));
+    ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),
@@ -208,6 +209,80 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
       assert.equal(ok(sql(`SELECT p.provolatile = 'i' AND NOT p.prosecdef AND NOT p.proisstrict
         AND pg_get_userbyid(p.proowner) = 'cs_ai_definer'
         FROM pg_proc p WHERE p.oid = 'public.owner_acceptance_content_hash(jsonb,integer,text)'::regprocedure`)), 't');
+    });
+    await check('actual candidate scope, source facts and final review metadata bind to one registered record', () => {
+      const r = structuredClone(record);
+      const content = sources.map((source) => ({ script_version: 1, snapshot: {
+        ...normalizedSnapshot(), script_id: `synthetic_${source.domain}`, category: source.domain,
+        source_version_id: source.source_version_id, review_mode: 'owner_acceptance',
+        effective_to: source.domain === 'campaign' ? '2026-09-30T00:00:00.000Z' : null,
+        primary_reviewer_id: r.owner_subject_hash, primary_review_evd: r.approval_evidence_id,
+      } }));
+      const omitted = ['review_mode','primary_reviewer_id','primary_reviewer_role','primary_review_evd',
+        'secondary_reviewer_id','secondary_reviewer_role','secondary_review_evd'];
+      r.scope.items = content.map(({ snapshot: s, script_version }) => ({
+        script_id: s.script_id, script_version, domain: s.category, source_version_id: s.source_version_id,
+        review_input_sha256: sha(stable({ ...Object.fromEntries(Object.entries(s).filter(([k]) => !omitted.includes(k))),
+          projection_version: 'customer-agent/owner-acceptance-input/v1', script_version })),
+        risk_level: s.risk_level, risk_categories: s.risk_categories, has_conflict: s.has_conflict,
+      }));
+      const anchor = sha(encode(r));
+      const withHashes = (entries) => entries.map((e) => ({ ...e, content_hash: sha(stable({
+        hash_version: 'customer-agent/owner-acceptance-content/v1', script_version: e.script_version,
+        owner_acceptance_record_sha256: anchor, content: e.snapshot,
+      })) }));
+      const args = (entries, ids = sources.map((s) => s.source_version_id), tenant = 'synthetic_tenant', owner = r.owner_subject_hash) =>
+        `${quote(tenant)},'${anchor}',${quote(owner)},${ids === null ? 'NULL' : `ARRAY[${ids.map(quote).join(',')}]::text[]`},${quote(JSON.stringify(entries))}::jsonb`;
+      // Every case registers and consumes in one rolled-back transaction: no fixture
+      // record remains to hide missing-registration checks elsewhere in this suite.
+      const consume = (entries = withHashes(content), { ids, tenant, owner, before = '', role = '', registerRecord = true } = {}) => sql(`BEGIN;
+        ${registerRecord ? `SET LOCAL ROLE app_owner_acceptance_registrar; SELECT public.register_owner_acceptance(
+          'synthetic_tenant',${quote(encode(r))},'${anchor}','${r.owner_subject_hash}'); RESET ROLE;` : ''}
+        ${before} ${role ? `SET LOCAL ROLE ${role};` : ''}
+        SELECT public.assert_owner_acceptance_content(${args(entries,ids,tenant,owner)}); ROLLBACK;`);
+      ok(consume()); ok(consume(withHashes([...content].reverse()), { ids: sources.map((s) => s.source_version_id).reverse() }));
+      denied(consume(withHashes(content), { registerRecord: false }), 'NOT_ACTIVE');
+      denied(consume(withHashes(content), { tenant: 'other_tenant' }), 'NOT_ACTIVE');
+      denied(consume(withHashes(content), { owner: sha('other-owner') }), 'NOT_ACTIVE');
+      for (const ids of [null, [], sources.slice(1).map((s) => s.source_version_id), Array(4).fill(sources[0].source_version_id)]) {
+        denied(consume(withHashes(content), { ids }), 'CONTENT_INVALID');
+      }
+      denied(consume(withHashes(content), { ids: [...sources.slice(1).map((s) => s.source_version_id), 'srcv_synthetic_absent'] }), 'NOT_ACTIVE');
+      for (const entries of [null, {}, [], Array(5001).fill(withHashes(content)[0])]) denied(consume(entries), 'CONTENT_INVALID');
+      for (const change of [
+        (c) => c.pop(), (c) => c.push(c[0]), (c) => { c[0].script_version = 2; },
+        (c) => { c[0].snapshot.answer_text = 'changed synthetic answer'; },
+        (c) => { c[0].snapshot.script_id = 'synthetic_unapproved'; },
+        (c) => { c[0].snapshot.source_ref = 'SRC-SYNTHETIC-OTHER'; },
+        (c) => { c[0].snapshot.category = 'product'; },
+        (c) => { c[0].snapshot.source_version_id = sources[1].source_version_id; },
+        (c) => { c[0].snapshot.risk_level = 'high'; c[0].snapshot.risk_categories = ['legal_commitment']; },
+        (c) => { c[0].snapshot.primary_reviewer_id = sha('other-owner'); },
+        (c) => { c[0].snapshot.primary_review_evd = 'EVD-SYNTHETIC-OTHER-APPROVAL'; },
+      ]) {
+        const changed = structuredClone(content); change(changed);
+        // Recompute the final identity: a matching hash cannot substitute for exact
+        // approval scope or trusted review metadata.
+        denied(consume(withHashes(changed)));
+      }
+      const changed = withHashes(content); changed[0].content_hash = sha('stale-content');
+      denied(consume(changed), 'CONTENT_MISMATCH');
+      for (const version of [null, '1', 0, 2147483648]) {
+        const entries = withHashes(content); entries[0].script_version = version; denied(consume(entries), 'CONTENT_INVALID');
+      }
+      const extra = withHashes(content); extra[0].untrusted = true; denied(consume(extra), 'CONTENT_INVALID');
+      denied(consume(withHashes(content), { before: `SELECT public.revoke_owner_acceptance('synthetic_tenant','${anchor}','EVD-SYNTHETIC-REVOKED');` }), 'NOT_ACTIVE');
+      denied(consume(withHashes(content), { before: `SELECT public.suspend_authoritative_source('${sources[0].source_version_id}','SOURCE_REVOKED','EVD-SYNTHETIC-SUSPENDED','synthetic-owner','owner');` }), 'NOT_ACTIVE');
+      for (const isolation of ['REPEATABLE READ','SERIALIZABLE']) {
+        denied(sql(`BEGIN ISOLATION LEVEL ${isolation}; SELECT public.assert_owner_acceptance_content(${args(withHashes(content))})`), 'ISOLATION_DENIED');
+      }
+      for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker','app_owner_acceptance_registrar']) {
+        denied(consume(withHashes(content), { role }), '42501');
+      }
+      assert.equal(ok(sql(`SELECT p.prosecdef AND p.provolatile = 'v' AND NOT p.proisstrict
+        AND pg_get_userbyid(p.proowner) = 'cs_ai_definer'
+        FROM pg_proc p WHERE p.oid = 'public.assert_owner_acceptance_content(text,text,text,text[],jsonb)'::regprocedure`)), 't');
+      assert.equal(ok(sql('SELECT count(*) FROM public.owner_acceptance_records')), '1');
     });
     for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker']) {
       await check(`${role} cannot register acceptance or call internal assertion`, () => {

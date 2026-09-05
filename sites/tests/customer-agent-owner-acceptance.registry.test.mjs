@@ -67,3 +67,12 @@ test('final hash candidate is additive, parseable and does not replace legacy go
   assert.match(hashSql, /IMMUTABLE SECURITY INVOKER/);
   assert.match(hashSql, /REVOKE ALL ON FUNCTION public\.owner_acceptance_content_hash\(JSONB,INTEGER,TEXT\) FROM PUBLIC/);
 });
+
+test('content scope candidate parses as a private definer without replacing runtime gates', async () => {
+  const scopeSql = await readFile(new URL('30-开发-进行中/owner-acceptance.content-scope.v1.sql', root), 'utf8');
+  assert.ok(parser.parseSync(scopeSql).stmts.length > 0);
+  assert.equal(parser.parsePlPgSQLSync(scopeSql).plpgsql_funcs.length, 1);
+  assert.doesNotMatch(scopeSql, /CREATE OR REPLACE|ALTER TABLE|GRANT EXECUTE/);
+  assert.match(scopeSql, /SECURITY DEFINER/);
+  assert.match(scopeSql, /REVOKE ALL ON FUNCTION public\.assert_owner_acceptance_content\(TEXT,TEXT,TEXT,TEXT\[\],JSONB\) FROM PUBLIC/);
+});
