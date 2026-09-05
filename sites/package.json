@@ -1,6 +1,6 @@
 {
   "name": "tianyuan-ai-sites",
-  "version": "5.26.0",
+  "version": "5.26.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -49,11 +49,11 @@
   "devDependencies": {
     "@libpg-query/parser": "17.6.10",
     "@plantuml/core": "1.2026.6",
-    "@redocly/cli": "^2.44.2",
+    "@redocly/cli": "^2.51.2",
     "ajv": "8.20.0",
-    "axe-core": "4.12.1",
+    "axe-core": "4.13.0",
     "dompurify": "3.4.13",
-    "esbuild": "0.28.1",
+    "esbuild": "0.28.2",
     "jsdom": "29.1.1",
     "mermaid": "10.9.8",
     "playwright": "1.62.0"
