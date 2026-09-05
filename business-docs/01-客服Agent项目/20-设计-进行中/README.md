@@ -26,6 +26,8 @@
 python3 -m http.server 8766 --directory business-docs/01-客服Agent项目/20-设计-进行中
 ```
 
+> **当前增量（2026-09-05）：** 既有设计签名保持冻结；四域业务版本与负责人承接已确认，待版本化合同转换。Search + Events 已有合成实现，不能把下列早期 PG 证据的 NOT_IMPLEMENTED 外推到整个 API。真实 T5 未通过、桌面未接线、上线未完成；当前推进以 [开发入口](../30-开发-进行中/README.md) 为准。
+
 ## 现在关卡（瀑布）
 
 | 关卡 | 状态 |
@@ -64,4 +66,4 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/test_arch_ssot_invariants.py
 # 期望：summary fail=0（总数以当前测试输出为准）
 ```
 
-当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目 `DEV-M1 · COMPLETE`，`W0`～`W5` 已完成，下一动作是 `DEC-SEARCH-01` / 真实 G1a 准入复核。`DEV-M2`、真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**
+当前结论：**技术第 1～3 关、G0 与 Ddev 已通过；Menokin 正式项目 `DEV-M1 · COMPLETE`，`W0`～`W5` 已完成，下一动作是负责人承接合同落地与版本化新包准备。`DEV-M2`、真实数据、飞书运行接入、外部教师调用、训练、模型发布、部署与真实 Pilot 均为 NO-GO。**

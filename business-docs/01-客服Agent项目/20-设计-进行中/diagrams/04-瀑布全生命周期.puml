@@ -34,7 +34,7 @@ note right
   人读架构·实现·测试设计已收口
   25/26/31/37/39/33/40/41/43/46/47/48/49/50
   2026-08-10 Codex交叉检查已冻结到90-评审（非规范证据）
-  当前 schema v1.12 reference DDL 本地 PG15 预检：PASS-WITH-LIMITATION
+  历史 schema v1.12 reference DDL 本地 PG15 预检：PASS-WITH-LIMITATION
   旧 c1e74c EVD：仅历史，不外推当前 schema
   DEC-042 schema v1.12 / OpenAPI 1.11.0 静态合同：LOCKED
   DEV-M0 W2类型/validator + W3 API/config /health：COMPLETE
@@ -42,7 +42,8 @@ note right
   DEV-M1 mock auth/policy + SearchBackend + Search/Events：COMPLETE
   DEV-M1 50条纯合成runner：50/50 · NOT_SIGNED / NOT_EVALUATED
   DEC-SEARCH-01：PASS-WITH-CONDITIONS；comparison v2已合并
-  G1a T4：READY；T5：ATTEMPTED/BLOCKED；DEV-M2：NO-GO
+  G1a T4：BLOCKED；T5：ATTEMPTED/BLOCKED；DEV-M2：NO-GO
+  四域业务版本已批准；负责人承接已确认，机器合同转换未完成
   desktop接库/真实来源/动态EVD：NOT_IMPLEMENTED；managed/backup/concurrency/production：NOT_CERTIFIED
   *升级/并发/生产/真机仍未认证；本地预检不替代这些证据
 end note
@@ -62,21 +63,22 @@ note right
   产品仓 DEV-M0 与 DEV-M1 COMPLETE
   DEC-SEARCH-01：PASS-WITH-CONDITIONS
   G1A-E0 T1～T3 + comparison v2：COMPLETE · MERGED · 44/44
-  T4输入包：READY · STATICALLY_VERIFIED
-  下一步：T5重试dry-run与独立重试授权
+  T4输入包：BLOCKED（历史静态READY不代表当前可运行）
+  下一步：负责人承接合同落地与版本化新包准备
   真实G1a：NOT_EVALUATED；DEV-M2：NO-GO
 end note
 
 |代码开发|
 :代码开发\n产出：API · 壳 · 迁移脚本;
 note right
-  **DEV-M0 与 DEV-M1 COMPLETE**
+  **整体开发进行中**
+  DEV-M0 与 DEV-M1 COMPLETE
   DEV-M0 workspace/合同/migration/runtime/CI 已完成
   DEV-M1 mock auth/policy + 受控SearchBackend已完成
   Search + Events事务与合成runner已完成
   runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED
-  G1A-E0 T1～T3与comparison v2已合并；T4输入包READY
-  T5首次尝试在评测前阻塞
+  G1A-E0 T1～T3与comparison v2已合并；T4输入包BLOCKED
+  T5 Attempt06/07失败关闭，未产生有效报告
   desktop、真实来源、DEV-M2与生产仍未放行
 end note
 
@@ -84,13 +86,14 @@ end note
 :单元测试\n产出：INV / 端口单测绿;
 note right
   DEV-M1完整pnpm check、PG15集成与Windows feasibility smoke已绿
-  技术第5关仍待独立进关
+  开发测试持续；整体测试关尚未收口
 end note
 
 |系统测试|
 :系统测试\n产出：集成 / 压测 / 安全测试报告;
 note right
-  未开始
+  局部集成已有证据
+  正式系统验收未开始
   压测后才可宣称高并发
 end note
 

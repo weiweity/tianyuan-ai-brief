@@ -1,7 +1,7 @@
 # 业务文档地图
 
 > **客服状态更新：** 2026-09-05；其他板块沿用各自入口标记的更新时间\
-> **当前主线：** 客服需求、架构与实现设计三关均已收口，G0 / Ddev 已分别签发；技术第 4 关中 `DEV-M1 · COMPLETE`。真实 G1a 的 T4 受控输入包已完成装配并通过静态校验；首次 T5 在进入评测前被宿主沙箱阻塞，共享来源修复经 PR #24 合并至 `main@4dbee4b`，合并后 CI run `33930030132` 三路全绿；仍只具备合成验证证据，状态为 `T4 READY · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`。下一动作是 T5 重试 dry-run 与独立重试授权。`DEV-M2`、飞书运行接入、Pilot、部署、付费调用与自动发送仍未授权。
+> **当前主线：** 客服需求、架构与实现设计三关均已收口，G0 / Ddev 已分别签发；技术第 4 关中 `DEV-M1 · COMPLETE`。真实 G1a 的 T4 受控输入包已完成装配并通过静态校验；首次 T5 在进入评测前被宿主沙箱阻塞，共享来源修复经 PR #24 合并至 `main@4dbee4b`，合并后 CI run `33930030132` 三路全绿；仍只具备合成验证证据，状态为 `T4 BLOCKED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`。下一动作是 负责人承接合同落地与版本化新包准备。`DEV-M2`、飞书运行接入、Pilot、部署、付费调用与自动发送仍未授权。
 
 ## 30 秒入口
 
@@ -44,7 +44,7 @@ business-docs/
 | 项目管理 | 持续 | [`01-客服Agent项目/README.md`](01-客服Agent项目/README.md) 与根目录 `00–06` |
 | 需求 | **已完成** | [`10-需求-已完成/`](01-客服Agent项目/10-需求-已完成/) |
 | 设计 | **已完成 · 架构 PASS-WITH-CONDITIONS · 实现设计 Pass · Ready** | [`20-设计-进行中/`](01-客服Agent项目/20-设计-进行中/)（Ddev 签发时冻结的兼容路径，目录名不再表示阶段状态） |
-| 开发 | **DEV-M1 · 已完成；G1a T4 READY / T5 ATTEMPTED / BLOCKED（DEV-M2 待独立准入）** | [`30-开发-进行中/`](01-客服Agent项目/30-开发-进行中/) |
+| 开发 | **DEV-M1 · 已完成；G1a T4 BLOCKED / T5 ATTEMPTED / BLOCKED（DEV-M2 待独立准入）** | [`30-开发-进行中/`](01-客服Agent项目/30-开发-进行中/) |
 | 测试 | 待开始 | [`40-测试-待开始/`](01-客服Agent项目/40-测试-待开始/) |
 | 发布 | 待开始 | [`50-发布-待开始/`](01-客服Agent项目/50-发布-待开始/) |
 | 运营 | 待开始 | [`60-运营-待开始/`](01-客服Agent项目/60-运营-待开始/) |
@@ -80,4 +80,4 @@ npm run test:business
 npm run test:all
 ```
 
-*业务文档地图 v5.12 · 2026-09-05 · 客服技术 1～3 关已收口，G0 / Ddev Pass，DEV-M1 与 W0～W5 已完成；真实 G1a 为 `T4 READY · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`，下一动作是 T5 重试 dry-run 与独立重试授权。其他板块状态以各自入口为准。*
+*业务文档地图 v5.12 · 2026-09-05 · 客服技术 1～3 关已收口，G0 / Ddev Pass，DEV-M1 与 W0～W5 已完成；真实 G1a 为 `T4 BLOCKED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`，下一动作是 负责人承接合同落地与版本化新包准备。其他板块状态以各自入口为准。*

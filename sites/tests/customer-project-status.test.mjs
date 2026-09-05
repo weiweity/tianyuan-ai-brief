@@ -478,13 +478,13 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3、comparison v2 与共享来源修复已合并；风险输入修正经 PR #26 合并至 main@04c90b3，候选 CI run 33942953693 三路全绿。T4 BLOCKED：历史静态验收保留，33/33 条风险组合不符合合同，正式逐条审批 0/33；T5 ATTEMPTED / BLOCKED：Attempt06/07 未产生报告，EVD-G1A-RUN-07 与 EVD-G1A-CLEANUP-07 记录失败与清理，真实输入未删除。仍为 NOT_SIGNED / NOT_EVALUATED。下一动作：33 条逐条风险审定与版本化新包准备。高风险保持不同主体双审；未审定不装包、不重跑、不自动续期。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
+    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3、comparison v2 与共享来源修复已合并；风险输入修正经 PR #26 合并至 main@04c90b3，候选 CI run 33942953693 三路全绿。T4 BLOCKED：历史静态验收保留，33/33 条风险组合仍不符合现行机器合同；四域业务版本已批准，负责人承接已确认，工程转换未完成；T5 ATTEMPTED / BLOCKED：Attempt06/07 未产生报告，EVD-G1A-RUN-07 与 EVD-G1A-CLEANUP-07 记录失败与清理，真实输入未删除。仍为 NOT_SIGNED / NOT_EVALUATED。下一动作：负责人承接合同落地与版本化新包准备。负责人承接已确认；现行双审机器约束尚未转换，不伪造第二审核人，转换完成前不装包、不重跑、不自动续期。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
     milestone: "DEV-M1",
     milestoneState: "COMPLETE",
     completedSlices: ["W0", "W1", "W2", "W3", "W4", "W5"],
     nextSlice: "",
     nextSliceName: "",
-    nextAction: "33 条逐条风险审定与版本化新包准备",
+    nextAction: "负责人承接合同落地与版本化新包准备",
     gateStatusLabel: "T4 BLOCKED · T5 ATTEMPTED / BLOCKED",
     evidenceIds: ["EVD-G1A-RUN-07", "EVD-G1A-CLEANUP-07"],
   });
