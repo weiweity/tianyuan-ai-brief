@@ -2,6 +2,17 @@
 
 本文件记录治理工具与合同候选的版本变化，不代表客服产品版本、阶段签发或生产上线。既有发布历史保留在 Git 与对应阶段记录中。
 
+## [5.26.1] - 2026-09-06
+
+### Changed
+
+- 升级构建、无障碍检查与 OpenAPI 校验依赖：esbuild 0.28.2、axe-core 4.13.0、@redocly/cli 2.51.2。
+- GitHub Actions 的质量与 Pages 工作流统一使用固定提交的 actions/setup-python v7.0.0。
+
+### Scope
+
+- DOMPurify 3.4.13 与 Mermaid 10.9.8 继续保持冻结；本次不迁移归档 vendor、SRI 或运行时内容，也不新增客服功能、权限或数据连接。
+
 ## [5.26.0] - 2026-09-05
 
 ### Added
