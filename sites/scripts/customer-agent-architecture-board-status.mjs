@@ -33,7 +33,7 @@ function readDevelopmentShell(projectStatus) {
     return {
       gateClass: "partial",
       codeStatus: milestoneCompleted
-        ? `${progress.milestone} · 已完成（${completed} 已收口）`
+        ? `整体仍在开发；${progress.milestone} · 已完成（${completed} 已收口）`
         : `${progress.milestone} · 进行中（${completed} 已完成）`,
       currentSummary: milestoneCompleted
         ? `${progress.milestone} 产品实施与退出证据已完成；${progress.gateStatusLabel ? `当前 ${progress.gateStatusLabel}；` : ""}下一动作是${nextAction}（待单独授权）。`

@@ -761,9 +761,9 @@ async function runHistoricalCurrentNavigationAudit(browser) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const failures = [];
   const hubStatusPattern =
-    /DEV-M1 已完成，W0、W1、W2、W3、W4、W5 已收口[\s\S]*33 条逐条风险审定与版本化新包准备[\s\S]*待单独授权[\s\S]*下一里程碑未授权/;
+    /DEV-M1 已完成，W0、W1、W2、W3、W4、W5 已收口[\s\S]*负责人承接合同落地与版本化新包准备[\s\S]*待单独授权[\s\S]*下一里程碑未授权/;
   const prdStatusPattern =
-    /G0 (?:\/|与) Ddev[^。\n]*签发[\s\S]*DEV-M1 产品实施(?:与退出证据)?已完成[\s\S]*33 条逐条风险审定与版本化新包准备[\s\S]*仍须单独授权[\s\S]*仍未部署/i;
+    /G0 (?:\/|与) Ddev[^。\n]*签发[\s\S]*DEV-M1 产品实施(?:与退出证据)?已完成[\s\S]*负责人承接合同落地与版本化新包准备[\s\S]*仍须单独授权[\s\S]*仍未部署/i;
   const attachFailureAudit = (page, label) => {
     page.on("pageerror", (error) => failures.push(`${label} pageerror: ${error.message}`));
     page.on("console", (message) => {

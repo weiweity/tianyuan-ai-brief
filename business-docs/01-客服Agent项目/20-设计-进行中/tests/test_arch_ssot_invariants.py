@@ -217,7 +217,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "`DEC-SEARCH-01=PASS-WITH-CONDITIONS`",
         "`G1A-E0 T1～T3=COMPLETE`",
         "T4 输入包=`BLOCKED`",
-        "33 条逐条风险审定与版本化新包准备",
+        "负责人承接合同落地与版本化新包准备",
     )
 
     ledger_path = DESIGN.parent / "02-G0责任与证据台账.md"
@@ -2190,7 +2190,7 @@ def test_waterfall_gate_status() -> None:
         "初始即时范围 DEV-M0",
         "DEV-M1 后续按独立授权完成",
     )
-    _assert_same_line(t, "4 代码开发", "DEV-M1 complete", "G1a T4 BLOCKED / T5 ATTEMPTED / BLOCKED", "PR #26", "main@04c90b3", "33943165306", "正式批准 0/33", "NOT_SIGNED / NOT_EVALUATED", "33 条逐条风险审定与版本化新包准备")
+    _assert_same_line(t, "4 代码开发", "DEV-M1 complete", "G1a T4 BLOCKED / T5 ATTEMPTED / BLOCKED", "PR #26", "main@04c90b3", "33943165306", "负责人承接已确认", "NOT_SIGNED / NOT_EVALUATED", "负责人承接合同落地与版本化新包准备")
     _assert_same_line(t, "Ddev 后的开发", "G1A-E0 T1～T3", "PR #23", "main@b0a52d9", "33889553752", "T4", "首次 T5", "NOT_SIGNED / NOT_EVALUATED")
     _assert_same_line(t, "| v1.32 |", "PR #17～#20", "33785347931", "5cf650c")
     _assert_same_line(t, "| v1.35 |", "PR #23", "33889553752", "main@b0a52d9", "T4 READY", "T5 NOT STARTED / NOT_EVALUATED")
@@ -2342,12 +2342,12 @@ def test_waterfall_gate_status() -> None:
     _assert_same_line(d04, "即时只放行", "DEV-M0")
     _assert_same_line(d04, "产品仓 DEV-M0 与 DEV-M1 COMPLETE")
     _assert_same_line(d04, "G1A-E0 T1～T3 + comparison v2", "COMPLETE", "MERGED", "44/44")
-    _assert_same_line(d04, "T4输入包", "READY", "STATICALLY_VERIFIED")
-    _assert_same_line(d04, "下一步", "T5重试dry-run与独立重试授权")
+    _assert_same_line(d04, "T4输入包", "BLOCKED", "历史静态READY不代表当前可运行")
+    _assert_same_line(d04, "下一步", "负责人承接合同落地与版本化新包准备")
     _assert_same_line(d04, "DEC-SEARCH-01", "PASS-WITH-CONDITIONS")
     _assert_same_line(d04, "真实G1a", "NOT_EVALUATED", "DEV-M2", "NO-GO")
     assert "runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED" in d04
-    _assert_same_line(d04, "当前 schema v1.12 reference DDL", "PG15", "PASS-WITH-LIMITATION")
+    _assert_same_line(d04, "历史 schema v1.12 reference DDL", "PG15", "PASS-WITH-LIMITATION")
     _assert_same_line(d04, "managed", "backup", "concurrency", "production", "NOT_CERTIFIED")
     _assert_same_line(d04, "旧 c1e74c EVD", "仅历史")
     _assert_same_line(d04, "升级", "并发", "生产", "真机", "未认证")
@@ -2598,7 +2598,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     ):
         assert re.search(invariant, t), f"architecture board missing DEC-042 invariant: {invariant}"
     _assert_same_line(t, "扩展治理", "静态已冻结", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "不新增端口、路由或表")
-    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M1 产品实施与退出证据已完成", "33 条逐条风险审定与版本化新包准备", "待单独授权")
+    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M1 产品实施与退出证据已完成", "负责人承接合同落地与版本化新包准备", "待单独授权")
     _assert_same_line(t, "组织门禁", "G0 / Ddev Pass")
     _assert_same_line(t, "架构关", "Ddev 已独立签发", "真实问法", "Pilot", "上线仍须后续独立签发")
     _assert_same_line(t, "小白说明", "Ddev 已签发", "DEV-M1 产品实施与退出证据已完成", "纯合成工程范围", "真实来源", "生产")
@@ -2611,7 +2611,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
         "EVD-DDEV-AUTH-20260831",
         "DEV-M0",
         "DEV-M1 产品实施与退出证据已完成",
-        "33 条逐条风险审定与版本化新包准备",
+        "负责人承接合同落地与版本化新包准备",
         "待单独授权",
     )
     _assert_same_line(t, "外部责任包 14/14", "Scope 15/15", "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
@@ -2622,14 +2622,14 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
         assert stale_gate_copy not in t, f"architecture board revives stale current status: {stale_gate_copy}"
     _assert_same_line(
         t,
-        "当前 schema v1.12",
+        "冻结设计基线 schema v1.12",
         DEV_M0_SCHEMA_SHA256,
         "OpenAPI 1.11.0",
         OPENAPI_SHA256,
         "PASS-WITH-LIMITATION",
         "EVD-PG15-LOCAL-PREFLIGHT-20260821T212715+0800-47B66795",
     )
-    _assert_same_line(t, "旧 c1e74c EVD", "仅为历史证据", "不能外推到当前 schema")
+    _assert_same_line(t, "旧 c1e74c EVD", "仅为历史证据", "不能外推到冻结设计基线 schema")
     _assert_same_line(
         t,
         "../90-评审/2026-08-06_架构交叉验证终裁快照.md",
@@ -2779,8 +2779,8 @@ def test_architecture_docs_and_diagram_sources_stay_aligned() -> None:
     assert "产品仓 DEV-M0 与 DEV-M1 COMPLETE" in d04
     assert "DEC-SEARCH-01：PASS-WITH-CONDITIONS" in d04
     assert "G1A-E0 T1～T3 + comparison v2：COMPLETE · MERGED · 44/44" in d04
-    assert "T4输入包：READY · STATICALLY_VERIFIED" in d04
-    assert "下一步：T5重试dry-run与独立重试授权" in d04
+    assert "T4输入包：BLOCKED（历史静态READY不代表当前可运行）" in d04
+    assert "下一步：负责人承接合同落地与版本化新包准备" in d04
     assert "真实G1a：NOT_EVALUATED；DEV-M2：NO-GO" in d04
     assert "runner 50/50，但仍为NOT_SIGNED / NOT_EVALUATED" in d04
 

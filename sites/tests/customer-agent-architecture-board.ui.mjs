@@ -111,7 +111,7 @@ try {
     }
     assert.match(
       bodyText,
-      /当前 schema v1\.12 reference DDL[^\n]*本机隔离 PostgreSQL 15\.18[^\n]*PASS-WITH-LIMITATION/
+      /冻结设计基线 schema v1\.12 reference DDL[^\n]*本机隔离 PostgreSQL 15\.18[^\n]*PASS-WITH-LIMITATION/
     );
     assert.match(
       bodyText,
@@ -153,7 +153,7 @@ try {
     );
     assert.match(
       bodyText,
-      /33 条逐条风险审定与版本化新包准备（待单独授权）/
+      /负责人承接合同落地与版本化新包准备（待单独授权）/
     );
     assert.match(bodyText, /T4 BLOCKED · T5 ATTEMPTED \/ BLOCKED/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
