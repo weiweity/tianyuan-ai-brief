@@ -453,11 +453,11 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   const status = deriveProjectStatus(sources);
   const currentVersions = currentSourceVersions(sources);
   const signedVersions = authorizationSourceVersions(sources);
-  assert.equal(currentVersions.charter, "v3.45");
+  assert.equal(currentVersions.charter, "v3.46");
   assert.equal(signedVersions.charter, "v3.35");
-  assert.equal(currentVersions.schedule, "v3.38");
+  assert.equal(currentVersions.schedule, "v3.39");
   assert.equal(signedVersions.schedule, "v3.28");
-  assert.equal(currentVersions.ledger, "v3.83");
+  assert.equal(currentVersions.ledger, "v3.84");
   assert.equal(signedVersions.ledger, "v3.72");
   assert.deepEqual(status.statusAxes, {
     direction: "P0 · 工作方向已登记",
@@ -478,15 +478,15 @@ test("当前 29/29 Menokin 真源动态导出七条状态轴、正式 B 与已�
   assert.deepEqual(status.developmentProgress, {
     category: "active",
     state: "开发中",
-    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3 已合并；comparison v2 合同经 PR #23 / CI run 33889553752 三路全绿并合并到 main@b0a52d9a63b8f1585cd5f22a2b1d335bab55792f。T4 READY：仓外六项 EVD、四成员 v2 包、实际产品解析器静态校验和纯合成宿主网络沙箱/异常残留回收预演均已完成；T5 NOT STARTED：尚未运行，仍固定为 NOT_SIGNED / NOT_EVALUATED。下一动作：T5 最终 dry-run 与独立运行授权。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
+    detail: "产品实施仓 DEV-M1 · COMPLETE；W0、W1、W2、W3、W4、W5 已完成，G1A-E0 T1～T3 与 comparison v2 合同已合并；共享来源装载修复经 PR #24 合并至 main@4dbee4b，合并后 CI run 33930030132 三路全绿。T4 READY：仓外六项 EVD 与四成员 v2 包已完成历史静态验收，重试前须重验权限、有效期与外部锚点；T5 ATTEMPTED / BLOCKED：历史失败与清理事实由 EVD-G1A-RUN-01 和 EVD-G1A-CLEANUP-01 留存，Attempt04/05 定位共享来源装载冲突。修复只完成合成验证，修复后真实重试尚未执行，仍为 NOT_SIGNED / NOT_EVALUATED。下一动作：T5 重试 dry-run 与独立重试授权。飞书接入、desktop adapter、DEV-M2、部署与 Pilot 均未放行",
     milestone: "DEV-M1",
     milestoneState: "COMPLETE",
     completedSlices: ["W0", "W1", "W2", "W3", "W4", "W5"],
     nextSlice: "",
     nextSliceName: "",
-    nextAction: "T5 最终 dry-run 与独立运行授权",
-    gateStatusLabel: "T4 READY · T5 NOT STARTED",
-    evidenceIds: [],
+    nextAction: "T5 重试 dry-run 与独立重试授权",
+    gateStatusLabel: "T4 READY · T5 ATTEMPTED / BLOCKED",
+    evidenceIds: ["EVD-G1A-RUN-01", "EVD-G1A-CLEANUP-01"],
   });
   assert.equal(isChecked("[X]"), true);
   assert.equal(status.d0Completed, true);
@@ -1132,7 +1132,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions, { schedule: "v3.16" }),
-      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.38 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 v3\.16 与当前真源 v3\.39 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "冻结输入清单",
@@ -1152,7 +1152,7 @@ test("DEC-DDEV-01 PASS 签发包必须与 G0、真源版本、费用和 RACI 交
     [
       "冻结输入清单",
       ddevInputVersionText(versions).replace(/^01 /, "010 "),
-      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.38 不一致（正式签发基线 v3\.28）/,
+      /DEC-DDEV-01 冻结输入 01 版本 缺失 与当前真源 v3\.39 不一致（正式签发基线 v3\.28）/,
     ],
     [
       "允许环境与数据",
