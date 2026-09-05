@@ -90,6 +90,8 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     ok(sql(baseSql));
     const extensionSql = await readFile(new URL('owner-acceptance.registry.v1.sql', candidate), 'utf8');
     ok(sql(extensionSql));
+    const contentHashSql = await readFile(new URL('owner-acceptance.content-hash.v1.sql', candidate), 'utf8');
+    ok(sql(contentHashSql));
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),
@@ -115,6 +117,14 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     const denied = (result, code = 'OWNER_ACCEPTANCE_') => {
       assert.notEqual(result.status, 0); assert.match(result.stderr, new RegExp(code));
     };
+    const governanceArguments = (mode = 'single') => `
+      'synthetic_presale','presale','合成标题','合成话术','SRC-SYNTHETIC','srcv_synthetic_presale',
+      'ROLE-CONTENT-LEAD','2026-09-30T00:00:00.000Z',ARRAY['douyin','qianniu'],'storewide',ARRAY[]::text[],
+      '2026-09-01T00:00:00.000Z',NULL,'synthetic_taxonomy','synthetic_intent','medium',ARRAY[]::text[],false,
+      ${quote(mode)},'synthetic-reviewer','ROLE-CONTENT-LEAD','EVD-SYNTHETIC-REVIEW',
+      ${mode === 'dual' ? "'synthetic-secondary','ROLE-CS-MANAGER','EVD-SYNTHETIC-SECONDARY'" : 'NULL,NULL,NULL'},ARRAY[]::text[],
+      '[{"question_id":"synthetic_question","question_text":"合成问题"}]'::jsonb`;
+    const normalizedSnapshot = (mode) => JSON.parse(ok(sql(`SELECT public.content_governance_snapshot(${governanceArguments(mode)})`)));
     await check('one genuine owner can register exactly anchored metadata; JS and SQL agree', () => {
       assert.equal(verifyOwnerAcceptance(encode(record), { approvedRecordSha256: sha(encode(record)), expectedOwnerSubjectHash: record.owner_subject_hash, observedScope: record.scope, now }).runtime_activated, false);
       assert.equal(ok(register()), sha(encode(record))); ok(bound());
@@ -137,12 +147,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
         SELECT public.revoke_owner_acceptance('synthetic_tenant','${sha(encode(record))}','EVD-SYNTHETIC-STALE')`), 'ISOLATION_DENIED');
     });
     await check('SQL normalized business projection matches Node canonical hash and binds every business field', () => {
-      const snapshot = JSON.parse(ok(sql(`SELECT public.content_governance_snapshot(
-        'synthetic_presale','presale','合成标题','合成话术','SRC-SYNTHETIC','srcv_synthetic_presale',
-        'ROLE-CONTENT-LEAD','2026-09-30T00:00:00.000Z',ARRAY['douyin','qianniu'],'storewide',ARRAY[]::text[],
-        '2026-09-01T00:00:00.000Z',NULL,'synthetic_taxonomy','synthetic_intent','medium',ARRAY[]::text[],false,
-        'single','synthetic-reviewer','ROLE-CONTENT-LEAD','EVD-SYNTHETIC-REVIEW',NULL,NULL,NULL,ARRAY[]::text[],
-        '[{"question_id":"synthetic_question","question_text":"合成问题"}]'::jsonb)`)));
+      const snapshot = normalizedSnapshot();
       const omitted = ['review_mode','primary_reviewer_id','primary_reviewer_role','primary_review_evd','secondary_reviewer_id','secondary_reviewer_role','secondary_review_evd'];
       const projection = Object.fromEntries(Object.entries(snapshot).filter(([key]) => !omitted.includes(key)));
       const expected = sha(stable({ ...projection, projection_version: 'customer-agent/owner-acceptance-input/v1', script_version: 1 }));
@@ -157,6 +162,52 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
       denied(digest(snapshot, 0), 'INPUT_INVALID');
       denied(digest({ ...snapshot, unknown_business_field: 'synthetic' }), 'INPUT_INVALID');
       const incomplete = { ...snapshot }; delete incomplete.questions; denied(digest(incomplete), 'INPUT_INVALID');
+    });
+    await check('final content identity binds the normalized content, version, real owner, evidence and record anchor', () => {
+      const snapshot = { ...normalizedSnapshot(), review_mode: 'owner_acceptance',
+        primary_reviewer_id: record.owner_subject_hash, primary_review_evd: record.approval_evidence_id };
+      const anchor = sha(encode(record));
+      const digest = (value = snapshot, version = 1, recordSha = anchor) => sql(`SELECT public.owner_acceptance_content_hash(
+        ${quote(JSON.stringify(value))}::jsonb,${version},
+        ${recordSha === null ? 'NULL' : quote(recordSha)})`);
+      const expected = sha(stable({ hash_version: 'customer-agent/owner-acceptance-content/v1',
+        script_version: 1, owner_acceptance_record_sha256: anchor, content: snapshot }));
+      assert.equal(ok(digest()), expected);
+      assert.equal(ok(digest(Object.fromEntries(Object.entries(snapshot).reverse()))), expected, 'JSON object order is not content');
+      for (const key of Object.keys(snapshot).filter((k) => !k.startsWith('secondary_') && !['review_mode','has_conflict','primary_reviewer_role'].includes(k))) {
+        const changed = { ...snapshot, [key]: key === 'primary_reviewer_id' ? sha('another-real-owner')
+          : key === 'primary_review_evd' ? 'EVD-SYNTHETIC-OTHER-APPROVAL'
+          : snapshot[key] === null ? 'synthetic-change' : null };
+        // This pure identity function binds business fields; business validators
+        // remain responsible for their values before normalized input is supplied.
+        assert.notEqual(ok(digest(changed)), expected, key);
+      }
+      assert.notEqual(ok(digest(snapshot, 2)), expected);
+      assert.notEqual(ok(digest(snapshot, 1, sha('another-approved-record'))), expected);
+      for (const mode of ['single', 'dual']) {
+        const oldHash = ok(sql(`SELECT public.content_governance_hash(${governanceArguments(mode)})`));
+        assert.equal(oldHash, sha(stable(normalizedSnapshot(mode))), `old ${mode} preimage has no new envelope`);
+      }
+      for (const value of [null, [], 'synthetic', 1]) denied(digest(value));
+      denied(sql(`SELECT public.owner_acceptance_content_hash(NULL,1,'${anchor}')`));
+      for (const version of [0, -1, 'NULL']) denied(digest(snapshot, version));
+      for (const invalid of [null, '', 'wrong-anchor', anchor.toUpperCase()]) denied(digest(snapshot, 1, invalid));
+      const missing = { ...snapshot }; delete missing.questions; denied(digest(missing));
+      denied(digest({ ...snapshot, extra: 'synthetic' }));
+      for (const [key, values] of Object.entries({
+        review_mode: [null, 'single', 'dual', 'other'], has_conflict: [null, true, 'false'],
+        primary_reviewer_id: [null, '', 'not-a-hash', 1], primary_reviewer_role: [null, 'ROLE-CS-MANAGER'],
+        primary_review_evd: [null, '', 'bad-evidence', 1],
+        secondary_reviewer_id: ['synthetic-reviewer'], secondary_reviewer_role: ['ROLE-CS-MANAGER'],
+        secondary_review_evd: ['EVD-SYNTHETIC-FAKE-SECONDARY'],
+      })) for (const value of values) denied(digest({ ...snapshot, [key]: value }));
+      for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker','app_owner_acceptance_registrar']) {
+        denied(sql(`SET ROLE ${role}; SELECT public.owner_acceptance_content_hash(
+          ${quote(JSON.stringify(snapshot))}::jsonb,1,'${anchor}')`), '42501');
+      }
+      assert.equal(ok(sql(`SELECT p.provolatile = 'i' AND NOT p.prosecdef AND NOT p.proisstrict
+        AND pg_get_userbyid(p.proowner) = 'cs_ai_definer'
+        FROM pg_proc p WHERE p.oid = 'public.owner_acceptance_content_hash(jsonb,integer,text)'::regprocedure`)), 't');
     });
     for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker']) {
       await check(`${role} cannot register acceptance or call internal assertion`, () => {

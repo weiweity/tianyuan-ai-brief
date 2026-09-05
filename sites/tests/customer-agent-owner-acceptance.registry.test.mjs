@@ -58,3 +58,12 @@ test('OpenAPI extension is an unapplied candidate; no new route or public review
   assert.equal(api.includes('x-owner-acceptance-registry-candidate'), false);
   assert.match(api, /ReviewMode:\n\s+type: string\n\s+enum: \[single, dual\]/);
 });
+
+test('final hash candidate is additive, parseable and does not replace legacy governance semantics', async () => {
+  const hashSql = await readFile(new URL('30-开发-进行中/owner-acceptance.content-hash.v1.sql', root), 'utf8');
+  assert.ok(parser.parseSync(hashSql).stmts.length > 0);
+  assert.equal(parser.parsePlPgSQLSync(hashSql).plpgsql_funcs.length, 1);
+  assert.doesNotMatch(hashSql, /CREATE OR REPLACE|ALTER TABLE|GRANT EXECUTE/);
+  assert.match(hashSql, /IMMUTABLE SECURITY INVOKER/);
+  assert.match(hashSql, /REVOKE ALL ON FUNCTION public\.owner_acceptance_content_hash\(JSONB,INTEGER,TEXT\) FROM PUBLIC/);
+});
