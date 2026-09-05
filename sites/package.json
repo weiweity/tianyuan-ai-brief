@@ -1,6 +1,6 @@
 {
   "name": "tianyuan-ai-sites",
-  "version": "5.25.1",
+  "version": "5.26.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -38,7 +38,9 @@
     "test:customer-contracts": "node --test tests/customer-project-status.test.mjs tests/customer-project-contract.regression.test.mjs tests/customer-agent-minimal-g0-evidence.test.mjs && npm run test:customer-agent-contract-set && npm run test:customer-agent-python-tools && npm run check:business-sources",
     "test:customer-boundary": "node --test tests/public-project-boundary.test.mjs",
     "test:design-contracts": "npm run test:architecture-contract && npm run check:arch-diagrams",
-    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar",
+    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar && npm run test:owner-acceptance-contract",
+    "test:owner-acceptance-contract": "node --test tests/customer-agent-owner-acceptance.registry.test.mjs",
+    "test:owner-acceptance:pg15": "node --test tests/customer-agent-owner-acceptance.pg15.mjs",
     "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci",
     "audit:deps": "npm audit --registry=https://registry.npmjs.org",
     "test:release": "npm run test:all",

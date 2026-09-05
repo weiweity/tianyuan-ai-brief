@@ -1,0 +1,21 @@
+{
+  "x-owner-acceptance-registry-candidate": {
+    "status": "LOCAL_CANDIDATE_NOT_ACTIVATED",
+    "purpose": "g1a_offline_only",
+    "recordSchema": "customer-agent/owner-acceptance/v1",
+    "sqlContract": "owner-acceptance.registry.v1",
+    "storage": ["owner_acceptance_records", "owner_acceptance_revocations"],
+    "registrationCapability": "app_owner_acceptance_registrar",
+    "registerFunction": "register_owner_acceptance",
+    "revokeFunction": "revoke_owner_acceptance",
+    "internalAssertionFunction": "assert_owner_acceptance",
+    "reviewInputHashFunction": "owner_acceptance_review_input_sha256",
+    "sourceOfTrust": "separately-verified-external-record-sha-and-owner",
+    "tenantBinding": "server-derived-tenant-and-authoritative-source-versions",
+    "transactionIsolation": "read committed",
+    "publicHttpRoutes": [],
+    "runtimeActivated": false,
+    "changesExistingReviewMode": false,
+    "description": "待完整接线并版本化导出时合入 OpenAPI 的 vendor extension 候选，不是独立 HTTP API 文档，不修改现行 ReviewMode。登记执行器须独立核验包外真实批准证据；不能自行从候选记录取得信任锚点。"
+  }
+}
