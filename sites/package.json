@@ -49,7 +49,7 @@
   "devDependencies": {
     "@libpg-query/parser": "17.6.10",
     "@plantuml/core": "1.2026.6",
-    "@redocly/cli": "^2.44.2",
+    "@redocly/cli": "^2.51.0",
     "ajv": "8.20.0",
     "axe-core": "4.12.1",
     "dompurify": "3.4.13",
