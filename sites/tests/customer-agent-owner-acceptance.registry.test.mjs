@@ -106,8 +106,6 @@ test('import candidate parses and preserves existing function signatures and ACL
     'BEGIN\n  -- Plans are append-only and cannot be updated/deleted. A row lock would require\n  -- UPDATE privilege which this definer deliberately lacks on immutable evidence.\n  SELECT plan.*',
   ).replace('WHERE plan.plan_id = p_plan_id\n  FOR SHARE;', 'WHERE plan.plan_id = p_plan_id;'));
 });
-
-
 test('release candidate keeps read checks independent of full payload hashing and preserves public ACL', async () => {
   const candidate = await readFile(new URL('30-开发-进行中/owner-acceptance.publish.v1.sql', root), 'utf8');
   const frozen = await readFile(new URL('20-设计-进行中/33-schema-v1-草案.sql', root), 'utf8');
