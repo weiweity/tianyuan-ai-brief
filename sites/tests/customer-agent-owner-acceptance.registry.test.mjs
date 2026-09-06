@@ -76,3 +76,12 @@ test('content scope candidate parses as a private definer without replacing runt
   assert.match(scopeSql, /SECURITY DEFINER/);
   assert.match(scopeSql, /REVOKE ALL ON FUNCTION public\.assert_owner_acceptance_content\(TEXT,TEXT,TEXT,TEXT\[\],JSONB\) FROM PUBLIC/);
 });
+
+
+test('storage candidate parses and uses one review policy across three guarded tables', async () => {
+  const storageSql = await readFile(new URL('30-开发-进行中/owner-acceptance.storage.v1.sql', root), 'utf8');
+  assert.ok(parser.parseSync(storageSql).stmts.length > 0);
+  assert.equal(parser.parsePlPgSQLSync(storageSql).plpgsql_funcs.length, 4);
+  assert.equal((storageSql.match(/CREATE TRIGGER owner_acceptance_storage_guard/g) ?? []).length, 3);
+  assert.doesNotMatch(storageSql, /GRANT EXECUTE|CREATE OR REPLACE FUNCTION (?:public\.)?(?:publish_content_release|rollback_content_release|finalize_content_import_validation)/);
+});

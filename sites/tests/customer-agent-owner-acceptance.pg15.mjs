@@ -93,6 +93,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     const contentHashSql = await readFile(new URL('owner-acceptance.content-hash.v1.sql', candidate), 'utf8');
     ok(sql(contentHashSql));
     ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
+    ok(sql(await readFile(new URL('owner-acceptance.storage.v1.sql', candidate), 'utf8')));
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),
@@ -284,6 +285,105 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
         FROM pg_proc p WHERE p.oid = 'public.assert_owner_acceptance_content(text,text,text,text[],jsonb)'::regprocedure`)), 't');
       assert.equal(ok(sql('SELECT count(*) FROM public.owner_acceptance_records')), '1');
     });
+    await check('storage enforces actual approved content on authoring, staging and release rows', () => {
+      const question = { question_id: 'q_synthetic_storage', question_version: 1, question_text: '合成存储问题',
+        semantic_family_id: 'sf_synthetic_storage', origin_fingerprint: sha('synthetic-question-origin'),
+        origin_fingerprint_key_version: 'synthetic-v1', source_asset_id: 'sa_synthetic_storage', source: 'manual',
+        intent_taxonomy_version: 'itax_synthetic_storage', intent_id: 'intent_synthetic_storage' };
+      question.question_hash = ok(sql(`SELECT public.content_question_hash(${quote(JSON.stringify(question))}::jsonb)`));
+      const row = { tenant_id: 'synthetic_tenant', script_id: 'synthetic_storage', category: 'presale', title: '合成存储标题', answer_text: '合成存储话术',
+        status: 'draft', version: 3, script_version: 3, source_ref: 'SRC-SYNTHETIC', source_version_id: 'srcv_synthetic_presale',
+        platform_scope: ['douyin','qianniu'], product_scope_type: 'storewide', product_scope_refs: [], campaign_tag: null,
+        effective_from: record.accepted_at, effective_to: null, intent_taxonomy_version: question.intent_taxonomy_version,
+        intent_id: question.intent_id, risk_level: 'high', risk_categories: ['legal_commitment'], has_conflict: false,
+        review_mode: 'owner_acceptance', primary_reviewer_id: record.owner_subject_hash, primary_reviewer_role: 'ROLE-CONTENT-LEAD',
+        primary_review_evd: record.approval_evidence_id, secondary_reviewer_id: null, secondary_reviewer_role: null,
+        secondary_review_evd: null, placeholder_keys: [], questions_json: [question], priority: 0, owner_role: 'ROLE-CONTENT-LEAD',
+        review_due_at: record.expires_at, created_at: record.accepted_at, updated_at: record.accepted_at, published_at: null,
+        staging_id: 'synthetic_staging', import_batch_id: 'synthetic_storage_batch', operation: 'upsert',
+        search_document: "'synthetic':1", search_fallback_text: 'synthetic', validation_ok: true, validation_errors: null,
+        quality_status: 'clean', quality_issue_codes: [], quality_gate_passed: true, release_id: 'synthetic_storage_release' };
+      const snapshot = (value) => JSON.parse(ok(sql(`SELECT public.content_governance_snapshot(
+        r.script_id,r.category,r.title,r.answer_text,r.source_ref,r.source_version_id,r.owner_role,r.review_due_at,
+        r.platform_scope,r.product_scope_type,r.product_scope_refs,r.effective_from,r.effective_to,r.intent_taxonomy_version,r.intent_id,
+        r.risk_level,r.risk_categories,r.has_conflict,r.review_mode,r.primary_reviewer_id,r.primary_reviewer_role,r.primary_review_evd,
+        r.secondary_reviewer_id,r.secondary_reviewer_role,r.secondary_review_evd,r.placeholder_keys,r.questions_json)
+        FROM jsonb_populate_record(NULL::public.scripts,${quote(JSON.stringify(value))}::jsonb) r`)));
+      const r = structuredClone(record); const snap = snapshot(row);
+      r.scope.items = [{ script_id: row.script_id, script_version: 3, domain: row.category, source_version_id: row.source_version_id,
+        review_input_sha256: ok(sql(`SELECT public.owner_acceptance_review_input_sha256(${quote(JSON.stringify(snap))}::jsonb,3)`)),
+        risk_level: row.risk_level, risk_categories: row.risk_categories, has_conflict: false }];
+      row.owner_acceptance_record_sha256 = sha(encode(r));
+      const rehash = (value, version = value.version) => ({ ...value, content_hash: sha(stable({
+        hash_version: 'customer-agent/owner-acceptance-content/v1', content: snapshot(value), script_version: version,
+        owner_acceptance_record_sha256: value.owner_acceptance_record_sha256 })) });
+      const boundRow = rehash(row);
+      const setup = `INSERT INTO public.intent_taxonomy_versions(intent_taxonomy_version,approval_evd,approved_by,approved_at)
+        VALUES ('itax_synthetic_storage','EVD-SYNTHETIC-TAXONOMY','synthetic',now());
+        INSERT INTO public.intent_taxonomy_entries(intent_taxonomy_version,intent_id,label,lifecycle)
+        VALUES ('itax_synthetic_storage','intent_synthetic_storage','synthetic','active');
+        INSERT INTO public.import_batches(import_batch_id,source_type,source_binding_hash,status,tenant_id)
+        VALUES ('synthetic_storage_batch','seed','${sha(sources.map((source) => `${source.domain}:${source.source_version_id}`).join('|'))}','validating','synthetic_tenant');
+        SET LOCAL app.import_binding_write='on'; SET LOCAL app.publishing='on';
+        INSERT INTO public.import_batch_source_bindings(import_batch_id,domain,source_version_id)
+        SELECT 'synthetic_storage_batch',domain,source_version_id FROM public.authoritative_source_versions;
+        INSERT INTO public.content_releases(release_id,release_seq,status,source_binding_hash,tenant_id)
+        VALUES ('synthetic_storage_release',1,'published','${sha(sources.map((source) => `${source.domain}:${source.source_version_id}`).join('|'))}','synthetic_tenant');
+        INSERT INTO public.release_source_bindings(release_id,domain,source_version_id)
+        SELECT 'synthetic_storage_release',domain,source_version_id FROM public.authoritative_source_versions;`;
+      const write = (table, value = boundRow, { registered = true, before = '', after = '', role = '' } = {}) => sql(`BEGIN; ${setup}
+        ${registered ? `SELECT public.register_owner_acceptance('synthetic_tenant',${quote(encode(r))},'${row.owner_acceptance_record_sha256}','${row.primary_reviewer_id}');` : ''}
+        ${before} ${role ? `SET LOCAL ROLE ${role};` : ''}
+        INSERT INTO public.${table} SELECT * FROM jsonb_populate_record(NULL::public.${table},${quote(JSON.stringify(value))}::jsonb);
+        ${after} SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;`);
+      for (const table of ['scripts','staging_scripts','release_items']) {
+        ok(write(table)); denied(write(table,boundRow,{ registered: false }), 'NOT_ACTIVE');
+        for (const mutate of [
+          (v) => { v.answer_text = '合成篡改'; }, (v) => { v.title = '合成篡改'; },
+          (v) => { v.version = 4; v.script_version = 4; }, (v) => { v.primary_review_evd = 'EVD-SYNTHETIC-WRONG'; },
+          (v) => { v.risk_level = 'medium'; v.risk_categories = []; },
+          (v) => { v.source_version_id = 'srcv_synthetic_product'; v.category = 'product'; },
+        ]) { const changed = structuredClone(row); mutate(changed); denied(write(table,rehash(changed)), 'STORAGE_MISMATCH'); }
+        denied(write(table,{ ...boundRow,content_hash: sha('stale-content') }), 'STORAGE_MISMATCH');
+        denied(write(table,{ ...boundRow,owner_acceptance_record_sha256: null }), 'NOT_ACTIVE');
+        denied(write(table,{ ...boundRow,secondary_reviewer_id: sha('fake-secondary') }));
+        denied(write(table,{ ...boundRow,has_conflict: true }));
+        denied(write(table,boundRow,{ before: `SELECT public.revoke_owner_acceptance('synthetic_tenant','${row.owner_acceptance_record_sha256}','EVD-SYNTHETIC-REVOKE');` }), 'NOT_ACTIVE');
+        denied(write(table,boundRow,{ before: `SELECT public.suspend_authoritative_source('srcv_synthetic_presale','SOURCE_REVOKED','EVD-SYNTHETIC-SUSPEND','synthetic','owner');` }), 'NOT_ACTIVE');
+        for (const role of ['app_runtime','app_import_worker','app_content_admin','app_owner_acceptance_registrar']) {
+          denied(write(table,boundRow,{ role }), '42501');
+        }
+        const legacy = { ...boundRow,owner_acceptance_record_sha256: null,script_version: table === 'staging_scripts' ? null : 3,
+          review_mode: 'dual', secondary_reviewer_id: sha('synthetic-secondary'),secondary_reviewer_role: 'ROLE-CS-MANAGER',
+          secondary_review_evd: 'EVD-SYNTHETIC-SECONDARY' };
+        legacy.content_hash = sha(stable(snapshot(legacy)));
+        ok(write(table,legacy,{ registered: false }));
+        denied(write(table,{ ...legacy,secondary_reviewer_role: null }), '23514');
+        const single = { ...legacy,risk_level: 'medium',risk_categories: [],review_mode: 'single',
+          secondary_reviewer_id: null,secondary_reviewer_role: null,secondary_review_evd: null };
+        single.content_hash = sha(stable(snapshot(single)));
+        ok(write(table,single,{ registered: false }));
+        denied(write(table,{ ...single,owner_acceptance_record_sha256: row.owner_acceptance_record_sha256 }), '23514');
+      }
+      denied(write('scripts',{ ...boundRow,tenant_id: 'other_tenant' }), 'NOT_ACTIVE');
+      denied(write('staging_scripts',boundRow,{ before: "UPDATE public.import_batches SET tenant_id='other_tenant';" }), 'NOT_ACTIVE');
+      denied(write('release_items',boundRow,{ before: "UPDATE public.content_releases SET tenant_id='other_tenant';" }), 'NOT_ACTIVE');
+      const withdrawal = { ...boundRow,operation: 'withdraw',questions_json: [] };
+      for (const field of ['title','answer_text','content_hash','owner_role','review_due_at','platform_scope',
+        'product_scope_type','product_scope_refs','campaign_tag','effective_from','effective_to','intent_taxonomy_version',
+        'intent_id','risk_level','risk_categories','has_conflict','review_mode','primary_reviewer_id','primary_reviewer_role',
+        'primary_review_evd','secondary_reviewer_id','secondary_reviewer_role','secondary_review_evd','placeholder_keys',
+        'search_document','search_fallback_text','owner_acceptance_record_sha256','script_version']) withdrawal[field] = null;
+      ok(write('staging_scripts',withdrawal,{ registered: false }));
+      denied(write('staging_scripts',{ ...withdrawal,owner_acceptance_record_sha256: row.owner_acceptance_record_sha256 }), '23514');
+      denied(write('staging_scripts',{ ...boundRow,script_version: null }));
+      denied(write('staging_scripts',{ ...boundRow,script_version: 4 }));
+      denied(write('scripts',boundRow,{ after: "UPDATE public.scripts SET answer_text='changed' WHERE script_id='synthetic_storage';" }), 'STORAGE_MISMATCH');
+      for (const role of ['app_runtime','app_import_worker','app_content_admin','app_owner_acceptance_registrar']) {
+        denied(sql(`SET ROLE ${role}; SELECT public.owner_acceptance_active_record('synthetic_tenant','${row.owner_acceptance_record_sha256}','${row.primary_reviewer_id}')`), '42501');
+      }
+      assert.equal(ok(sql('SELECT count(*) FROM public.scripts')), '0');
+    });
     for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker']) {
       await check(`${role} cannot register acceptance or call internal assertion`, () => {
         denied(register(record, { role }), '42501');
@@ -394,8 +494,8 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
       ok(sql(`SELECT public.suspend_authoritative_source('${sources[0].source_version_id}','SOURCE_REVOKED','EVD-SYNTHETIC-SUSPENDED','synthetic-owner','owner')`));
       denied(bound(r)); denied(register(r));
     });
-    await check('existing single/dual constraints and all runtime function definitions remain unchanged', () => {
-      assert.equal(ok(sql("SELECT count(*) FROM pg_constraint WHERE conrelid IN ('scripts'::regclass,'staging_scripts'::regclass,'release_items'::regclass) AND pg_get_constraintdef(oid) LIKE '%owner_acceptance%'")), '0');
+    await check('storage candidate does not wire existing runtime consumers', () => {
+      assert.equal(ok(sql("SELECT count(*) FROM pg_trigger WHERE tgname = 'owner_acceptance_storage_guard'")), '3');
       assert.equal(ok(sql("SELECT count(*) FROM pg_proc WHERE proname IN ('publish_content_release','rollback_content_release','search_recommendable_scripts') AND prosrc LIKE '%owner_acceptance%'")), '0');
     });
   } finally {
