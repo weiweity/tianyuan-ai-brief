@@ -202,11 +202,10 @@ test("canonical replace 遇到 dist symlink 时拒绝，仓库外目录不删除
   await assert.rejects(stat(path.join(external, "pages")), { code: "ENOENT" });
 });
 
-test("Pages 由任一归档、发布工具或脱敏 09 触发，不上传客服证据且 Action 固定提交", async () => {
-  const workflow = await readFile(path.join(repoRoot, ".github/workflows/pages.yml"), "utf8");
-  assert.match(workflow, /archive\/\*\*/);
-  assert.match(workflow, /sites\/\*\*/);
-  assert.match(workflow, /business-docs\/01-客服Agent项目\/09-客服Agent需求会汇报\.html/);
+test("Pages 由可信 main 验证后发布，不上传客服证据且 Action 固定提交", async () => {
+  const workflow = (await Promise.all(['quality.yml', 'pages.yml'].map(name => readFile(path.join(repoRoot, '.github/workflows', name), 'utf8')))).join('\n');
+  assert.match(workflow, /shouldPublishPages\(process.env\)/);
+  assert.doesNotMatch(workflow, /BEFORE_SHA|pagesAffected/);
   assert.doesNotMatch(workflow, /customer-agent-(?:prd|hub|meeting)-qa|Upload quality evidence/);
   assert.match(workflow, /actions\/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa/);
   assert.match(workflow, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);

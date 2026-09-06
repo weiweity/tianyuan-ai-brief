@@ -74,10 +74,9 @@ README、生成 HTML、评审快照和历史会议稿都不得独立发明当前
 ## 校验
 
 ```bash
-node business-docs/08-工具/sync_customer_agent_surfaces.mjs --check
-cd sites
-npm run test:business
-npm run test:all
+npm --prefix sites run test:changed -- business-docs/README.md
 ```
+
+上例只打印本次文件的最小校验计划；加 `--run` 执行。业务语义和私密边界需按 [测试分层](../sites/README.md#校验与预览) 补对应门禁；PR、发布与正式阶段验收统一运行 `npm --prefix sites run test:release`，不再先重复执行已包含的业务 QA。
 
 *业务文档地图 v5.12 · 2026-09-05 · 客服技术 1～3 关已收口，G0 / Ddev Pass，DEV-M1 与 W0～W5 已完成；真实 G1a 为 `T4 BLOCKED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`，下一动作是 负责人承接合同落地与版本化新包准备。其他板块状态以各自入口为准。*
