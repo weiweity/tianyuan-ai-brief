@@ -25,8 +25,7 @@
 cd sites
 npm ci --ignore-scripts
 npx playwright install chromium
-npm run verify:archive
-npm run test:all
+npm run test:release
 npm run serve
 ```
 
@@ -44,6 +43,12 @@ Linux CI 如需同时补系统依赖，使用 `npx playwright install --with-dep
 | 阶段收口、发布候选、PR/部署前 | `npm run test:release` | 等价完整 `test:all`，包含 UI、业务 QA、依赖审计及所有静态合同 |
 
 轻量门只缩短反馈回路，不降低发布标准。HTML 模板、交互、可访问性、构建/归档、依赖、锁文件、CI 或发布工具发生变化时，仍须补对应浏览器/归档检查，并在形成发布候选前运行 `test:release`。
+
+执行顺序以 `scripts/quality-plan.mjs` 的 `releaseSteps` 为准：`test:release` / `test:all` 共用同一入口，每步输出耗时与退出码。`npm test` 保留静态合同；私有工作区端到端回归和真实页面排版分别由 `test:boundary-integration` / `test:layout-ui` 执行，两项都在 release 中，浏览器缺失必须失败。`test:customer-boundary` 同时执行静态与私有工作区检查。
+
+`npm run test:changed -- README.md` 只打印计划，加 `--run` 才执行；路径必须相对仓库根目录、显式列出本次任务文件，不自动读取整个脏工作树。路径分类无法判断 Markdown 是否更改 URL、代号、审批语义等，遇到这些内容仍按上表显式补边界门禁；未知代码回退 release。SQL grammar 不等于 PostgreSQL：改 SQL 行为时另在隔离测试库运行 `test:owner-acceptance:pg15`，不触碰真实数据库。
+
+CI 由 `quality.yml` 完整检查一次。每次可信 main push / main 手动运行通过后，都从该已验证 checkout 构建并上传 Pages artifact；不再按最新提交的路径跳过发布，防止后来的纯文档提交取消前一页面提交后漏发。同一运行的 `publish` job 依赖 `test` 成功，再调用仅部署的 `pages.yml`。纯文档 main 提交也会打包部署，但不重复全量检查；PR 不部署，也不消费其他运行的 artifact。需要手动发布时运行 quality；没有新的上线授权时不要触发工作流。
 
 `npm run create:security-archive` 只用于首次创建 2026-08-09 快照，若目标已存在会拒绝覆盖；日常只运行 `npm run verify:archive`。生成器从旧归档与锁定的 `node_modules` 在临时目录重建，白名单校验通过后才发布新目录和独立 manifest，禁止手改 Bundle。
 

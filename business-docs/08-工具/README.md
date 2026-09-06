@@ -2,6 +2,8 @@
 
 本目录维护客服 Agent `07/08` 现行生成视图、`09` D0 冻结快照与 `00–06` 真源之间的生成、合同和浏览器验收工具。历史 Python 核验脚本不属于本轮日常门禁，也不应随本轮提交。
 
+工程校验统一按 [sites 测试分层](../../sites/README.md#校验与预览) 选择；完整顺序在 [quality-plan.mjs](../../sites/scripts/quality-plan.mjs)。`test:release` 已包含业务浏览器 QA，不需要在它之前重复运行 `test:business`。真实数据操作仍须单独授权。
+
 | 文件 | 唯一用途 |
 |------|----------|
 | `customer_project_status.mjs` | 从章程、G0、Scope 与费用真源推导受控状态；拒绝伪 G0、伪 Ddev、伪 cap 与无证据状态 |
