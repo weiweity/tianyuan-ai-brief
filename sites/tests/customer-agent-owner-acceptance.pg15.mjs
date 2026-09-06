@@ -94,6 +94,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     ok(sql(contentHashSql));
     ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
     ok(sql(await readFile(new URL('owner-acceptance.storage.v1.sql', candidate), 'utf8')));
+    ok(sql(await readFile(new URL('owner-acceptance.import.v1.sql', candidate), 'utf8')));
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),
@@ -285,7 +286,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
         FROM pg_proc p WHERE p.oid = 'public.assert_owner_acceptance_content(text,text,text,text[],jsonb)'::regprocedure`)), 't');
       assert.equal(ok(sql('SELECT count(*) FROM public.owner_acceptance_records')), '1');
     });
-    await check('storage enforces actual approved content on authoring, staging and release rows', () => {
+    await check('storage enforces actual approved content on authoring, staging and release rows', async (storageTest) => {
       const question = { question_id: 'q_synthetic_storage', question_version: 1, question_text: '合成存储问题',
         semantic_family_id: 'sf_synthetic_storage', origin_fingerprint: sha('synthetic-question-origin'),
         origin_fingerprint_key_version: 'synthetic-v1', source_asset_id: 'sa_synthetic_storage', source: 'manual',
@@ -382,6 +383,94 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
       for (const role of ['app_runtime','app_import_worker','app_content_admin','app_owner_acceptance_registrar']) {
         denied(sql(`SET ROLE ${role}; SELECT public.owner_acceptance_active_record('synthetic_tenant','${row.owner_acceptance_record_sha256}','${row.primary_reviewer_id}')`), '42501');
       }
+      await storageTest.test('fenced finalizer derives review metadata and admits only the complete approved batch', () => {
+        const previous = { ...boundRow,version: 2,owner_acceptance_record_sha256: null,
+          review_mode: 'dual',secondary_reviewer_id: sha('synthetic-secondary'),secondary_reviewer_role: 'ROLE-CS-MANAGER',
+          secondary_review_evd: 'EVD-SYNTHETIC-SECONDARY' };
+        previous.content_hash = sha(stable(snapshot(previous)));
+        const workerFields = ['staging_id','script_id','operation','category','title','answer_text','content_hash',
+          'source_version_id','owner_role','review_due_at','platform_scope','product_scope_type','product_scope_refs',
+          'campaign_tag','effective_from','effective_to','intent_taxonomy_version','intent_id','risk_level','risk_categories',
+          'has_conflict','placeholder_keys','questions_json','search_fallback_text','quality_status','quality_issue_codes',
+          'owner_acceptance_record_sha256','script_version'];
+        const input = (value) => ({ ...Object.fromEntries(workerFields.map((key) => [key,value[key]])),
+          questions_grams_text: '合成 问题',title_grams_text: '合成 标题',answer_grams_text: '合成 话术' });
+        const finalize = (rows = [input(boundRow)], { acceptance = r, registerRecord = true, quality = true,
+          before = '', role = 'app_import_worker', lease = 1, atomicRejection = false, legacyReview = '' } = {}) => {
+          const mandatory = rows.filter((item) => item.risk_level === 'high' || item.has_conflict).length;
+          const ordinary = rows.length - mandatory;
+          const call = `public.finalize_content_import_validation('synthetic_import_job','synthetic-worker',${lease},
+            'synthetic_storage_batch','staged',${quote(JSON.stringify(rows))}::jsonb,NULL)`;
+          return sql(`BEGIN; ${setup}
+            INSERT INTO public.scripts SELECT * FROM jsonb_populate_record(NULL::public.scripts,${quote(JSON.stringify(previous))}::jsonb);
+            INSERT INTO public.outbox_jobs(job_id,job_type,payload,status,lease_owner,lease_version,lease_expires_at)
+            VALUES ('synthetic_import_job','import_validate','{"import_batch_id":"synthetic_storage_batch"}','running',
+              'synthetic-worker',1,now()+interval '10 minutes');
+            ${registerRecord ? `SELECT public.register_owner_acceptance('synthetic_tenant',${quote(encode(acceptance))},'${sha(encode(acceptance))}','${acceptance.owner_subject_hash}');` : ''}
+            ${quality ? `SELECT * FROM public.freeze_content_quality_review_plan('synthetic_import_job','synthetic-worker',1,
+              'synthetic_storage_batch','qplan_synthetic_import','synthetic-v1',now(),${rows.length},${ordinary},${mandatory},
+              '${sha('synthetic-seed')}','${sha('synthetic-selection')}','sha256-ranked-v1',${quote(JSON.stringify(rows))}::jsonb);
+              SELECT public.record_content_quality_review_evidence('qplan_synthetic_import',${ordinary},0,NULL,NULL,${mandatory},0,
+              ${rows.length},0,'passed','EVD-SYNTHETIC-QUALITY','content_quality_reviewer');` : ''}
+            ${legacyReview} ${before} SET LOCAL ROLE ${role};
+            ${atomicRejection ? `DO $atomic$ BEGIN
+              BEGIN PERFORM ${call}; RAISE EXCEPTION 'expected rejection';
+              EXCEPTION WHEN SQLSTATE 'ZA004' THEN NULL; END;
+              EXECUTE 'RESET ROLE';
+              IF (SELECT status FROM public.import_batches WHERE import_batch_id='synthetic_storage_batch') <> 'validating'
+                OR EXISTS (SELECT 1 FROM public.staging_scripts WHERE import_batch_id='synthetic_storage_batch')
+                OR (SELECT status FROM public.outbox_jobs WHERE job_id='synthetic_import_job') <> 'running' THEN
+                RAISE EXCEPTION 'partial finalization survived rejection'; END IF;
+              END $atomic$;` : `SELECT ${call}; RESET ROLE;
+              SELECT s.review_mode || ':' || s.script_version || ':' || b.status || ':' || j.status
+                FROM public.staging_scripts s JOIN public.import_batches b USING(import_batch_id)
+                CROSS JOIN public.outbox_jobs j WHERE j.job_id='synthetic_import_job';`}
+            RESET ROLE; SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;`);
+        };
+        assert.match(ok(finalize()), /owner_acceptance:3:staged:done/);
+        denied(finalize(undefined,{ registerRecord: false }), 'staging row count mismatch');
+        denied(finalize(undefined,{ quality: false }), 'QUALITY_GATE_NOT_PASSED');
+        denied(finalize(undefined,{ lease: 2 }), 'OUTBOX_LEASE_LOST');
+        denied(finalize(undefined,{ before: "UPDATE public.outbox_jobs SET lease_expires_at=now()-interval '1 second';" }), 'OUTBOX_LEASE_LOST');
+        for (const key of ['review_mode','primary_reviewer_id','primary_review_evd','secondary_reviewer_id','quality_gate_passed']) {
+          denied(finalize([{ ...input(boundRow),[key]: null }]), 'REVIEW_EVIDENCE_TRUST_BOUNDARY');
+        }
+        for (const version of [null,'3',0,2147483648,4]) {
+          denied(finalize([{ ...input(boundRow),script_version: version }]), 'OWNER_ACCEPTANCE_IMPORT_');
+        }
+        const incompleteReference = input(boundRow); delete incompleteReference.script_version;
+        denied(finalize([incompleteReference]), 'IMPORT_INVALID');
+        denied(finalize([{ ...input(boundRow),owner_acceptance_record_sha256: sha('unknown-record') }]), 'staging row count mismatch');
+        denied(finalize(undefined,{ before: `SELECT public.revoke_owner_acceptance('synthetic_tenant','${row.owner_acceptance_record_sha256}','EVD-SYNTHETIC-REVOKED');` }), 'NOT_ACTIVE');
+        denied(finalize(undefined,{ before: "UPDATE public.import_batches SET tenant_id='other_tenant';" }), 'VERSION_MISMATCH');
+        for (const role of ['app_runtime','app_content_admin','app_owner_acceptance_registrar']) {
+          denied(finalize(undefined,{ role }), '42501');
+        }
+        const legacy = { ...previous,version: 3 };
+        legacy.content_hash = sha(stable(snapshot(legacy)));
+        const legacyInput = input(legacy); delete legacyInput.owner_acceptance_record_sha256; delete legacyInput.script_version;
+        const decisions = [ ['lead','ROLE-CONTENT-LEAD',legacy.primary_reviewer_id,legacy.primary_review_evd,'content_review_lead'],
+          ['manager','ROLE-CS-MANAGER',legacy.secondary_reviewer_id,legacy.secondary_review_evd,'content_review_manager'] ]
+          .map(([id,reviewRole,subject,evidence,capability]) => `SELECT public.record_content_review_decision('crd_synthetic_${id}',
+            '${legacy.script_id}','${legacy.content_hash}','${reviewRole}','${subject}','synthetic-v1','${evidence}','approved',now(),'${capability}');`).join('\n');
+        // Legacy has no staging version; inspect state separately through the result.
+        ok(finalize([legacyInput],{ registerRecord: false,legacyReview: decisions }));
+        const single = { ...legacy,risk_level: 'medium',risk_categories: [],review_mode: 'single',
+          secondary_reviewer_id: null,secondary_reviewer_role: null,secondary_review_evd: null };
+        single.content_hash = sha(stable(snapshot(single)));
+        const singleInput = input(single); delete singleInput.owner_acceptance_record_sha256; delete singleInput.script_version;
+        ok(finalize([singleInput],{ registerRecord: false,legacyReview:
+          `SELECT public.record_content_review_decision('crd_synthetic_single','${single.script_id}',
+          '${single.content_hash}','ROLE-CONTENT-LEAD','${single.primary_reviewer_id}','synthetic-v1',
+          '${single.primary_review_evd}','approved',now(),'content_review_lead');` }));
+        const larger = structuredClone(r);
+        const secondSnapshot = { ...snap,script_id: 'synthetic_storage_second' };
+        larger.scope.items.push({ ...larger.scope.items[0],script_id: secondSnapshot.script_id,
+          review_input_sha256: ok(sql(`SELECT public.owner_acceptance_review_input_sha256(${quote(JSON.stringify(secondSnapshot))}::jsonb,3)`)) });
+        const partialRow = rehash({ ...row,owner_acceptance_record_sha256: sha(encode(larger)) });
+        denied(finalize([input(partialRow)],{ acceptance: larger }), 'NOT_ACTIVE');
+        ok(finalize([input(partialRow)],{ acceptance: larger,atomicRejection: true }));
+      });
       assert.equal(ok(sql('SELECT count(*) FROM public.scripts')), '0');
     });
     for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker']) {

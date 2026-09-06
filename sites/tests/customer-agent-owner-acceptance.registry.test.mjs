@@ -85,3 +85,24 @@ test('storage candidate parses and uses one review policy across three guarded t
   assert.equal((storageSql.match(/CREATE TRIGGER owner_acceptance_storage_guard/g) ?? []).length, 3);
   assert.doesNotMatch(storageSql, /GRANT EXECUTE|CREATE OR REPLACE FUNCTION (?:public\.)?(?:publish_content_release|rollback_content_release|finalize_content_import_validation)/);
 });
+
+
+test('import candidate parses and preserves existing function signatures and ACL', async () => {
+  const candidate = await readFile(new URL('30-开发-进行中/owner-acceptance.import.v1.sql', root), 'utf8');
+  const frozen = await readFile(new URL('20-设计-进行中/33-schema-v1-草案.sql', root), 'utf8');
+  assert.ok(parser.parseSync(candidate).stmts.length > 0);
+  assert.equal(parser.parsePlPgSQLSync(candidate).plpgsql_funcs.length, 2);
+  assert.doesNotMatch(candidate, /\b(?:GRANT|ALTER FUNCTION)\b/);
+  for (const revoke of candidate.matchAll(/REVOKE[\s\S]*?;/g)) assert.ok(frozen.includes(revoke[0]));
+  for (const name of ['record_content_quality_review_evidence', 'finalize_content_import_validation']) {
+    const pattern = new RegExp(`CREATE OR REPLACE FUNCTION ${name}\\([\\s\\S]*?AS \\$\\$`);
+    assert.equal(candidate.match(pattern)?.[0], frozen.match(pattern)?.[0]);
+  }
+  const qualityBody = (text) => text.match(/CREATE OR REPLACE FUNCTION record_content_quality_review_evidence\([\s\S]*?\n\$\$;/)?.[0];
+  const original = qualityBody(frozen);
+  assert.ok(original);
+  assert.equal(qualityBody(candidate), original.replace(
+    'BEGIN\n  SELECT plan.*',
+    'BEGIN\n  -- Plans are append-only and cannot be updated/deleted. A row lock would require\n  -- UPDATE privilege which this definer deliberately lacks on immutable evidence.\n  SELECT plan.*',
+  ).replace('WHERE plan.plan_id = p_plan_id\n  FOR SHARE;', 'WHERE plan.plan_id = p_plan_id;'));
+});
