@@ -13,6 +13,8 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { OWNER_PROFILE_PATH, OWNER_CONTRACT_PATHS, OWNER_SQL_SOURCES, buildOwnerContractFiles } from "../../business-docs/08-工具/build_customer_agent_owner_contract.mjs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -86,6 +88,11 @@ async function createFixture({
     "  title: Fixture API",
     "  version: 1.11.0",
     "paths: {}",
+    "components:",
+    "  schemas:",
+    "    ReviewMode:",
+    "      type: string",
+    "      enum: [single, dual]",
     "",
   ].join("\n");
   const database = [
@@ -405,5 +412,99 @@ test("manifest 字段封闭且目录不接受未声明文件", async () => {
       }),
       /字段集合不封闭/,
     );
+  });
+});
+
+async function addOwnerProfile(fixture) {
+  const development = path.posix.dirname(OWNER_PROFILE_PATH);
+  const files = [...OWNER_SQL_SOURCES.slice(1),
+    `${development}/owner-acceptance.v1.schema.json`,
+    `${development}/owner-acceptance.registry.v1.openapi-extension.json`];
+  for (const source of files) {
+    const bytes = source.endsWith('.sql') ? '-- synthetic additive fixture\n'
+      : await readFile(new URL(`../../${source}`, import.meta.url));
+    await writeSourceFile(fixture.repositoryRoot, source, bytes);
+  }
+  const generated = buildOwnerContractFiles((source) => readFileSync(path.join(fixture.repositoryRoot, source)));
+  const databaseHash = digest(generated.database), openapiHash = digest(generated.openapi);
+  await writeSourceFile(fixture.repositoryRoot, OWNER_PROFILE_PATH,
+    JSON.stringify({ schema: 'customer-agent-contract-profile/v1', profile: 'owner-acceptance-v1' }));
+  for (const key of ['database', 'openapi']) await writeSourceFile(fixture.repositoryRoot, OWNER_CONTRACT_PATHS[key], generated[key]);
+  await writeSourceFile(fixture.repositoryRoot, OWNER_CONTRACT_PATHS.increment, [
+    `**直接前序机器合同：** ${fixture.databaseHash} ${fixture.openapiHash}`,
+    `**A3 机器合同增量：** ${databaseHash} ${openapiHash}`,
+    `**实际产物必须精确匹配：** ${databaseHash} ${openapiHash}`,
+  ].join('\n'));
+  fixtureGit(fixture.repositoryRoot, ['add', '--', development]);
+  fixtureGit(fixture.repositoryRoot, ['commit', '-m', 'fixture integrated owner contract']);
+  return { repository: fixture.repositoryRoot,
+    sourceGitSha: fixtureGit(fixture.repositoryRoot, ['rev-parse', 'HEAD']),
+    expectedDatabaseSha256: databaseHash, expectedOpenapiSha256: openapiHash };
+}
+
+test('owner profile exports complete immutable contract while historical commit remains exportable', async () => {
+  await withFixture({}, async (fixture) => {
+    const options = await addOwnerProfile(fixture);
+    const contract = loadContractSetFromCommit(options);
+    assert.equal(contract.manifest.database.version, 'schema.v1.15');
+    assert.equal(contract.manifest.openapi.version, '1.12.0');
+    assert.equal(contract.manifest.database.source_path, OWNER_CONTRACT_PATHS.database);
+    const written = await writeImmutableContractSet({ contractSet: contract, repository: fixture.repositoryRoot, outputRoot: fixture.outputRoot });
+    await verifyContractSetDirectory({ contractSetDirectory: written.target, repository: fixture.repositoryRoot });
+    const old = loadContractSetFromCommit({ repository: fixture.repositoryRoot, sourceGitSha: fixture.sourceGitSha,
+      expectedDatabaseSha256: fixture.databaseHash, expectedOpenapiSha256: fixture.openapiHash });
+    assert.equal(old.manifest.database.source_path, CONTRACT_SOURCE_PATHS.database);
+    // A dirty invalid profile must not affect a previously committed export.
+    await writeSourceFile(fixture.repositoryRoot, OWNER_PROFILE_PATH, '{}');
+    assert.deepEqual(loadContractSetFromCommit(options).manifest, contract.manifest);
+  });
+});
+
+for (const failure of ['unknown-profile', 'deleted-profile', 'stale-predecessor', 'stale-current', 'missing-source', 'altered-generated']) {
+  test(`owner profile fails closed: ${failure}`, async () => {
+    await withFixture({}, async (fixture) => {
+      const options = await addOwnerProfile(fixture);
+      let expected;
+      if (failure === 'unknown-profile') {
+        await writeSourceFile(fixture.repositoryRoot, OWNER_PROFILE_PATH, '{"schema":"customer-agent-contract-profile/v1","profile":"other"}');
+        expected = /profile/;
+      } else if (failure === 'deleted-profile') {
+        await rm(path.join(fixture.repositoryRoot, OWNER_PROFILE_PATH));
+        expected = /删除了既有合同 profile/;
+      } else if (failure.startsWith('stale-')) {
+        const target = path.join(fixture.repositoryRoot, OWNER_CONTRACT_PATHS.increment);
+        const prior = await readFile(target, 'utf8');
+        await writeFile(target, prior.replace(failure === 'stale-predecessor' ? fixture.databaseHash : options.expectedDatabaseSha256, '0'.repeat(64)));
+        expected = /双哈希不一致/;
+      } else if (failure === 'missing-source') {
+        await rm(path.join(fixture.repositoryRoot, OWNER_SQL_SOURCES.at(-1)));
+        expected = /git rev-parse 失败/;
+      } else {
+        const target = path.join(fixture.repositoryRoot, OWNER_CONTRACT_PATHS.database);
+        const altered = `${await readFile(target, 'utf8')}-- unauthorized generated edit\n`;
+        await writeFile(target, altered);
+        options.expectedDatabaseSha256 = digest(altered);
+        expected = /派生产物/;
+      }
+      fixtureGit(fixture.repositoryRoot, ['add', '--', path.posix.dirname(OWNER_PROFILE_PATH)]);
+      fixtureGit(fixture.repositoryRoot, ['commit', '-m', `fixture invalid ${failure}`]);
+      options.sourceGitSha = fixtureGit(fixture.repositoryRoot, ['rev-parse', 'HEAD']);
+      assert.throws(() => loadContractSetFromCommit(options), expected);
+    });
+  });
+}
+
+test('owner profile cannot be downgraded through a merge that keeps the legacy parent tree', async () => {
+  await withFixture({}, async (fixture) => {
+    const owner = await addOwnerProfile(fixture);
+    fixtureGit(fixture.repositoryRoot, ['checkout', '-b', 'legacy-branch', fixture.sourceGitSha]);
+    await writeSourceFile(fixture.repositoryRoot, 'unrelated.txt', 'synthetic unrelated branch\n');
+    fixtureGit(fixture.repositoryRoot, ['add', '--', 'unrelated.txt']);
+    fixtureGit(fixture.repositoryRoot, ['commit', '-m', 'fixture legacy-side work']);
+    fixtureGit(fixture.repositoryRoot, ['merge', '-s', 'ours', '--no-edit', owner.sourceGitSha]);
+    const sourceGitSha = fixtureGit(fixture.repositoryRoot, ['rev-parse', 'HEAD']);
+    assert.equal(fixtureGit(fixture.repositoryRoot, ['log', '-1', '--format=%H', sourceGitSha, '--', OWNER_PROFILE_PATH]), '');
+    assert.throws(() => loadContractSetFromCommit({ repository: fixture.repositoryRoot, sourceGitSha,
+      expectedDatabaseSha256: fixture.databaseHash, expectedOpenapiSha256: fixture.openapiHash }), /删除了既有合同 profile/);
   });
 });

@@ -87,15 +87,20 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     }
     const baseSql = await readFile(new URL('33-schema-v1-草案.sql', design), 'utf8');
     assert.equal(sha(baseSql), 'edf909bf9450b5745a85ced4a75a2e2de3e5b061847562cd3a68c9c7c226da99');
-    ok(sql(baseSql));
-    const extensionSql = await readFile(new URL('owner-acceptance.registry.v1.sql', candidate), 'utf8');
-    ok(sql(extensionSql));
-    const contentHashSql = await readFile(new URL('owner-acceptance.content-hash.v1.sql', candidate), 'utf8');
-    ok(sql(contentHashSql));
-    ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
-    ok(sql(await readFile(new URL('owner-acceptance.storage.v1.sql', candidate), 'utf8')));
-    ok(sql(await readFile(new URL('owner-acceptance.import.v1.sql', candidate), 'utf8')));
-    ok(sql(await readFile(new URL('owner-acceptance.publish.v1.sql', candidate), 'utf8')));
+    if (process.env.CUSTOMER_AGENT_PG_INTEGRATED === '1') {
+      ok(sql(await readFile(new URL('schema.v1.15.sql', candidate), 'utf8')));
+      assert.match(ok(sql("SELECT obj_description('public'::regnamespace, 'pg_namespace');")), /CS-AI-C11 schema\.v1\.15;/);
+    } else {
+      ok(sql(baseSql));
+      const extensionSql = await readFile(new URL('owner-acceptance.registry.v1.sql', candidate), 'utf8');
+      ok(sql(extensionSql));
+      const contentHashSql = await readFile(new URL('owner-acceptance.content-hash.v1.sql', candidate), 'utf8');
+      ok(sql(contentHashSql));
+      ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
+      ok(sql(await readFile(new URL('owner-acceptance.storage.v1.sql', candidate), 'utf8')));
+      ok(sql(await readFile(new URL('owner-acceptance.import.v1.sql', candidate), 'utf8')));
+      ok(sql(await readFile(new URL('owner-acceptance.publish.v1.sql', candidate), 'utf8')));
+    }
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),

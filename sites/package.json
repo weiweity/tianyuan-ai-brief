@@ -1,6 +1,6 @@
 {
   "name": "tianyuan-ai-sites",
-  "version": "5.31.0",
+  "version": "5.32.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -38,13 +38,15 @@
     "test:customer-contracts": "node --test tests/customer-project-status.test.mjs tests/customer-project-contract.regression.test.mjs tests/customer-agent-minimal-g0-evidence.test.mjs && npm run test:customer-agent-contract-set && npm run test:customer-agent-python-tools && npm run check:business-sources",
     "test:customer-boundary": "node --test tests/public-project-boundary.test.mjs",
     "test:design-contracts": "npm run test:architecture-contract && npm run check:arch-diagrams",
-    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar && npm run test:owner-acceptance-contract",
+    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar && npm run test:owner-acceptance-contract && npm run check:owner-contract && npm run lint:owner-openapi",
     "test:owner-acceptance-contract": "node --test tests/customer-agent-owner-acceptance.registry.test.mjs",
     "test:owner-acceptance:pg15": "node --test tests/customer-agent-owner-acceptance.pg15.mjs",
     "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci",
     "audit:deps": "npm audit --registry=https://registry.npmjs.org",
     "test:release": "npm run test:all",
-    "test:all": "npm run test && npm run test:ui && npm run test:arch-board-ui && npm run test:business && npm run test:customer-agent-python-tools && npm run lint:openapi && npm run test:sql-grammar && npm run test:architecture-contract && npm run check:arch-diagrams && npm run audit:deps"
+    "test:all": "npm run test && npm run test:ui && npm run test:arch-board-ui && npm run test:business && npm run test:customer-agent-python-tools && npm run lint:openapi && npm run check:owner-contract && npm run lint:owner-openapi && npm run test:sql-grammar && npm run test:architecture-contract && npm run check:arch-diagrams && npm run audit:deps",
+    "check:owner-contract": "node ../business-docs/08-工具/build_customer_agent_owner_contract.mjs --check",
+    "lint:owner-openapi": "redocly lint ../business-docs/01-客服Agent项目/30-开发-进行中/openapi.v1.12.yaml"
   },
   "devDependencies": {
     "@libpg-query/parser": "17.6.10",

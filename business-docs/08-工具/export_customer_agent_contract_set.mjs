@@ -17,12 +17,16 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  OWNER_PROFILE_PATH, OWNER_CONTRACT_PATHS, buildOwnerContractFiles,
+} from "./build_customer_agent_owner_contract.mjs";
+
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "../..");
 const defaultOutputRoot = path.join(repositoryRoot, "output/customer-agent-contract-sets");
 
 export const CONTRACT_SET_SCHEMA = "customer-agent-contract-set/v1";
-export const CONTRACT_SET_TOOL_VERSION = "1.1.0";
+export const CONTRACT_SET_TOOL_VERSION = "1.2.0";
 
 export const CONTRACT_SOURCE_PATHS = Object.freeze({
   architecture: "business-docs/01-客服Agent项目/20-设计-进行中/37-架构SSOT-v1.md",
@@ -255,14 +259,28 @@ export function loadContractSetFromCommit({
   expectedDatabaseSha256,
 }) {
   const exactSourceGitSha = resolveExactSourceCommit(repository, sourceGitSha);
-  const buffers = Object.fromEntries(
-    Object.entries(CONTRACT_SOURCE_PATHS).map(([key, sourcePath]) => [
-      key,
-      gitBlob(repository, exactSourceGitSha, sourcePath),
-    ]),
-  );
+  const readSource = (sourcePath) => gitBlob(repository, exactSourceGitSha, sourcePath);
+  // Missing profile is supported only for historical commits. A present but invalid profile
+  // fails closed; neither the working tree nor a manifest may select source paths.
+  const profileObject = runGit(repository, ["ls-tree", exactSourceGitSha, "--", OWNER_PROFILE_PATH]);
+  const ownerProfile = String(profileObject.stdout).trim() !== "";
+  if (!ownerProfile && gitText(repository, ["log", "--full-history", "-1", "--format=%H", exactSourceGitSha, "--", OWNER_PROFILE_PATH])) {
+    throw new Error("来源 commit 删除了既有合同 profile，拒绝降级历史合同");
+  }
+  if (ownerProfile) {
+    const profile = JSON.parse(utf8(readSource(OWNER_PROFILE_PATH), OWNER_PROFILE_PATH));
+    if (Object.keys(profile).sort().join(",") !== "profile,schema"
+        || profile.schema !== "customer-agent-contract-profile/v1"
+        || profile.profile !== "owner-acceptance-v1") {
+      throw new Error("未知或不封闭的合同来源 profile");
+    }
+  }
+  const sourcePaths = ownerProfile
+    ? { ...CONTRACT_SOURCE_PATHS, openapi: OWNER_CONTRACT_PATHS.openapi, database: OWNER_CONTRACT_PATHS.database }
+    : CONTRACT_SOURCE_PATHS;
+  const buffers = Object.fromEntries(Object.entries(sourcePaths).map(([key, sourcePath]) => [key, readSource(sourcePath)]));
   const sources = Object.fromEntries(
-    Object.entries(buffers).map(([key, value]) => [key, utf8(value, CONTRACT_SOURCE_PATHS[key])]),
+    Object.entries(buffers).map(([key, value]) => [key, utf8(value, sourcePaths[key])]),
   );
   const openapiHash = sha256(buffers.openapi);
   const databaseHash = sha256(buffers.database);
@@ -275,14 +293,33 @@ export function loadContractSetFromCommit({
     throw new Error(`DDL blob 哈希不匹配：expected=${expectedDatabase} actual=${databaseHash}`);
   }
 
+  const predecessorDatabaseHash = ownerProfile ? sha256(readSource(CONTRACT_SOURCE_PATHS.database)) : databaseHash;
+  const predecessorOpenapiHash = ownerProfile ? sha256(readSource(CONTRACT_SOURCE_PATHS.openapi)) : openapiHash;
   assertNormativeContractAlignment({
     architecture: sources.architecture,
     apiSemantics: sources.apiSemantics,
     implementation: sources.implementation,
     developmentIncrement: sources.developmentIncrement,
-    databaseHash,
-    openapiHash,
+    databaseHash: predecessorDatabaseHash,
+    openapiHash: predecessorOpenapiHash,
   });
+  if (ownerProfile) {
+    const generated = buildOwnerContractFiles(readSource);
+    for (const key of ["database", "openapi"]) {
+      if (!buffers[key].equals(generated[key])) throw new Error(`承接合同派生产物与来源不一致：${key}`);
+    }
+    const increment = utf8(readSource(OWNER_CONTRACT_PATHS.increment), OWNER_CONTRACT_PATHS.increment);
+    for (const [anchor, ddl, api] of [
+      ["**直接前序机器合同：**", predecessorDatabaseHash, predecessorOpenapiHash],
+      ["**A3 机器合同增量：**", databaseHash, openapiHash],
+      ["**实际产物必须精确匹配：**", databaseHash, openapiHash],
+    ]) {
+      const lines = linesForAnchor(increment, "A3 承接合同", anchor);
+      if (lines.length !== 1) throw new Error(`A3 合同声明必须唯一：${anchor}`);
+      hashPairFromLine(lines[0], anchor);
+      assertLineCarriesHashes(lines[0], anchor, ddl, api);
+    }
+  }
 
   const openapiVersion = extractOpenapiVersion(sources.openapi);
   const databaseVersion = extractDatabaseVersion(sources.database);
@@ -303,14 +340,14 @@ export function loadContractSetFromCommit({
     implementation_version: implementationVersion,
     openapi: {
       version: openapiVersion,
-      source_path: CONTRACT_SOURCE_PATHS.openapi,
+      source_path: sourcePaths.openapi,
       file: "openapi.v1.yaml",
       sha256: openapiHash,
       bytes: buffers.openapi.byteLength,
     },
     database: {
       version: databaseVersion,
-      source_path: CONTRACT_SOURCE_PATHS.database,
+      source_path: sourcePaths.database,
       file: databaseFile,
       sha256: databaseHash,
       bytes: buffers.database.byteLength,
