@@ -106,3 +106,23 @@ test('import candidate parses and preserves existing function signatures and ACL
     'BEGIN\n  -- Plans are append-only and cannot be updated/deleted. A row lock would require\n  -- UPDATE privilege which this definer deliberately lacks on immutable evidence.\n  SELECT plan.*',
   ).replace('WHERE plan.plan_id = p_plan_id\n  FOR SHARE;', 'WHERE plan.plan_id = p_plan_id;'));
 });
+
+
+test('release candidate keeps read checks independent of full payload hashing and preserves public ACL', async () => {
+  const candidate = await readFile(new URL('30-开发-进行中/owner-acceptance.publish.v1.sql', root), 'utf8');
+  const frozen = await readFile(new URL('20-设计-进行中/33-schema-v1-草案.sql', root), 'utf8');
+  assert.ok(parser.parseSync(candidate).stmts.length > 0);
+  assert.equal(parser.parsePlPgSQLSync(candidate).plpgsql_funcs.length, 6);
+  assert.doesNotMatch(candidate, /GRANT EXECUTE/);
+  for (const name of ['publish_content_release','rollback_content_release','issue_snapshot_offline_lease']) {
+    const pattern = new RegExp(`CREATE OR REPLACE FUNCTION ${name}\\([\\s\\S]*?AS \\$\\$`);
+    assert.ok(candidate.match(pattern));
+    assert.equal(candidate.match(pattern)[0],frozen.match(pattern)[0]);
+  }
+  const reader = candidate.match(/CREATE FUNCTION public\.owner_acceptance_release_ready\([\s\S]*?\n\$\$;/)?.[0];
+  assert.ok(reader);
+  assert.doesNotMatch(reader,/content_governance_snapshot|owner_acceptance_content_hash|answer_text|questions_json/);
+  assert.match(reader,/owner_acceptance_active_record/);
+  assert.match(reader,/member_count <> jsonb_array_length/);
+  assert.match(reader,/v_source_ids IS DISTINCT FROM v_expected_ids/);
+});

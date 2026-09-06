@@ -19,8 +19,8 @@ const pgBin = process.env.CUSTOMER_AGENT_PG_BIN;
 assert.ok(pgBin && path.isAbsolute(pgBin), 'Set CUSTOMER_AGENT_PG_BIN to an existing PostgreSQL 15 bin directory');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('PG')));
 env.PGCONNECT_TIMEOUT = '5';
-const run = (name, args, input) => {
-  const result = spawnSync(path.join(pgBin, name), args, { env, input, encoding: 'utf8', timeout: 30_000, maxBuffer: 8 * 1024 * 1024 });
+const run = (name, args, input, timeout = 30_000) => {
+  const result = spawnSync(path.join(pgBin, name), args, { env, input, encoding: 'utf8', timeout, maxBuffer: 8 * 1024 * 1024 });
   assert.ifError(result.error);
   return result;
 };
@@ -95,6 +95,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
     ok(sql(await readFile(new URL('owner-acceptance.content-scope.v1.sql', candidate), 'utf8')));
     ok(sql(await readFile(new URL('owner-acceptance.storage.v1.sql', candidate), 'utf8')));
     ok(sql(await readFile(new URL('owner-acceptance.import.v1.sql', candidate), 'utf8')));
+    ok(sql(await readFile(new URL('owner-acceptance.publish.v1.sql', candidate), 'utf8')));
     const now = new Date();
     const sources = ['aftersale','campaign','presale','product'].map((domain) => ({
       domain, source_version_id: `srcv_synthetic_${domain}`, snapshot_sha256: sha(`source-${domain}`),
@@ -396,7 +397,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
         const input = (value) => ({ ...Object.fromEntries(workerFields.map((key) => [key,value[key]])),
           questions_grams_text: '合成 问题',title_grams_text: '合成 标题',answer_grams_text: '合成 话术' });
         const finalize = (rows = [input(boundRow)], { acceptance = r, registerRecord = true, quality = true,
-          before = '', role = 'app_import_worker', lease = 1, atomicRejection = false, legacyReview = '' } = {}) => {
+          before = '', role = 'app_import_worker', lease = 1, atomicRejection = false, legacyReview = '', afterFinalize = '' } = {}) => {
           const mandatory = rows.filter((item) => item.risk_level === 'high' || item.has_conflict).length;
           const ordinary = rows.length - mandatory;
           const call = `public.finalize_content_import_validation('synthetic_import_job','synthetic-worker',${lease},
@@ -425,7 +426,7 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
               SELECT s.review_mode || ':' || s.script_version || ':' || b.status || ':' || j.status
                 FROM public.staging_scripts s JOIN public.import_batches b USING(import_batch_id)
                 CROSS JOIN public.outbox_jobs j WHERE j.job_id='synthetic_import_job';`}
-            RESET ROLE; SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;`);
+            RESET ROLE; ${afterFinalize} SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;`);
         };
         assert.match(ok(finalize()), /owner_acceptance:3:staged:done/);
         denied(finalize(undefined,{ registerRecord: false }), 'staging row count mismatch');
@@ -463,6 +464,94 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
           `SELECT public.record_content_review_decision('crd_synthetic_single','${single.script_id}',
           '${single.content_hash}','ROLE-CONTENT-LEAD','${single.primary_reviewer_id}','synthetic-v1',
           '${single.primary_review_evd}','approved',now(),'content_review_lead');` }));
+        const publish = `SELECT setval('public.content_release_seq',100);
+          SET LOCAL ROLE app_content_admin;
+          SELECT * FROM public.publish_content_release('synthetic_storage_batch','synthetic','synthetic','synthetic-owner','owner');
+          RESET ROLE;`;
+        const assertPublished = `DO $verified$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM public.content_current c JOIN public.content_releases r ON r.release_id=c.current_release_id
+              JOIN public.release_items item ON item.release_id=r.release_id
+              JOIN public.v_release_source_gate gate ON gate.release_id=r.release_id
+              WHERE r.tenant_id='synthetic_tenant' AND item.script_version=3 AND item.review_mode='owner_acceptance'
+                AND item.owner_acceptance_record_sha256='${row.owner_acceptance_record_sha256}' AND gate.source_gate_ready)
+            OR NOT EXISTS (SELECT 1 FROM public.scripts WHERE version=3 AND tenant_id='synthetic_tenant'
+              AND owner_acceptance_record_sha256='${row.owner_acceptance_record_sha256}') THEN
+            RAISE EXCEPTION 'publication lost tenant, version or acceptance'; END IF;
+          END $verified$;
+          SET LOCAL ROLE app_runtime;
+          DO $search$ BEGIN IF (SELECT count(*) FROM public.search_recommendable_scripts('qianniu') WHERE is_candidate) <> 1 THEN
+            RAISE EXCEPTION 'expected one accepted search candidate'; END IF; END $search$; RESET ROLE;`;
+        ok(finalize(undefined,{ afterFinalize: publish+assertPublished }));
+        denied(finalize(undefined,{ afterFinalize: `UPDATE public.scripts SET version=3;`+publish }), 'VERSION_MISMATCH');
+        denied(finalize(undefined,{ afterFinalize: `SELECT public.revoke_owner_acceptance('synthetic_tenant','${row.owner_acceptance_record_sha256}','EVD-SYNTHETIC-REVOKED');`+publish }), 'NOT_ACTIVE');
+        ok(finalize(undefined,{ afterFinalize: publish+assertPublished+`
+          SELECT public.revoke_owner_acceptance('synthetic_tenant','${row.owner_acceptance_record_sha256}','EVD-SYNTHETIC-REVOKED');
+          DO $denied$ BEGIN
+            IF EXISTS (SELECT 1 FROM public.v_release_source_gate gate JOIN public.content_current c ON c.current_release_id=gate.release_id
+                WHERE gate.source_gate_ready) THEN RAISE EXCEPTION 'revoked current remains ready'; END IF;
+          END $denied$;
+          SET LOCAL ROLE app_runtime;
+          DO $denied$ BEGIN
+            IF EXISTS (SELECT 1 FROM public.search_recommendable_scripts('qianniu')) THEN RAISE EXCEPTION 'revoked content escaped search'; END IF;
+          END $denied$; RESET ROLE;
+          UPDATE public.scripts SET status='archived',updated_at=clock_timestamp();` }));
+        const switchCurrent = `UPDATE public.content_current SET current_release_id='synthetic_storage_release';`;
+        ok(finalize(undefined,{ afterFinalize: publish+switchCurrent+`
+          SET LOCAL ROLE app_content_admin;
+          SELECT * FROM public.rollback_content_release('rel_101','synthetic rollback',NULL,'synthetic-owner','owner');
+          RESET ROLE;`+assertPublished }));
+        // The ordinary review modes keep their original hash and publication path.
+        for (const [legacyRow,review] of [[legacyInput,decisions],[singleInput,
+          `SELECT public.record_content_review_decision('crd_synthetic_single','${single.script_id}',
+            '${single.content_hash}','ROLE-CONTENT-LEAD','${single.primary_reviewer_id}','synthetic-v1',
+            '${single.primary_review_evd}','approved',now(),'content_review_lead');`]]) {
+          ok(finalize([legacyRow],{ registerRecord: false,legacyReview: review,afterFinalize: publish+`
+            DO $legacy$ BEGIN IF (SELECT count(*) FROM public.search_recommendable_scripts('qianniu') WHERE is_candidate) <> 1 THEN
+              RAISE EXCEPTION 'legacy publication not searchable'; END IF; END $legacy$;` }));
+        }
+        const revoke = `SELECT public.revoke_owner_acceptance('synthetic_tenant','${row.owner_acceptance_record_sha256}','EVD-SYNTHETIC-REVOKED');`;
+        denied(finalize(undefined,{ afterFinalize: publish+switchCurrent+revoke+`
+          SET LOCAL ROLE app_content_admin;
+          SELECT * FROM public.rollback_content_release('rel_101',NULL,NULL,'synthetic-owner','owner');` }), 'NOT_ACTIVE');
+        ok(finalize(undefined,{ afterFinalize: revoke+`
+          SET LOCAL ROLE app_content_admin;
+          DO $atomic$ BEGIN
+            BEGIN
+              PERFORM public.publish_content_release('synthetic_storage_batch','synthetic',NULL,'synthetic-owner','owner');
+              RAISE EXCEPTION 'expected revoked publish denial';
+            EXCEPTION WHEN SQLSTATE 'ZA004' THEN NULL; END;
+            EXECUTE 'RESET ROLE';
+            IF (SELECT status FROM public.import_batches WHERE import_batch_id='synthetic_storage_batch') <> 'staged'
+              OR (SELECT version FROM public.scripts WHERE script_id='synthetic_storage') <> 2
+              OR (SELECT status FROM public.scripts WHERE script_id='synthetic_storage') <> 'draft'
+              OR EXISTS (SELECT 1 FROM public.content_current)
+              OR (SELECT count(*) FROM public.content_releases) <> 1 THEN
+              RAISE EXCEPTION 'failed publish left partial state'; END IF;
+          END $atomic$; RESET ROLE;` }));
+        denied(finalize(undefined,{ afterFinalize: publish+revoke+`
+          UPDATE public.scripts SET status='archived',answer_text='synthetic-changed';` }), 'NOT_ACTIVE');
+        const leaseThenRevoke = publish+`
+          SET LOCAL ROLE app_runtime;
+          SELECT set_config('test.synthetic_lease',(SELECT offline_lease_token FROM public.read_current_announcement_with_lease('synthetic-client','synthetic-user',900)),true);
+          RESET ROLE;`+revoke;
+        for (const call of [
+          `SELECT * FROM public.read_current_announcement_with_lease('synthetic-client','synthetic-user',900);`,
+          `SELECT * FROM public.read_snapshot_page(current_setting('test.synthetic_lease'),'synthetic-client','synthetic-user','rel_101');`,
+          `SELECT public.ack_client_release('synthetic-client','synthetic-user','rel_101',101,current_setting('test.synthetic_lease'));`,
+        ]) denied(finalize(undefined,{ afterFinalize: leaseThenRevoke+'SET LOCAL ROLE app_runtime;'+call }), 'SOURCE_GATE_NOT_READY');
+        const shortLived = structuredClone(r); shortLived.expires_at = new Date(Date.now()+7000).toISOString();
+        const shortAnchor = sha(encode(shortLived));
+        const shortRow = rehash({ ...row,owner_acceptance_record_sha256: shortAnchor });
+        ok(finalize([input(shortRow)],{ acceptance: shortLived,afterFinalize: publish+`
+          SET LOCAL ROLE app_runtime;
+          DO $lease$ DECLARE lease record; BEGIN
+            SELECT * INTO lease FROM public.read_current_announcement_with_lease('synthetic-client','synthetic-user',900);
+            IF lease.lease_expires_at IS DISTINCT FROM '${shortLived.expires_at}'::timestamptz THEN
+              RAISE EXCEPTION 'lease outlived acceptance deadline'; END IF;
+            PERFORM pg_sleep(greatest(0,extract(epoch FROM lease.lease_expires_at-clock_timestamp()))+0.03);
+            IF EXISTS (SELECT 1 FROM public.search_recommendable_scripts('qianniu')) THEN
+              RAISE EXCEPTION 'expired current remains searchable'; END IF;
+          END $lease$; RESET ROLE;` }));
         const larger = structuredClone(r);
         const secondSnapshot = { ...snap,script_id: 'synthetic_storage_second' };
         larger.scope.items.push({ ...larger.scope.items[0],script_id: secondSnapshot.script_id,
@@ -470,7 +559,48 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
         const partialRow = rehash({ ...row,owner_acceptance_record_sha256: sha(encode(larger)) });
         denied(finalize([input(partialRow)],{ acceptance: larger }), 'NOT_ACTIVE');
         ok(finalize([input(partialRow)],{ acceptance: larger,atomicRejection: true }));
+        ok(sql(`BEGIN; ${setup}
+          SELECT public.register_owner_acceptance('synthetic_tenant',${quote(encode(larger))},'${sha(encode(larger))}','${larger.owner_subject_hash}');
+          INSERT INTO public.release_items SELECT * FROM jsonb_populate_record(NULL::public.release_items,${quote(JSON.stringify(partialRow))}::jsonb);
+          DO $partial$ BEGIN
+            IF public.owner_acceptance_release_ready('synthetic_storage_release')
+              OR public.owner_acceptance_release_content_ready('synthetic_storage_release') THEN
+              RAISE EXCEPTION 'partial release admitted'; END IF;
+          END $partial$; SET CONSTRAINTS ALL IMMEDIATE; ROLLBACK;`));
       });
+      if (process.env.CUSTOMER_AGENT_PG_SCALE === '5000') {
+        const large = structuredClone(r);
+        const omitted = ['review_mode','primary_reviewer_id','primary_reviewer_role','primary_review_evd',
+          'secondary_reviewer_id','secondary_reviewer_role','secondary_review_evd'];
+        const projection = Object.fromEntries(Object.entries(snap).filter(([key]) => !omitted.includes(key)));
+        large.scope.items = Array.from({ length: 5000 }, (_, i) => {
+          const script_id = `scale_${String(i).padStart(5,'0')}`;
+          return { ...r.scope.items[0],script_id,review_input_sha256: sha(stable({ ...projection,script_id,
+            projection_version: 'customer-agent/owner-acceptance-input/v1',script_version: 3 })) };
+        });
+        const largeAnchor = sha(encode(large));
+        const members = large.scope.items.map(({ script_id }) => ({ script_id,
+          content_hash: sha(stable({ hash_version: 'customer-agent/owner-acceptance-content/v1',
+            content: { ...snap,script_id },script_version: 3,owner_acceptance_record_sha256: largeAnchor })) }));
+        const outcome = run('psql',psqlArgs,`BEGIN; ${setup}
+          SELECT public.register_owner_acceptance('synthetic_tenant',${quote(encode(large))},'${largeAnchor}','${large.owner_subject_hash}');
+          INSERT INTO public.release_items
+          SELECT row.* FROM jsonb_array_elements(${quote(JSON.stringify(members))}::jsonb) member
+          CROSS JOIN LATERAL jsonb_populate_record(NULL::public.release_items,
+            ${quote(JSON.stringify({ ...boundRow,owner_acceptance_record_sha256: largeAnchor }))}::jsonb || member) row;
+          SET CONSTRAINTS ALL IMMEDIATE;
+          DO $ready$ BEGIN IF NOT EXISTS (SELECT 1 FROM public.v_release_source_gate
+            WHERE release_id='synthetic_storage_release' AND source_gate_ready) THEN
+            RAISE EXCEPTION 'scale fixture must be ready'; END IF; END $ready$;
+          EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT source_gate_ready FROM public.v_release_source_gate
+            WHERE release_id='synthetic_storage_release';
+          ROLLBACK;`,180_000);
+        const output = ok(outcome);
+        assert.match(output, /^[0-9a-f]{64}\n\[/);
+        const plan = JSON.parse(output.slice(output.indexOf('[')));
+        console.log(JSON.stringify({ scaleRows: 5000,realStorageGuards: true,releaseGateExecutionMs: plan[0]['Execution Time'] }));
+        assert.equal(plan[0].Plan['Actual Rows'],1);
+      }
       assert.equal(ok(sql('SELECT count(*) FROM public.scripts')), '0');
     });
     for (const role of ['app_runtime','app_import_worker','app_content_admin','app_work_order_worker']) {
@@ -583,9 +713,13 @@ test('owner acceptance registry: isolated PG15 synthetic capability and lifecycl
       ok(sql(`SELECT public.suspend_authoritative_source('${sources[0].source_version_id}','SOURCE_REVOKED','EVD-SYNTHETIC-SUSPENDED','synthetic-owner','owner')`));
       denied(bound(r)); denied(register(r));
     });
-    await check('storage candidate does not wire existing runtime consumers', () => {
+    await check('release gate is private and existing runtime ACL remains narrow', () => {
       assert.equal(ok(sql("SELECT count(*) FROM pg_trigger WHERE tgname = 'owner_acceptance_storage_guard'")), '3');
-      assert.equal(ok(sql("SELECT count(*) FROM pg_proc WHERE proname IN ('publish_content_release','rollback_content_release','search_recommendable_scripts') AND prosrc LIKE '%owner_acceptance%'")), '0');
+      assert.equal(ok(sql("SELECT count(*) FROM pg_proc WHERE proname IN ('publish_content_release','rollback_content_release') AND prosrc LIKE '%owner_acceptance%'")), '2');
+      for (const role of ['app_runtime','app_content_admin','app_import_worker','app_owner_acceptance_registrar']) {
+        for (const name of ['owner_acceptance_release_ready','owner_acceptance_release_content_ready'])
+          denied(sql(`SET ROLE ${role}; SELECT public.${name}('synthetic_storage_release')`), '42501');
+      }
     });
   } finally {
     try { cleanupSyntheticCluster(root); }
