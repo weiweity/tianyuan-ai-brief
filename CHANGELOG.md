@@ -68,6 +68,17 @@
 
 - 本次仅为 A2b-1 最终摘要候选；不证明批准真实性，不放宽内容存储、发布或真实运行门。后续消费者仍须验证有效承接及精确范围。
 
+## [5.26.1] - 2026-09-06
+
+### Changed
+
+- 升级构建、无障碍检查与 OpenAPI 校验依赖：esbuild 0.28.2、axe-core 4.13.0、@redocly/cli 2.51.2。
+- GitHub Actions 的质量与 Pages 工作流统一使用固定提交的 actions/setup-python v7.0.0。
+
+### Scope
+
+- DOMPurify 3.4.13 与 Mermaid 10.9.8 继续保持冻结；本次不迁移归档 vendor、SRI 或运行时内容，也不新增客服功能、权限或数据连接。
+
 ## [5.26.0] - 2026-09-05
 
 ### Added
