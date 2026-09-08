@@ -11,6 +11,7 @@
 ### Changed
 
 - 候选合同保持未冻结、未 intake；不表示 HTTP/worker 已实现或 DEV-M2 已获准。
+- 静态检查钉死 LoginExchange 成功/多余字段、resume 能力、SQL 原因词与 SET ROLE 行为脚本；PG 行为补 PKCE 错 verifier、跨角色 EXECUTE、质量幂等冲突与缺陷阻断。
 
 ### Scope
 

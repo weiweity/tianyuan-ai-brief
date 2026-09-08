@@ -6,18 +6,25 @@ const Ajv = require('ajv/dist/2020');
 const parser = require('@libpg-query/parser');
 const root = new URL('../../business-docs/01-客服Agent项目/30-开发-进行中/backend-runtime-candidate/', import.meta.url);
 const api = JSON.parse(readFileSync(new URL('openapi.delta.json', root)));
-assert.equal(api.components.schemas.LoginCreate.additionalProperties, false);
-assert.equal(api.components.schemas.LoginExchange.additionalProperties, false);
-assert.equal(api.components.schemas.ReviewDecision.additionalProperties, false);
-assert.equal(api.components.schemas.QualityEvidence.additionalProperties, false);
+for (const name of ['LoginCreate','LoginExchange','ReviewDecision','QualityEvidence','ReviewResume','ReviewPage','CandidateError']) {
+  assert.equal(api.components.schemas[name].additionalProperties, false, name);
+}
 for (const path of ['/v1/auth/login-requests','/v1/auth/login-requests/{login_id}/exchange','/v1/auth/logout','/v1/admin/content/reviews/{batch_id}/cancel','/v1/admin/content/reviews/{batch_id}/resume']) {
   assert.ok(api.paths[path], path);
 }
 assert.deepEqual(api.paths['/v1/admin/content/reviews/{batch_id}/cancel'].post['x-required-roles'], ['owner','coach']);
+assert.ok(!api.paths['/v1/admin/content/reviews/{batch_id}/cancel'].post['x-required-roles'].includes('app_backend_worker'));
+assert.equal(api.paths['/v1/admin/content/reviews/{batch_id}/cancel'].post['x-required-capability'], undefined);
 const decisionCaps=api.paths['/v1/admin/content/reviews/{batch_id}/decisions'].post['x-required-capability'];
 assert.deepEqual(decisionCaps, ['content_review_lead','content_review_manager']);
-assert.ok(!decisionCaps.includes('app_backend_worker'));
 assert.deepEqual(api.paths['/v1/admin/content/reviews/{batch_id}/quality-evidence'].post['x-required-capability'], ['content_quality_reviewer']);
+assert.deepEqual(api.paths['/v1/admin/content/reviews/{batch_id}/resume'].post['x-required-capability'], ['content_quality_reviewer']);
+assert.notDeepEqual(decisionCaps, api.paths['/v1/admin/content/reviews/{batch_id}/quality-evidence'].post['x-required-capability']);
+for (const path of ['/v1/admin/content/reviews/{batch_id}/decisions','/v1/admin/content/reviews/{batch_id}/quality-evidence','/v1/admin/content/reviews/{batch_id}/resume']) {
+  const caps=api.paths[path].post['x-required-capability'];
+  assert.ok(!caps.includes('app_backend_worker'), path);
+  assert.ok(!(api.paths[path].post['x-required-roles']||[]).includes('app_backend_worker'), path);
+}
 const reasons=api.components.schemas.CandidateError.properties.error.properties.details.properties.reason.enum;
 for (const reason of ['REVIEW_STALE','IDEMPOTENCY_CONFLICT','CAPABILITY_DENIED','SESSION_INVALID','QUALITY_SAMPLE_MISMATCH','REVIEW_EVIDENCE_MISSING','REVIEW_CANCELLED','QUALITY_POPULATION_MISMATCH','LOGIN_CONSUMED','QUALITY_GATE_NOT_PASSED']) {
   assert.ok(reasons.includes(reason), reason);
@@ -25,6 +32,7 @@ for (const reason of ['REVIEW_STALE','IDEMPOTENCY_CONFLICT','CAPABILITY_DENIED',
 assert.ok(api.components.schemas.CandidateError.properties.error.properties.code.enum.includes('GONE'));
 assert.equal(api.components.schemas.ReviewPage.properties.batch_id.maxLength, 128);
 assert.equal(api.components.schemas.ReviewPageItem.properties.content_hash.pattern, '^[0-9a-f]{64}$');
+assert.equal(api.components.schemas.ReviewDecision.properties.content_hash.pattern, '^[0-9a-f]{64}$');
 const ajv = new Ajv({strict:false, validateFormats:false});
 const doc = {$id:'urn:cs-ai:backend-candidate', ...api};
 ajv.addSchema(doc);
@@ -33,7 +41,11 @@ const check = (name, value, expected) => { cases++; assert.equal(ajv.validate({$
 check('LoginCreate',{client_challenge:'a'.repeat(43),challenge_method:'S256'},true);
 check('LoginCreate',{client_challenge:'a'.repeat(43),challenge_method:'plain'},false);
 check('LoginCreate',{client_challenge:'a'.repeat(43),challenge_method:'S256',role:'owner'},false);
+check('LoginExchange',{client_verifier:'a'.repeat(43)},true);
 check('LoginExchange',{client_verifier:'a'.repeat(42)},false);
+check('LoginExchange',{client_verifier:'a'.repeat(43),role:'owner'},false);
+check('CandidateError',{error:{code:'GONE',message:'Gone',details:{reason:'LOGIN_CONSUMED'}}},true);
+check('CandidateError',{error:{code:'UNAUTHORIZED',message:'Invalid',details:{reason:'SESSION_INVALID'}}},true);
 const decision={review_revision:'a'.repeat(64),script_id:'synthetic-script',content_hash:'b'.repeat(64),decision:'approved',evidence_id:'EVD-SYNTHETIC-01'};
 check('ReviewDecision',decision,true);
 check('ReviewDecision',{...decision,decision:'passed'},false);
@@ -64,7 +76,32 @@ assert.match(tx,/CREATE ROLE app_backend_auth NOLOGIN/);
 assert.match(tx,/CREATE ROLE app_backend_review NOLOGIN/);
 assert.match(tx,/CREATE ROLE app_backend_worker NOLOGIN/);
 assert.match(tx,/SECURITY DEFINER/);
+assert.match(tx,/ERRCODE='ZA001',MESSAGE='LOGIN_INVALID'/);
+assert.match(tx,/ERRCODE='ZA003',MESSAGE='LOGIN_INVALID'/);
 assert.match(tx,/ERRCODE='ZA003'/);
 assert.match(tx,/ERRCODE='ZA005'/);
+assert.match(tx,/ERRCODE='ZA006'/);
 assert.match(tx,/lease_version/);
-console.log(`PASS ${cases} schema examples, storage SQL (${parsed.stmts.length}) and transaction SQL (${txParsed.stmts.length}, ${functions.plpgsql_funcs.length} PL/pgSQL bodies, ${named.length} CREATE FUNCTION); PG behavior is a separate command`);
+assert.match(tx,/GRANT EXECUTE ON FUNCTION backend_review\.page\(TEXT,TEXT,TEXT,INTEGER,INTEGER\),backend_review\.decision/);
+assert.match(tx,/GRANT EXECUTE ON FUNCTION backend_review\.park\(TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,BIGINT,JSONB\),backend_review\.finish\(TEXT,TEXT,BIGINT,TEXT\) TO app_backend_worker;/);
+assert.match(tx,/REVOKE ALL ON ALL FUNCTIONS IN SCHEMA backend_identity,backend_review FROM PUBLIC/);
+assert.doesNotMatch(tx,/GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA backend_review/);
+assert.doesNotMatch(tx,/GRANT EXECUTE ON FUNCTION backend_review\.decision[^;]*TO app_backend_worker/);
+assert.doesNotMatch(tx,/GRANT EXECUTE ON FUNCTION backend_review\.quality[^;]*TO app_backend_worker/);
+assert.doesNotMatch(tx,/GRANT EXECUTE ON FUNCTION backend_review\.resume[^;]*TO app_backend_worker/);
+assert.doesNotMatch(tx,/GRANT EXECUTE ON FUNCTION backend_review\.cancel[^;]*TO app_backend_worker/);
+for (const reason of ['REVIEW_STALE','IDEMPOTENCY_CONFLICT','CAPABILITY_DENIED','SESSION_INVALID','QUALITY_SAMPLE_MISMATCH','REVIEW_EVIDENCE_MISSING','REVIEW_CANCELLED','QUALITY_POPULATION_MISMATCH','LOGIN_CONSUMED','QUALITY_GATE_NOT_PASSED','OUTBOX_LEASE_LOST']) {
+  assert.match(tx, new RegExp(reason));
+}
+const behavior=readFileSync(new URL('backend-runtime-candidate.behavior.sql', import.meta.url),'utf8');
+assert.match(behavior,/SET ROLE app_backend_auth/);
+assert.match(behavior,/SET ROLE app_backend_review/);
+assert.match(behavior,/SET ROLE app_backend_worker/);
+assert.match(behavior,/SQLSTATE 'ZA003' THEN IF SQLERRM<>'LOGIN_CONSUMED'/);
+assert.match(behavior,/SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_CANCELLED'/);
+assert.match(behavior,/SQLSTATE 'ZA006' THEN IF SQLERRM<>'OUTBOX_LEASE_LOST'/);
+const pg=readFileSync(new URL('backend-runtime-candidate.pg.mjs', import.meta.url),'utf8');
+assert.match(pg,/PostgreSQL 15 binaries required/);
+assert.match(pg,/server_version_num/);
+assert.match(pg,/lock_timeout/);
+console.log(`PASS ${cases} schema examples, storage SQL (${parsed.stmts.length}) and transaction SQL (${txParsed.stmts.length}, ${functions.plpgsql_funcs.length} PL/pgSQL bodies, ${named.length} CREATE FUNCTION); PG SET ROLE suite pinned`);

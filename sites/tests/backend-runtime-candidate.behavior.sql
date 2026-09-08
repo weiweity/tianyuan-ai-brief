@@ -31,13 +31,25 @@ SELECT backend_identity.create_login('nocap-login',encode(sha256(convert_to(repe
 SELECT backend_identity.begin_callback(repeat('n',43));
 SELECT backend_identity.complete_callback('nocap-login','nocap-binding');
 SELECT backend_identity.exchange('nocap-login',repeat('z',43),repeat('p',43));
+SELECT backend_identity.create_login('pkce-login',encode(sha256(convert_to(repeat('1',43),'UTF8')),'hex'),rtrim(translate(encode(sha256(convert_to(repeat('2',43),'UTF8')),'base64'),'+/','-_'),'='));
+SELECT backend_identity.begin_callback(repeat('1',43));
+SELECT backend_identity.complete_callback('pkce-login','synthetic-binding');
 DO $$ BEGIN
  BEGIN PERFORM backend_identity.exchange('synthetic-login',repeat('v',43),repeat('u',43)); RAISE EXCEPTION 'Replay accepted';
+ EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'LOGIN_CONSUMED' THEN RAISE; END IF; END;
+ BEGIN PERFORM backend_identity.exchange('pkce-login',repeat('9',43),repeat('7',43)); RAISE EXCEPTION 'Bad PKCE accepted';
+ EXCEPTION WHEN SQLSTATE 'ZA001' THEN IF SQLERRM<>'LOGIN_INVALID' THEN RAISE; END IF; END;
+ BEGIN PERFORM backend_identity.begin_callback(repeat('1',43)); RAISE EXCEPTION 'Callback replay accepted';
+ EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'LOGIN_INVALID' THEN RAISE; END IF; END;
+END $$;
+SELECT backend_identity.exchange('pkce-login',repeat('2',43),repeat('7',43));
+DO $$ BEGIN
+ BEGIN PERFORM backend_identity.exchange('pkce-login',repeat('2',43),repeat('6',43)); RAISE EXCEPTION 'PKCE replay accepted';
  EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'LOGIN_CONSUMED' THEN RAISE; END IF; END;
 END $$;
 RESET ROLE;
 DO $$ BEGIN
- IF (SELECT count(*) FROM backend_identity.sessions)<>4 THEN RAISE EXCEPTION 'Duplicate session'; END IF;
+ IF (SELECT count(*) FROM backend_identity.sessions)<>5 THEN RAISE EXCEPTION 'Duplicate session'; END IF;
 END $$;
 INSERT INTO public.import_batches(import_batch_id,source_type,source_binding_hash,status,actor_user_id,actor_role) VALUES('synthetic-batch','seed',repeat('a',64),'validating','synthetic-user','owner');
 INSERT INTO public.outbox_jobs(job_id,job_type,payload,status,lease_owner,lease_version,lease_expires_at) VALUES('synthetic-job','import_validate','{"import_batch_id":"synthetic-batch"}','running','synthetic-worker',1,clock_timestamp()+interval '60 seconds');
@@ -55,7 +67,9 @@ BEGIN
  revision:=backend_review.park('synthetic-job','synthetic-worker',1,'synthetic-batch','qplan_synthetic','review/synthetic',repeat('e',64),100,rows);
  BEGIN PERFORM backend_review.park('synthetic-job','synthetic-worker',1,'synthetic-batch','qplan_synthetic','review/synthetic',repeat('e',64),100,rows); RAISE EXCEPTION 'Repark accepted'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_STALE' THEN RAISE; END IF; END;
  BEGIN PERFORM backend_review.decision(repeat('t',43),'synthetic-batch',revision,'denied','synthetic-script',repeat('b',64),'approved','EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Worker review allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+ BEGIN PERFORM backend_review.page(repeat('t',43),'synthetic-batch',revision,0,1); RAISE EXCEPTION 'Worker page allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  SET ROLE app_backend_review;
+ BEGIN PERFORM backend_identity.create_login('review-login',repeat('a',64),repeat('b',43)); RAISE EXCEPTION 'Review login allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  BEGIN PERFORM 1 FROM backend_identity.sessions; RAISE EXCEPTION 'Session table readable'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  BEGIN PERFORM public.record_content_review_decision('crd_denied','s',repeat('b',64),'ROLE-CONTENT-LEAD',repeat('c',64),'v1','EVD-SYNTHETIC-01','approved',clock_timestamp(),'content_review_lead'); RAISE EXCEPTION 'Raw review allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  BEGIN PERFORM backend_review.page(repeat('p',43),'synthetic-batch',revision,0,1); RAISE EXCEPTION 'No-cap page allowed'; EXCEPTION WHEN SQLSTATE 'ZA005' THEN IF SQLERRM<>'CAPABILITY_DENIED' THEN RAISE; END IF; END;
@@ -65,7 +79,8 @@ BEGIN
  BEGIN PERFORM backend_review.decision(repeat('g',43),'synthetic-batch',revision,'quality-as-lead','synthetic-script',repeat('b',64),'approved','EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Quality actor decision allowed'; EXCEPTION WHEN SQLSTATE 'ZA005' THEN IF SQLERRM<>'CAPABILITY_DENIED' THEN RAISE; END IF; END;
  BEGIN PERFORM backend_review.quality(repeat('t',43),'synthetic-batch',revision,'lead-as-quality','initial','[]'::jsonb,'EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Lead quality allowed'; EXCEPTION WHEN SQLSTATE 'ZA005' THEN IF SQLERRM<>'CAPABILITY_DENIED' THEN RAISE; END IF; END;
  page:=backend_review.page(repeat('t',43),'synthetic-batch',revision,0,2);
- IF jsonb_array_length(page->'items')<>2 OR page->>'next_after' IS NOT NULL OR page ? 'object_key' OR EXISTS(SELECT 1 FROM jsonb_array_elements(page->'items') item WHERE item ? 'object_key') THEN RAISE EXCEPTION 'Page violation'; END IF;
+ IF jsonb_array_length(page->'items')<>2 OR page->>'next_after' IS NOT NULL OR page ? 'object_key'
+  OR EXISTS(SELECT 1 FROM jsonb_array_elements(page->'items') item WHERE item ? 'object_key' OR NOT item ?& ARRAY['initial_sample','expanded_sample','script_id','content_hash']) THEN RAISE EXCEPTION 'Page violation'; END IF;
  listed:=backend_review.list(repeat('t',43),NULL,20);
  IF jsonb_array_length(listed->'items')<>1 OR listed->'items'->0->>'state'<>'waiting' THEN RAISE EXCEPTION 'List violation'; END IF;
  BEGIN PERFORM backend_review.page(repeat('t',43),'synthetic-batch',repeat('z',64),0,1); RAISE EXCEPTION 'Stale accepted'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_STALE' THEN RAISE; END IF; END;
@@ -77,6 +92,7 @@ BEGIN
  BEGIN PERFORM backend_review.quality(repeat('g',43),'synthetic-batch',revision,'quality-short','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script','content_hash',repeat('b',64),'defect',false)),'EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Short sample accepted'; EXCEPTION WHEN SQLSTATE 'ZA001' THEN IF SQLERRM<>'QUALITY_SAMPLE_MISMATCH' THEN RAISE; END IF; END;
  receipt:=backend_review.quality(repeat('g',43),'synthetic-batch',revision,'quality-request','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script','content_hash',repeat('b',64),'defect',false),jsonb_build_object('script_id','synthetic-conflict','content_hash',repeat('c',64),'defect',false)),'EVD-SYNTHETIC-01');
  IF receipt IS DISTINCT FROM backend_review.quality(repeat('g',43),'synthetic-batch',revision,'quality-request','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script','content_hash',repeat('b',64),'defect',false),jsonb_build_object('script_id','synthetic-conflict','content_hash',repeat('c',64),'defect',false)),'EVD-SYNTHETIC-01') THEN RAISE EXCEPTION 'Quality idempotency violation'; END IF;
+ BEGIN PERFORM backend_review.quality(repeat('g',43),'synthetic-batch',revision,'quality-request','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script','content_hash',repeat('b',64),'defect',true),jsonb_build_object('script_id','synthetic-conflict','content_hash',repeat('c',64),'defect',false)),'EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Quality mismatch accepted'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'IDEMPOTENCY_CONFLICT' THEN RAISE; END IF; END;
  IF receipt->>'quality_state'<>'passed' THEN RAISE EXCEPTION 'Quality failed'; END IF;
  BEGIN PERFORM backend_review.resume(repeat('g',43),'synthetic-batch',revision); RAISE EXCEPTION 'Missing dual-person resumed'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_EVIDENCE_MISSING' THEN RAISE; END IF; END;
  PERFORM backend_review.decision(repeat('k',43),'synthetic-batch',revision,'manager-conflict','synthetic-conflict',repeat('c',64),'approved','EVD-SYNTHETIC-01');
@@ -89,10 +105,35 @@ BEGIN
  SET ROLE app_backend_review;
  BEGIN PERFORM backend_review.resume(repeat('g',43),'synthetic-batch',revision); RAISE EXCEPTION 'Cancelled resumed'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_CANCELLED' THEN RAISE; END IF; END;
 END $$;
+RESET ROLE;
+INSERT INTO public.import_batches(import_batch_id,source_type,source_binding_hash,status,actor_user_id,actor_role) VALUES('synthetic-batch-2','seed',repeat('a',64),'validating','synthetic-user','owner');
+INSERT INTO public.outbox_jobs(job_id,job_type,payload,status,lease_owner,lease_version,lease_expires_at) VALUES('synthetic-job-2','import_validate','{"import_batch_id":"synthetic-batch-2"}','running','synthetic-worker',1,clock_timestamp()+interval '60 seconds');
+DO $$
+DECLARE rows JSONB; revision TEXT; manifest TEXT; receipt JSONB;
+BEGIN
+ rows:=jsonb_build_array(
+  jsonb_build_object('staging_id','b2-staging','script_id','synthetic-script-2','operation','upsert','content_hash',repeat('b',64),'risk_level','low','has_conflict',false,'quality_status','clean','title','T2','answer_text','A2'),
+  jsonb_build_object('staging_id','b2-conflict','script_id','synthetic-conflict-2','operation','upsert','content_hash',repeat('c',64),'risk_level','high','has_conflict',true,'quality_status','clean','title','C2','answer_text','A2')
+ );
+ manifest:=encode(sha256(convert_to(jsonb_build_array(backend_review.sample_ids(rows,repeat('a',64),1),backend_review.sample_ids(rows,repeat('a',64),1))::text,'UTF8')),'hex');
+ SET ROLE app_backend_worker;
+ PERFORM public.freeze_content_quality_review_plan('synthetic-job-2','synthetic-worker',1,'synthetic-batch-2','qplan_synthetic_2','synthetic-policy',clock_timestamp(),2,1,1,repeat('a',64),manifest,'sha256-ranked-v1',rows);
+ revision:=backend_review.park('synthetic-job-2','synthetic-worker',1,'synthetic-batch-2','qplan_synthetic_2','review/synthetic-2',repeat('e',64),100,rows);
+ SET ROLE app_backend_review;
+ PERFORM backend_review.decision(repeat('t',43),'synthetic-batch-2',revision,'b2-lead','synthetic-script-2',repeat('b',64),'approved','EVD-SYNTHETIC-01');
+ PERFORM backend_review.decision(repeat('t',43),'synthetic-batch-2',revision,'b2-lead-conflict','synthetic-conflict-2',repeat('c',64),'approved','EVD-SYNTHETIC-01');
+ PERFORM backend_review.decision(repeat('k',43),'synthetic-batch-2',revision,'b2-manager-conflict','synthetic-conflict-2',repeat('c',64),'approved','EVD-SYNTHETIC-01');
+ receipt:=backend_review.quality(repeat('g',43),'synthetic-batch-2',revision,'quality-block','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script-2','content_hash',repeat('b',64),'defect',true),jsonb_build_object('script_id','synthetic-conflict-2','content_hash',repeat('c',64),'defect',false)),'EVD-SYNTHETIC-01');
+ IF receipt->>'quality_state'<>'blocked' THEN RAISE EXCEPTION 'Defect did not block'; END IF;
+ BEGIN PERFORM backend_review.resume(repeat('g',43),'synthetic-batch-2',revision); RAISE EXCEPTION 'Blocked quality resumed'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'QUALITY_GATE_NOT_PASSED' THEN RAISE; END IF; END;
+END $$;
 SET ROLE app_backend_auth;
 SELECT backend_identity.logout(repeat('t',43));
 DO $$ BEGIN
  BEGIN PERFORM backend_identity.actor(repeat('t',43)); RAISE EXCEPTION 'Revoked accepted'; EXCEPTION WHEN SQLSTATE 'ZA005' THEN IF SQLERRM<>'SESSION_INVALID' THEN RAISE; END IF; END;
+ PERFORM backend_identity.actor(repeat('k',43));
+ PERFORM backend_identity.actor(repeat('g',43));
+ BEGIN PERFORM backend_review.page(repeat('k',43),'synthetic-batch',repeat('b',64),0,1); RAISE EXCEPTION 'Auth page allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
 END $$;
 RESET ROLE;
 SET ROLE app_backend_review;
