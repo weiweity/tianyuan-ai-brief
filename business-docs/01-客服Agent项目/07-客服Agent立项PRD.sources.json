@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "prd": {
     "file": "07-客服Agent立项PRD.html",
-    "sha256": "35e1314eb7443f19224f2b9eda7e0754c25e0104321ed46d739dbea7fa6d927b"
+    "sha256": "00702cd9e693f1fd8810808f8eb5bdfb2ac37120b359d7fe29cd9efd4c0875d8"
   },
   "sources": [
     {
@@ -21,7 +21,7 @@
       "id": "ledger",
       "file": "02-G0责任与证据台账.md",
       "label": "G0 责任与证据台账",
-      "sha256": "2b510aaf9d912dbbf131f3c2dbda12e33483bf343b1cb08f8a0261d53cce0a0e"
+      "sha256": "16c6ab344c804483605562bbb6f76e6e7a18818225b1a5a48fc3f289eaf3e560"
     },
     {
       "id": "scope",
@@ -48,7 +48,7 @@
       "sha256": "1a822d5650b53e717b8f5766e4356a9a660fc31b02a872d0801675fa517031ab"
     }
   ],
-  "sourceHash": "5a5a40d5628134ab649392d2444a8780b7318c60b6d60f56277c160a824401aa",
+  "sourceHash": "9920aa5eb891c7f05fd1c069c51d78acdeb1ccad46495b74df6e40329fd3c7a9",
   "contracts": {
     "statusAxes": {
       "direction": "P0 · 工作方向已登记",
