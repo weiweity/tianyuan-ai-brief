@@ -1,6 +1,6 @@
 {
   "name": "tianyuan-ai-sites",
-  "version": "5.32.1",
+  "version": "5.32.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -40,7 +40,7 @@
     "test:boundary-integration": "node --test tests/public-project-boundary.integration.mjs",
     "test:layout-ui": "node --test tests/layout-type-contract.ui.mjs",
     "test:design-contracts": "npm run test:architecture-contract && npm run check:arch-diagrams",
-    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar && npm run test:owner-acceptance-contract && npm run check:owner-contract && npm run lint:owner-openapi",
+    "test:machine-contracts": "npm run lint:openapi && npm run test:sql-grammar && npm run test:owner-acceptance-contract && npm run check:owner-contract && npm run lint:owner-openapi && npm run test:backend-candidate",
     "test:owner-acceptance-contract": "node --test tests/customer-agent-owner-acceptance.registry.test.mjs",
     "test:owner-acceptance:pg15": "node --test tests/customer-agent-owner-acceptance.pg15.mjs",
     "test:business": "npm run check:business-sources && node ../business-docs/08-工具/test_customer_agent_prd.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_hub.mjs --round=ci && node ../business-docs/08-工具/test_customer_agent_meeting.mjs --round=ci",
@@ -49,7 +49,9 @@
     "test:all": "node scripts/quality-plan.mjs --release --run",
     "test:changed": "node scripts/quality-plan.mjs",
     "check:owner-contract": "node ../business-docs/08-工具/build_customer_agent_owner_contract.mjs --check",
-    "lint:owner-openapi": "redocly lint ../business-docs/01-客服Agent项目/30-开发-进行中/openapi.v1.12.yaml"
+    "lint:owner-openapi": "redocly lint ../business-docs/01-客服Agent项目/30-开发-进行中/openapi.v1.12.yaml",
+    "test:backend-candidate": "node tests/backend-runtime-candidate.mjs",
+    "test:backend-candidate:pg": "node tests/backend-runtime-candidate.pg.mjs"
   },
   "devDependencies": {
     "@libpg-query/parser": "17.6.10",

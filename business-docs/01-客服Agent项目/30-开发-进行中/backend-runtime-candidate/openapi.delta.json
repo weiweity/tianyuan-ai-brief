@@ -1,0 +1,2547 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Backend runtime candidate delta",
+    "version": "0.1.0",
+    "description": "DRAFT additive backend contract with bounded review projection and restricted transaction functions. Not activated; full integration acceptance and versioned intake remain pending.",
+    "license": {
+      "name": "Proprietary",
+      "identifier": "LicenseRef-Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3100"
+    }
+  ],
+  "tags": [
+    {
+      "name": "backend-candidate",
+      "description": "Synthetic backend contract candidate"
+    }
+  ],
+  "security": [
+    {
+      "ProductSession": []
+    }
+  ],
+  "paths": {
+    "/v1/auth/login-requests": {
+      "post": {
+        "operationId": "createLoginRequest",
+        "summary": "createLoginRequest",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "201": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginCreated"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCreate"
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/auth/login-requests/{login_id}/exchange": {
+      "post": {
+        "operationId": "exchangeLoginRequest",
+        "summary": "exchangeLoginRequest",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginSession"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Awaiting callback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginPending"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginExchange"
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "login_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "logoutSession",
+        "summary": "logoutSession",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "204": {
+            "description": "Completed",
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/callback": {
+      "get": {
+        "operationId": "receiveProviderCallback",
+        "summary": "receiveProviderCallback",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Fixed HTML completion page; never reflects provider input",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        ],
+        "x-query-invariant": "state required; exactly one of code/error; reject duplicate and unknown query keys"
+      }
+    },
+    "/v1/admin/content/reviews": {
+      "get": {
+        "operationId": "listContentReviews",
+        "summary": "listContentReviews",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewList"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "x-required-capability": [
+          "content_review_lead",
+          "content_review_manager",
+          "content_quality_reviewer"
+        ]
+      }
+    },
+    "/v1/admin/content/reviews/{batch_id}/decisions": {
+      "post": {
+        "operationId": "recordReviewDecision",
+        "summary": "recordReviewDecision",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecision"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "x-required-capability": [
+          "content_review_lead",
+          "content_review_manager"
+        ]
+      }
+    },
+    "/v1/admin/content/reviews/{batch_id}/quality-evidence": {
+      "post": {
+        "operationId": "recordQualityEvidence",
+        "summary": "recordQualityEvidence",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualityEvidence"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "x-required-capability": [
+          "content_quality_reviewer"
+        ]
+      }
+    },
+    "/v1/admin/content/reviews/{batch_id}": {
+      "get": {
+        "operationId": "readContentReviewPage",
+        "summary": "Read a bounded immutable review page",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewPage"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "review_revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "x-required-capability": [
+          "content_review_lead",
+          "content_review_manager",
+          "content_quality_reviewer"
+        ]
+      }
+    },
+    "/v1/admin/content/reviews/{batch_id}/resume": {
+      "post": {
+        "operationId": "resumeReviewedImport",
+        "summary": "Resume a fully reviewed immutable import",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResumed"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewResume"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Gateway-scoped replay key; SQL resume is unique per batch/revision and returns the same job_id"
+          }
+        ],
+        "x-required-capability": [
+          "content_quality_reviewer"
+        ]
+      }
+    },
+    "/v1/admin/content/reviews/{batch_id}/cancel": {
+      "post": {
+        "operationId": "cancelReviewedImport",
+        "summary": "Cancel a parked review wait and the underlying import batch",
+        "tags": [
+          "backend-candidate"
+        ],
+        "responses": {
+          "default": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Existing error.code/message/details envelope with candidate reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateError"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Cancelled; repeated cancel is a no-op",
+            "headers": {
+              "Cache-Control": {
+                "description": "Credentials and review responses are never cached",
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Gateway-scoped replay key; repeated cancel is a no-op"
+          }
+        ],
+        "x-required-roles": [
+          "owner",
+          "coach"
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ProductSession": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "opaque product session"
+      }
+    },
+    "schemas": {
+      "LoginCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "client_challenge": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "challenge_method": {
+            "const": "S256"
+          }
+        },
+        "required": [
+          "client_challenge",
+          "challenge_method"
+        ]
+      },
+      "LoginCreated": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "login_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "authorize_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "login_id",
+          "authorize_url",
+          "expires_at"
+        ]
+      },
+      "LoginExchange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "client_verifier": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._~-]{43,128}$"
+          }
+        },
+        "required": [
+          "client_verifier"
+        ]
+      },
+      "LoginPending": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "pending"
+          },
+          "retry_after_seconds": {
+            "const": 2
+          }
+        },
+        "required": [
+          "status",
+          "retry_after_seconds"
+        ]
+      },
+      "LoginSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "token_type": {
+            "const": "Bearer"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_at"
+        ]
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "state": {
+            "enum": [
+              "waiting",
+              "resumed",
+              "cancelled"
+            ]
+          },
+          "candidate_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          }
+        },
+        "required": [
+          "batch_id",
+          "review_revision",
+          "state",
+          "candidate_count"
+        ]
+      },
+      "ReviewList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/ReviewSummary"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ReviewDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "script_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected"
+            ]
+          },
+          "evidence_id": {
+            "type": "string",
+            "pattern": "^EVD-[A-Z0-9-]{6,127}$"
+          }
+        },
+        "required": [
+          "review_revision",
+          "script_id",
+          "content_hash",
+          "decision",
+          "evidence_id"
+        ]
+      },
+      "QualityItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "script_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "defect": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "script_id",
+          "content_hash",
+          "defect"
+        ]
+      },
+      "QualityEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "phase": {
+            "enum": [
+              "initial",
+              "expanded"
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5000,
+            "items": {
+              "$ref": "#/components/schemas/QualityItem"
+            },
+            "x-unique-by": [
+              "script_id",
+              "content_hash"
+            ]
+          },
+          "evidence_id": {
+            "type": "string",
+            "pattern": "^EVD-[A-Z0-9-]{6,127}$"
+          }
+        },
+        "required": [
+          "review_revision",
+          "phase",
+          "checks",
+          "evidence_id"
+        ]
+      },
+      "ReviewReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "batch_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "batch_id",
+          "review_revision",
+          "recorded_at"
+        ]
+      },
+      "CandidateError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message",
+              "details"
+            ],
+            "properties": {
+              "code": {
+                "enum": [
+                  "VALIDATION",
+                  "UNAUTHORIZED",
+                  "FORBIDDEN",
+                  "CONFLICT",
+                  "NOT_FOUND",
+                  "RATE_LIMITED",
+                  "OVERLOADED",
+                  "GONE"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "LOGIN_INVALID",
+                      "LOGIN_EXPIRED",
+                      "LOGIN_CONSUMED",
+                      "SESSION_INVALID",
+                      "CAPABILITY_DENIED",
+                      "REVIEW_STALE",
+                      "IDEMPOTENCY_CONFLICT",
+                      "REQUEST_INVALID",
+                      "DEPENDENCY_UNAVAILABLE",
+                      "RATE_LIMITED",
+                      "REVIEW_EVIDENCE_MISSING",
+                      "QUALITY_GATE_NOT_PASSED",
+                      "QUALITY_SAMPLE_MISMATCH",
+                      "QUALITY_EVIDENCE_INVALID",
+                      "QUALITY_INITIAL_REQUIRED",
+                      "QUALITY_EXPANSION_DENIED",
+                      "OUTBOX_LEASE_LOST",
+                      "QUALITY_POPULATION_MISMATCH",
+                      "DUPLICATE_SCRIPT",
+                      "DUPLICATE_CHECK",
+                      "REVIEW_EVIDENCE_TRUST_BOUNDARY",
+                      "READ_COMMITTED_REQUIRED",
+                      "REVIEW_CANCELLED",
+                      "QUALITY_EVIDENCE_IMMUTABLE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReviewPageItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "script_id",
+          "content_hash",
+          "title",
+          "answer_text",
+          "category",
+          "product_scope_type",
+          "effective_from",
+          "effective_to",
+          "risk_level",
+          "quality_status",
+          "position",
+          "operation",
+          "has_conflict",
+          "platform_scope",
+          "product_scope_refs",
+          "placeholder_keys",
+          "risk_categories",
+          "initial_sample",
+          "expanded_sample",
+          "source_version_id",
+          "owner_role",
+          "review_due_at",
+          "intent_id",
+          "intent_taxonomy_version",
+          "questions"
+        ],
+        "properties": {
+          "script_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "answer_text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "product_scope_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "effective_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "risk_level": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "quality_status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "operation": {
+            "enum": [
+              "upsert",
+              "withdraw"
+            ]
+          },
+          "has_conflict": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "platform_scope": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 1000
+          },
+          "product_scope_refs": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 1000
+          },
+          "placeholder_keys": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 1000
+          },
+          "risk_categories": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 1000
+          },
+          "initial_sample": {
+            "type": "boolean"
+          },
+          "expanded_sample": {
+            "type": "boolean"
+          },
+          "source_version_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "owner_role": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "review_due_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "intent_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "intent_taxonomy_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "questions": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "question_id",
+                "question_version",
+                "question_text",
+                "question_hash",
+                "semantic_family_id"
+              ],
+              "properties": {
+                "question_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 500
+                },
+                "question_version": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "question_text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 500
+                },
+                "question_hash": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 500
+                },
+                "semantic_family_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReviewPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "batch_id",
+          "review_revision",
+          "items",
+          "next_after",
+          "total"
+        ],
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/ReviewPageItem"
+            }
+          },
+          "next_after": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5000
+          }
+        }
+      },
+      "QualityReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "batch_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quality_state": {
+            "enum": [
+              "passed",
+              "blocked",
+              "expansion_required",
+              "revision_required"
+            ]
+          }
+        },
+        "required": [
+          "receipt_id",
+          "batch_id",
+          "review_revision",
+          "recorded_at",
+          "quality_state"
+        ]
+      },
+      "ReviewResume": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "review_revision"
+        ],
+        "properties": {
+          "review_revision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "ReviewResumed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job_id"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      }
+    }
+  },
+  "x-status": "DRAFT_NOT_INTAKE_READY",
+  "x-base-contract": {
+    "openapi": "1.12.0",
+    "database": "1.15"
+  },
+  "x-runtime-activated": false,
+  "x-database-functions": {
+    "login": "backend_identity.create_login/begin_callback/complete_callback/exchange/actor/logout",
+    "review": "backend_review.page/decision/quality/resume/cancel/list",
+    "worker": "backend_review.park/finish",
+    "lock": "backend_review.lock_content; 12 canonical public functions serialized before their first business lock",
+    "activation": "candidate NOLOGIN capability roles only; no deployment login membership"
+  }
+}

@@ -14,7 +14,7 @@ test("release 与 Pages CI 必须执行客服 Python 工具合同", async () => 
   const packageJson = JSON.parse(await readFile(path.join(sitesRoot, "package.json"), "utf8"));
   const scripts = packageJson.scripts;
   assert.match(scripts["test:all"], /quality-plan\.mjs --release --run/);
-  for (const step of ['test:customer-agent-python-tools', 'test:boundary-integration', 'test:layout-ui']) assert.ok(releaseSteps.includes(step));
+  for (const step of ['test:customer-agent-python-tools', 'test:boundary-integration', 'test:layout-ui', 'test:backend-candidate']) assert.ok(releaseSteps.includes(step));
   assert.match(scripts["test:customer-agent-python-tools"], /test:customer-agent-g009-tools/);
   assert.match(scripts["test:customer-agent-python-tools"], /test:customer-agent-staging-tools/);
   assert.match(scripts["test:customer-agent-staging-tools"], /test_customer_service_staging_pipeline\.py/);
@@ -67,6 +67,8 @@ test('every standalone test has a release route or explicit isolated PG route', 
     if (!file.endsWith('.mjs') || file.endsWith('.test.mjs')) continue;
     if (file === 'customer-agent-owner-acceptance.pg15.mjs') {
       assert.ok(scripts['test:owner-acceptance:pg15'].includes(file));
+    } else if (file === 'backend-runtime-candidate.pg.mjs') {
+      assert.ok(scripts['test:backend-candidate:pg'].includes(file));
     } else assert.ok(direct.includes(file), `${file} has no release gate`);
   }
 });
