@@ -658,7 +658,7 @@ const ddevChecklist = developmentInterrupted
         `保持 ${completedSlicesLabel} 基线与既有行为不漂移`,
         hasNumberedNextSlice
           ? `执行 ${nextActionLabel}，只做冻结计划内工作`
-          : `只准备${nextActionLabel}的范围、验收与授权输入；授权前不实施`,
+          : `仅梳理下一动作「${nextActionLabel}」的范围、验收与授权输入；授权前不实施`,
         "获批后复跑受影响测试、构建、workspace 与 E2E，保留实施证据",
         "保持 development / test + 合成数据；不启用真实数据、运行接入、部署或下一里程碑",
       ]

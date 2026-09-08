@@ -153,9 +153,9 @@ try {
     );
     assert.match(
       bodyText,
-      /负责人承接合同落地与版本化新包准备（待单独授权）/
+      /准备正式身份与内容运行链实施计划.*待单独授权/
     );
-    assert.match(bodyText, /T4 BLOCKED · T5 ATTEMPTED \/ BLOCKED/);
+    assert.match(bodyText, /下一里程碑与真实运行能力未自动放行/);
     assert.doesNotMatch(bodyText, /DEV-M0 Ready · 未开始|代码(?:开发)?尚?未开始/);
 
     for (const id of tabs) {

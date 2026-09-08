@@ -267,7 +267,7 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "真 PG 备份",
         "演练前只写“目标”",
     )
-    assert "v3.84" in ledger
+    assert "v3.85" in ledger
     _assert_same_line(
         ledger,
         "DEC-058",
@@ -292,16 +292,12 @@ def test_current_portfolio_dashboard_keeps_architecture_redlines() -> None:
         "DEC-DDEV-01",
     )
     footer = ledger.rstrip().splitlines()[-1]
-    assert footer.startswith("*G0 责任与证据台账 v3.84 · 2026-09-05")
+    assert footer.startswith("*G0 责任与证据台账 v3.85 · 2026-09-08")
     assert footer.endswith("*")
     for token in (
-        "Menokin",
-        "14/14",
-        "15/15",
-        "DEV-M1 · COMPLETE",
-        "`DEC-SEARCH-01=PASS-WITH-CONDITIONS`",
-        "`T4 BLOCKED / RISK REVALIDATION REQUIRED · T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`",
-        "后置门",
+        "Menokin", "14/14", "15/15", "DEV-M1已完成",
+        "调整的范围签发T6", "原机器NOT_EVALUATED不改写",
+        "DEV-M2、真实接入、部署和Pilot仍待独立批准",
     ):
         assert token in footer, f"ledger footer missing: {token}"
     scope = (DESIGN.parent / "03-Scope与验收.md").read_text(encoding="utf-8")
@@ -1271,7 +1267,7 @@ def test_cr_004_authoritative_source_fail_closed_contract_is_static_and_complete
         assert forbidden_internal_projection not in snapshot_contract
 
     # G0-09 governance evidence is closed; runtime claims remain unimplemented and separately gated.
-    assert "v3.84" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger and "DEC-066" in ledger and "DEC-069" in ledger and "DEC-070" in ledger and "DEC-071" in ledger and "DEC-072" in ledger and "DEC-073" in ledger and "DEC-SEARCH-01" in ledger
+    assert "v3.85" in ledger and "DEC-041" in ledger and "CR-004" in ledger and "DEC-053" in ledger and "DEC-057" in ledger and "DEC-058" in ledger and "DEC-059" in ledger and "DEC-062" in ledger and "DEC-063" in ledger and "DEC-066" in ledger and "DEC-069" in ledger and "DEC-070" in ledger and "DEC-071" in ledger and "DEC-072" in ledger and "DEC-073" in ledger and "DEC-SEARCH-01" in ledger
     cr004_history_line = next(line for line in ledger.splitlines() if line.startswith("| 2026-08-09 | CR-004 |"))
     assert "W4" not in cr004_history_line and "DEC-066" not in cr004_history_line
     assert "运行能力尚未实现" in cr004_history_line and "DEC-039" in cr004_history_line
@@ -2598,7 +2594,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
     ):
         assert re.search(invariant, t), f"architecture board missing DEC-042 invariant: {invariant}"
     _assert_same_line(t, "扩展治理", "静态已冻结", "N/N-1", "PlatformAdapter", "迁移兼容矩阵", "不新增端口、路由或表")
-    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M1 产品实施与退出证据已完成", "负责人承接合同落地与版本化新包准备", "待单独授权")
+    _assert_same_line(t, "当前推进项", "第 4 关代码开发", "G0=PASS", "Ddev=PASS", "DEV-M1 产品实施与退出证据已完成", "准备正式身份与内容运行链实施计划", "待单独授权")
     _assert_same_line(t, "组织门禁", "G0 / Ddev Pass")
     _assert_same_line(t, "架构关", "Ddev 已独立签发", "真实问法", "Pilot", "上线仍须后续独立签发")
     _assert_same_line(t, "小白说明", "Ddev 已签发", "DEV-M1 产品实施与退出证据已完成", "纯合成工程范围", "真实来源", "生产")
@@ -2611,7 +2607,7 @@ def test_arch_board_tabs_a11y_fit_mapping_and_offline() -> None:
         "EVD-DDEV-AUTH-20260831",
         "DEV-M0",
         "DEV-M1 产品实施与退出证据已完成",
-        "负责人承接合同落地与版本化新包准备",
+        "准备正式身份与内容运行链实施计划",
         "待单独授权",
     )
     _assert_same_line(t, "外部责任包 14/14", "Scope 15/15", "EVD-G0-SIGN-20260831", "EVD-DDEV-AUTH-20260831")
