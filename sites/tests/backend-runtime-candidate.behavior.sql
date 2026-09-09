@@ -68,6 +68,7 @@ BEGIN
  BEGIN PERFORM backend_review.park('synthetic-job','synthetic-worker',1,'synthetic-batch','qplan_synthetic','review/synthetic',repeat('e',64),100,rows); RAISE EXCEPTION 'Repark accepted'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'REVIEW_STALE' THEN RAISE; END IF; END;
  BEGIN PERFORM backend_review.decision(repeat('t',43),'synthetic-batch',revision,'denied','synthetic-script',repeat('b',64),'approved','EVD-SYNTHETIC-01'); RAISE EXCEPTION 'Worker review allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  BEGIN PERFORM backend_review.page(repeat('t',43),'synthetic-batch',revision,0,1); RAISE EXCEPTION 'Worker page allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+ BEGIN PERFORM backend_review.list(repeat('t',43),NULL,20); RAISE EXCEPTION 'Worker list allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  SET ROLE app_backend_review;
  BEGIN PERFORM backend_identity.create_login('review-login',repeat('a',64),repeat('b',43)); RAISE EXCEPTION 'Review login allowed'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
  BEGIN PERFORM 1 FROM backend_identity.sessions; RAISE EXCEPTION 'Session table readable'; EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
@@ -126,6 +127,25 @@ BEGIN
  receipt:=backend_review.quality(repeat('g',43),'synthetic-batch-2',revision,'quality-block','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script-2','content_hash',repeat('b',64),'defect',true),jsonb_build_object('script_id','synthetic-conflict-2','content_hash',repeat('c',64),'defect',false)),'EVD-SYNTHETIC-01');
  IF receipt->>'quality_state'<>'blocked' THEN RAISE EXCEPTION 'Defect did not block'; END IF;
  BEGIN PERFORM backend_review.resume(repeat('g',43),'synthetic-batch-2',revision); RAISE EXCEPTION 'Blocked quality resumed'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'QUALITY_GATE_NOT_PASSED' THEN RAISE; END IF; END;
+END $$;
+RESET ROLE;
+INSERT INTO public.import_batches(import_batch_id,source_type,source_binding_hash,status,actor_user_id,actor_role) VALUES('synthetic-batch-3','seed',repeat('a',64),'validating','synthetic-user','owner');
+INSERT INTO public.outbox_jobs(job_id,job_type,payload,status,lease_owner,lease_version,lease_expires_at) VALUES('synthetic-job-3','import_validate','{"import_batch_id":"synthetic-batch-3"}','running','synthetic-worker',1,clock_timestamp()+interval '60 seconds');
+DO $$
+DECLARE rows JSONB; revision TEXT; manifest TEXT; receipt JSONB;
+BEGIN
+ rows:=jsonb_build_array(
+  jsonb_build_object('staging_id','b3-staging','script_id','synthetic-script-3','operation','upsert','content_hash',repeat('b',64),'risk_level','low','has_conflict',false,'quality_status','clean','title','T3','answer_text','A3'),
+  jsonb_build_object('staging_id','b3-conflict','script_id','synthetic-conflict-3','operation','upsert','content_hash',repeat('c',64),'risk_level','high','has_conflict',true,'quality_status','clean','title','C3','answer_text','A3')
+ );
+ manifest:=encode(sha256(convert_to(jsonb_build_array(backend_review.sample_ids(rows,repeat('a',64),1),backend_review.sample_ids(rows,repeat('a',64),1))::text,'UTF8')),'hex');
+ SET ROLE app_backend_worker;
+ PERFORM public.freeze_content_quality_review_plan('synthetic-job-3','synthetic-worker',1,'synthetic-batch-3','qplan_synthetic_3','synthetic-policy',clock_timestamp(),2,1,1,repeat('a',64),manifest,'sha256-ranked-v1',rows);
+ revision:=backend_review.park('synthetic-job-3','synthetic-worker',1,'synthetic-batch-3','qplan_synthetic_3','review/synthetic-3',repeat('e',64),100,rows);
+ SET ROLE app_backend_review;
+ receipt:=backend_review.quality(repeat('g',43),'synthetic-batch-3',revision,'quality-revision','initial',jsonb_build_array(jsonb_build_object('script_id','synthetic-script-3','content_hash',repeat('b',64),'defect',false),jsonb_build_object('script_id','synthetic-conflict-3','content_hash',repeat('c',64),'defect',true)),'EVD-SYNTHETIC-01');
+ IF receipt->>'quality_state'<>'revision_required' THEN RAISE EXCEPTION 'Sub-threshold defect blocked'; END IF;
+ BEGIN PERFORM backend_review.resume(repeat('g',43),'synthetic-batch-3',revision); RAISE EXCEPTION 'Revision-required resumed'; EXCEPTION WHEN SQLSTATE 'ZA003' THEN IF SQLERRM<>'QUALITY_GATE_NOT_PASSED' THEN RAISE; END IF; END;
 END $$;
 SET ROLE app_backend_auth;
 SELECT backend_identity.logout(repeat('t',43));
