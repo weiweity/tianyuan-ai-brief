@@ -7,7 +7,7 @@ export const releaseSteps = [
   'test', 'test:boundary-integration', 'test:layout-ui', 'test:ui',
   'test:arch-board-ui', 'test:business', 'test:customer-agent-python-tools',
   'lint:openapi', 'check:owner-contract', 'lint:owner-openapi',
-  'test:backend-candidate',
+  'test:backend-candidate', 'check:backend-contract', 'lint:backend-openapi',
   'test:sql-grammar', 'test:architecture-contract', 'check:arch-diagrams', 'audit:deps',
 ];
 

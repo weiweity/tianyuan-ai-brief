@@ -16,6 +16,7 @@
 | `test_customer_agent_hub.mjs` | 执行中心五视口、筛选、复制、打印、深色与无障碍验收 |
 | `test_customer_agent_meeting.mjs` | 启动会主屏的泄漏门禁、五视口、交互、离线、打印与无障碍验收 |
 | `verify_customer_agent_pg15.mjs` | 在临时 PostgreSQL 15 cluster 中预检当前 reference DDL；只用 Unix socket、禁用 TCP，结束时删除 PGDATA/WAL，结果写入已忽略的 `output/` |
+| `build_customer_agent_backend_contract.mjs` | 从固定 owner 基线及候选增量生成 OpenAPI 1.13 / schema.v1.16；`--write` 生成、`--check` 校验；不覆盖旧版本 |
 | `build_customer_agent_owner_contract.mjs` | 确定性聚合承接 SQL 与 OpenAPI；`--write` 生成、`--check` 验证；导出器从同一 Git commit 重建比较 |
 | `export_customer_agent_contract_set.mjs` | 只从调用方指定的完整 40 位来源 commit 读取 OpenAPI / DDL 与规范锚点，校验双哈希后在 ignored `output/` 原子生成只读、不可覆盖的版本化合同集；不读脏工作树、不写产品仓 |
 | `verify_customer_agent_g009_intake.mjs` | 校验 G0-09 四域接收清单的公开安全投影；允许预填态盘点，最终用 `--require-ready` 拒绝缺域、证据错配、质量分母错误和敏感值 |

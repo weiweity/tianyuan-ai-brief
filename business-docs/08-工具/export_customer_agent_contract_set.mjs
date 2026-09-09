@@ -21,6 +21,8 @@ import {
   OWNER_PROFILE_PATH, OWNER_CONTRACT_PATHS, buildOwnerContractFiles,
 } from "./build_customer_agent_owner_contract.mjs";
 
+import { BACKEND_CONTRACT_PATHS, buildBackendContractFiles } from "./build_customer_agent_backend_contract.mjs";
+
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "../..");
 const defaultOutputRoot = path.join(repositoryRoot, "output/customer-agent-contract-sets");
@@ -267,15 +269,22 @@ export function loadContractSetFromCommit({
   if (!ownerProfile && gitText(repository, ["log", "--full-history", "-1", "--format=%H", exactSourceGitSha, "--", OWNER_PROFILE_PATH])) {
     throw new Error("来源 commit 删除了既有合同 profile，拒绝降级历史合同");
   }
+  let backendProfile = false;
   if (ownerProfile) {
     const profile = JSON.parse(utf8(readSource(OWNER_PROFILE_PATH), OWNER_PROFILE_PATH));
     if (Object.keys(profile).sort().join(",") !== "profile,schema"
         || profile.schema !== "customer-agent-contract-profile/v1"
-        || profile.profile !== "owner-acceptance-v1") {
+        || !["owner-acceptance-v1", "backend-synthetic-v1"].includes(profile.profile)) {
       throw new Error("未知或不封闭的合同来源 profile");
     }
+    backendProfile = profile.profile === "backend-synthetic-v1";
   }
-  const sourcePaths = ownerProfile
+  if (!backendProfile && gitText(repository, ["log", "--full-history", "-1", "--format=%H", exactSourceGitSha, "--", BACKEND_CONTRACT_PATHS.increment])) {
+    throw new Error("来源 commit 已存在后端合同历史，拒绝降级 owner profile");
+  }
+  const sourcePaths = backendProfile
+    ? { ...CONTRACT_SOURCE_PATHS, openapi: BACKEND_CONTRACT_PATHS.openapi, database: BACKEND_CONTRACT_PATHS.database }
+    : ownerProfile
     ? { ...CONTRACT_SOURCE_PATHS, openapi: OWNER_CONTRACT_PATHS.openapi, database: OWNER_CONTRACT_PATHS.database }
     : CONTRACT_SOURCE_PATHS;
   const buffers = Object.fromEntries(Object.entries(sourcePaths).map(([key, sourcePath]) => [key, readSource(sourcePath)]));
@@ -306,16 +315,36 @@ export function loadContractSetFromCommit({
   if (ownerProfile) {
     const generated = buildOwnerContractFiles(readSource);
     for (const key of ["database", "openapi"]) {
-      if (!buffers[key].equals(generated[key])) throw new Error(`承接合同派生产物与来源不一致：${key}`);
+      if (!(backendProfile ? readSource(OWNER_CONTRACT_PATHS[key]) : buffers[key]).equals(generated[key])) throw new Error(`承接合同派生产物与来源不一致：${key}`);
     }
     const increment = utf8(readSource(OWNER_CONTRACT_PATHS.increment), OWNER_CONTRACT_PATHS.increment);
     for (const [anchor, ddl, api] of [
       ["**直接前序机器合同：**", predecessorDatabaseHash, predecessorOpenapiHash],
-      ["**A3 机器合同增量：**", databaseHash, openapiHash],
-      ["**实际产物必须精确匹配：**", databaseHash, openapiHash],
+      ["**A3 机器合同增量：**", sha256(generated.database), sha256(generated.openapi)],
+      ["**实际产物必须精确匹配：**", sha256(generated.database), sha256(generated.openapi)],
     ]) {
       const lines = linesForAnchor(increment, "A3 承接合同", anchor);
       if (lines.length !== 1) throw new Error(`A3 合同声明必须唯一：${anchor}`);
+      hashPairFromLine(lines[0], anchor);
+      assertLineCarriesHashes(lines[0], anchor, ddl, api);
+    }
+  }
+
+  if (backendProfile) {
+    const generated = buildBackendContractFiles(readSource);
+    for (const key of ["database", "openapi"]) {
+      if (!buffers[key].equals(generated[key])) throw new Error(`后端合同派生产物与来源不一致：${key}`);
+    }
+    const increment = utf8(readSource(BACKEND_CONTRACT_PATHS.increment), BACKEND_CONTRACT_PATHS.increment);
+    const approval = utf8(readSource("business-docs/01-客服Agent项目/90-评审/2026-09-09_后端合成开发批准.md"), "后端开发批准");
+    if (!/^> 状态：APPROVED · SYNTHETIC DEVELOPMENT ONLY\r?$/m.test(approval) || !/^> 决定：DEC-BACKEND-SYNTHETIC-20260909\r?$/m.test(approval)) throw new Error("缺后端合成开发批准");
+    for (const [anchor, ddl, api] of [
+      ["**直接前序机器合同：**", sha256(readSource(OWNER_CONTRACT_PATHS.database)), sha256(readSource(OWNER_CONTRACT_PATHS.openapi))],
+      ["**后端机器合同增量：**", databaseHash, openapiHash],
+      ["**实际产物必须精确匹配：**", databaseHash, openapiHash],
+    ]) {
+      const lines = linesForAnchor(increment, "后端合同", anchor);
+      if (lines.length !== 1) throw new Error(`后端合同声明必须唯一：${anchor}`);
       hashPairFromLine(lines[0], anchor);
       assertLineCarriesHashes(lines[0], anchor, ddl, api);
     }

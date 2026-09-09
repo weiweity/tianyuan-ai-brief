@@ -10,6 +10,8 @@
 
 ### Changed
 
+- 按单主机合成开发批准组合 OpenAPI 1.13 / schema 1.16，增加可追溯导出、防降级与精确批准状态校验；保留旧合同，运行接入未激活。
+
 - 候选合同保持未冻结、未 intake；不表示 HTTP/worker 已实现或 DEV-M2 已获准。
 - 静态检查钉死 LoginExchange 成功/多余字段、resume 能力、SQL 原因词与 SET ROLE 行为脚本；PG 行为补 PKCE 错 verifier、跨角色 EXECUTE、质量幂等冲突与缺陷阻断。
 - 静态门把 SQLSTATE 与 reason 成对钉死，并覆盖 worker 对 page/list 的 GRANT 拒绝；PG 行为区分阈值阻断与低于阈值的 revision_required。
