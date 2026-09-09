@@ -123,3 +123,7 @@ assert.match(pg,/PostgreSQL 15 binaries required/);
 assert.match(pg,/server_version_num/);
 assert.match(pg,/lock_timeout/);
 console.log(`PASS ${cases} schema examples, storage SQL (${parsed.stmts.length}) and transaction SQL (${txParsed.stmts.length}, ${functions.plpgsql_funcs.length} PL/pgSQL bodies, ${named.length} CREATE FUNCTION); PG SET ROLE suite pinned`);
+
+const { buildClosureContractFiles, CLOSURE_CONTRACT_PATHS } = await import('../../business-docs/08-工具/build_customer_agent_backend_contract.mjs');
+const closure = buildClosureContractFiles(source => readFileSync(new URL(`../../${source}`, import.meta.url)));
+assert.deepEqual(readFileSync(new URL(`../../${CLOSURE_CONTRACT_PATHS.database}`, import.meta.url)), closure.database);

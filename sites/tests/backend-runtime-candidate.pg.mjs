@@ -19,8 +19,10 @@ try {
  assert.equal(Math.floor(Number(sql('SHOW server_version_num'))/10000),15,'PostgreSQL 15 server required');
  const base='business-docs/01-客服Agent项目/30-开发-进行中/';
  let installation='';
- for(const file of ['schema.v1.16.sql']) installation+=run('psql',[...args,'-f',base+file]);
+ for(const file of ['schema.v1.17.sql']) installation+=run('psql',[...args,'-f',base+file]);
  writeFileSync(path.join(dir,'install.log'),installation);
+ assert.equal(sql("SELECT prosecdef AND proowner='cs_ai_definer'::regrole AND proconfig=ARRAY['search_path=pg_catalog, public, pg_temp'] FROM pg_proc WHERE oid='public.trg_release_source_set_complete()'::regprocedure").trim(),'t');
+ assert.equal(sql("SELECT has_table_privilege('app_content_admin','public.release_source_bindings','SELECT')").trim(),'f');
  const output=run('psql',[...args,'-f','sites/tests/backend-runtime-candidate.behavior.sql']);
  writeFileSync(path.join(dir,'behavior.log'),output);assert.match(output,/PASS auth replay/);
  assert.equal(Number(sql("select count(*) from pg_proc where pronamespace='public'::regnamespace and position('backend_review.lock_content' in prosrc)>0")),12);

@@ -1,1 +1,4 @@
-{"schema":"customer-agent-contract-profile/v1","profile":"backend-synthetic-v1"}
+{
+  "schema": "customer-agent-contract-profile/v1",
+  "profile": "backend-closure-v1"
+}

@@ -62,14 +62,34 @@ export function buildBackendContractFiles(readSource) {
   return {openapi:Buffer.from(openapi), database:Buffer.from(database)};
 }
 
+export const CLOSURE_CONTRACT_PATHS = Object.freeze({
+  openapi: BACKEND_CONTRACT_PATHS.openapi,
+  database: `${development}/schema.v1.17.sql`,
+  increment: `${development}/10-后端收尾合同交接.md`,
+});
+export const CLOSURE_DELTA_PATH = `${development}/backend-closure.delta.sql`;
+export function buildClosureContractFiles(readSource) {
+  const base = buildBackendContractFiles(readSource);
+  const delta = readSource(CLOSURE_DELTA_PATH);
+  const database = Buffer.concat([
+    Buffer.from('-- schema.v1.17 — synthetic backend closure clean-install reference\n'),
+    base.database,
+    Buffer.from(`\n-- BEGIN CLOSURE ${digest(delta)}\n`), delta,
+    Buffer.from('-- END CLOSURE\n'),
+  ]);
+  return { openapi: base.openapi, database };
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
-  if (args.length !== 1 || !['--write','--check'].includes(args[0])) throw new Error('Use --write or --check');
+  if (args.length !== 1 || !['--write','--check','--write-closure','--check-closure'].includes(args[0])) throw new Error('Use --write or --check');
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-  const files = buildBackendContractFiles(source => readFileSync(path.join(root,source)));
+  const closure = args[0].endsWith('-closure');
+  const files = (closure ? buildClosureContractFiles : buildBackendContractFiles)(source => readFileSync(path.join(root,source)));
+  const paths = closure ? CLOSURE_CONTRACT_PATHS : BACKEND_CONTRACT_PATHS;
   for (const [key,bytes] of Object.entries(files)) {
-    const target = path.join(root,BACKEND_CONTRACT_PATHS[key]);
-    if (args[0] === '--write') writeFileSync(target,bytes);
+    const target = path.join(root,paths[key]);
+    if (args[0].startsWith('--write')) writeFileSync(target,bytes);
     else if (!readFileSync(target).equals(bytes)) throw new Error(`Backend generated drift: ${key}`);
     console.log(`${key} ${digest(bytes)} ${bytes.length} bytes`);
   }
