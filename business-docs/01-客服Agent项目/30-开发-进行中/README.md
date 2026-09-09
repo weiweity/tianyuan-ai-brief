@@ -1,8 +1,8 @@
 # 30 · 正式开发阶段（进行中）
 
-> **状态：** `DEV-M1 COMPLETE` · `G1A-E0 T1～T3 COMPLETE · MERGED` · `T4 BLOCKED` · `T5 ATTEMPTED / BLOCKED · NOT_EVALUATED`
-> **进入与推进证据：** 设计评审、G0 / Ddev、DEV-M0 / DEV-M1 退出证据；产品仓 comparison v2 合同 PR #23（`main@b0a52d9`）与 CI run `33889553752`；仓外 `EVD-G1A-DATA-01`、`EVD-G1A-EVALSET-01`、`EVD-G1A-BLIND-01`、`EVD-G1A-COMPARISON-02`、`EVD-G1A-HOST-01`、`EVD-G1A-PACKAGE-01`、`EVD-G1A-RUN-01`、`EVD-G1A-CLEANUP-01`
-> **下一动作：** 负责人承接合同落地与版本化新包准备；负责人承接决定已确认，现行机器合同转换前不装包、不重跑、不自动续期、不签发 T6
+> **状态：** `DEV-M1 COMPLETE` · 后端 T0–T6 COMPLETE · MERGED · 桌面接入方案 APPROVED / 待实施
+> **当前增量（2026-09-09）：** 产品仓 `main@bb7a14b`（PR #59）五项 CI 通过；治理合同来源 `0904a0a`，OpenAPI 1.13.0 / schema.v1.17。桌面 adapter 未实现。下一动作以产品仓执行清单 `docs/plans/2026-09-06-execution-goal.md` 与 APPROVED `docs/plans/2026-09-09-desktop-integration-preparation.md` 为准；仅按专项批准实施 D1–D5。两仓不互相读取运行时文件。
+> **历史进入证据：** 设计评审、G0 / Ddev、DEV-M0 / DEV-M1 退出证据；comparison v2 合同 PR #23（`main@b0a52d9`）与 CI run `33889553752`；仓外 G1A EVD。下文 T4 BLOCKED / 未签发 T6 等语句保留当时语义，不能覆盖其后已合并的后端与已记录的 T6 签发。
 
 目录名保持技术第 4 关兼容入口。本项目记录仓只保存阶段、决定和证据；产品代码继续只在独立产品实施仓中维护。`DEV-M0`、`DEV-M1` W0～W5 与 G1A-E0 T1～T3 退出证据已完成；comparison v2 合同已通过 PR #23 合并。仓外 T4 输入包以四个 0600 成员装配，实际产品解析器静态校验通过；宿主网络沙箱与异常残留回收先以纯合成数据预演通过。首次 T5 在任何 case 执行前因临时目录别名与 sandbox profile 不一致而失败关闭，RUN/CLEANUP 证据确认 0 条评测与 0 残留；共享来源修复经 PR #24 合并至 `main@4dbee4b`，合并后 CI run `33930030132` 三路全绿；仍只具备合成验证证据，后续 Attempt06/07 仍失败关闭，四域业务版本已确认；33 条工程风险记录待负责人承接合同转换，结果仍固定为 `NOT_SIGNED / NOT_EVALUATED`，不自动放行真实 G1a、`DEV-M2`、飞书运行接入、desktop adapter、部署、Pilot 或付费调用。
 

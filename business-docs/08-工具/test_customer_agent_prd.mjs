@@ -217,7 +217,7 @@ await check("关键业务口径完整", async () => {
         milestoneLabel,
         slicesLabel,
         nextAction,
-        "准备正式身份与内容运行链实施计划",
+        "实施已批准的桌面合成接入 D1–D5",
         "仍须单独授权"
       );
       assert.doesNotMatch(visible, /软件(?:尚)?未开发/, "当前 PRD 已进入开发中，不得残留“软件未开发”");

@@ -140,7 +140,7 @@ export function synchronizeBoardStatusShell(board, projectStatus) {
   board = replaceUnique(
     board,
     /<p class="cv-note"><strong>小白说明：<\/strong>[\s\S]*?<\/p>/g,
-    () => `<p class="cv-note"><strong>小白说明：</strong>${projectStatus.ddevReady ? `Ddev 已签发，${escapeHtml(development.currentSummary)}` : "施工图已经锁定，但组织授权门尚未通过。"}当前证据只覆盖获批的纯合成工程范围；真实来源、飞书运行接入、desktop adapter、Pilot 与生产仍须后续独立门禁。</p>`,
+    () => `<p class="cv-note"><strong>小白说明：</strong>${projectStatus.ddevReady ? `Ddev 已签发，${escapeHtml(development.currentSummary)}` : "施工图已经锁定，但组织授权门尚未通过。"}当前证据只覆盖获批的纯合成工程范围；真实来源、飞书运行接入、desktop adapter 真实运行接入、Pilot 与生产仍须后续独立门禁。</p>`,
     "小白版当前开发说明"
   );
   board = replaceUnique(
